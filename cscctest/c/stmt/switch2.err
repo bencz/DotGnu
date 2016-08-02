@@ -1,0 +1,6 @@
+./switch2.c:26: switch quantity not an integer
+./switch2.c:35: multiple `default' labels in `switch' statement
+./switch2.c:34: previous `default' label here
+./switch2.c:41: invalid case label expression
+./switch2.c:48: duplicate case expression
+./switch2.c:47: previous definition here

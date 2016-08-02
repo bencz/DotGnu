@@ -1,0 +1,120 @@
+#!/bin/sh
+#
+# bininstall - Install a binary version on a system.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+# Validate the command-line arguments.
+if [ -z "$1" -o -z "$2" ]; then
+	echo "Usage: $0 dir version" 1>&2
+	exit 1
+fi
+INSTDIR="$1"
+VERSION="$2"
+
+# Verify the install directory.
+if [ ! -d "$INSTDIR" ]; then
+	echo "$INSTDIR: No such file or directory" 1>&2
+	exit 1
+fi
+if [ ! -w "$INSTDIR" ]; then
+	echo "$INSTDIR: directory is not writable" 1>&2
+	exit 1
+fi
+
+# Determine the name of the install file list.
+FILELIST="$INSTDIR/lib/cscc/install-$VERSION.lst"
+
+# Helper function that echoes a command-line and then executes it.
+function call()
+{
+	echo $*
+	$*
+}
+
+# Helper function that makes a directory if it is missing.
+function makedir()
+{
+	if [ ! -d "$1" ]; then
+		echo mkdir "$1"
+		if mkdir "$1"; then
+			chmod 755 "$1"
+		else
+			exit 1
+		fi
+	fi
+}
+
+# Copy the contents of a directory to a destination directory.
+function copydir()
+{
+	for i in $1/*; do
+		NAME=`basename "$i"`
+		if [ -L "$i" ]; then
+			echo rm -f "$2/$NAME"
+			if rm -f "$2/$NAME"; then
+				echo cp -d "$i" "$2"
+				if cp -d "$i" "$2"; then
+					echo '' >/dev/null
+				else
+					exit 1
+				fi
+			else
+				exit 1
+			fi
+		elif [ -f "$i" ]; then
+			echo cp "$i" "$2"
+			if cp "$i" "$2"; then
+				if [ -x "$i" ]; then
+					echo chmod 755 "$2/$NAME"
+					chmod 755 "$2/$NAME"
+				else
+					echo chmod 644 "$2/$NAME"
+					chmod 644 "$2/$NAME"
+				fi
+			else
+				exit 1
+			fi
+		fi
+		echo "$2/$NAME" >>$FILELIST
+	done
+}
+
+# Create the directories that we need.
+makedir $INSTDIR/bin
+makedir $INSTDIR/lib
+makedir $INSTDIR/lib/cscc
+makedir $INSTDIR/lib/cscc/plugins
+makedir $INSTDIR/include
+makedir $INSTDIR/include/pnet
+makedir $INSTDIR/man
+makedir $INSTDIR/man/man1
+
+# Remove any existing file lists from previous versions.
+for i in $INSTDIR/lib/cscc/install-*.lst; do
+	rm -f "$i"
+done
+
+# Copy the files across.
+copydir ./usr/local/bin $INSTDIR/bin
+copydir ./usr/local/lib $INSTDIR/lib
+copydir ./usr/local/lib/cscc/plugins $INSTDIR/lib/cscc/plugins
+copydir ./usr/local/include/pnet $INSTDIR/include/pnet
+copydir ./usr/local/man/man1 $INSTDIR/man/man1
+
+# Done.
+exit 0

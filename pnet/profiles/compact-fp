@@ -1,0 +1,113 @@
+#
+# compact-fp - Compact profile, including floating-point support.
+#
+# Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+# Attempt to reduce code size (y/n).
+IL_CONFIG_REDUCE_CODE=y
+
+# Attempt to reduce runtime data size (y/n).
+IL_CONFIG_REDUCE_DATA=y
+
+# Use thin-locks to reduce memory usage
+IL_CONFIG_USE_THIN_LOCKS=y
+
+# Use a direct-threaded interpreter if possible (y/n).
+IL_CONFIG_DIRECT=n
+
+# Use interpreter unrolling if possible (y/n).
+IL_CONFIG_UNROLL=n
+
+# Support Java class loading and manipulation (y/n).
+IL_CONFIG_JAVA=n
+
+# Support gzip-compressed program images (y/n).
+IL_CONFIG_GZIP=n
+
+# Force the system to use Latin1 as the default encoding (y/n).
+IL_CONFIG_LATIN1=y
+
+# Declare the default size of a page in the method cache.
+IL_CONFIG_CACHE_PAGE_SIZE=32768
+
+# Declare the default size of a thread's operand stack.
+IL_CONFIG_STACK_SIZE=8192
+
+# Declare the default size of a thread's frame stack.
+IL_CONFIG_FRAME_STACK_SIZE=512
+
+# Maximum size for the garbage-collected heap (0 means unlimited).
+IL_CONFIG_GC_HEAP_SIZE=0
+
+# Add support for PInvoke (y/n).
+IL_CONFIG_PINVOKE=n
+
+# Use full reflection library (y/n).
+IL_CONFIG_REFLECTION=y
+
+# Use the runtime infrastructure library (y/n).  This will
+# always be enabled if reflection is enabled.
+IL_CONFIG_RUNTIME_INFRA=y
+
+# Use networking support (y/n).
+IL_CONFIG_NETWORKING=y
+
+# Use floating-point operations in the engine (y/n).
+IL_CONFIG_FP_SUPPORTED=y
+
+# Support the extended numeric classes Single, Double, and Decimal (y/n).
+# IL_CONFIG_FP_SUPPORTED should be enabled if this is enabled.
+IL_CONFIG_EXTENDED_NUMERICS=y
+
+# Use non-vector arrays (y/n).
+IL_CONFIG_NON_VECTOR_ARRAYS=n
+
+# Use multiple application domains (y/n).
+IL_CONFIG_APPDOMAINS=n
+
+# Use remoting (y/n).
+IL_CONFIG_REMOTING=n
+
+# Use vararg methods (y/n).
+IL_CONFIG_VARARGS=n
+
+# Allow dynamic growth of stack frames (y/n).
+IL_CONFIG_GROW_FRAMES=n
+
+# Use filtered exceptions (y/n).
+IL_CONFIG_FILTERED_EXCEPTIONS=n
+
+# Use debug line information (y/n).
+IL_CONFIG_DEBUG_LINES=n
+
+# Compile with debugger support
+IL_CONFIG_DEBUGGER=n
+
+# Use file and directory internalcalls (y/n).
+IL_CONFIG_FILESYSTEM=y
+
+# ECMA compliance. Might differ from observed behavior of .NET (y/n).
+IL_CONFIG_ECMA=y
+
+# Major CLR/Framework Version to support (1 .. 3)
+IL_VERSION_MAJOR=1
+
+# Minor CLR/Framework Version to support
+IL_VERSION_MINOR=0
+
+# Default version string to store in the metadata
+IL_VERSION_METADATA="v1.1.4322"

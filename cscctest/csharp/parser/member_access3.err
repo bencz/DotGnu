@@ -1,0 +1,3 @@
+./member_access3.cs:24: warning: unsafe field declaration
+./member_access3.cs:24: warning: unsafe pointer type
+./member_access3.cs:27: warning: unsafe method declaration

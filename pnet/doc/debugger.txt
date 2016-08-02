@@ -1,0 +1,170 @@
+Quick start
+-----------
+
+If you want to use debugger for debugging your applications please visit this
+page:
+
+                     http://home.gna.org/libide/
+
+Rest of this document will deal with debugger internals that regular user does
+not need to know.
+
+Introduction
+------------
+
+Current debugger implementation is by default a part of ilrun program. Debugger
+can be activated e.g. by command line switch of ilrun. Ilrun then connects
+to debugger frontend which is most often some IDE. The frontend can then send
+simple text commands and read responses.
+
+Activation
+----------
+
+Debugger is enabled in default build profile. You can check if you have
+debugger support by invoking:
+
+$ ilrun -D
+Engine Version                 : 0.8.1
+...
+Debugger support               : Yes
+Build Profile                  : Full
+...
+
+To start debugging ilrun has two command line switches -g and -G. They are used
+to tell ilrun to activate the debugging module before your program starts. They
+also specify how will the debugger talk to it's frontend. Let's see example:
+
+$ ilrun -g MyProgram.exe
+
+The -g option specifies that the default connection should be used. The default
+connection is always socket connection to localhost on port 4571.
+
+Alternatively you can use -G option for custom connection:
+
+$ ilrun -G 192.168.1.2:1234
+$ IL_DEBUGGER_CONNECTION_STRING=192.168.1.2:1234 ilrun MyProgram.exe
+$ ilrun -G stdio MyProgram.exe
+
+The first example can be used e.g. when program is running on different machine
+than the debugger frontend - this is called remote debugging. In this case the
+frontend is on 192.168.1.2 on port 1234. The port information can be ommited
+and standard port 4571 will be used. You should always use IP address because
+debugger does not support DNS resolving.
+
+The second example works similar to -G option, but uses environment variable
+IL_DEBUGGER_CONNECTION_STRING to specify remote frontend. This could be useful
+in situations where you cant modify ilrun's command line options.
+
+The last example will use stdio for sending debugger commands. This is the
+easiest way how to start debugger, but also the most useless for practical use.
+
+Example session
+---------------
+
+In this section we will walkthrough debugging of simple C# program. You will
+need simple TCP server that listens on default debugger port 4571 and that can
+send text commands and read responses after client connects. You can find such
+program here [1]. The program is called ServiceConsole and is part of bigger
+project called PortableStudio [2], which is C# IDE with integrated support for
+Portable.NET.
+
+So first thing to be done is starting server:
+
+$ ilrun ServiceConsole.exe 4571
+The server is running at port 4571
+Waiting for a connection...
+
+Now the program that we want to debug - let's say hello.exe which can be found
+in pnetlib samples.
+
+$ ilrun -g hello.exe
+
+Server should now say:
+Connection accepted
+
+and display prompt:
+>
+
+If you do not want to start server you can try communication with debugger on
+stdio. So instead of previous setup just do:
+
+$ ilrun -G stdio hello.exe
+
+Once you are connected, you can display help for debugger commands:
+> help
+...
+
+Commands function and usage are in most cases clear so we will not describe all
+of them here. Every debugger command sends response after it is executed.
+Response is always structure DebuggerResponse that is serialized to XML text.
+You can find this structure with useful comments here [3]. The XML text is
+always NIL terminated.
+
+For quick start you can try these commands:
+
+> show_position
+> show_locals
+> step
+
+Please note that show_locals is now supported only if you compiled pnet with
+jit coder (--with-jit configure switch).
+
+In most cases you will want to specify which assemblies you want to debug. This
+can be done via watch_assembly command. Debugger will then step only into
+assemblies specified with this command. This will also speedup debugged program
+greatly.
+
+Some debugger commands should be executed only when the program execution is
+stopped. For this purpose use command:
+
+> is_stopped
+
+If the command returns "yes", all debugger commands are safe to be executed.
+Otherwise the program should be stopped. You can use command:
+
+> break
+
+Now you should check is_stopped until it says yes.
+
+If you call some commands e.g. show_locals while program is running it can lead
+to incorrect behavior or even program crash. This will be fixed in future.
+
+Implemntation
+-------------
+
+Most important for implementing debugger is support in engine. Both CVM and JIT
+engine provide debug hooks. This is low-level mechanism, that allows you to
+inject callbacks into various places of debugged program.
+
+Debugger handles engine callbacks in DebugHook() function. This function is
+called after every IL instruction. Debugger decides here what to do. E.g. it
+can decide to stop if breakpoint is reached, it can display local variables or
+do any other command.
+
+Implementing debugger via debug hooks is really easy and portable solution, but
+it has it's downsides too. Calling debug hook function after every instruction
+can dramatically slowdown program execution. Fortunately this only applies when
+debugger is connected - otherwise hooks are not inserted at all. We can also
+achieve a big speedup if we insert hooks only in functions that we are
+interested in. E.g. most user will not want to debug system libraries.
+
+Debugger should also handle multiple threads although it's possible to run
+debugger even on systems that dont have threading (with some limitations).
+Commands like show_locals should be always executed in their thread, because
+displaying watches can involve working with Thread.CurrentThread.
+
+Some debugger functions are difficult to implement in C. For these functions
+we have DebuggerHelper class that is implemented in C#. You can find this class
+in pnetlib/runtime/System/Private directory. This class is called from C and is
+used mainly for displaying watches.
+
+Most of the debugger functions can be found in engine/debugger.c file. Some
+support is also in coders. You can grep for IL_DEBUGGER to find these places.
+
+References
+----------
+
+[1] svn://svn.gna.org/svn/libide/trunk/studio/service_console
+[2] https://gna.org/projects/libide
+[3] svn://svn.gna.org/svn/libide/trunk/studio/PortableStudio.Data/DebuggerResponseDataInfo.cs
+[4] https://gna.org/projects/libide/studio

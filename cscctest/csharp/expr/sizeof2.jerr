@@ -1,0 +1,9 @@
+./sizeof2.cs:29: unsafe method declaration not permitted with Java output
+./sizeof2.cs:31: unsafe `sizeof' operator not permitted with Java output
+./sizeof2.cs:31: `void' type is not allowed in this context
+./sizeof2.cs:32: unsafe `sizeof' operator not permitted with Java output
+./sizeof2.cs:32: cannot take the size of a managed type
+./sizeof2.cs:33: unsafe `sizeof' operator not permitted with Java output
+./sizeof2.cs:33: cannot take the size of a managed type
+./sizeof2.cs:34: unsafe `sizeof' operator not permitted with Java output
+./sizeof2.cs:34: invalid argument to `sizeof' operator

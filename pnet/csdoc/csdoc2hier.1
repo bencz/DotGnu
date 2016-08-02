@@ -1,0 +1,59 @@
+.\" Copyright (c) 2001 Southern Storm Software, Pty Ltd.
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.TH csdoc2hier 1 "17 June 2002" "Southern Storm Software" "Portable.NET Development Tools"
+.SH NAME
+csdoc2hier \- convert C# documentation into a hierarchy diagram
+.SH SYNOPSIS
+\fBcsdoc2hier\fR [ options ] \fIinput\fR ...
+.SH DESCRIPTION
+.B Csdoc2hier
+reads the supplied XML input files, and converts them into
+a diagram of the type hierarchy.
+
+Specifying multiple input files is exactly the same as specifying
+one input file which is the concatenation of all of the files.
+Only one output collection is created.  \fBCsdoc2hier\fR must be invoked
+multiple times to convert multiple input files into multiple output
+collections.
+.SH OPTIONS
+.TP
+.B -o \fIname\fR, \-\-output \fIname\fR
+Specify the name of the output file.  If not specified, the default
+is standard output.
+.TP
+.B \-fby\-library
+Organise the output by library instead of by class name.
+.TP
+.B \-\-help
+Print a usage message for the \fBcsdoc2hier\fR program.
+.TP
+.B \-v, \-\-version
+Print the version of the \fBcsdoc2hier\fR program.
+.TP
+.B \-\-
+Marks the end of the command-line options, and the beginning of
+the input filenames.  You may need to use this if your filename
+begins with '-'.  e.g. "csdoc2hier -- -input.xml".  This is not needed
+if the input is stdin: "csdoc2hier -" is perfectly valid.
+.SH "AUTHOR"
+Written by Southern Storm Software, Pty Ltd.
+
+http://www.southern-storm.com.au/
+.SH "SEE ALSO"
+csdoc(1), csdoc2html(1)
+.SH "DIAGNOSTICS"
+Exit status is 1 if an error occurred while processing the input.
+Otherwise the exit status is 0.

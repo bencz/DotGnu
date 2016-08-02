@@ -1,0 +1,32 @@
+#
+# Overflow.txt - Resources for overflow errors.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Overflow_Byte=El valor del Byte ha d'estar entre 0 i 255, ambdos inclosos
+Overflow_SByte=El valor valid per a SByte han d'estar entre -128 i 127, ambdos inclosos
+Overflow_Int16=El valor valid per a Int16 han d'estar entre -32768 i 32767, ambdos inclosos
+Overflow_UInt16=El valor valid per a UInt16 han d'estar entre 0 i 65535, ambdos inclosos
+Overflow_Int32=El valor valid per a Int32 han d'estar entre -2147483648 i 2147483647, ambdos inclosos
+Overflow_UInt32=El valor valid per a UInt32 han d'estar entre 0 i 4294967295, ambdos inclosos
+Overflow_Int64=El valor valid per a Int64 han d'estar entre -9223372036854775808 i 9223372036854775807, ambdos inclosos
+Overflow_UInt64=El valor UInt64 han d'estar entre 0 i 18446744073709551615, ambdos inclosos
+Overflow_Char=El valor per al Char han d'estar entre 0 i 65535, ambdos inclosos
+Overflow_Decimal=Els valors decimals han d'estar entre -79228162514264337593543950335 i 79228162514264337593543950335, ambdos inclosos
+Overflow_NegateTwosCompNum=S'ha intentat negar el major nombre negatiu d'un enter
+Overflow_Pointer=El valor del punter està fora de rang
+Overflow_Currency=El valor de la divisa OA sobrepassat

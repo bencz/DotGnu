@@ -1,0 +1,140 @@
+/*
+ * jv_ainit.tc - Array initialization nodes.
+ *
+ * Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+%output "cg_ainit.c"
+
+%{
+
+/*
+ * Populate a particular level of a Java array.
+ */
+static void PopulateJavaArrayLevel(ILGenInfo *info, ILNode *expr,
+							       ILMachineType elemMachineType,
+							       ILType *elemType, ILType *arrayType,
+							       ILUInt32 *posn, int dim, int rank)
+{
+	ILNode_ListIter iter;
+	ILNode *node;
+	ILUInt32 index;
+
+	/* Have we reached the innermost level? */
+	if(dim >= rank)
+	{
+		/* Duplicate the array object on the stack */
+		JavaGenSimple(info, JAVA_OP_DUP);
+		JavaGenAdjust(info, 1);
+
+		/* Output the index into the current dimension */
+		JavaGenUInt32(info, posn[dim - 1]);
+		JavaGenAdjust(info, 1);
+
+		/* Store the value into the array */
+		JavaGenCast(info, JavaGenValue(expr, info), elemMachineType);
+		JavaGenStoreArray(info, elemMachineType);
+		JavaGenAdjust(info, -(2 + JavaGenTypeSize(elemMachineType)));
+	}
+	else
+	{
+		/* Retrieve the next-inner array dimension */
+		if(dim > 0)
+		{
+			JavaGenSimple(info, JAVA_OP_DUP);
+			JavaGenAdjust(info, 1);
+			JavaGenUInt32(info, posn[dim - 1]);
+			JavaGenAdjust(info, 1);
+			JavaGenSimple(info, JAVA_OP_AALOAD);
+			JavaGenAdjust(info, -1);
+		}
+
+		/* Scan the current array dimension and call ourselves recursively */
+		ILNode_ListIter_Init(&iter, ((ILNode_ArrayInit *)expr)->expr);
+		index = 0;
+		while((node = ILNode_ListIter_Next(&iter)) != 0)
+		{
+			posn[dim] = index;
+			PopulateJavaArrayLevel(info, node, elemMachineType, elemType,
+							       arrayType, posn, dim + 1, rank);
+			++index;
+		}
+
+		/* Pop the inner array dimension */
+		if(dim > 0)
+		{
+			JavaGenSimple(info, JAVA_OP_POP);
+			JavaGenAdjust(info, -1);
+		}
+	}
+}
+
+%}
+
+/*
+ * Generate value code for an array initialization expression.
+ */
+JavaGenValue(ILNode_ArrayInit)
+{
+	ILType *type = node->arrayType;
+	ILType *elemType;
+	int rank, dimension;
+	ILUInt32 *posn;
+
+	/* Bail out if semantic analysis was not performed correctly */
+	if(!type)
+	{
+		JavaGenSimple(info, JAVA_OP_ACONST_NULL);
+		JavaGenAdjust(info, 1);
+		return ILMachineType_ObjectRef;
+	}
+
+	/* Create the array */
+	elemType = ILTypeGetElemType(type);
+	rank = ILTypeGetRank(type);
+	if(rank == 1)
+	{
+		/* Create a single-dimensional array */
+		JavaGenUInt32(info, ILGetArrayInitLength(node->expr, 0));
+		JavaGenAdjust(info, 1);
+		JavaGenNewArray(info, elemType);
+	}
+	else
+	{
+		/* Create a multi-dimensional array */
+		for(dimension = 0; dimension < rank; ++dimension)
+		{
+			JavaGenUInt32(info, ILGetArrayInitLength(node->expr, dimension));
+			JavaGenAdjust(info, 1);
+		}
+		JavaGenNewMultiArray(info, type, rank);
+		JavaGenAdjust(info, -(rank - 1));
+	}
+
+	/* Populate the array */
+	posn = (ILUInt32 *)ILMalloc(sizeof(ILUInt32) * rank);
+	if(!posn)
+	{
+		ILGenOutOfMemory(info);
+	}
+	PopulateJavaArrayLevel(info, (ILNode *)node, ILTypeToMachineType(elemType),
+					       elemType, type, posn, 0, rank);
+	ILFree(posn);
+
+	/* Return the array's machine type to the caller */
+	return ILMachineType_ObjectRef;
+}

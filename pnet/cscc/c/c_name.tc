@@ -1,0 +1,627 @@
+/*
+ * c_name.tc - Convert expressions into names suitable for embedding
+ *             in array types.
+ *
+ * Copyright (C) 2004, 2009  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+%output "c_name.c"
+
+%decls %{
+
+/*
+ * Name information that is returned by "ILNode_CName",
+ */
+typedef struct
+{
+	char *name;
+	int	  prec;
+
+} CName;
+
+/*
+ * Standard precedence values.
+ */
+#define	C_PREC_PRIMARY		200
+#define	C_PREC_POSTFIX		190
+#define	C_PREC_UNARY		180
+#define	C_PREC_MULT			170
+#define	C_PREC_ADD			160
+#define	C_PREC_SHIFT		150
+#define	C_PREC_RELATIONAL	140
+#define	C_PREC_EQUALITY		130
+#define	C_PREC_AND			120
+#define	C_PREC_XOR			110
+#define	C_PREC_OR			100
+#define	C_PREC_LOGAND		90
+#define	C_PREC_LOGOR		80
+#define	C_PREC_COND			70
+#define	C_PREC_ASSIGN		60
+#define	C_PREC_EXPR			50
+
+/*
+ * The default name.
+ */
+extern CName CNameDefault;
+
+/*
+ * Create a name from a string and precedence.
+ */
+CName CNameCreate(const char *name, int prec);
+
+/*
+ * Create a name that results from applying a unary operator.
+ */
+CName CNameCreateUnary(const char *oper, CName arg, int prec);
+
+/*
+ * Create a name that results from applying a unary operator with brackets.
+ */
+CName CNameCreateUnaryBracketed(const char *oper, CName arg, int prec);
+
+/*
+ * Create a name that results from applying a binary operator.
+ */
+CName CNameCreateBinary(CName left, const char *oper, CName right, int prec);
+
+%}
+
+%{
+
+#include <cscc/c/c_internal.h>
+
+CName CNameDefault = {0, 0};
+
+CName CNameCreate(const char *name, int prec)
+{
+	CName result;
+	result.name = ILDupString(name);
+	if(!(result.name))
+	{
+		CCOutOfMemory();
+	}
+	result.prec = prec;
+	return result;
+}
+
+CName CNameCreateUnary(const char *oper, CName arg, int prec)
+{
+	CName result;
+	result.name = (char *)ILMalloc(strlen(oper) + strlen(arg.name) + 4);
+	if(!(result.name))
+	{
+		CCOutOfMemory();
+	}
+	if(prec > arg.prec)
+	{
+		strcpy(result.name, oper);
+		strcat(result.name, " (");
+		strcat(result.name, arg.name);
+		strcat(result.name, ")");
+	}
+	else
+	{
+		strcpy(result.name, oper);
+		strcat(result.name, " ");
+		strcat(result.name, arg.name);
+	}
+	ILFree(arg.name);
+	result.prec = prec;
+	return result;
+}
+
+CName CNameCreateUnaryBracketed(const char *oper, CName arg, int prec)
+{
+	CName result;
+	result.name = (char *)ILMalloc(strlen(oper) + strlen(arg.name) + 3);
+	if(!(result.name))
+	{
+		CCOutOfMemory();
+	}
+	strcpy(result.name, oper);
+	strcat(result.name, "(");
+	strcat(result.name, arg.name);
+	strcat(result.name, ")");
+	ILFree(arg.name);
+	result.prec = prec;
+	return result;
+}
+
+CName CNameCreateBinary(CName left, const char *oper, CName right, int prec)
+{
+	CName result;
+	result.name = (char *)ILMalloc(strlen(left.name) + strlen(oper) +
+								   strlen(right.name) + 7);
+	if(!(result.name))
+	{
+		CCOutOfMemory();
+	}
+	if(prec >= left.prec)
+	{
+		strcpy(result.name, "(");
+		strcat(result.name, left.name);
+		strcat(result.name, ")");
+	}
+	else
+	{
+		strcpy(result.name, left.name);
+	}
+	strcat(result.name, " ");
+	strcat(result.name, oper);
+	strcat(result.name, " ");
+	if(prec > right.prec)
+	{
+		strcpy(result.name, "(");
+		strcat(result.name, right.name);
+		strcat(result.name, ")");
+	}
+	else
+	{
+		strcpy(result.name, right.name);
+	}
+	ILFree(left.name);
+	ILFree(right.name);
+	result.prec = prec;
+	return result;
+}
+
+%}
+
+/*
+ * Get the name and precedence of an expression.
+ */
+%operation CName ILNode_CName([ILNode *node]) = {CNameDefault};
+
+/*
+ * Stub out node types that don't have an expression name.
+ */
+ILNode_CName(ILNode_Statement),
+ILNode_CName(ILNode_Dummy),
+ILNode_CName(ILNode_LValue),
+ILNode_CName(ILNode_Decimal),
+ILNode_CName(ILNode_UserLogical),
+ILNode_CName(ILNode_UserUnaryOp),
+ILNode_CName(ILNode_UserBinaryOp),
+ILNode_CName(ILNode_Concat),
+ILNode_CName(ILNode_DelegateAdd),
+ILNode_CName(ILNode_DelegateSub),
+ILNode_CName(ILNode_Assign),
+ILNode_CName(ILNode_AssignExpression),
+ILNode_CName(ILNode_PreInc),
+ILNode_CName(ILNode_PreDec),
+ILNode_CName(ILNode_PostInc),
+ILNode_CName(ILNode_PostDec),
+ILNode_CName(ILNode_UserIncOrDec),
+ILNode_CName(ILNode_IncOrDecPtr),
+ILNode_CName(ILNode_UserConversion),
+ILNode_CName(ILNode_Deref),
+ILNode_CName(ILNode_AddressOf),
+ILNode_CName(ILNode_This),
+ILNode_CName(ILNode_ArgList),
+ILNode_CName(ILNode_VarArgList),
+ILNode_CName(ILNode_VarArgExpand),
+ILNode_CName(ILNode_Argument),
+ILNode_CName(ILNode_ArgArray),
+ILNode_CName(ILNode_BoxingExpression),
+ILNode_CName(ILNode_Error),
+ILNode_CName(ILNode_MakeRefAny),
+ILNode_CName(ILNode_RefType),
+ILNode_CName(ILNode_RefValue),
+ILNode_CName(ILNode_ArrayLength),
+ILNode_CName(ILNode_NewExpression),
+ILNode_CName(ILNode_ObjectCreationExpression),
+ILNode_CName(ILNode_DelegateCreationExpression),
+ILNode_CName(ILNode_DefaultConstructor),
+ILNode_CName(ILNode_RefInit),
+ILNode_CName(ILNode_RefValueTypeCreationExpression),
+ILNode_CName(ILNode_InvocationExpression),
+ILNode_CName(ILNode_CSharpInvocation),
+ILNode_CName(ILNode_BaseInit),
+ILNode_CName(ILNode_ThisInit),
+ILNode_CName(ILNode_NonStaticInit),
+ILNode_CName(ILNode_Identifier),
+ILNode_CName(ILNode_QualIdent),
+ILNode_CName(ILNode_GenericQualIdent),
+ILNode_CName(ILNode_ArrayInit),
+ILNode_CName(ILNode_CDeclarator),
+ILNode_CName(ILNode_VaStart),
+ILNode_CName(ILNode_VaEnd),
+ILNode_CName(ILNode_VaArg),
+ILNode_CName(ILNode_SetJmp),
+ILNode_CName(ILNode_AllocA),
+ILNode_CName(ILNode_FunctionRef),
+ILNode_CName(ILNode_CToCSharpString),
+ILNode_CName(ILNode_CArrayInit),
+ILNode_CName(ILNode_CLabelRef),
+ILNode_CName(ILNode_CSharpTypeOf),
+ILNode_CName(ILNode_CTypeExpression),
+ILNode_CName(ILNode_CBox),
+ILNode_CName(ILNode_CNewObject),
+ILNode_CName(ILNode_CNewArray),
+ILNode_CName(ILNode_CDelete),
+ILNode_CName(ILNode_CSizeTempVar),
+ILNode_CName(ILNode_CopyComplex),
+ILNode_CName(ILNode_EmptyExpr)
+{
+	return CNameCreate("???", C_PREC_PRIMARY);
+}
+
+/*
+ * Get name information for constants.
+ */
+ILNode_CName(ILNode_Null)
+{
+	return CNameCreate("__null__", C_PREC_PRIMARY);
+}
+ILNode_CName(ILNode_NullPtr)
+{
+	return CNameCreate("((void *)0)", C_PREC_PRIMARY);
+}
+ILNode_CName(ILNode_True)
+{
+	return CNameCreate("__true__", C_PREC_PRIMARY);
+}
+ILNode_CName(ILNode_False)
+{
+	return CNameCreate("__false__", C_PREC_PRIMARY);
+}
+ILNode_CName(ILNode_Integer)
+{
+	char numbuf[64];
+	if(node->value <= (ILUInt64)IL_MAX_UINT32)
+	{
+		sprintf(numbuf, "%s%lu",
+				(node->isneg ? "-" : ""),
+				(unsigned long)(node->value));
+	}
+	else
+	{
+		sprintf(numbuf, "%s0x%lX%08lX",
+				(node->isneg ? "-" : ""),
+				(unsigned long)(node->value >> 32),
+				(unsigned long)(node->value & IL_MAX_UINT32));
+	}
+	return CNameCreate(numbuf, (node->isneg ? C_PREC_UNARY : C_PREC_PRIMARY));
+}
+ILNode_CName(ILNode_Real)
+{
+	char numbuf[64];
+	sprintf(numbuf, "%f", (double)(node->value));
+	return CNameCreate
+		(numbuf, (numbuf[0] == '-' ? C_PREC_UNARY : C_PREC_PRIMARY));
+}
+ILNode_CName(ILNode_String)
+{
+	CName result;
+	char *str = (char *)ILMalloc(node->len + 3);
+	str[0] = '"';
+	ILMemCpy(str + 1, node->str, node->len);
+	str[node->len + 1] = '"';
+	str[node->len + 2] = '\0';
+	result.name = str;
+	result.prec = C_PREC_PRIMARY;
+	return result;
+}
+
+/*
+ * Logical operators.
+ */
+ILNode_CName(ILNode_LogicalNot)
+{
+	return CNameCreateUnary("!", ILNode_CName(node->expr), C_PREC_UNARY);
+}
+ILNode_CName(ILNode_LogicalAnd)
+{
+	return CNameCreateBinary(ILNode_CName(node->expr1), "&&",
+							 ILNode_CName(node->expr2), C_PREC_LOGAND);
+}
+ILNode_CName(ILNode_LogicalOr)
+{
+	return CNameCreateBinary(ILNode_CName(node->expr1), "||",
+							 ILNode_CName(node->expr2), C_PREC_LOGOR);
+}
+
+/*
+ * Arithmetic operators.
+ */
+ILNode_CName(ILNode_Add)
+{
+	return CNameCreateBinary(ILNode_CName(node->expr1), "+",
+							 ILNode_CName(node->expr2), C_PREC_ADD);
+}
+ILNode_CName(ILNode_Sub)
+{
+	return CNameCreateBinary(ILNode_CName(node->expr1), "-",
+							 ILNode_CName(node->expr2), C_PREC_ADD);
+}
+ILNode_CName(ILNode_Mul)
+{
+	return CNameCreateBinary(ILNode_CName(node->expr1), "*",
+							 ILNode_CName(node->expr2), C_PREC_MULT);
+}
+ILNode_CName(ILNode_Div)
+{
+	return CNameCreateBinary(ILNode_CName(node->expr1), "/",
+							 ILNode_CName(node->expr2), C_PREC_MULT);
+}
+ILNode_CName(ILNode_Rem)
+{
+	return CNameCreateBinary(ILNode_CName(node->expr1), "%",
+							 ILNode_CName(node->expr2), C_PREC_MULT);
+}
+ILNode_CName(ILNode_Neg)
+{
+	return CNameCreateUnary("-", ILNode_CName(node->expr), C_PREC_UNARY);
+}
+ILNode_CName(ILNode_UnaryPlus)
+{
+	return CNameCreateUnary("+", ILNode_CName(node->expr), C_PREC_UNARY);
+}
+ILNode_CName(ILNode_And)
+{
+	return CNameCreateBinary(ILNode_CName(node->expr1), "&",
+							 ILNode_CName(node->expr2), C_PREC_AND);
+}
+ILNode_CName(ILNode_Or)
+{
+	return CNameCreateBinary(ILNode_CName(node->expr1), "|",
+							 ILNode_CName(node->expr2), C_PREC_OR);
+}
+ILNode_CName(ILNode_Xor)
+{
+	return CNameCreateBinary(ILNode_CName(node->expr1), "^",
+							 ILNode_CName(node->expr2), C_PREC_XOR);
+}
+ILNode_CName(ILNode_Not)
+{
+	return CNameCreateUnary("~", ILNode_CName(node->expr), C_PREC_UNARY);
+}
+ILNode_CName(ILNode_Shl)
+{
+	return CNameCreateBinary(ILNode_CName(node->expr1), "<<",
+							 ILNode_CName(node->expr2), C_PREC_SHIFT);
+}
+ILNode_CName(ILNode_Shr)
+{
+	return CNameCreateBinary(ILNode_CName(node->expr1), ">>",
+							 ILNode_CName(node->expr2), C_PREC_SHIFT);
+}
+ILNode_CName(ILNode_UShr)
+{
+	return CNameCreateBinary(ILNode_CName(node->expr1), ">>",
+							 ILNode_CName(node->expr2), C_PREC_SHIFT);
+}
+
+/*
+ * Relational operators.
+ */
+ILNode_CName(ILNode_Eq)
+{
+	return CNameCreateBinary(ILNode_CName(node->expr1), "==",
+							 ILNode_CName(node->expr2), C_PREC_EQUALITY);
+}
+ILNode_CName(ILNode_Ne)
+{
+	return CNameCreateBinary(ILNode_CName(node->expr1), "!=",
+							 ILNode_CName(node->expr2), C_PREC_EQUALITY);
+}
+ILNode_CName(ILNode_Lt)
+{
+	return CNameCreateBinary(ILNode_CName(node->expr1), "<",
+							 ILNode_CName(node->expr2), C_PREC_RELATIONAL);
+}
+ILNode_CName(ILNode_Le)
+{
+	return CNameCreateBinary(ILNode_CName(node->expr1), "<=",
+							 ILNode_CName(node->expr2), C_PREC_RELATIONAL);
+}
+ILNode_CName(ILNode_Gt)
+{
+	return CNameCreateBinary(ILNode_CName(node->expr1), ">",
+							 ILNode_CName(node->expr2), C_PREC_RELATIONAL);
+}
+ILNode_CName(ILNode_Ge)
+{
+	return CNameCreateBinary(ILNode_CName(node->expr1), ">=",
+							 ILNode_CName(node->expr2), C_PREC_RELATIONAL);
+}
+
+/*
+ * Miscellaneous operators.
+ */
+ILNode_CName(ILNode_Comma)
+{
+	/* In a constant expression, the first argument will be discarded */
+	return ILNode_CName(node->expr2);
+}
+ILNode_CName(ILNode_AsIs),
+ILNode_CName(ILNode_Pedantic),
+ILNode_CName(ILNode_NoPedantic),
+ILNode_CName(ILNode_ToBool),
+ILNode_CName(ILNode_ToConst)
+{
+	return ILNode_CName(node->expr);
+}
+ILNode_CName(ILNode_Overflow)
+{
+	return CNameCreateUnaryBracketed
+		("__checked__", ILNode_CName(node->expr), C_PREC_UNARY);
+}
+ILNode_CName(ILNode_NoOverflow)
+{
+	return CNameCreateUnaryBracketed
+		("__unchecked__", ILNode_CName(node->expr), C_PREC_UNARY);
+}
+ILNode_CName(ILNode_CastSimple)
+{
+	const char *type;
+	switch(node->machineType)
+	{
+		case ILMachineType_Void:		type = "(void)"; break;
+		case ILMachineType_Boolean:		type = "(_Bool)"; break;
+		case ILMachineType_Int8:		type = "(char)"; break;
+		case ILMachineType_UInt8:		type = "(unsigned char)"; break;
+		case ILMachineType_Int16:		type = "(short)"; break;
+		case ILMachineType_UInt16:		type = "(unsigned short)"; break;
+		case ILMachineType_Char:		type = "(__wchar__)"; break;
+		case ILMachineType_Int32:		type = "(int)"; break;
+		case ILMachineType_UInt32:		type = "(unsigned int)"; break;
+		case ILMachineType_Int64:		type = "(long long)"; break;
+		case ILMachineType_UInt64:		type = "(unsigned long long)"; break;
+		case ILMachineType_NativeInt:	type = "(long)"; break;
+		case ILMachineType_NativeUInt:	type = "(unsigned long)"; break;
+		case ILMachineType_Float32:		type = "(float)"; break;
+		case ILMachineType_Float64:		type = "(double)"; break;
+		case ILMachineType_NativeFloat:	type = "(native float)"; break;
+		case ILMachineType_Decimal:		type = "(System.Decimal)"; break;
+		case ILMachineType_String:		type = "(System.String)"; break;
+		case ILMachineType_ObjectRef:	type = "(System.Object)"; break;
+		case ILMachineType_UnmanagedPtr:
+		case ILMachineType_ManagedPtr:
+		case ILMachineType_TransientPtr: type = "(void *)"; break;
+		default:						type = "(?)"; break;
+	}
+	return CNameCreateUnaryBracketed
+		(type, ILNode_CName(node->expr), C_PREC_UNARY);
+}
+ILNode_CName(ILNode_CastType)
+{
+	return CNameCreateUnaryBracketed
+		(CTypeToName(&CCCodeGen, node->type),
+		 ILNode_CName(node->expr), C_PREC_UNARY);
+}
+ILNode_CName(ILNode_CastStringToCharPtr)
+{
+	return CNameCreateUnaryBracketed
+		("(__wchar__ *)", ILNode_CName(node->expr), C_PREC_UNARY);
+}
+ILNode_CName(ILNode_CastArrayToElementPtr)
+{
+	/* TODO */
+	return CNameCreateUnaryBracketed
+		("(? *)", ILNode_CName(node->expr), C_PREC_UNARY);
+}
+ILNode_CName(ILNode_Conditional)
+{
+	CName name1 = ILNode_CName(node->expr1);
+	CName name2 = ILNode_CName(node->expr2);
+	CName name3 = ILNode_CName(node->expr3);
+	CName result;
+	result.name = (char *)ILMalloc(strlen(name1.name) + strlen(name2.name) +
+								   strlen(name3.name) + 15);
+	if(!(result.name))
+	{
+		CCOutOfMemory();
+	}
+	strcpy(result.name, "((");
+	strcat(result.name, name1.name);
+	strcat(result.name, ") ? (");
+	strcat(result.name, name2.name);
+	strcat(result.name, ") : (");
+	strcat(result.name, name3.name);
+	strcat(result.name, "))");
+	ILFree(name1.name);
+	ILFree(name2.name);
+	ILFree(name3.name);
+	result.prec = C_PREC_PRIMARY;
+	return result;
+}
+ILNode_CName(ILNode_IsNull)
+{
+	CName name = CNameCreate("0", C_PREC_PRIMARY);
+	return CNameCreateBinary(ILNode_CName(node->expr), "==",
+							 name, C_PREC_EQUALITY);
+}
+ILNode_CName(ILNode_IsNonNull)
+{
+	CName name = CNameCreate("0", C_PREC_PRIMARY);
+	return CNameCreateBinary(ILNode_CName(node->expr), "!=",
+							 name, C_PREC_EQUALITY);
+}
+
+/*
+ * Define extra node types that are required by C.
+ */
+ILNode_CName(ILNode_SizeOfExpr),
+ILNode_CName(ILNode_SizeOfType),
+ILNode_CName(ILNode_CSizeOfRaw)
+{
+	CName name = CNameCreate
+		(CTypeToName(&CCCodeGen, node->type), C_PREC_PRIMARY);
+	return CNameCreateUnaryBracketed("sizeof", name, C_PREC_UNARY);
+}
+ILNode_CName(ILNode_CSizeReleaseTempVar)
+{
+	return ILNode_CName(node->expr1);
+}
+ILNode_CName(ILNode_CSizeMax)
+{
+	CName name1 = ILNode_CName(node->expr1);
+	CName name2 = ILNode_CName(node->expr2);
+	CName result;
+	result.name = (char *)ILMalloc(strlen(name1.name) + strlen(name2.name) + 8);
+	if(!(result.name))
+	{
+		CCOutOfMemory();
+	}
+	strcpy(result.name, "max(");
+	strcat(result.name, name1.name);
+	strcat(result.name, ", ");
+	strcat(result.name, name2.name);
+	strcat(result.name, ")");
+	ILFree(name1.name);
+	ILFree(name2.name);
+	result.prec = C_PREC_POSTFIX;
+	return result;
+}
+ILNode_CName(ILNode_CSizeAlign)
+{
+	CName name1 = ILNode_CName(node->size);
+	CName name2;
+	char numbuf[32];
+	CName result;
+	sprintf(numbuf, "0x%04lX", (unsigned long)(node->alignFlags));
+	if(node->measureType)
+	{
+		name2 = CNameCreate
+			(CTypeToName(&CCCodeGen, node->measureType), C_PREC_PRIMARY);
+	}
+	else
+	{
+		name2 = CNameCreate("", C_PREC_PRIMARY);
+	}
+	result.name = (char *)ILMalloc(strlen(name1.name) + strlen(numbuf) +
+								   strlen(name2.name) + 12);
+	if(!(result.name))
+	{
+		CCOutOfMemory();
+	}
+	strcpy(result.name, "align(");
+	strcat(result.name, name1.name);
+	strcat(result.name, ", ");
+	strcat(result.name, numbuf);
+	if(node->measureType)
+	{
+		strcat(result.name, ", ");
+		strcat(result.name, name2.name);
+	}
+	strcat(result.name, ")");
+	ILFree(name1.name);
+	ILFree(name2.name);
+	result.prec = C_PREC_POSTFIX;
+	return result;
+}

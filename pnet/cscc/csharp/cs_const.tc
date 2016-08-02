@@ -1,0 +1,323 @@
+/*
+ * cs_const.tc - Semantic analysis for C# constant node types.
+ *
+ * Copyright (C) 2001, 2002  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/*
+ * Perform semantic analysis for the "null" constant.
+ */
+ILNode_SemAnalysis(ILNode_Null)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_ObjectRef;
+	evalValue.un.oValue = 0;
+	CSSemSetConstant(value, ILType_Null, evalValue);
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the "null pointer" constant.
+ */
+ILNode_SemAnalysis(ILNode_NullPtr)
+{
+	/* Will never be encountered in C# code, so do the same as "null" */
+	CSSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_ObjectRef;
+	evalValue.un.oValue = 0;
+	CSSemSetConstant(value, ILType_Null, evalValue);
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the "true" constant.
+ */
+ILNode_SemAnalysis(ILNode_True)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Boolean;
+	evalValue.un.i4Value = 1;
+	CSSemSetConstant(value, ILType_Boolean, evalValue);
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the "false" constant.
+ */
+ILNode_SemAnalysis(ILNode_False)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Boolean;
+	evalValue.un.i4Value = 0;
+	CSSemSetConstant(value, ILType_Boolean, evalValue);
+	return value;
+}
+
+/*
+ * Perform semantic analysis for integer constants.
+ */
+ILNode_SemAnalysis(ILNode_Int8)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Int8;
+	if(node->isneg)
+	{
+		evalValue.un.i4Value = -((ILInt32)(node->value));
+	}
+	else
+	{
+		evalValue.un.i4Value = (ILInt32)(node->value);
+	}
+	CSSemSetConstant(value, ILType_Int8, evalValue);
+	return value;
+}
+ILNode_SemAnalysis(ILNode_UInt8)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_UInt8;
+	evalValue.un.i4Value = (ILInt32)(node->value);
+	CSSemSetConstant(value, ILType_UInt8, evalValue);
+	return value;
+}
+ILNode_SemAnalysis(ILNode_Int16)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Int16;
+	if(node->isneg)
+	{
+		evalValue.un.i4Value = -((ILInt32)(node->value));
+	}
+	else
+	{
+		evalValue.un.i4Value = (ILInt32)(node->value);
+	}
+	CSSemSetConstant(value, ILType_Int16, evalValue);
+	return value;
+}
+ILNode_SemAnalysis(ILNode_UInt16)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_UInt16;
+	evalValue.un.i4Value = (ILInt32)(node->value);
+	CSSemSetConstant(value, ILType_UInt16, evalValue);
+	return value;
+}
+ILNode_SemAnalysis(ILNode_Char)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Char;
+	evalValue.un.i4Value = (ILInt32)(node->value);
+	CSSemSetConstant(value, ILType_Char, evalValue);
+	return value;
+}
+ILNode_SemAnalysis(ILNode_Int32)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Int32;
+	if(node->isneg)
+	{
+		evalValue.un.i4Value = -((ILInt32)(node->value));
+	}
+	else
+	{
+		evalValue.un.i4Value = (ILInt32)(node->value);
+	}
+	CSSemSetConstant(value, ILType_Int32, evalValue);
+	return value;
+}
+ILNode_SemAnalysis(ILNode_UInt32)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_UInt32;
+	evalValue.un.i4Value = (ILInt32)(node->value);
+	CSSemSetConstant(value, ILType_UInt32, evalValue);
+	return value;
+}
+ILNode_SemAnalysis(ILNode_Int)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	ILNode_EvalConst(node, info, &evalValue);
+	if(evalValue.valueType == ILMachineType_Int64)
+	{
+		CSSemSetConstant(value, ILType_Int64, evalValue);
+	}
+	else
+	{
+		CSSemSetConstant(value, ILType_Int, evalValue);
+	}
+	return value;
+}
+ILNode_SemAnalysis(ILNode_UInt)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	ILNode_EvalConst(node, info, &evalValue);
+	if(evalValue.valueType == ILMachineType_UInt64)
+	{
+		CSSemSetConstant(value, ILType_UInt64, evalValue);
+	}
+	else
+	{
+		CSSemSetConstant(value, ILType_UInt, evalValue);
+	}
+	return value;
+}
+ILNode_SemAnalysis(ILNode_Int64)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Int64;
+	if(node->isneg)
+	{
+		evalValue.un.i8Value = -((ILInt64)(node->value));
+	}
+	else
+	{
+		evalValue.un.i8Value = (ILInt64)(node->value);
+	}
+	CSSemSetConstant(value, ILType_Int64, evalValue);
+	return value;
+}
+ILNode_SemAnalysis(ILNode_UInt64)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_UInt64;
+	evalValue.un.i8Value = (ILInt64)(node->value);
+	CSSemSetConstant(value, ILType_UInt64, evalValue);
+	return value;
+}
+
+/*
+ * Perform semantic analysis for floating point constants.
+ */
+ILNode_SemAnalysis(ILNode_Float32)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Float32;
+	evalValue.un.r4Value = (ILFloat)(node->value);
+	CSSemSetConstant(value, ILType_Float32, evalValue);
+	return value;
+}
+ILNode_SemAnalysis(ILNode_Float64)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Float64;
+	evalValue.un.r8Value = node->value;
+	CSSemSetConstant(value, ILType_Float64, evalValue);
+	return value;
+}
+ILNode_SemAnalysis(ILNode_Float)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_NativeFloat;
+	evalValue.un.r8Value = node->value;
+	CSSemSetConstant(value, ILType_Float, evalValue);
+	return value;
+}
+
+/*
+ * Perform semantic analysis for decimal constants.
+ */
+ILNode_SemAnalysis(ILNode_Decimal)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_ManagedValue;
+	evalValue.un.decValue = node->value;
+	CSSemSetConstant(value, ILFindSystemType(info, "Decimal"), evalValue);
+	return value;
+}
+
+/*
+ * Perform semantic analysis for string constants.
+ */
+ILNode_SemAnalysis(ILNode_String)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_String;
+	evalValue.un.strValue.str = node->str;
+	evalValue.un.strValue.len = node->len;
+	CSSemSetConstant(value, ILFindSystemType(info, "String"), evalValue);
+	return value;
+}
+
+%end %{
+
+ILNode *CSBuiltinConstant(const char *name)
+{
+	if(!strcmp(name, "float_min"))
+	{
+		static unsigned char const minFloat[4] =
+			{0xFF, 0xFF, 0x7F, 0xFF};
+		return ILNode_Float32_create(IL_READ_FLOAT(minFloat));
+	}
+	else if(!strcmp(name, "float_max"))
+	{
+		static unsigned char const maxFloat[4] =
+			{0xFF, 0xFF, 0x7F, 0x7F};
+		return ILNode_Float32_create(IL_READ_FLOAT(maxFloat));
+	}
+	else if(!strcmp(name, "float_epsilon"))
+	{
+		static unsigned char const epsFloat[4] =
+			{0x01, 0x00, 0x00, 0x00};
+		return ILNode_Float32_create(IL_READ_FLOAT(epsFloat));
+	}
+	else if(!strcmp(name, "double_min"))
+	{
+		static unsigned char const minDouble[8] =
+			{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xEF, 0xFF};
+		return ILNode_Float64_create(IL_READ_DOUBLE(minDouble));
+	}
+	else if(!strcmp(name, "double_max"))
+	{
+		static unsigned char const maxDouble[8] =
+			{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xEF, 0x7F};
+		return ILNode_Float64_create(IL_READ_DOUBLE(maxDouble));
+	}
+	else if(!strcmp(name, "double_epsilon"))
+	{
+		static unsigned char const epsDouble[8] =
+			{0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+		return ILNode_Float64_create(IL_READ_DOUBLE(epsDouble));
+	}
+	else
+	{
+		CCError("unknown builtin constant `%s'", name);
+		return ILNode_Null_create();
+	}
+}
+
+%}
+

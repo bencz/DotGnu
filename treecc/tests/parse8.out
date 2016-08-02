@@ -1,0 +1,38 @@
+parse8.tst:3: enumerated type name expected
+line 3: %node A no_parent 14
+parse8.tst:4: `=' expected
+line 4: %node B no_parent 14
+parse8.tst:5: `{' expected
+line 5: %node C no_parent 14
+line 7: %node D C 16
+line 7: %node E C 16
+line 7: %node F C 16
+line 7: %node G C 16
+line 9: %node H no_parent 14
+parse8.tst:9: no values were specified for the enumeration
+line 10: %node I no_parent 14
+line 10: %node J I 16
+parse8.tst:11: `}' expected
+line 11: %operation void op1 0
+line 11: %param C c 1
+parse8.tst:12: `D' is not a valid trigger type
+line 12: %operation void op2 0
+line 12: %param D c 1
+parse8.tst:14: cannot use enumerated types as triggers for virtual operations
+line 13: %operation void op3 0
+line 13: %param C c 1
+parse8.tst:14: `C *' is not a valid trigger type
+line 14: %operation void op4 0
+line 14: %param C * c 1
+parse8.tst:11: operation `op1' has no cases
+parse8.tst:11: node type `D' is not handled in operation `op1'
+parse8.tst:11: node type `E' is not handled in operation `op1'
+parse8.tst:11: node type `F' is not handled in operation `op1'
+parse8.tst:11: node type `G' is not handled in operation `op1'
+parse8.tst:12: operation `op2' has no cases
+parse8.tst:13: operation `op3' has no cases
+parse8.tst:13: node type `D' is not handled in operation `op3'
+parse8.tst:13: node type `E' is not handled in operation `op3'
+parse8.tst:13: node type `F' is not handled in operation `op3'
+parse8.tst:13: node type `G' is not handled in operation `op3'
+parse8.tst:14: operation `op4' has no cases

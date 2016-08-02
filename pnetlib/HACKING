@@ -1,0 +1,387 @@
+
+This file provides an introduction to hacking on the source code for pnetlib.
+It describes what you need, where to go looking for useful things, coding
+guidelines, and how to contribute your completed code.
+
+Requirements
+------------
+
+- Automake 1.4 or later
+- Autoconf 2.13 or later
+- A recent version of Portable.NET's "pnet" package installed
+- Cygwin environment (Windows only)
+
+Obtaining a development version of pnetlib
+------------------------------------------
+
+The most up to date version of pnetlib is always the version in CVS on
+savannah.gnu.org.  This is the preferred version to use to make changes.
+To check out the sources via anonymous CVS, use the following commands:
+
+    export CVS_RSH="ssh"
+    cvs -z3 -d:ext:anoncvs@savannah.gnu.org:/cvsroot/dotgnu-pnet
+            co pnetlib
+
+If you already have a version checked out, then cd to your "pnetlib"
+working directory and use the following command:
+
+    cvs -z3 update -d
+
+The "-d" is important.  You won't get newly created directories from the
+repository if you omit it.
+
+The most recent release version of the source is on the Portable.NET
+Web site:
+
+    http://www.southern-storm.com.au/portable_net.html
+
+Building pnetlib
+----------------
+
+To build your pnetlib development version, use the following commands:
+
+    cd pnetlib
+    ./auto_gen.sh
+    ./configure
+    make
+
+The "auto_gen.sh" script is only needed with the CVS version: it recreates
+the automake and autoconf output files.  You typically only need it the
+first time you have checked out the source tree, or if you have made a
+substantial change to the configuration or build system.
+
+If you didn't do a "make install" with Portable.NET's "pnet" package,
+then you may need to configure as follows:
+
+    ./configure --with-pnet="../pnet"
+
+where "../pnet" is the path to the "pnet" source tree on your system.
+
+Since version 0.4.8 of Portable.NET, its C# compiler is capable of
+building "pnetlib" cleanly.  But if you want to compile it with
+Microsoft's C# compiler, you can still do so if you have Cygwin
+installed:
+
+    ./configure --with-mstools --with-pnet="../pnet"
+
+Even if you have a Windows machine, it may be best not to use Microsoft's
+development tools.  Their SDK has a fairly restrictive EULA attached to it
+which may make it difficult for us in the future.  Therefore, we want to
+limit the number of people who have been exposed to the EULA.
+
+Other things that you need
+--------------------------
+
+Now that you can build pnetlib, you will need some other information to
+contribute to its development.  First, you need a copy of the ECMA
+class specification:
+
+	http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-335-xml.zip
+
+Run the "All.xml" file within this zip archive through Portable.NET's
+"csdoc2html" program to get a version that you can read in a regular
+Web browser.
+
+Second, you need to check out the pnetlib class status page at:
+
+    http://www.dotgnu.org/pnetlib-status/
+
+This provides a complete list of all of the ECMA classes, methods,
+fields, and other definitions that we currently lack or which are
+only partially complete.  This is a good place to start when looking
+for code that you can contribute.
+
+Class examples
+--------------
+
+The best place to start when building a class is to cut-and-paste a
+similar class, remove the implementation, and then fill in the missing
+details.  The following classes in the "System" namespace are good
+examples of various class types:
+
+    Random                         Classes
+    Version                        Structs
+    IComparable                    Interfaces
+    DayOfWeek                      Regular enumerations
+    AttributeTargets               Flag-based enumerations
+    IndexOutOfRangeException       Exceptions
+    AssemblyLoadEventHandler       Delegates
+    CLSCompliantAttribute          Attributes
+
+Previously, it was necessary to add new classes to the makefile structure.
+Since the build system was moved to "csant", this is no longer necessary,
+as new *.cs files will be picked up automatically.
+
+Unit testing
+------------
+
+We are beginning to build a unit test framework for pnetlib.  The current
+tests can be found in the "tests/System" sub-directory.  The framework
+itself is implemented in the "csunit" sub-directory.
+
+Unit testing is also another place where you can help if you don't want
+to write classes in the main source tree.
+
+Documentation
+-------------
+
+Currently there are no XML documentation comments embedded in the source
+code.  This is for two reasons:
+
+    The ECMA specification contains more than enough information
+    for most classes, and users can easily convert the specification
+    using "csdoc2html".  There isn't much point duplicating it.
+
+    When a developer is writing a class from existing documentation,
+    their mind is "tainted" to some extent.  If they created XML
+    documentation as they wrote the code, it might unintentionally
+    end up being a derived work of the original.  This may create
+    legal problems for us further along.
+
+Volunteers are sought to help document the classes by looking at the
+pnetlib code rather than by looking at the existing documentation.  This
+will help introduce some "clean rooming" to the process of documenting
+the code.
+
+Copyright
+---------
+
+All source files must contain the standard GPL header, together with the
+name of the entity that you are assigning Copyright to.  You can choose
+one of the following entities:
+
+    Southern Storm Software, Pty Ltd
+    Free Software Foundation
+    FreeDevelopers.net
+
+Be sure to check with your employer (especially their legal department)
+to make sure that you have permission to re-assign Copyright.  Some
+employers have conditions in their employment agreements that make all
+work done by you belong to them even if you did it outside office hours.
+
+For patches to existing classes, the guidelines are:
+
+    If the change is less than 15 lines in length, then the patch is
+    considered trivial and the Copyright stays with the current holder.
+
+    For larger changes, you should either assign Copyright to the
+    existing holder, or choose one of the above entities to assign
+    joint ownership.
+
+The following is an example Copyright header:
+
+/*
+ * Foo.cs - Implementation of the "System.Foo" class.
+ *
+ * Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+ *
+ * Contributions from John Smith <john@smith.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+Joint ownership would look something like this:
+
+ * Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+ * Copyright (C) 2002  Free Software Foundation
+
+See the Portable.NET FAQ for more information on Copyright assignment:
+
+    http://www.southern-storm.com.au/pnet_faq.html
+
+How to submit changes and bug reports
+-------------------------------------
+
+Changes should be submitted through the Patch Manager on Savannah:
+
+    http://savannah.gnu.org/patch/?group_id=353
+
+Bug reports should be submitted through the Bug Tracking system
+on Savannah:
+
+	https://savannah.gnu.org/bugs/?group=dotgnu-pnet
+
+Alternatively, you can e-mail patches and bug reports to Rhys Weatherley
+(rweather@southern-storm.com.au).  The facilities on Savannah make it
+easier to track issues.
+
+When you submit a bug report, please provide the following information:
+
+    - C# source for a test application that demonstrates the bug.
+    - A description of why you think the behaviour is incorrect.
+    - The platform (OS and CPU) upon which the problem was observed.
+    - The versions of pnetlib and Portable.NET that you tested with.
+    - Patch data for fixes, if applicable.
+
+The preferred patch format is context diff's against the CVS repository.
+Use "cvs diff -c filename" to create such diff's.  To create a context
+diff for a new file that does not exist in the repository, use the
+command "diff -c /dev/null filename" instead.
+
+The "make_patch.sh" script can be used to assist in the process of building
+patch files suitable for use with pnetlib.  The script assumes that you are
+working with the CVS version of the source tree, not the .tar.gz version.
+The simplest way to use the script is to cd to the top-level source directory
+and type:
+
+    ./make_patch.sh
+
+The script will determine which files have changed, ask for you to enter
+a description, and then construct the patch file.  The file will be called
+"USER-DATE.patch" in the current directory unless you specify "-o":
+
+    ./make_patch.sh -o filename
+
+Normally the patch will be calculated for every file that you have changed.
+To submit a patch for a specific set of files, specify them on the command
+line:
+
+    ./make_patch.sh ChangeLog runtime/System/Foo/Bar.cs
+
+It is usually a good idea to do a "cvs update -d" prior to creating a
+patch file using "make_patch.sh".
+
+Please submit patches for:
+
+    - Source files that were added or changed.
+    - Resource files that contain new strings.
+    - ChangeLog entries that describe the changes that were made.
+
+To summarise, here are the steps for adding a new class to the library:
+
+    - Create and test the new class file.
+    - Modify ChangeLog to describe what you have changed.
+    - Do a "cvs update -d" to get the latest version of the source.
+    - Execute "make_patch.sh" to create a patch file with the changes:
+
+            ./make_patch.sh
+        or  ./make_patch.sh ChangeLog runtime/System/Foo/Bar.cs
+
+    - Submit the patch through the Patch Manager on Savannah.
+
+General coding guidelines
+-------------------------
+
+A. Avoid native methods where possible.  If it can be implemented
+   in C#, then do so.  Efficiency will be tackled later.  At all times,
+   be clear.  If you need to use tricky code, then comment it heavily
+   to explain the reasons for the trickiness.
+
+B. All strings that may be displayed to the user must be translatable
+   using "_(tag)".  Add the default values to the text files within
+   "resources/en_US".  All resource files must use the UTF-8 encoding.
+   For example:
+
+        C# code:
+
+        public void name(Object value)
+        {
+            if(!(value is Int32))
+            {
+                throw new ArgumentException(_("Arg_MustBeInt32"));
+            }
+        }
+
+        Resources:
+
+        Arg_MustBeInt32=Object must be of type Int32
+
+   If there is an existing message tag that expresses the error, then
+   please use the existing tag rather than creating a new one.
+
+C. If you are modifying someone else's code, then use their white space
+   and brace-placement conventions, even if you don't like them.  That
+   will prevent code degradation.  The default style in most classes
+   is tab stops at 4 spaces, with braces on a new line.  Use "//"
+   instead of "/*" for comments ("/*" used in Copyright headers is
+   a special exception).  For example:
+
+        if(condition)
+        {
+            // This is a comment.
+            ...
+        }
+        else
+        {
+            ...
+        }
+
+D. Method and class names begin with upper case.  Field, parameter
+   and local variable names begin with lower case.  Avoid Hungarian
+   notations such as "m_" for members.
+
+E. Use the names "Object", "String", and "Decimal" instead of the C#
+   keywords "object", "string", and "decimal".  This keeps the naming
+   system consistent.
+
+F. Some classes need private helper methods and classes in their
+   implementation.  Within "runtime", these helpers should be placed
+   into the "System.Private" namespace.  The classes in this namespace
+   must always be declared "internal".  In other libraries, create a
+   sub-namespace called "Private".  e.g. "System.XML.Private".
+
+G. One file, one class.  C# doesn't strictly require this, but it makes
+   it a lot easier to locate classes within the source tree.
+   For generic classes the filename has to be the classname followed by
+   an underscore and the generic arity of the class.
+   Example: System.IComparable<T> is in System/IComparable_1.cs
+
+H. Namespaces are mapped to directories as follows: "A.B.C" is mapped
+   to the directory "A/B/C".
+
+I. If you have a method or class that is incomplete, then mark it with
+   the "TODO" attribute as follows:
+
+        [TODO]
+        public void name()
+        {
+        }
+
+   This attribute is recognized by the pnetlib class status page to
+   report upon which classes and methods are incomplete.
+
+J. There are classes in Microsoft's .NET Framework SDK that do not exist
+   in the ECMA specification.  If you are implementing one of these classes,
+   then it should be wrapped as follows:
+
+        #if !ECMA_COMPAT
+
+        public class Name
+        {
+            ...
+
+        }; // class Name
+
+        #endif // !ECMA_COMPAT
+
+   Similar "#if" directives can be used inside a class when a method is
+   not applicable to ECMA.
+
+   The pnetlib build system creates two assemblies: "mscorlib.dll" and
+   "mscorlib_ecma.dll".  The later only contains ECMA definitions.
+
+K. Avoid RCS source tags like "Date" and "Log".  They tend to make the
+   code look ugly, and are difficult to keep consistent when code is
+   copied from one source repository to another.  Change information
+   should instead be placed in the ChangeLog file:
+
+        2002-01-07  John Smith  <john@smith.com>
+
+                * runtime/System/Foo.cs: modify the "Foo" class to
+                implement the "Parse" methods.
+
+   This will acknowledge who did what to which file and when.  It is
+   also easier to scan through the ChangeLog file when building the
+   NEWS entry for each major release.

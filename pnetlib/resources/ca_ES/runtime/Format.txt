@@ -1,0 +1,49 @@
+#
+# Format.txt - Resources for formatting errors.
+#
+# Copyright (C) 2001, 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Format_BadBoolean=Format incorrecte per al tipus booleà
+Format_NeedSingleChar=L'entrada ha de ser una string d'un sol caracter
+Format_Integer=El valor ha d'estar en forma d'integer
+Format_Guid=El correcte valor pel Guid ha de ser "B", "D", "N" o "P"
+Format_GuidValue=Format incorrecte pel valor del Guid
+Format_Enum=Format incorrecte per una enumeració
+Format_Version=Format incorrecte per a un valor de Versio
+Format_IP=Format incorrecte per a una direcció IP
+Format_FormatString=Especificació incorrecte de format
+Format_FormatArgNumber=Nombre d'argument invàlid en el format especificat
+Format_Base64ArrayChar=Caracter de bas64 incorrecte per a l'entrada
+Format_TypeException=El tipus esta en un format invàlid
+Format_StringException=Especificació de format invàlida
+Format_UnallowedCurrencySymbol=No estan suportats els símbols de divisa
+Format_UnallowedDecimalPoint=No estan permesos els punts decimals
+Format_MultipleDecimalSeparators=S'ha trobat més d'un punt en el nombre decimal
+Format_UnallowedLeadingWhite=No estan suportats els espais en blanc al principi
+Format_UnallowedTrailingWhite=No estan suportats els caracters en blanc al final
+Format_UnbalancedParentheses=Falta un parèntesis a la cadena
+Format_ExtraParentheses=Hi ha més d'un parell de parentesis a la cadena
+Format_UnallowedParentheses=No estan suportats els parentesis a la cadena
+Format_UnallowedLeadingSign=No està permés posar el signe al principi
+Format_UnallowedTrailingSign=No està permés posar el signe al final
+Format_UnallowedExponent=No està permés posar un exponent
+Format_TwoSigns=S'han trobat dos signes, al principi i al final
+Format_HexNotSupported=La notació hexadecimal no està suportada per a valors decimals o de punt flotant
+Format_FileIOPermSetName=El mateix directori FileIO - {0}
+Format_NetCodeGroupName=La mateixa pàgina Web
+Format_DateTime=Format invalid per un valor de data/hora
+Format_Empty=El format de la cadena està buit

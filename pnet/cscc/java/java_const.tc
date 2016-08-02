@@ -1,0 +1,188 @@
+/*
+ * java_const.tc - Constants and their semantic analysis
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ * Copyright (C) 2003  Gopal.V
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/*
+ * Perform semantic analysis for the "null" constant.
+ */
+ILNode_JSemAnalysis(ILNode_Null)
+{
+	JavaSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_ObjectRef;
+	evalValue.un.oValue = 0;
+	JavaSemSetConstant(value, ILType_Null, evalValue);
+	return value;
+}
+
+
+/*
+ * Perform semantic analysis for the "true" constant.
+ */
+ILNode_JSemAnalysis(ILNode_True)
+{
+	JavaSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Boolean;
+	evalValue.un.i4Value = 1;
+	JavaSemSetConstant(value, ILType_Boolean, evalValue);
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the "false" constant.
+ */
+ILNode_JSemAnalysis(ILNode_False)
+{
+	JavaSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Boolean;
+	evalValue.un.i4Value = 0;
+	JavaSemSetConstant(value, ILType_Boolean, evalValue);
+	return value;
+}
+
+ILNode_JSemAnalysis(ILNode_UInt8)
+{
+	JavaSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_UInt8;
+	evalValue.un.i4Value = (ILInt32)(node->value);
+	JavaSemSetConstant(value, ILType_UInt8, evalValue);
+	return value;
+}
+
+ILNode_JSemAnalysis(ILNode_Int16)
+{
+	JavaSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Int16;
+	if(node->isneg)
+	{
+		evalValue.un.i4Value = -((ILInt32)(node->value));
+	}
+	else
+	{
+		evalValue.un.i4Value = (ILInt32)(node->value);
+	}
+	JavaSemSetConstant(value, ILType_Int16, evalValue);
+	return value;
+}
+ILNode_JSemAnalysis(ILNode_Char)
+{
+	JavaSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Char;
+	evalValue.un.i4Value = (ILInt32)(node->value);
+	JavaSemSetConstant(value, ILType_Char, evalValue);
+	return value;
+}
+ILNode_JSemAnalysis(ILNode_Int32)
+{
+	JavaSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Int32;
+	if(node->isneg)
+	{
+		evalValue.un.i4Value = -((ILInt32)(node->value));
+	}
+	else
+	{
+		evalValue.un.i4Value = (ILInt32)(node->value);
+	}
+	JavaSemSetConstant(value, ILType_Int32, evalValue);
+	return value;
+}
+ILNode_JSemAnalysis(ILNode_Int)
+{
+	JavaSemValue value;
+	ILEvalValue evalValue;
+	ILNode_EvalConst(node, info, &evalValue);
+	if(evalValue.valueType == ILMachineType_Int64)
+	{
+		JavaSemSetConstant(value, ILType_Int64, evalValue);
+	}
+	else
+	{
+		JavaSemSetConstant(value, ILType_Int, evalValue);
+	}
+	return value;
+}
+ILNode_JSemAnalysis(ILNode_Int64)
+{
+	JavaSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Int64;
+	if(node->isneg)
+	{
+		evalValue.un.i8Value = -((ILInt64)(node->value));
+	}
+	else
+	{
+		evalValue.un.i8Value = (ILInt64)(node->value);
+	}
+	JavaSemSetConstant(value, ILType_Int64, evalValue);
+	return value;
+}
+
+/*
+ * Perform semantic analysis for floating point constants.
+ */
+ILNode_JSemAnalysis(ILNode_Float32)
+{
+	JavaSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Float32;
+	evalValue.un.r4Value = (ILFloat)(node->value);
+	JavaSemSetConstant(value, ILType_Float32, evalValue);
+	return value;
+}
+ILNode_JSemAnalysis(ILNode_Float64)
+{
+	JavaSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Float64;
+	evalValue.un.r8Value = node->value;
+	JavaSemSetConstant(value, ILType_Float64, evalValue);
+	return value;
+}
+ILNode_JSemAnalysis(ILNode_Float)
+{
+	JavaSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_NativeFloat;
+	evalValue.un.r8Value = node->value;
+	JavaSemSetConstant(value, ILType_Float, evalValue);
+	return value;
+}
+
+/*
+ * Perform semantic analysis for string constants.
+ */
+ILNode_JSemAnalysis(ILNode_String)
+{
+	JavaSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_String;
+	evalValue.un.strValue.str = node->str;
+	evalValue.un.strValue.len = node->len;
+	JavaSemSetConstant(value, ILFindSystemType(info, "String"), evalValue);
+	return value;
+}

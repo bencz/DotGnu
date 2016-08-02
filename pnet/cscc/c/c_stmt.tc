@@ -1,0 +1,1432 @@
+/*
+ * c_stmt.tc - Statement handling for C.
+ *
+ * Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+%{
+
+/*
+ * Determine if a tree node corresponds to the empty statement.
+ */
+#define	IsEmpty(node) ((node) == 0 || yykind((node)) == yykindof(ILNode_Empty))
+
+/*
+ * Perform semantic analysis on a sub-statement.
+ */
+static CSemValue StmtSem(ILNode *node, ILGenInfo *info,
+					     ILNode **parent, int stmtLevel)
+{
+	CSemValue value = CSemValueDefault;
+	if(node)
+	{
+		value = ILNode_CSemAnalysis(node, info, parent, stmtLevel);
+		if(!CSemIsVoid(value) && !CSemIsRValue(value) && !CSemIsError(value))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("invalid statement"));
+		}
+	}
+	return value;
+}
+
+/*
+ * Statement context flags.
+ */
+#define	C_STMT_LOOP			1
+#define	C_STMT_SWITCH		2
+#define	C_STMT_TRY			4
+#define	C_STMT_CATCH		8
+#define	C_STMT_FINALLY		16
+
+/*
+ * Push a statement context.
+ */
+static void PushStmtContext(ILGenInfo *info, int context)
+{
+	if(info->contextStackSize >= info->contextStackMax)
+	{
+		/* Increase the size of the context stack */
+		int *newstack;
+		newstack = (int *)ILRealloc(info->contextStack,
+									sizeof(int) * (info->contextStackMax + 4));
+		if(!newstack)
+		{
+			ILGenOutOfMemory(info);
+		}
+		info->contextStack = newstack;
+		info->contextStackMax += 4;
+	}
+	info->contextStack[info->contextStackSize] = context;
+	++(info->contextStackSize);
+}
+
+/*
+ * Pop the top-most statement context.
+ */
+static void PopStmtContext(ILGenInfo *info)
+{
+	--(info->contextStackSize);
+}
+
+/*
+ * Determine if we are within a specific context, but not
+ * within a "stop" context.  e.g. "break" can be used
+ * within a loop, but not in the body of a "finally"
+ * within the loop.  "finally" is the "stop" context.
+ */
+static int StmtContextOK(ILGenInfo *info, int context, int stopContext)
+{
+	long posn = info->contextStackSize;
+	while(posn > 0)
+	{
+		--posn;
+		if((info->contextStack[posn] & stopContext) != 0)
+		{
+			return 0;
+		}
+		if((info->contextStack[posn] & context) != 0)
+		{
+			return 1;
+		}
+	}
+	if(!context)
+	{
+		/* We are checking a "return" statement */
+		return 1;
+	}
+	else
+	{
+		/* We are checking some other kind of statement */
+		return 0;
+	}
+}
+
+%}
+
+/*
+ * Perform semantic analysis for the empty statement.
+ */
+ILNode_CSemAnalysis(ILNode_Empty)
+{
+	/* Nothing to do here, because there is nothing in the statement */
+	return CSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for compound statements.  We return the
+ * semantic value of the last statement in case it is an expression
+ * and the compound statement was used in the context of an expression
+ * statement: "({ ... })".
+ */
+ILNode_CSemAnalysis(ILNode_Compound),
+ILNode_CSemAnalysis(ILNode_List)
+{
+	CSemValue value = CSemValueDefault;
+	ILNode_ListIter iter;
+	ILNode *stmt, *replace;
+	ILNode_ListIter_Init(&iter, node);
+	while((stmt = ILNode_ListIter_Next(&iter)) != 0)
+	{
+		replace = stmt;
+		value = ILNode_CSemAnalysis(stmt, info, &replace, stmtLevel);
+		if(replace != stmt)
+		{
+			*(iter.last) = replace;
+		}
+		if(!CSemIsVoid(value) && !CSemIsRValue(value) && !CSemIsError(value))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("invalid statement"));
+		}
+	}
+	return value;
+}
+
+/*
+ * Collect the case labels in a compound statement.
+ */
+ILNode_CollectCases(ILNode_Compound),
+ILNode_CollectCases(ILNode_List)
+{
+	ILNode_ListIter iter;
+	ILNode *stmt;
+	ILNode_ListIter_Init(&iter, node);
+	while((stmt = ILNode_ListIter_Next(&iter)) != 0)
+	{
+		ILNode_CollectCases(stmt, info, list);
+	}
+}
+
+/*
+ * Perform semantic analysis for "if" statements.
+ */
+ILNode_CSemAnalysis(ILNode_If)
+{
+	ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	StmtSem(node->thenClause, info, &(node->thenClause), stmtLevel);
+	StmtSem(node->elseClause, info, &(node->elseClause), stmtLevel);
+	return CSemValueDefault;
+}
+
+/*
+ * Collect the case labels in an "if" statement.
+ */
+ILNode_CollectCases(ILNode_If)
+{
+	if(node->thenClause)
+	{
+		ILNode_CollectCases(node->thenClause, info, list);
+	}
+	if(node->elseClause)
+	{
+		ILNode_CollectCases(node->thenClause, info, list);
+	}
+}
+
+/*
+ * Perform semantic analysis for "while" statements.
+ */
+ILNode_CSemAnalysis(ILNode_While)
+{
+	ILNode_CSemAnalysis(node->cond, info, &(node->cond), stmtLevel);
+	PushStmtContext(info, C_STMT_LOOP);
+	StmtSem(node->stmt, info, &(node->stmt), stmtLevel);
+	PopStmtContext(info);
+	return CSemValueDefault;
+}
+
+/*
+ * Collect the case labels in a loop statement.
+ */
+ILNode_CollectCases(ILNode_While),
+ILNode_CollectCases(ILNode_Do),
+ILNode_CollectCases(ILNode_For)
+{
+	ILNode_CollectCases(node->stmt, info, list);
+}
+
+/*
+ * Perform semantic analysis for "do" statements.
+ */
+ILNode_CSemAnalysis(ILNode_Do)
+{
+	PushStmtContext(info, C_STMT_LOOP);
+	StmtSem(node->stmt, info, &(node->stmt), stmtLevel);
+	PopStmtContext(info);
+	ILNode_CSemAnalysis(node->cond, info, &(node->cond), stmtLevel);
+	return CSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for "for" statements.
+ */
+ILNode_CSemAnalysis(ILNode_For)
+{
+	StmtSem(node->init, info, &(node->init), stmtLevel);
+	ILNode_CSemAnalysis(node->cond, info, &(node->cond), stmtLevel);
+	StmtSem(node->incr, info, &(node->incr), stmtLevel);
+	PushStmtContext(info, C_STMT_LOOP);
+	StmtSem(node->stmt, info, &(node->stmt), stmtLevel);
+	PopStmtContext(info);
+	return CSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for "break" statements.
+ */
+ILNode_CSemAnalysis(ILNode_Break)
+{
+	if(!StmtContextOK(info, C_STMT_LOOP | C_STMT_SWITCH, 0))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "`break' used outside loop or switch");
+	}
+	return CSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for "continue" statements.
+ */
+ILNode_CSemAnalysis(ILNode_Continue)
+{
+	if(!StmtContextOK(info, C_STMT_LOOP, 0))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "`continue' used outside loop");
+	}
+	return CSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for "return" statements.
+ */
+ILNode_CSemAnalysis(ILNode_Return)
+{
+	ILMethod *method = CFunctionGetCurrent();
+	ILType *returnType = CTypeGetReturn(ILMethod_Signature(method));
+	if(ILTypeStripPrefixes(returnType) != ILType_Void)
+	{
+		/* Emit a warning if the return type is not "void".  This really
+		   should be an error, but we copy what gcc does for compatibility */
+		CCWarningOnLine(yygetfilename(node), yygetlinenum(node),
+			  "`return' with no value, in function returning non-void");
+	}
+	return CSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for "return expression" statements.
+ */
+ILNode_CSemAnalysis(ILNode_ReturnExpr)
+{
+	CSemValue value;
+	ILMethod *method = CFunctionGetCurrent();
+	ILType *returnType = CTypeGetReturn(ILMethod_Signature(method));
+
+	/* Perform semantic analysis on the expression */
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	if(CSemIsError(value))
+	{
+		/* We've already reported an error for a bad expression,
+		   so don't bother complaining about the situation again */
+		return CSemValueDefault;
+	}
+	else if(!CSemIsRValue(value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid return value");
+		return CSemValueDefault;
+	}
+
+	/* Determine if the value is compatible with the return type */
+	if(ILTypeStripPrefixes(returnType) == ILType_Void)
+	{
+		/* Emit a warning if the return type is "void".  This really should
+		   be an error, but we copy what gcc does for compatibility */
+		CCWarningOnLine(yygetfilename(node), yygetlinenum(node),
+			  "`return' with a value, in function returning void");
+
+		/* Replace the current node with a value-less return so that
+		   the code generator outputs the correct return code */
+		*parent = ILNode_Return_create();
+		CGenCloneLine(*parent, (ILNode *)node);
+	}
+	else
+	{
+		/* Coerce the value to the return type */
+		if(CCanCoerceValue(value, returnType))
+		{
+			CCoerceNode(info, node->expr, &(node->expr), value, returnType);
+			if(CTypeIsComplex(returnType))
+			{
+				/* We need to make a copy of a complex value before
+				   returning it to the caller */
+				node->expr = ILNode_CopyComplex_create
+					(node->expr, returnType);
+			}
+		}
+		else
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  		  "incompatible types in return: "
+						  		"no conversion from `%s' to `%s'",
+						  CTypeToName(info, CSemGetType(value)),
+						  CTypeToName(info, returnType));
+		}
+	}
+
+	/* Done */
+	return CSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for a "copy complex" expression.
+ */
+ILNode_CSemAnalysis(ILNode_CopyComplex)
+{
+	/* Not called, so nothing to do here */
+	return CSemValueDefault;
+}
+
+/*
+ * Get the type information for a "copy complex" expression.
+ */
+ILNode_GetType(ILNode_CopyComplex)
+{
+	/* We are always copying into a pointer */
+	return ILMachineType_UnmanagedPtr;
+}
+
+/*
+ * Generate value code for a "copy complex" expression.
+ */
+ILNode_GenValue(ILNode_CopyComplex)
+{
+	/* Allocate global memory for the value */
+	CGenSizeOf(info, node->type);
+	if(info->asmOutput)
+	{
+		fputs("\tcall\tnative int [.library]System.Runtime.InteropServices."
+			  "Marshal::AllocHGlobal(int32)\n", info->asmOutput);
+	}
+
+	/* Duplicate the pointer because we need it for the return logic */
+	ILGenSimple(info, IL_OP_DUP);
+	ILGenAdjust(info, 1);
+
+	/* Push the value onto the stack that we will be returning */
+	ILNode_GenValue(node->expr, info);
+
+	/* Copy the value into the block that we allocated */
+	CGenSizeOf(info, node->type);
+	ILGenByteInsn(info, IL_OP_PREFIX + IL_PREFIX_OP_UNALIGNED, 1);
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CPBLK);
+	ILGenAdjust(info, -3);
+
+	/* The return type is a pointer */
+	return ILMachineType_UnmanagedPtr;
+}
+JavaGenValue(ILNode_CopyComplex)
+{
+	return ILMachineType_UnmanagedPtr;
+}
+
+%decls %{
+
+/*
+ * Destroy the "goto" label list for the current function.
+ */
+void CGenGotoDestroy(void);
+
+/*
+ * Generate labels for the switch statement that handles "goto *".
+ */
+void CGenGotoPtrLabels(ILGenInfo *info, ILLabel *defaultLabel);
+
+%}
+
+%{
+
+/*
+ * Storage for the "goto" label list.
+ */
+typedef struct _tagCGenGoto CGenGoto;
+struct _tagCGenGoto
+{
+	CGenGoto   *next;
+	const char *name;
+	ILNode     *node;
+	ILInt32		labelNum;
+	int			defined : 1;
+	int			used : 1;
+};
+static CGenGoto *gotoList = 0;
+static ILInt32 gotoLabelNext = 1;
+
+void CGenGotoDestroy(void)
+{
+	CGenGoto *label, *nextLabel;
+	label = gotoList;
+	while(label != 0)
+	{
+		nextLabel = label->next;
+		if(!(label->defined))
+		{
+			CCErrorOnLine(yygetfilename(label->node),
+						  yygetlinenum(label->node),
+						  _("label `%s' used but not defined"), label->name);
+		}
+		else if(!(label->used))
+		{
+			CCWarningOnLine(yygetfilename(label->node),
+							yygetlinenum(label->node),
+						    _("label `%s' defined but not used"), label->name);
+		}
+		ILFree(label);
+		label = nextLabel;
+	}
+	gotoList = 0;
+	gotoLabelNext = 1;
+}
+
+void CGenGotoPtrLabels(ILGenInfo *info, ILLabel *defaultLabel)
+{
+	CGenGoto **labels;
+	CGenGoto *current;
+	ILInt32 posn, posn2, num;
+	ILGotoEntry *entry;
+
+	/* Collect up all labels */
+	labels = (CGenGoto **)ILMalloc(sizeof(CGenGoto) * gotoLabelNext);
+	if(!labels)
+	{
+		CCOutOfMemory();
+	}
+	current = gotoList;
+	num = 0;
+	while(current != 0)
+	{
+		labels[num++] = current;
+		current = current->next;
+	}
+
+	/* Sort the labels on label number */
+	for(posn = 0; posn < (num - 1); ++posn)
+	{
+		for(posn2 = posn + 1; posn2 < num; ++posn2)
+		{
+			if(labels[posn]->labelNum > labels[posn2]->labelNum)
+			{
+				current = labels[posn];
+				labels[posn] = labels[posn2];
+				labels[posn2] = current;
+			}
+		}
+	}
+
+	/* Output the labels in order */
+	for(posn = 0; posn < num; ++posn)
+	{
+		entry = info->gotoList;
+		while(entry != 0)
+		{
+			if(!strcmp(entry->name, labels[posn]->name))
+			{
+				break;
+			}
+			entry = entry->next;
+		}
+		if(entry)
+		{
+			ILGenSwitchRef(info, &(entry->label), (posn != (num - 1)));
+		}
+		else
+		{
+			ILGenSwitchRef(info, defaultLabel, (posn != (num - 1)));
+		}
+	}
+
+	/* Clean up and exit */
+	ILFree(labels);
+}
+
+%}
+
+/*
+ * Perform semantic analysis for "goto" statements.
+ */
+ILNode_CSemAnalysis(ILNode_Goto)
+{
+	CGenGoto *label;
+
+	/* We must use "goto" at the statement level */
+	if(!stmtLevel)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("`goto' used within expression statement"));
+		return CSemValueDefault;
+	}
+
+	/* Record this label in the function's "goto" label list */
+	label = gotoList;
+	while(label != 0 && label->name != node->name)
+	{
+		label = label->next;
+	}
+	if(!label)
+	{
+		label = (CGenGoto *)ILMalloc(sizeof(CGenGoto));
+		if(!label)
+		{
+			CCOutOfMemory();
+		}
+		label->next = gotoList;
+		gotoList = label;
+		label->name = node->name;
+		label->node = (ILNode *)node;
+		label->labelNum = gotoLabelNext++;
+		label->defined = 0;
+		label->used = 1;
+	}
+	else
+	{
+		label->used = 1;
+	}
+	return CSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for "goto label" statements.
+ */
+ILNode_CSemAnalysis(ILNode_GotoLabel)
+{
+	CGenGoto *label;
+
+	/* We must use goto labels at the statement level */
+	if(!stmtLevel)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("label used within expression statement"));
+		return CSemValueDefault;
+	}
+
+	/* Record this label in the function's "goto" label list */
+	label = gotoList;
+	while(label != 0 && label->name != node->name)
+	{
+		label = label->next;
+	}
+	if(!label)
+	{
+		label = (CGenGoto *)ILMalloc(sizeof(CGenGoto));
+		if(!label)
+		{
+			CCOutOfMemory();
+		}
+		label->next = gotoList;
+		gotoList = label;
+		label->name = node->name;
+		label->node = (ILNode *)node;
+		label->labelNum = gotoLabelNext++;
+		label->defined = 1;
+		label->used = 0;
+	}
+	else if(!(label->defined))
+	{
+		label->node = (ILNode *)node;
+		label->defined = 1;
+	}
+	else
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("duplicate label `%s'"), node->name);
+	}
+	return CSemValueDefault;
+}
+
+/*
+ * Perform code generation operations for the "&&" label reference operator.
+ */
+ILNode_GetType(ILNode_CLabelRef)
+{
+	return ILMachineType_NativeInt;
+}
+ILNode_GenValue(ILNode_CLabelRef)
+{
+	ILGenIntNative(info, node->labelNum);
+	return ILMachineType_NativeInt;
+}
+JavaGenValue(ILNode_CLabelRef)
+{
+	/* Will never be called: nothing to do here */
+	return ILMachineType_NativeInt;
+}
+
+/*
+ * Evaluate the constant value of the "&&" label reference operator.
+ */
+ILNode_EvalConst(ILNode_CLabelRef)
+{
+	if(node->labelNum != 0)
+	{
+		value->valueType = ILMachineType_NativeInt;
+		value->un.i4Value = node->labelNum;
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+/*
+ * Perform semantic analysis for the "&&" label reference operator.
+ */
+ILNode_CSemAnalysis(ILNode_CLabelRef)
+{
+	CGenGoto *label;
+	CSemValue value;
+
+	/* Record this label in the function's "goto" label list */
+	label = gotoList;
+	while(label != 0 && label->name != node->name)
+	{
+		label = label->next;
+	}
+	if(!label)
+	{
+		label = (CGenGoto *)ILMalloc(sizeof(CGenGoto));
+		if(!label)
+		{
+			CCOutOfMemory();
+		}
+		label->next = gotoList;
+		gotoList = label;
+		label->name = node->name;
+		label->node = (ILNode *)node;
+		label->labelNum = gotoLabelNext++;
+		label->defined = 0;
+		label->used = 1;
+	}
+	else
+	{
+		label->used = 1;
+	}
+
+	/* Copy the label number for later use */
+	node->labelNum = label->labelNum;
+
+	/* Labels always have the type "void *" */
+	CSemSetRValue(value, CTypeCreateVoidPtr(info));
+	return value;
+}
+
+/*
+ * Perform semantic analysis for "new scope" statements.
+ */
+ILNode_CSemAnalysis(ILNode_NewScope)
+{
+	ILScope *savedScope = info->currentScope;
+	CSemValue value;
+	if(!(node->scope))
+	{
+		node->scope = ILScopeCreate(info, savedScope);
+	}
+	info->currentScope = node->scope;
+	value = StmtSem(node->stmt, info, &(node->stmt), stmtLevel);
+	info->currentScope = savedScope;
+	return value;
+}
+
+/*
+ * Collect the case labels in a new scope statement.
+ */
+ILNode_CollectCases(ILNode_NewScope)
+{
+	if(node->stmt)
+	{
+		ILNode_CollectCases(node->stmt, info, list);
+	}
+}
+
+%{
+
+/*
+ * Count the number of case labels in the body of a "switch" statement,
+ * and find the default case.
+ */
+static unsigned long CountLabelsAndFindDefault(ILNode *sections,
+											   ILNode **defCase)
+{
+	ILNode_ListIter iter1;
+	ILNode_ListIter iter2;
+	ILNode *section;
+	ILNode *caseNode;
+	unsigned long count;
+	ILNode *prevDefLabel;
+
+	/* Initialize the return information */
+	count = 0;
+	*defCase = 0;
+	prevDefLabel = 0;
+
+	/* Iterate through the sections */
+	ILNode_ListIter_Init(&iter1, sections);
+	while((section = ILNode_ListIter_Next(&iter1)) != 0)
+	{
+		/* Iterate through the case list for each section */
+		ILNode_ListIter_Init
+			(&iter2, ((ILNode_SwitchSection *)section)->caseList);
+		while((caseNode = ILNode_ListIter_Next(&iter2)) != 0)
+		{
+			if(yyisa(caseNode, ILNode_DefaultLabel))
+			{
+				/* This is the switch's default label */
+				if(prevDefLabel)
+				{
+					CCErrorOnLine(yygetfilename(caseNode),
+						  yygetlinenum(caseNode),
+						  "multiple `default' labels in `switch' statement");
+					CCErrorOnLine(yygetfilename(prevDefLabel),
+						  yygetlinenum(prevDefLabel),
+						  "previous `default' label here");
+				}
+				else
+				{
+					*defCase = section;
+					prevDefLabel = caseNode;
+				}
+			}
+			else
+			{
+				/* This is a particular case label */
+				++count;
+			}
+		}
+	}
+
+	/* Return the count to the caller */
+	return count;
+}
+
+/*
+ * Compare two case label values within "ILSwitchValue" objects.
+ */
+static int CompareCaseLabels(const void *e1, const void *e2)
+{
+	const ILEvalValue *value1 = &(((const ILSwitchValue *)e1)->value);
+	const ILEvalValue *value2 = &(((const ILSwitchValue *)e2)->value);
+
+	switch(value1->valueType)
+	{
+		case ILMachineType_Int8:
+		case ILMachineType_UInt8:
+		case ILMachineType_Int16:
+		case ILMachineType_UInt16:
+		case ILMachineType_Char:
+		case ILMachineType_Int32:
+		{
+			if(value1->un.i4Value < value2->un.i4Value)
+			{
+				return -1;
+			}
+			else if(value1->un.i4Value > value2->un.i4Value)
+			{
+				return 1;
+			}
+		}
+		break;
+
+		case ILMachineType_UInt32:
+		{
+			if(((ILUInt32)(value1->un.i4Value)) <
+					((ILUInt32)(value2->un.i4Value)))
+			{
+				return -1;
+			}
+			else if(((ILUInt32)(value1->un.i4Value)) >
+					((ILUInt32)(value2->un.i4Value)))
+			{
+				return 1;
+			}
+		}
+		break;
+
+		case ILMachineType_Int64:
+		{
+			if(value1->un.i8Value < value2->un.i8Value)
+			{
+				return -1;
+			}
+			else if(value1->un.i8Value > value2->un.i8Value)
+			{
+				return 1;
+			}
+		}
+		break;
+
+		case ILMachineType_UInt64:
+		{
+			if(((ILUInt64)(value1->un.i8Value)) <
+					((ILUInt64)(value2->un.i8Value)))
+			{
+				return -1;
+			}
+			else if(((ILUInt64)(value1->un.i8Value)) >
+					((ILUInt64)(value2->un.i8Value)))
+			{
+				return 1;
+			}
+		}
+		break;
+
+		default: break;
+	}
+	return 0;
+}
+
+/*
+ * Collect up all of the case labels for a "switch" statement,
+ * and sort them into ascending order.  Returns the new size of
+ * the case label list, after errors have been removed.
+ */
+static unsigned long CollectCaseLabels(ILGenInfo *info, ILNode *sections,
+							  		   ILType *switchType,
+									   ILSwitchValue *values)
+{
+	ILNode_ListIter iter1;
+	ILNode_ListIter iter2;
+	ILNode *section;
+	ILNode *caseNode;
+	ILNode_CaseLabel *caseLabel;
+	unsigned long size;
+	unsigned long posn;
+	CSemValue value;
+	ILMachineType switchMachineType;
+
+	/* Initialize */
+	size = 0;
+	switchMachineType = ILTypeToMachineType(switchType);
+
+	/* Iterate through the sections */
+	ILNode_ListIter_Init(&iter1, sections);
+	while((section = ILNode_ListIter_Next(&iter1)) != 0)
+	{
+		/* Iterate through the case list for each section */
+		ILNode_ListIter_Init
+			(&iter2, ((ILNode_SwitchSection *)section)->caseList);
+		while((caseNode = ILNode_ListIter_Next(&iter2)) != 0)
+		{
+			if(yyisa(caseNode, ILNode_CaseLabel))
+			{
+				/* Perform semantic analysis on the case expression */
+				caseLabel = (ILNode_CaseLabel *)caseNode;
+				value = ILNode_CSemAnalysis(caseLabel->expr, info,
+									        &(caseLabel->expr), 0);
+				if(CSemIsError(value))
+				{
+					continue;
+				}
+				else if(CSemGetConstant(value) == 0 ||
+				        !IsIntegerMachineType
+							(CSemGetConstant(value)->valueType))
+				{
+					CCErrorOnLine(yygetfilename(caseLabel->expr),
+								  yygetlinenum(caseLabel->expr),
+								  "invalid case label expression");
+					continue;
+				}
+
+				/* Coerce the case expression to the governing type */
+				if(!CCanCoerceValue(value, switchType))
+				{
+					CCErrorOnLine(yygetfilename(caseLabel->expr),
+								  yygetlinenum(caseLabel->expr),
+								  "no conversion from `%s' to `%s'",
+								  CTypeToName(info, CSemGetType(value)),
+								  CTypeToName(info, switchType));
+					continue;
+				}
+				CCoerceNode(info, caseLabel->expr, &(caseLabel->expr),
+							value, switchType);
+				ILGenCastConst(info, CSemGetConstant(value),
+							   CSemGetConstant(value)->valueType,
+							   switchMachineType);
+
+				/* Record the case node information for later */
+				values[size].value = *(CSemGetConstant(value));
+				values[size].caseLabel = caseNode;
+				values[size].section = section;
+				++size;
+			}
+		}
+	}
+
+	/* Sort the case label list into ascending order */
+	if(size > 1)
+	{
+	#ifdef HAVE_QSORT
+		qsort(values, (size_t)size, sizeof(ILSwitchValue), CompareCaseLabels);
+	#else
+		unsigned long i;
+		unsigned long j;
+		ILSwitchValue temp;
+		for(i = 0; i < size - 1; ++i)
+		{
+			for(j = i + 1; j < size; ++j)
+			{
+				if(CompareCaseLabels(&(values[i]), &(values[j])) > 0)
+				{
+					temp = values[i];
+					values[i] = values[j];
+					values[j] = temp;
+				}
+			}
+		}
+	#endif
+	}
+
+	/* Check for duplicates in the case label list */
+	if(size > 1)
+	{
+		for(posn = 0; posn < size - 1; ++posn)
+		{
+			if(CompareCaseLabels(&(values[posn]), &(values[posn + 1])) == 0)
+			{
+				CCErrorOnLine(yygetfilename(values[posn + 1].caseLabel),
+				              yygetlinenum(values[posn + 1].caseLabel),
+							  "duplicate case expression");
+				CCErrorOnLine(yygetfilename(values[posn].caseLabel),
+				              yygetlinenum(values[posn].caseLabel),
+							  "previous definition here");
+			}
+		}
+	}
+
+	/* Return the final table size to the caller */
+	return size;
+}
+
+%}
+
+/*
+ * Perform semantic analysis for "switch" statements.
+ */
+ILNode_CSemAnalysis(ILNode_Switch)
+{
+	CSemValue value;
+	ILType *governType;
+	unsigned long size;
+
+	/* Make sure that we are at the statement level of the function */
+	if(!stmtLevel)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("`switch' used within expression statement"));
+		return CSemValueDefault;
+	}
+
+	/* Collect up the "case" and "default" labels within the "switch" body */
+	node->sections = ILNode_SwitchSectList_create();
+	if(node->body)
+	{
+		ILNode_CollectCases(node->body, info, node->sections);
+	}
+
+	/* Perform semantic analysis on the expression */
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	if(!CSemIsRValue(value) || !CTypeIsInteger(CSemGetType(value)))
+	{
+		if(!CSemIsError(value))
+		{
+			CCErrorOnLine(yygetfilename(node->expr), yygetlinenum(node->expr),
+						  _("switch quantity not an integer"));
+		}
+		CSemSetRValue(value, ILType_Int32);
+	}
+
+	/* Determine the governing type to use */
+	switch(ILTypeToMachineType(CSemGetType(value)))
+	{
+		case ILMachineType_UInt32:
+		{
+			governType = ILType_UInt32;
+		}
+		break;
+
+		case ILMachineType_NativeInt:
+		case ILMachineType_Int64:
+		{
+			governType = ILType_Int64;
+		}
+		break;
+
+		case ILMachineType_NativeUInt:
+		case ILMachineType_UInt64:
+		{
+			governType = ILType_UInt64;
+		}
+		break;
+
+		default:
+		{
+			governType = ILType_Int32;
+		}
+		break;
+	}
+
+	/* Coerce the expression to the governing type */
+	CCoerceNode(info, node->expr, &(node->expr), value, governType);
+
+	node->switchType = governType;
+
+	/* Enter the switch context */
+	PushStmtContext(info, C_STMT_SWITCH);
+
+	/* Count the number of case labels and find the default case */
+	node->numSwitchValues = CountLabelsAndFindDefault
+			(node->sections, &(node->defaultSection));
+
+	/* Allocate space for the switch value table */
+	size = node->numSwitchValues * sizeof(ILSwitchValue);
+	if(size > 1024)
+	{
+		/* Warning!  This will leak memory! */
+		node->switchValues = (ILSwitchValue *)ILMalloc(size);
+	}
+	else
+	{
+		/* Allocate from the node pool, which will be cleaned up for us */
+		node->switchValues = (ILSwitchValue *)yynodealloc((unsigned int)size);
+	}
+	if(!(node->switchValues))
+	{
+		CCOutOfMemory();
+	}
+
+	/* Collect up the case labels and cast to the governing type */
+	node->numSwitchValues = CollectCaseLabels(info, node->sections,
+											  governType, node->switchValues);
+
+	/* Determine the type of switch table to generate */
+	CGSetSwitchTableType(node);
+
+	/* Perform semantic analysis on the switch body */
+	StmtSem(node->body, info, &(node->body), stmtLevel);
+
+	/* Exit the switch context */
+	PopStmtContext(info);
+
+	/* Finished */
+	return CSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for line number information blocks.
+ */
+ILNode_CSemAnalysis(ILNode_LineInfo)
+{
+	StmtSem(node->stmt, info, &(node->stmt), stmtLevel);
+	return CSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis on a case label.
+ */
+ILNode_CSemAnalysis(ILNode_CaseLabel)
+{
+	if(!StmtContextOK(info, C_STMT_SWITCH, 0))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("`case' used outside switch"));
+	}
+	return CSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis on a default label.
+ */
+ILNode_CSemAnalysis(ILNode_DefaultLabel)
+{
+	if(!StmtContextOK(info, C_STMT_SWITCH, 0))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("`default' used outside switch"));
+	}
+	return CSemValueDefault;
+}
+
+/*
+ * Collect the case labels in an case label statement.
+ */
+ILNode_CollectCases(ILNode_CaseLabel),
+ILNode_CollectCases(ILNode_DefaultLabel)
+{
+	ILNode *section;
+	ILNode *caseList = ILNode_CaseList_create();
+	ILNode_List_Add(caseList, (ILNode *)node);
+	section = ILNode_SwitchSection_create(caseList, ILNode_Empty_create());
+	node->section = (ILNode_SwitchSection *)section;
+	ILNode_List_Add(list, section);
+}
+
+/*
+ * Perform semantic analysis for a "goto *" statement.
+ */
+ILNode_CSemAnalysis(ILNode_CGotoPtr)
+{
+	CSemValue value;
+
+	/* We must use "goto *" at the statement level */
+	if(!stmtLevel)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("`goto *' used within expression statement"));
+		return CSemValueDefault;
+	}
+
+	/* Perform semantic analysis on the expression */
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	if(!CSemIsRValue(value))
+	{
+		if(!CSemIsError(value))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "invalid goto expression value");
+		}
+		return CSemValueDefault;
+	}
+	if(!CTypeIsPointer(CSemGetType(value)))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "goto expression value must be of a pointer type");
+		return CSemValueDefault;
+	}
+
+	/* Done */
+	return CSemValueDefault;
+}
+
+/*
+ * Determine if a "goto *" statement ends in a return.
+ */
+ILNode_EndsInReturnImpl(ILNode_CGotoPtr)
+{
+	return IL_ENDS_IN_GOTO;
+}
+
+/*
+ * Generate discard code for a "goto *" statement.
+ */
+ILNode_GenDiscard(ILNode_CGotoPtr)
+{
+	/* Evaluate the expression and convert it into an integer label number */
+	ILGenCast(info, ILNode_GenValue(node->expr, info), ILMachineType_Int32);
+
+	/* Jump to the end of the method, where we will place a
+	   switch table to effect the actual indirection */
+	ILGenJump(info, IL_OP_BR, &(info->gotoPtrLabel));
+}
+JavaGenDiscard(ILNode_CGotoPtr)
+{
+	/* Nothing to do here */
+}
+
+/*
+ * Perform semantic analysis for the "throw" statement.
+ */
+ILNode_CSemAnalysis(ILNode_Throw)
+{
+	if(!StmtContextOK(info, C_STMT_CATCH, C_STMT_FINALLY | C_STMT_TRY))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+	  		  		  _("`__throw__' with no value must be used "
+					    "inside a `__catch__' clause"));
+	}
+	return CSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "throw expression" statement.
+ */
+ILNode_CSemAnalysis(ILNode_ThrowExpr)
+{
+	CSemValue value;
+	ILType *exceptionClass;
+
+	/* Perform semantic analysis on the value */
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	if(CSemIsError(value))
+	{
+		/* We've already reported an error for a bad expression,
+		   so don't bother complaining about the situation again */
+		return CSemValueDefault;
+	}
+	else if(!CSemIsRValue(value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("invalid throw expression"));
+		return CSemValueDefault;
+	}
+
+	/* Attempt to coerce the value to "System.Exception" */
+	exceptionClass = ILFindSystemType(info, "Exception");
+	if(!CCanCoerce(CSemGetType(value), exceptionClass))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+	  		  		  "no conversion from `%s' to `%s'",
+					  CTypeToName(info, CSemGetType(value)),
+					  CTypeToName(info, exceptionClass));
+	}
+	CCoerceNode(info, node->expr, &(node->expr), value, exceptionClass);
+
+	/* Done */
+	return CSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "try" statement.
+ */
+ILNode_CSemAnalysis(ILNode_Try)
+{
+	/* Exception blocks must be at the statement level of the function */
+	if(!stmtLevel)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("`__try__' used within expression statement"));
+		return CSemValueDefault;
+	}
+
+	/* Enter a "try" context */
+	PushStmtContext(info, C_STMT_TRY);
+
+	/* Perform semantic analysis on the "try" body */
+	StmtSem(node->stmt, info, &(node->stmt), stmtLevel);
+
+	/* Perform semantic analysis on the "catch" clauses */
+	StmtSem(node->catchClauses, info, &(node->catchClauses), stmtLevel);
+
+	/* Perform semantic analysis on the "finally" clause */
+	StmtSem(node->finallyClause, info, &(node->finallyClause), stmtLevel);
+
+	/* Exit from the "try" context */
+	PopStmtContext(info);
+
+	/* Done */
+	return CSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "catch clause" statement.
+ */
+ILNode_CSemAnalysis(ILNode_CatchClause)
+{
+	ILType *exceptionType = ILFindSystemType(info, "Exception");
+	ILType *thrownType;
+	ILScope *newScope;
+
+	/* Enter a "catch" context */
+	PushStmtContext(info, C_STMT_CATCH);
+
+	/* Wrap the catch body in a new scope */
+	newScope = ILScopeCreate(info, info->currentScope);
+	node->stmt = ILNode_NewScope_create(node->stmt);
+	((ILNode_NewScope *)(node->stmt))->scope = newScope;
+
+	/* Validate the thrown value type, which is in "node->classInfo" */
+	thrownType = ILClassToType(node->classInfo);
+	if(!CCanCoerce(thrownType, exceptionType))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+	  		  		  _("`%s' does not inherit from `%s'"),
+					  CTypeToName(info, thrownType),
+					  CTypeToName(info, exceptionType));
+		thrownType = exceptionType;
+	}
+
+	/* Declare a new local variable for the catch value */
+	if(node->name)
+	{
+		/* Add the type to the local variable signature for this method */
+		node->varIndex = CGenAllocLocal(info, thrownType);
+
+		/* Create a local variable entry in the current scope */
+		ILScopeDeclareLocal(newScope, node->name, node->varIndex,
+							node->nameNode);
+	}
+
+	/* Perform semantic analysis on the catch body */
+	StmtSem(node->stmt, info, &(node->stmt), stmtLevel);
+
+	/* Exit from the "catch" context */
+	PopStmtContext(info);
+
+	/* Done */
+	return CSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "finally clause" statement.
+ */
+ILNode_CSemAnalysis(ILNode_FinallyClause)
+{
+	/* Enter a "finally" context */
+	PushStmtContext(info, C_STMT_FINALLY);
+
+	/* Perform semantic analysis on the finally body */
+	StmtSem(node->stmt, info, &(node->stmt), stmtLevel);
+
+	/* Exit from the "finally" context */
+	PopStmtContext(info);
+
+	/* Done */
+	return CSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "lock" statement.
+ */
+ILNode_CSemAnalysis(ILNode_Lock)
+{
+	CSemValue value;
+	ILType *objectType = ILFindSystemType(info, "Object");
+
+	/* Lock blocks must be at the statement level of the function */
+	if(!stmtLevel)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("`__lock__' used within expression statement"));
+		return CSemValueDefault;
+	}
+
+	/* Perform semantic analysis on the lock expression */
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	if(CSemIsError(value))
+	{
+		/* We've already reported an error for a bad expression,
+		   so don't bother complaining about the situation again */
+	}
+	else if(!CSemIsRValue(value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("invalid lock expression"));
+	}
+	else if(!CCanCoerce(CSemGetType(value), objectType))
+	{
+		CCErrorOnLine(yygetfilename(node->expr), yygetlinenum(node->expr),
+					  _("no conversion from `%s' to `%s'"),
+					  CTypeToName(info, CSemGetType(value)),
+					  CTypeToName(info, objectType));
+	}
+	else
+	{
+		CCoerceNode(info, node->expr, &(node->expr), value, objectType);
+	}
+
+	/* Enter a "try" context */
+	PushStmtContext(info, C_STMT_TRY);
+
+	/* Perform semantic analysis on the lock statement body */
+	StmtSem(node->stmt, info, &(node->stmt), stmtLevel);
+
+	/* Exit from the "try" context */
+	PopStmtContext(info);
+
+	/* Done */
+	return CSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for a memcpy statement.
+ */
+ILNode_CSemAnalysis(ILNode_Memcpy)
+{
+	/* Nothing to do here: this node is generated during semantic
+	   analysis of an invokation expression */
+	return CSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for a memset statement.
+ */
+ILNode_CSemAnalysis(ILNode_Memset)
+{
+	/* Nothing to do here: this node is generated during semantic
+	   analysis of an invokation expression */
+	return CSemValueDefault;
+}

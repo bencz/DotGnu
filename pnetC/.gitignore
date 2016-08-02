@@ -1,0 +1,12 @@
+Makefile.in
+Makefile
+.deps
+configure
+config.log
+config.cache
+config.status
+confdefs.h
+libtool
+aclocal.m4
+pnetc.spec
+autom4te.cache

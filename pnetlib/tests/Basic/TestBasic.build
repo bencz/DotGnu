@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<project name="pnetlib TestBasic" default="all">
+	<target name="all">
+
+		<!-- Build the TestBasic.dll library -->
+		<compile output="TestBasic.dll"
+				 target="library"
+				 unsafe="true"
+				 debug="true"
+				 nostdlib="true"
+				 optimize="true">
+
+			<sources>
+				<includes if="${CONFIG_EXTENDED_NUMERICS}" name="**/*.cs"/>
+				<excludes if="${CONFIG_EXTENDED_NUMERICS}" name="TestBasic.cs"/>
+				<file name="TestBasic.cs"/>
+			</sources>
+
+			<references>
+				<file name="../../csunit/cstest.dll"/>
+				<file name="../../Basic/Microsoft.VisualBasic.dll"/>
+				<file if="${CONFIG_REFLECTION}" name="../../System.Windows.Forms/System.Windows.Forms.dll"/>
+				<file if="${CONFIG_REFLECTION}" name="../../System.Drawing/System.Drawing.dll"/>
+				<file if="${CONFIG_REFLECTION}" name="../../System.Xml/System.Xml.dll"/>
+				<file name="../../System/System.dll"/>
+				<file name="../../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<file if="${CONFIG_REFLECTION}" name="../../DotGNU.Images/DotGNU.Images.dll"/>
+				<file if="${CONFIG_REFLECTION}" name="../../SharpZipLib/ICSharpCode.SharpZipLib.dll"/>
+				<file if="${CONFIG_REFLECTION}" name="../../compat/Accessibility.dll"/>
+				<file name="../../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+	</target>
+</project>

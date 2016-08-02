@@ -1,0 +1,25 @@
+./ifdef.cs:26: parse error at or near `x1'
+./ifdef.cs:31: parse error at or near `y1'
+./ifdef.cs:36: parse error at or near `z1'
+./ifdef.cs:41: parse error at or near `w1'
+./ifdef.cs:50: parse error at or near `x2'
+./ifdef.cs:55: parse error at or near `y2'
+./ifdef.cs:60: parse error at or near `z2'
+./ifdef.cs:65: parse error at or near `w2'
+./ifdef.cs:72: parse error at or near `v2'
+./ifdef.cs:81: parse error at or near `v3'
+./ifdef.cs:86: parse error at or near `u2'
+./ifdef.cs:95: parse error at or near `u3'
+./ifdef.cs:101: parse error at or near `t1'
+./ifdef.cs:116: parse error at or near `t2'
+./ifdef.cs:133: parse error at or near `t3'
+./ifdef.cs:148: parse error at or near `t4'
+./ifdef.cs:164: parse error at or near `s1'
+./ifdef.cs:171: parse error at or near `s2'
+./ifdef.cs:177: invalid pre-processor expression
+./ifdef.cs:179: invalid pre-processor expression
+./ifdef.cs:181: invalid pre-processor expression
+./ifdef.cs:183: invalid pre-processor expression
+./ifdef.cs:194: parse error at or near `r2'
+./ifdef.cs:201: parse error at or near `r1'
+./ifdef.cs:204: warning: file contains no declarations

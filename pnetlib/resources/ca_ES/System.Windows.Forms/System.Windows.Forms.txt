@@ -1,0 +1,40 @@
+#
+# System.Windows.Forms.txt - Resources for the "System.Windows.Forms" assembly.
+#
+# Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+SWF_CouldNotActivate=No s'ha pogut activar el control especificat
+SWF_SettingTopLevelParent=No es pot definir el pare dels controls d'alt nivell
+SWF_CircularityDetected=Els ajustos del pare provocaran una circularitat
+SWF_ControlDisposed=El control ja ha estat dispossat
+SWF_InvalidControlIndex=L'índex de control està fora de rang
+SWF_NotAControl=El valor especificat no es un control
+SWF_ControlNotAChild=El control especificat no és un fill de si mateix
+SWF_NonNegative=El valor no pot ser negatiu
+SWF_MenuItemIndex=L'index d'elements al menú està fora de rang
+SWF_InvalidMenuItem=El valor especificat no és un element del menú
+SWF_ItemAlreadyInUse=L'element del menú ja ha estat afegit
+SWF_MessageBox_OK=Acceptar
+SWF_MessageBox_Cancel=Cancel·lar
+SWF_MessageBox_Abort=&Abortar
+SWF_MessageBox_Retry=&Reintentar
+SWF_MessageBox_Ignore=&Ignorar
+SWF_MessageBox_Yes=&Si
+SWF_MessageBox_No=&No
+SWF_InvalidInterval=L'interval del temporitzador no és vàlid
+Invalid_CollectionModified=La col·lecció ha estat modificada
+Invalid_BadEnumeratorPosition=L'enumerador no esta posicionat en un element

@@ -1,0 +1,40 @@
+#
+# Installer.txt - Resources for System.Configuration.Install.
+#
+# Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Installer_NoInstallersFound=No s'han trobat instal·ladors en aquest ensamblat
+Installer_CouldNotLoadAssembly=No s'ha pogut carregar l'instal·lador de l'ensamblat: {0}
+Installer_LogIsNull=L'event de logueig és nul
+Installer_SourceIsNull=L'origen de l'event és nul
+Installer_NotAnEventLog=El component especificat no és un event de log
+Installer_NoEventLogs=La plataforma no suporta events de log
+Installer_Exception=Ha ocorregut una excepció durant el procés d'instal·lació
+Installer_InvalidSavedState=L'estat guardat de l'objecte és nul
+Installer_HelpIsNull=El contador d'ajuda és nul
+Installer_NameIsNull=El contador del nom de la categoria és nul
+Installer_NotAPerformanceCounter=El component especificat no és un contador de rendiment
+Installer_BeginInstallTransaction=Començar la transacció d'instal·lació
+Installer_BeginInstall=Iniciar la instal·lació
+Installer_BeginRollback=Iniciar la restauració
+Installer_EndRollback=Finalitzar la restauració
+Installer_RollbackPerformed=Restauració realitzada
+Installer_BeginCommit=Comemçar la memorització
+Installer_EndCommit=Fi de la memorització
+Installer_EndInstallTransaction=Fi de la instal·lació
+Installer_BeginUninstallTransaction=Iniciar la desinstal·lació
+Installer_EndUninstallTransaction=Fi de la desinstal·lació

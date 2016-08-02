@@ -1,0 +1,33 @@
+#
+# Security.txt - Resources for security errors.
+#
+# Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Security_AllMembershipCondition=Gesamter Code
+Security_AppDirMembershipCondition=Anwendungsverzeichnis
+Security_PolicyVersion=Ungueltige Version fuer das serialisierte Erlaubnisobjekt
+Security_PolicyName=Ungueltiger Name fuer das serialisierte Erlaubnisobjekt
+Security_NotCodeGroupChild=Das Objekt ist kein Kind der angegebenen Code Gruppe
+Security_RemotingCheckType=Der Typ {0} kann nicht in der 'Niedrigen' Sicherheitsebene uebertragen werden
+Security_SelectorCycle=Die Verkettung der angegebenen selectors erzeugen eine Ringbeziehung
+Security_Exclusive=Es wurden sich gegenseitig ausschliessende 'policies' entdeckt
+Security_PermissionSetNotFound=Der angegebene Berechtigungssatz konnte nicht gefunden werden
+Security_FullTrustPresent=Die komplette Vertrauensstellungsinformation ist bereits vorhanden
+Security_FullTrustNotPresent=Die komplette Vertrauensstellungsinformation ist nicht vorhanden
+Security_RootGroupDescription=Wurzel Codegruppe die Zugriff auf alles erlaubt
+Security_CodeGroupName=Ungueltiger XML Tag Name fuer eine Sicherheitscode Gruppe
+

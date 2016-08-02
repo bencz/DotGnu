@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<project name="pnetlib OpenSystem.Platform" default="all">
+	<target name="all">
+
+		<!-- Build the OpenSystem.Platform.dll library -->
+		<compile output="OpenSystem.Platform.dll"
+				 target="library"
+				 unsafe="true"
+				 optimize="true"
+				 debug="${CONFIG_DEBUG_LINES}"
+				 sanewarnings="true"
+				 install="true"
+				 installasdefault="${INSTALL_AS_DEFAULT}">
+
+			<!-- We add Types.cs to the list carefully because it may
+			     live in the build directory instead of the source -->
+			<sources>
+				<includes name="**/*.cs"/>
+				<excludes name="Types.cs"/>
+				<file name="Types.cs" basedir="${csant.build.dir}"/>
+			</sources>
+
+			<references>
+				<file name="../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+	</target>
+</project>

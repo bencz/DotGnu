@@ -1,0 +1,136 @@
+.\" Copyright (c) 2001 Southern Storm Software, Pty Ltd.
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.TH ilsize 1 "23 March 2001" "Southern Storm Software" "Portable.NET Development Tools"
+.SH NAME
+ilsize \- the Intermediate Language (IL) size utility
+.SH SYNOPSIS
+\fBilsize\fR [ options ] \fIinput\fR ...
+.SH DESCRIPTION
+.B Ilsize
+lists size information for each of the sections within an IL object file
+(.obj), an IL executable (.exe), or an IL dynamic link library (.dll).
+The output is similar to that produced by \fBsize\fR(1).
+.SH OPTIONS
+.TP
+.B \-\-radix \fInum\fR
+Set the radix for displaying size values within the output.  The default
+value is 10.  Legal values are 8, 10, and 16.
+.TP
+.B \-d
+Set the radix to 10.  Same as \fB\-\-radix 10\fR.
+.TP
+.B \-o
+Set the radix to 8.   Same as \fB\-\-radix 8\fR.
+.TP
+.B \-x
+Set the radix to 16.  Same as \fB\-\-radix 16\fR.
+.TP
+.B \-D, \--detailed
+Use a more detailed output that also includes the number of classes,
+fields, methods, etc.
+.TP
+.B \-\-help
+Print a usage message for the \fBilsize\fR program.
+.TP
+.B \-v, \-V, \-\-version
+Print the version of the \fBilsize\fR program.
+.TP
+.B \-\-
+Marks the end of the command-line options, and the beginning of
+the input filenames.  You may need to use this if your filename
+begins with '-'.  e.g. "ilsize -- -input.obj".  This is not needed
+if the input is stdin: "ilsize -" is perfectly valid.
+.SH "AUTHOR"
+Written by Southern Storm Software, Pty Ltd.
+
+http://www.southern-storm.com.au/
+.SH "SEE ALSO"
+ilasm(1), ildasm(1), ilnative(1), cscc(1), size(1)
+.SH "DIAGNOSTICS"
+Exit status is 1 if an error occurred while processing the input.
+Otherwise the exit status is 0.
+.TP
+\fIfilename\fR: truncated image
+
+The input file is truncated in some way that prevents it from being
+read as an IL image.
+.TP
+\fIfilename\fR: not a valid PE/COFF image
+
+The input file is not a PE/COFF file.  That is, it is not formatted
+as a Windows executable or dynamic link library, and is also not
+formatted as a Portable.Net object file (see \fBilasm\fR(1) for
+details on the object file format).
+.hy 0
+.TP
+\fIfilename\fR: image does not contain IL data (may be an ordinary Windows executable)
+.hy 1
+
+The input file is a valid PE/COFF file, but it does not contain
+an IL binary within it.  It is probably an ordinary native Windows
+executable that cannot be processed by \fBildasm\fR.
+.TP
+\fIfilename\fR: incorrect IL version
+
+The input file is a valid PE/COFF file that contains a valid IL binary,
+but the IL data is for an unsupported version.
+.TP
+\fIfilename\fR: required sections in reverse order
+
+There was something wrong with the order of sections within the file
+that caused the loader to need to seek backwards.  This will normally
+only happen for IL binaries that have been incorrectly generated or
+corrupted in some way.
+.TP
+\fIfilename\fR: not enough memory to load image
+
+The IL binary was so large that it could not be loaded into memory
+prior to disassembly.
+.TP
+\fIfilename\fR: bad addresses in image
+
+The PE/COFF file or IL binary within the file contained a "relative
+virtual address", or RVA, that was invalid.  This will normally only
+happen for IL binaries that have been incorrectly generated or
+corrupted in some way.
+.TP
+\fIfilename\fR: invalid metadata in image
+
+The metadata section was invalid in some way.  Usually this indicates
+a corrupted IL binary.
+.TP
+\fIfilename\fR: uses undocumented metadata feature
+
+The metadata section was mostly valid, but it used features for which
+we do not have sufficient documentation to parse successfully.
+.TP
+\fIfilename\fR: unresolved external references
+
+The metadata section was valid, but it referred to types in another
+file that could not be fully resolved.
+.TP
+metadata error: ...
+
+Depending on how the Portable.NET development tools were built, errors
+of this kind may appear in addition to the other errors listed above.
+They provide additional diagnostics that mainly of interest to the authors.
+If you come across a file that produces such an error, then contact
+the authors.
+.SH "BUGS"
+.B Ilsize
+does not currently understand the format of ".a" or ".lib" archive
+libraries, so it cannot display information about archive contents like
+\fBsize\fR(1) can.

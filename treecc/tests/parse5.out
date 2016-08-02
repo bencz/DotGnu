@@ -1,0 +1,195 @@
+line 3: %node expression no_parent 6
+line 4: %node binary expression 2
+line 5: %node unary expression 2
+line 6: %node intnum expression 0
+line 7: %node plus binary 0
+line 8: %node minus binary 0
+line 9: %node multiply binary 0
+line 10: %node divide binary 0
+line 11: %node negate unary 0
+line 12: %node power binary 0
+line 15: %operation void op 1
+line 15: %param expression * e 1
+line 15: %virtual expression op
+parse5.tst:16: operation `op' is already declared
+parse5.tst:15: previous declaration here
+parse5.tst:19: `virtual' and `inline' cannot be used together
+line 19: %operation void op1 1
+line 19: %param expression * e 1
+line 19: %virtual expression op1
+parse5.tst:20: `virtual' and `inline' cannot be used together
+line 20: %operation void op2 1
+line 20: %param expression * e 1
+line 20: %virtual expression op2
+parse5.tst:24: type name expected
+parse5.tst:24: operation return type expected
+parse5.tst:24: operation name expected
+parse5.tst:24: declaration expected
+parse5.tst:28: `(' expected
+line 28: %operation void op3 0
+line 28: %operation int op4 1
+line 28: %param expression * e 1
+line 28: %param const char * name 0
+line 28: %virtual expression op4
+parse5.tst:31: trigger types must end in `*'
+parse5.tst:32: the first parameter of a virtual must be the trigger
+line 31: %operation int op5 0
+line 31: %param expression * e 0
+line 31: %param intnum num 1
+parse5.tst:33: virtual operations must have at least one parameter
+line 32: %operation int op6 0
+parse5.tst:36: virtual operations must have at least one parameter
+line 33: %operation int op7 0
+parse5.tst:37: default value required
+line 36: %operation void * op8 0
+line 36: %param plus * p 1
+parse5.tst:37: default value required
+line 37: %operation void * op9 2
+line 37: %param int no_name 0
+line 37: %param expression * e 1
+parse5.tst:40: `int' is not a valid trigger type
+line 40: %operation void op10 0
+line 40: %param int x 1
+parse5.tst:41: `const char *' is not a valid trigger type
+line 41: %operation void op11 0
+line 41: %param int x 0
+line 41: %param const char * name 1
+parse5.tst:42: `int' is not a valid trigger type
+parse5.tst:42: `const expression *' is not a valid trigger type
+line 42: %operation void op12 0
+line 42: %param int x 1
+line 42: %param const expression * e 1
+parse5.tst:45: type name expected
+parse5.tst:45: parameter declaration expected
+line 45: %operation void op13 0
+parse5.tst:46: type name expected
+parse5.tst:46: `]' expected
+parse5.tst:46: parameter declaration expected
+line 46: %operation void op14 0
+parse5.tst:47: `]' expected
+line 47: %operation void op15 0
+line 47: %param int no_name 0
+line 47: %param expression * no_name 1
+parse5.tst:48: `)' expected
+line 48: %operation void op16 0
+parse5.tst:48: declaration expected
+parse5.tst:49: parameter declaration expected
+line 49: %operation void op17 0
+line 49: %param plus * no_name 1
+parse5.tst:52: trigger types must end in `*'
+line 52: %operation void op18 0
+line 52: %param expression e 1
+line 53: %operation void op19 0
+line 53: %param expression e 0
+line 53: %param expression * e2 1
+parse5.tst:54: trigger types must end in `*'
+line 54: %operation void op20 0
+line 54: %param expression e 0
+line 54: %param expression e2 1
+parse5.tst:57: trigger types must end in `*'
+line 57: %operation void class21::op21 0
+line 57: %param expression e 1
+parse5.tst:58: operation name expected
+parse5.tst:58: declaration expected
+parse5.tst:58: operation `expression' is not declared
+parse5.tst:58: `(' expected
+parse5.tst:58: `,' expected
+parse5.tst:58: operation `e' is not declared
+parse5.tst:58: `(' expected
+parse5.tst:58: code block expected
+parse5.tst:58: declaration expected
+parse5.tst:15: operation `op' has no cases
+parse5.tst:15: node type `plus' is not handled in operation `op'
+parse5.tst:15: node type `minus' is not handled in operation `op'
+parse5.tst:15: node type `multiply' is not handled in operation `op'
+parse5.tst:15: node type `divide' is not handled in operation `op'
+parse5.tst:15: node type `power' is not handled in operation `op'
+parse5.tst:15: node type `negate' is not handled in operation `op'
+parse5.tst:15: node type `intnum' is not handled in operation `op'
+parse5.tst:19: operation `op1' has no cases
+parse5.tst:19: node type `plus' is not handled in operation `op1'
+parse5.tst:19: node type `minus' is not handled in operation `op1'
+parse5.tst:19: node type `multiply' is not handled in operation `op1'
+parse5.tst:19: node type `divide' is not handled in operation `op1'
+parse5.tst:19: node type `power' is not handled in operation `op1'
+parse5.tst:19: node type `negate' is not handled in operation `op1'
+parse5.tst:19: node type `intnum' is not handled in operation `op1'
+parse5.tst:20: operation `op2' has no cases
+parse5.tst:20: node type `plus' is not handled in operation `op2'
+parse5.tst:20: node type `minus' is not handled in operation `op2'
+parse5.tst:20: node type `multiply' is not handled in operation `op2'
+parse5.tst:20: node type `divide' is not handled in operation `op2'
+parse5.tst:20: node type `power' is not handled in operation `op2'
+parse5.tst:20: node type `negate' is not handled in operation `op2'
+parse5.tst:20: node type `intnum' is not handled in operation `op2'
+parse5.tst:28: operation `op3' has no cases
+parse5.tst:28: operation `op4' has no cases
+parse5.tst:28: node type `plus' is not handled in operation `op4'
+parse5.tst:28: node type `minus' is not handled in operation `op4'
+parse5.tst:28: node type `multiply' is not handled in operation `op4'
+parse5.tst:28: node type `divide' is not handled in operation `op4'
+parse5.tst:28: node type `power' is not handled in operation `op4'
+parse5.tst:28: node type `negate' is not handled in operation `op4'
+parse5.tst:28: node type `intnum' is not handled in operation `op4'
+parse5.tst:31: operation `op5' has no cases
+parse5.tst:31: node type `intnum' is not handled in operation `op5'
+parse5.tst:32: operation `op6' has no cases
+parse5.tst:33: operation `op7' has no cases
+parse5.tst:36: operation `op8' has no cases
+parse5.tst:36: node type `plus' is not handled in operation `op8'
+parse5.tst:37: operation `op9' has no cases
+parse5.tst:37: node type `plus' is not handled in operation `op9'
+parse5.tst:37: node type `minus' is not handled in operation `op9'
+parse5.tst:37: node type `multiply' is not handled in operation `op9'
+parse5.tst:37: node type `divide' is not handled in operation `op9'
+parse5.tst:37: node type `power' is not handled in operation `op9'
+parse5.tst:37: node type `negate' is not handled in operation `op9'
+parse5.tst:37: node type `intnum' is not handled in operation `op9'
+parse5.tst:40: operation `op10' has no cases
+parse5.tst:41: operation `op11' has no cases
+parse5.tst:42: operation `op12' has no cases
+parse5.tst:45: operation `op13' has no cases
+parse5.tst:46: operation `op14' has no cases
+parse5.tst:47: operation `op15' has no cases
+parse5.tst:47: node type `plus' is not handled in operation `op15'
+parse5.tst:47: node type `minus' is not handled in operation `op15'
+parse5.tst:47: node type `multiply' is not handled in operation `op15'
+parse5.tst:47: node type `divide' is not handled in operation `op15'
+parse5.tst:47: node type `power' is not handled in operation `op15'
+parse5.tst:47: node type `negate' is not handled in operation `op15'
+parse5.tst:47: node type `intnum' is not handled in operation `op15'
+parse5.tst:48: operation `op16' has no cases
+parse5.tst:49: operation `op17' has no cases
+parse5.tst:49: node type `plus' is not handled in operation `op17'
+parse5.tst:52: operation `op18' has no cases
+parse5.tst:52: node type `plus' is not handled in operation `op18'
+parse5.tst:52: node type `minus' is not handled in operation `op18'
+parse5.tst:52: node type `multiply' is not handled in operation `op18'
+parse5.tst:52: node type `divide' is not handled in operation `op18'
+parse5.tst:52: node type `power' is not handled in operation `op18'
+parse5.tst:52: node type `negate' is not handled in operation `op18'
+parse5.tst:52: node type `intnum' is not handled in operation `op18'
+parse5.tst:53: operation `op19' has no cases
+parse5.tst:53: node type `plus' is not handled in operation `op19'
+parse5.tst:53: node type `minus' is not handled in operation `op19'
+parse5.tst:53: node type `multiply' is not handled in operation `op19'
+parse5.tst:53: node type `divide' is not handled in operation `op19'
+parse5.tst:53: node type `power' is not handled in operation `op19'
+parse5.tst:53: node type `negate' is not handled in operation `op19'
+parse5.tst:53: node type `intnum' is not handled in operation `op19'
+parse5.tst:54: operation `op20' has no cases
+parse5.tst:54: node type `plus' is not handled in operation `op20'
+parse5.tst:54: node type `minus' is not handled in operation `op20'
+parse5.tst:54: node type `multiply' is not handled in operation `op20'
+parse5.tst:54: node type `divide' is not handled in operation `op20'
+parse5.tst:54: node type `power' is not handled in operation `op20'
+parse5.tst:54: node type `negate' is not handled in operation `op20'
+parse5.tst:54: node type `intnum' is not handled in operation `op20'
+parse5.tst:57: operation `op21' has no cases
+parse5.tst:57: node type `plus' is not handled in operation `op21'
+parse5.tst:57: node type `minus' is not handled in operation `op21'
+parse5.tst:57: node type `multiply' is not handled in operation `op21'
+parse5.tst:57: node type `divide' is not handled in operation `op21'
+parse5.tst:57: node type `power' is not handled in operation `op21'
+parse5.tst:57: node type `negate' is not handled in operation `op21'
+parse5.tst:57: node type `intnum' is not handled in operation `op21'

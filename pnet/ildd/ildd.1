@@ -1,0 +1,58 @@
+.\" Copyright (c) 2002, 2003 Southern Storm Software, Pty Ltd.
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.TH ildd 1 "24 November 2003" "Southern Storm Software" "Portable.NET Development Tools"
+.SH NAME
+ildd \- print Intermediate Language (IL) program dependencies
+.SH SYNOPSIS
+\fBildd\fR [ options ] \fIinput\fR ...
+.SH DESCRIPTION
+.B Ildd
+lists the assemblies and modules that are referenced by an IL object
+file (.obj), an IL executable (.exe), or an IL dynamic link library (.dll).
+.SH OPTIONS
+.TP
+.B \-f, \-\-file\-names
+Print the name of each file that is processed, even if there is only
+one file specified.
+.TP
+.B \-p, \-\-pinvoke
+Print detailed information about PInvoke declarations.
+.TP
+.B \-r, \-\-recursive
+Recursively print transitive dependencies.
+.TP
+.B \-\-help
+Print a usage message for the \fBildd\fR program.
+.TP
+.B \-v, \-\-version
+Print the version of the \fBildd\fR program.
+.TP
+.B \-\-
+Marks the end of the command-line options, and the beginning of
+the input filenames.  You may need to use this if your filename
+begins with '-'.  e.g. "ildd -- -input.exe".  This is not needed
+if the input is stdin: "ildd -" is perfectly valid.
+.SH "AUTHOR"
+Written by Southern Storm Software, Pty Ltd.
+
+http://www.southern-storm.com.au/
+.SH "SEE ALSO"
+ilsize(1), ilfind(1), ilasm(1), cscc(1)
+.SH "DIAGNOSTICS"
+Exit status is 1 if an error occurred while processing the input.
+Otherwise the exit status is 0.  See the manual page for
+\fBilsize\fR(1) for a complete list of errors that may occur
+when loading an IL image file.

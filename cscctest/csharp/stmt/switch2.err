@@ -1,0 +1,10 @@
+./switch2.cs:40: invalid expression for `switch' statement
+./switch2.cs:46: `System.Object' is invalid as the governing type for a `switch'
+./switch2.cs:55: multiple `default' labels in `switch' statement
+./switch2.cs:54: previous `default' label here
+./switch2.cs:61: constant value required
+./switch2.cs:61: case expression is not constant
+./switch2.cs:67: no conversion from `long' to `int'
+./switch2.cs:74: `switch' section falls through
+./switch2.cs:80: duplicate case expression
+./switch2.cs:79: previous definition here

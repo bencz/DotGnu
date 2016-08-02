@@ -1,0 +1,3120 @@
+2003-01-11  Adam Ballai  <minddog@cannibutter.com>
+
+	* System.Xml/XmlTextReader.cs: fixed bugs in logic
+	and implemented ReadOuterXml ReadInnerXml.
+
+	* System.Xml/XmlTextReader.cs: more fixes in Read method
+
+2003-01-11  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/ComponentModel/Component.cs,
+	System/ComponentModel/Container.cs,
+	System/ComponentModel/Design/DesignerTransaction.cs,
+	System/ComponentModel/Design/IServiceContainer.cs,
+	System/Diagnostics/Process.cs,
+	System/Diagnostics/ProcessWindowStyle.cs, System.Xml/XmlDocument.cs,
+	System.Xml/XmlTextReader.cs, System.Xml/XmlTextWriter.cs,
+	compat/Vsa.cs: fix errors and warnings discovered by csc.
+
+2003-01-10  Jeff Post  <j_post@pacbell.net>
+
+	* System/ComponentModel/EnumConverter.cs: clean-up of ConvertFrom
+
+2003-01-10  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Reflection/IReflect.cs: bug in the signature for
+	"IReflect.GetMember".
+
+	* runtime/System/Runtime/InteropServices/Expando/IExpando.cs:
+	add the "IExpando" class, which is needed for JScript.
+
+2003-01-09  Aditya P. Bansod <abansod@fullenergy.com>
+
+	* runtime/Platform/FileMethods.cs, runtime/System/IO/Directory.cs,
+	runtime/System/IO/File.cs: new methods for manipulating creation times.
+	
+2003-01-09  Adam Ballai <minddog@cannibutter.com>
+
+	* System.Xml/XmlDocument.cs, System.Xml/XmlTextReader.cs: XML
+	reader updates.
+
+2003-01-07  Rainer Groesslinger <rainer.groesslinger@gmx.net>
+
+	* resources/de_DE/I18N/I18NRes.txt, resources/de_DE/System/Arg.txt,
+	resources/de_DE/System/Exception.txt, resources/de_DE/System.Xml/Xml.txt,
+	resources/de_DE/runtime/DivZero.txt, resources/de_DE/runtime/Exception.txt,
+	resources/de_DE/runtime/IO.txt,resources/de_DE/runtime/Overflow.txt :
+	Updates to the German translations for Pnetlib error messages.
+	(Gopal)
+
+2003-01-04  Gopal.V  <gopalv82@symonds.net>
+	
+	* System/Diagnostics/Process.cs, System/Diagnostics/ProcessStartInfo.cs,
+	System/Diagnostics/ProcessWindowStyle.cs: Add these classes for 
+	compatability with external libraries.
+
+	* System/System.build: Use the new "if" conditional to exclude entire
+	namespaces for selective builds.
+
+	* System/Diagnostics/Trace.cs: More .NET compatibility classes.
+
+2003-01-04  Jonathan Springer <jonathan.springer@verizon.net>
+
+	* runtime/System/Private/NumberParser.cs:  Fix a bug in thousands parsing
+	that was causing XmlConvert tests to break.
+
+	* tests/System.Xml/TestXmlConvert.cs:  Uncomment additional floating point
+	conversion testing.
+
+2003-01-04  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/IO/StreamReader.cs: fix a bug in "Read" that
+	caused it to return the wrong value to the caller.
+
+2003-01-04  Aditya P. Bansod <abansod@fullenergy.com>
+	
+	* runtime/Platform/FileMethods.cs, runtime/System/IO/File.cs: Add
+	internal calls and implement the File.SetLastWriteTime and 
+	SetLastAccessTime.  (Patch #917,Gopal)
+	
+2003-01-04  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Text/Encoding.cs: back out the UTF8 change because
+	the UTF8 property *must* include the preamble.
+
+	* runtime/System/Console.cs: detect UTF8 locales when creating the
+	console output and disable the preamble there.
+
+2003-01-02  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/Text/Encoding.cs: Disable UTF8 preambles when used
+	with Encoding.UTF8 to prevent the Console streams from using it.
+	(Bug #2118)
+
+	* runtime/System/Int32.cs: Add a ToString(Int32) static method to
+	maintain .NET compatibility.
+
+2003-01-02  Jason Lee <jason.lee@mac.com>
+	
+	* System/Net/DnsPermission.cs, System/Net/DnsPermissionAttribute.cs,
+	System/Net/GlobalProxySelection.cs: Add permission attributes and
+	preliminaries for a proxy scheme.
+
+	* System/Net/WebResponse.cs: Fill in the abstract class and remove
+	TODO markers.  (Patch #913,Gopal)
+	
+2003-01-03  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* compat/Vsa.cs: mis-spelt identifier in the Vsa code.
+
+2003-01-02  Adam Ballai  <minddog@cannibutter.com>
+	
+	* runtime/System/Convert.cs, System.Xml/XmlTextWriter.cs: Implement
+	the WriterBase64,WriteRaw and WriteBinHex for XmlTextWriter .
+	(Patch #907,Gopal)
+	
+2003-01-01  Jeff Post  <j_post@pacbell.net>
+
+	* System/ComponentModel/EnumConverter.cs: Add code for
+	CanConvertTo, CanConvertFrom, ConvertTo, ConvertFrom and IsValid.
+	(Patch #905,Gopal)
+
+2003-01-01  Jonathan Springer <jonathan.sprinver@verizon.net>
+
+	* resources/en_US/runtime/Format.txt, 
+	runtime/System/Private/NumberParser.cs:  Added support for parsing of
+	floating-point and decimal types.
+
+	* tests/runtime/System/SuiteSystem.cs, tests/runtime/System/TestDouble.cs:
+	Rudimentary tests for floating-point formatting.
+
+	* runtime/System/NumberFormat/ScientificFormatter.cs: Cosmetic fix.
+
+2003-01-01  Ian Fung  <if26@cornell.edu>
+
+	* System/ComponentModel/CancelEventArgs.cs,
+	System/ComponentModel/CollectionChangeEventArgs.cs,
+	System/ComponentModel/ListChangedEventArgs.cs,
+	System/ComponentModel/PropertyChangedEventArgs.cs,
+	System/ComponentModel/RefreshEventArgs.cs: Implement these 
+	5 classes for compatibility. (Patch #904, Gopal)
+	
+2002-12-31  Adam Ballai  <minddog@cannibutter.com>
+
+	* System.Xml/XmlWriter.cs, System.Xml/XmlTextWriter.cs, 
+	tests/System.Xml/TestXmlTextWriter.cs: Add WriteProcessingInstruction 
+	and WriteAttribute. (Patch #893, Gopal)
+
+2002-12-31  Gopal.V  <gopalv82@symonds.net>
+
+	* System/ComponentModel/BaseNumberConverter.cs,
+	System/ComponentModel/CancelEventArgs.cs,
+	System/ComponentModel/CollectionChangeEventArgs.cs,
+	System/ComponentModel/Component.cs,
+	System/ComponentModel/Container.cs,
+	System/ComponentModel/EditorAttribute.cs,
+	System/ComponentModel/EnumConverter.cs,
+	System/ComponentModel/ExpandableObjectConverter.cs,
+	System/ComponentModel/Int32Converter.cs,
+	System/ComponentModel/InvalidEnumArgumentException.cs,
+	System/ComponentModel/ListBindableAttribute.cs,
+	System/ComponentModel/ListChangedEventArgs.cs,
+	System/ComponentModel/LocalizableAttribute.cs,
+	System/ComponentModel/NotifyParentPropertyAttribute.cs,
+	System/ComponentModel/PropertyChangedEventArgs.cs,
+	System/ComponentModel/ReadOnlyAttribute.cs,
+	System/ComponentModel/RecommendedAsConfigurableAttribute.cs,
+	System/ComponentModel/RefreshEventArgs.cs,
+	System/ComponentModel/RefreshPropertiesAttribute.cs,
+	System/ComponentModel/StringConverter.cs,
+	System/ComponentModel/ToolboxItemAttribute.cs,
+	System/ComponentModel/WarningException.cs,
+	System/ComponentModel/Win32Exception.cs: Fix bug in stubbing out for
+	constructors.
+	
+2002-12-30  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* compat/Makefile.am, compat/compat.build, Vsa.cs: implement the
+	minor "Microsoft.Vsa" assembly, for backwards-compatibility.
+
+	* compat/Vsa.cs: missing classes in "Microsoft.Vsa".
+
+2002-12-29  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/Runtime/InteropServices/InterfaceTypeAttribute.cs: 
+	add attribute to support some external libraries.
+	
+	* runtime/System/Runtime/InteropServices/InterfaceTypeAttribute.cs: 
+	fix a compile issue with ECMA_COMPAT
+
+	* runtime/System/Reflection/Assembly.cs: Stub about GetName() function
+	to support some external libraries.
+
+	* runtime/System/Delegate.cs: Fix bug #2084 by checking for the 
+	delegate params as well.
+
+2002-12-29  Ian Fung  <if26@cornell.edu>
+	
+	* System/ComponentModel/DesignOnlyAttribute.cs,
+	System/ComponentModel/DesignTimeVisibleAttribute.cs,
+	System/ComponentModel/DesignerSerializationVisibilityAttribute.cs,
+	System/ComponentModel/EditorBrowsableAttribute.cs: Add these attributes
+	for compatibility (Patch #894,Gopal)
+	
+2002-12-28  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/STAThreadAttribute.cs: Add this attribute for 
+	compatibility reasons.
+
+2002-12-28  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Exception.cs, runtime/System/SystemException.cs:
+	ECMA-compatibility fixes.
+
+2002-12-26  Marcus Urban <mathpup@mylinuxisp.com>
+	
+	* runtime/System/Activator.cs: Remove non public methods from
+	access via Activator.CreateInstance. (Bug #2052,Gopal).
+	
+2002-12-26  Gopal.V  <gopalv82@symonds.net>
+	
+	* System/ComponentModel/BaseNumberConverter.cs,
+	System/ComponentModel/CancelEventArgs.cs,
+	System/ComponentModel/CancelEventHandler.cs,
+	System/ComponentModel/CollectionChangeEventArgs.cs,
+	System/ComponentModel/CollectionChangeEventHandler.cs,
+	System/ComponentModel/Component.cs,
+	System/ComponentModel/Container.cs,
+	System/ComponentModel/DesignOnlyAttribute.cs,
+	System/ComponentModel/DesignTimeVisibleAttribute.cs,
+	System/ComponentModel/DesignerSerializationVisibilityAttribute.cs,
+	System/ComponentModel/EditorAttribute.cs,
+	System/ComponentModel/EditorBrowsableAttribute.cs,
+	System/ComponentModel/EnumConverter.cs,
+	System/ComponentModel/ExpandableObjectConverter.cs,
+	System/ComponentModel/ICustomTypeDescriptor.cs,
+	System/ComponentModel/IDataErrorInfo.cs,
+	System/ComponentModel/IEditableObject.cs,
+	System/ComponentModel/IExtenderProvider.cs,
+	System/ComponentModel/IListSource.cs,
+	System/ComponentModel/ISupportInitialize.cs,
+	System/ComponentModel/ISynchronizeInvoke.cs,
+	System/ComponentModel/ITypedList.cs,
+	System/ComponentModel/Int32Converter.cs,
+	System/ComponentModel/InvalidEnumArgumentException.cs,
+	System/ComponentModel/ListBindableAttribute.cs,
+	System/ComponentModel/ListChangedEventArgs.cs,
+	System/ComponentModel/ListChangedEventHandler.cs,
+	System/ComponentModel/LocalizableAttribute.cs,
+	System/ComponentModel/NotifyParentPropertyAttribute.cs,
+	System/ComponentModel/PropertyChangedEventArgs.cs,
+	System/ComponentModel/PropertyChangedEventHandler.cs,
+	System/ComponentModel/ReadOnlyAttribute.cs,
+	System/ComponentModel/RecommendedAsConfigurableAttribute.cs,
+	System/ComponentModel/RefreshEventArgs.cs,
+	System/ComponentModel/RefreshEventHandler.cs,
+	System/ComponentModel/RefreshPropertiesAttribute.cs,
+	System/ComponentModel/StringConverter.cs,
+	System/ComponentModel/ToolboxItemAttribute.cs,
+	System/ComponentModel/TypeDescriptor.cs,
+	System/ComponentModel/WarningException.cs,
+	System/ComponentModel/Win32Exception.cs: Stubs of the ComponentModel
+	namespace.
+
+	* runtime/System/Runtime/InteropServices/ComInterfaceType.cs: An
+	enum needed for ComponentModel.
+
+	* System/ComponentModel/Design/DesignerTransaction.cs,
+	System/ComponentModel/Design/IDesignerHost.cs,
+	System/ComponentModel/Design/IServiceContainer.cs,
+	System/ComponentModel/Design/Makefile,
+	System/ComponentModel/Design/ServiceCreatorCallback.cs: Some 
+	Stubs of ComponentModel.Design namespace.
+
+	* System/ComponentModel/TypeConvertor.cs: Add the StandardValuesCollection
+	nested class .
+
+2002-12-25  Gopal.V  <gopalv82@symonds.net>
+	
+	* resources/en_US/runtime/IO.txt,  resources/de_DE/runtime/IO.txt:
+	Fix the formatting parameter of IO_CopyFileExists resource.
+
+	* runtime/System/Runtime/InteropServices/ExternalException.cs: Add
+	the new ExternalException class
+	
+2002-12-25  Aditya P. Bansod <abansod@fullenergy.com>
+	
+	* runtime/Platform/FileMethods.cs, runtime/System/IO/File.cs: 
+	re-implement File.Copy() with the a FileMethods.Copy() internal call.
+	(Patch #884,Gopal)
+
+2002-12-24  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Xml/XmlTextReader.cs: rearrange the XML reading code so
+	that it won't be necessary to create explicit XmlNode objects during
+	parsing, reducing memory requirements.
+
+2002-12-22  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/Reflection/Emit/ILGenerator.cs, 
+	runtime/System/Reflection/Emit/LocalBuilder.cs,
+	runtime/System/Reflection/Emit/ParameterBuilder.cs,
+	runtime/System/Reflection/Emit/UnmanagedMarshal.cs: Add 
+	stub code for Reflection.Emit.	
+	
+	* runtime/System/Reflection/Emit/ILGenerator.cs, 
+	runtime/System/Reflection/Emit/LocalBuilder.cs,
+	runtime/System/Reflection/Emit/ParameterBuilder.cs,
+	runtime/System/Reflection/Emit/UnmanagedMarshal.cs: Add 
+	#if !ECMA_COMPAT to these non spec classes.
+	
+2002-12-21  Aditya P. Bansod <abansod@fullenergy.com>
+	
+	* runtime/System/IO/File.cs: Improve the exception verbage on
+	the File.cs path verification.(Patch #875, Gopal).
+
+2002-12-21  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/Platform/FileMethods.cs, runtime/System/IO/File.cs:
+	Add an internal call 'Exists()' to check without opening the
+	file.
+
+	* runtime/System/File.cs, runtime/System/Directory.cs: Cleanup
+	the exceptions and rethrow them from the right locations.
+
+2002-12-21  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Text/Encoding.cs: make "InvokeI18N" more robust
+	against errors when loading "I18N".
+
+2002-12-20  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/IO/File.cs: Change some of the formatting of earlier
+	code to be compatible with pnetlib standards.
+
+	* System/Net/WebRequest.cs: Some cosmetic changes here as well.
+
+2002-12-20  Aditya P. Bansod <abansod@fullenergy.com>
+
+	* runtime/System/IO/File.cs: Throw the correct exceptions and general
+	cleanup of System.IO.File class. (Patch #871, Gopal)
+	
+2002-12-20  Jason Lee <jason.lee@mac.com>
+
+	* System/Net/WebRequest.cs: Bring up the WebRequest to spec, Mainly the 
+	RegisterPrefix and Create/Default methods. Also a little additional 
+	exception verbage. (Gopal)
+
+2002-12-17  Aditya P. Bansod <abansod@fullenergy.com>
+	
+	* runtime/System/Directory.cs: Implement Directory.Move() method.
+	(Patch #858, Gopal)
+
+2002-12-17  Gopal.V  <gopalv82@symonds.net>
+
+	* runtime/System/Exception.cs, runtime/System/SystemException.cs,
+	runtime/System/Runtime/Serialization/SerializationInfo.cs: Add some
+	stub methods to allow the loading of external assemblies.
+
+	* System/Diagnostics/Debug.cs: Add Debug class and stub implementations
+	of the various logging functions available in this class.
+
+	* System/Text/RegularExpressions/ChangeLog,
+	System/Text/RegularExpressions/arch.cs,
+	System/Text/RegularExpressions/cache.cs,
+	System/Text/RegularExpressions/category.cs,
+	System/Text/RegularExpressions/collections.cs,
+	System/Text/RegularExpressions/compiler.cs,
+	System/Text/RegularExpressions/debug.cs,
+	System/Text/RegularExpressions/interpreter.cs,
+	System/Text/RegularExpressions/interval.cs,
+	System/Text/RegularExpressions/match.cs,
+	System/Text/RegularExpressions/notes.txt,
+	System/Text/RegularExpressions/parser.cs,
+	System/Text/RegularExpressions/quicksearch.cs,
+	System/Text/RegularExpressions/regex.cs,
+	System/Text/RegularExpressions/replace.cs,
+	System/Text/RegularExpressions/syntax.cs,
+	System/Text/RegularExpressions/RegexRunner.cs,
+	System/Text/RegularExpressions/RegexRunnerFactory.cs: Import the 
+	System.Text.RegularExpressions namespace from Mono's class libs.
+
+	* System/Text/RegularExpressions/README: Provide the source and 
+	and licensing details about this directory.
+
+	* System/Text/RegularExpressions/RegexRunnerFactory.cs,
+	System/Text/RegexRunnerFactory/RegexRunner.cs: Change the error 
+	messages to introduce project independent error messages.
+
+	* System/Text/RegularExpressions/interval.cs: Remove compile time 
+	warning in code.
+
+2002-12-17  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Array.cs, runtime/System/Collections/ArrayList.cs,
+	tests/runtime/System/Collections/TestArrayList.cs: temporarily
+	replace quicksort with a dumb sort, so that we have something
+	that works, until such time that we can figure out what is
+	wrong with the partitioning code.
+
+2002-12-16  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* configure.in, resources/de_DE/I18N/Makefile.am,
+	resources/de_DE/System/Makefile.am,
+	resources/de_DE/System.Xml/Makefile.am,
+	resources/de_DE/runtime/Makefile.am, tools/csccwrap.sh.in:
+	remove the "csccwrap.sh" script; make sure that $(SHELL) is
+	used when calling "link_res.sh".
+
+	* configure.in: use "cygpath" to convert the "cscc" and
+	"cscc-cs" pathnames into Windows form under Cygwin.
+
+	* runtime/System/Reflection/AssemblyVersionAttribute.cs:
+	remove ECMA_COMPAT protection from AssemblyVersionAttribute.
+
+	* tools/link_res.sh.in: use the non-cygpath version of the
+	cscc pathname in "link_res.sh".
+
+	* configure.in: fix a bug in the "cygpath" detection code.
+
+2002-12-15  Aditya P. Bansod <abansod@fullenergy.com>
+
+	* runtime/System/IO/Directory.cs: Support recursive directory deletion,
+	(Patch #829,Gopal).
+
+2002-12-15  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Array.cs, runtime/System/Collections/ArrayList.cs,
+	tests/runtime/System/Collections/TestArrayList.cs: fix the pivot
+	values in the quicksort implementations within Array and ArrayList.
+
+2002-12-13  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Xml/ElementList.cs, System.Xml/XmlElement.cs,
+	System.Xml/XmlTextWriter.cs, tests/System.Xml/TestXml.cs:
+	new test cases for "XmlElement".
+
+	* runtime/System/Runtime/InteropServices/ICustomAdapter.cs,
+	runtime/System/Runtime/InteropServices/ICustomFactory.cs,
+	runtime/System/Runtime/InteropServices/ICustomMarshaler.cs:
+	add some classes to support custom marshaling.
+
+	* tests/System.Xml/TestXmlElement.cs: add missing test file.
+
+2002-12-12  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* configure.in, resources/de_DE/I18N/Makefile.am,
+	resources/de_DE/System/Makefile.am,
+	resources/de_DE/System.Xml/Makefile.am,
+	resources/de_DE/runtime/Makefile.am, tools/.cvsignore,
+	tools/link_res.sh.in: introduce the "link_res.sh" script, to handle
+	linking satellite assemblies under different compilers.
+
+2002-12-11  Aditya P. Bansod <abansod@fullenergy.com>
+	
+	* runtime/System/IO/Path.cs: use TEMP environment variable
+	instead of TEMP_DIR ,for Win32.
+
+2002-12-11  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* configure.in, I18N/I18N.build, System/System.build,
+	System.Xml/Xml.build, resources/de_DE/.cvsignore,
+	resources/de_DE/I18N/.cvsignore, resources/de_DE/System/.cvsignore,
+	resources/de_DE/System.Xml/.cvsignore,
+	resources/de_DE/runtime/.cvsignore, runtime/runtime.build:
+	back out the "--with-resources" change because it is better to
+	use satellite assemblies for each language; add .cvsignore files
+	to the "resources/de_DE" directories.
+
+	* resources/de_DE/I18N/Makefile.am,
+	resources/de_DE/System/Makefile.am,
+	resources/de_DE/System.Xml/Makefile.am,
+	resources/de_DE/runtime/Makefile.am: build the German resources
+	into satellite assemblies.
+
+	* runtime/System/Private/CultureNameTable.cs: fix the culture
+	identifier for "English (Zimbabwe)" so that it doesn't conflict
+	with "English (United States)".
+
+	* runtime/System/Globalization/CultureInfo.cs: use the invariant
+	culture rules with the current culture identifier if there isn't
+	a specific handler for the culture.
+
+	* runtime/System/Reflection/Assembly.cs,
+	runtime/System/Resources/ResourceManager.cs: attempt to load
+	satellite assemblies for foreign language resources, before
+	falling back to the builtin English defaults.
+
+2002-12-11  Gopal.V  <gopalv82@symonds.net>
+
+	* resources/de_DE/I18N/Makefile.am, de_DE/runtime/Makefile.am, 
+	de_DE/Makefile.am,resources/de_DE/System.Xml/Makefile.am, 
+	de_DE/System/Makefile.am: Makefiles for	the German translations 
+	of pnetlib resources.
+
+	* resources/Makefile.am: add the de_DE dir to resource build
+
+	* configure.in, runtime/runtime.build, System/System.build,
+	System.Xml/Xml.build, I18N/I18N.build: allow ./configure 
+	--with-resources= NAME to modify the resources being linked in.
+
+2002-12-11  Rainer Groesslinger <rainer.groesslinger@gmx.net>
+
+	* resources/de_DE/I18N/I18NRes.txt, resources/de_DE/runtime/Arg.txt,
+	resources/de_DE/runtime/Cast.txt, resources/de_DE/runtime/Crypto.txt,
+	resources/de_DE/runtime/DivZero.txt, resources/de_DE/runtime/Exception.txt,
+	resources/de_DE/runtime/Format.txt,	resources/de_DE/runtime/Invalid.txt,
+	resources/de_DE/runtime/IO.txt,	resources/de_DE/runtime/Reflection.txt,
+	resources/de_DE/runtime/Overflow.txt, resources/de_DE/runtime/NotSupp.txt,
+	resources/de_DE/runtime/Serialize.txt, resources/de_DE/System/Arg.txt,
+	resources/de_DE/System/Exception.txt, resources/de_DE/System/Invalid.txt,
+	resources/de_DE/System/IO.txt, resources/de_DE/System.Xml/Xml.txt:
+	Partial translation of resources for pnetlib in German (Gopal).
+	
+2002-12-08  Craig Altenburg (Qeygh) <craiga@qonos.org>
+	
+	* System/IO/Path.cs: Update to System.IO.Path (Patch ID: 784),
+	(checked in by Gopal).
+
+2002-12-09  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* doc/native.html: remove "native.html" because it is hopelessly
+	out of date.
+
+	* Makefile.am, configure.in, compat/.cvsignore,
+	compat/CSharpCompiler.cs, compat/Makefile.am, compat/README,
+	compat/VisualC.cs, compat/compat.build: add the "compat" directory,
+	and implement two MS assemblies (Microsoft.VisualC and cscompmgd)
+	within it, solely for the sake of backwards-compatbility.
+
+	* compat/CSharpCompiler.cs: implement "cscompmgd" in terms of
+	the definitions in "System.CodeDom.Compiler".
+
+	* System.Xml/ElementList.cs, System.Xml/XmlDocument.cs,
+	System.Xml/XmlElement.cs, System.Xml/XmlNode.cs,
+	System.Xml/XmlProcessingInstruction.cs,
+	resources/en_US/System.Xml/Xml.txt: continue implementing the
+	"System.Xml" namespace.
+
+	* System.Xml/XmlFragmentTextWriter.cs, System.Xml/XmlTextWriter.cs,
+	csunit/TestMain.cs, csupport/Complex.cs, csupport/Crt0.cs,
+	csupport/FileTable.cs, csupport/LongDouble.cs: fix some pedantic
+	issues turned up by csc.
+
+	* resources/en_US/System/NotSupp.txt,
+	resources/en_US/System/Makefile.am: add a missing resource
+	file for the "System" assembly.
+
+	* csunit/TestMain.cs, csunit/TestResult.cs, csunit/TestWriterResult.cs:
+	force "make check" to stop when a failure is detected.
+
+	* tests/System.Xml/TestXmlNamespaceManager.cs: convert a
+	string-based switch statement into a set of nested if's because
+	csc generates unverifiable code for the switch.
+
+	* csunit/TestMain.cs: be more precise about how to locate
+	"Assembly.LoadFrom".
+
+2002-12-08  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* Makefile.am, configure.in, csunit/Makefile.am,
+	csunit/NUnitEmulation.cs, csunit/README, csunit/Test.cs,
+	csunit/TestArray.cs, csunit/TestAssertFailed.cs, csunit/TestCase.cs,
+	csunit/TestException.cs, csunit/TestFailure.cs, csunit/TestMain.cs,
+	csunit/TestResult.cs, csunit/TestStop.cs, csunit/TestSuite.cs,
+	csunit/TestVersion.cs.in, csunit/TestWriterResult.cs,
+	csunit/csunit-run.sh, csunit/csunit.build, tests/System/Makefile.am,
+	tests/System/TestSystem.build, tests/System.Xml/Makefile.am,
+	tests/runtime/Makefile.am, tests/runtime/Testruntime.build:
+	copy "csunit" back into pnetlib so that we can eventually remove
+	all C# code from "pnet".
+
+	* System.Xml/XmlNodeReader.cs: stub out the methods in "XmlNodeReader".
+
+	* configure.in: remove "httpsrv.exe" from the configuration phase,
+	as it won't be living in "pnet" for much longer, and it isn't
+	currently used for testing pnetlib.
+
+	* configure.in: remove "ILRUN_FLAGS" as there is no need to
+	access "pnet/samples/mscorlib.dll" any more.
+
+	* Makefile.am, configure.in, csupport/.cvsignore, csupport/Complex.cs,
+	csupport/Crt0.cs, csupport/FileTable.cs, csupport/LongDouble.cs,
+	csupport/LongJmp.cs, csupport/Makefile.am, csupport/Markers.cs,
+	csupport/README, csupport/csupport.build: move the "csupport"
+	directory from "pnet" to "pnetlib".
+
+	* Makefile.am, configure.in, samples/.cvsignore, samples/Makefile.am,
+	samples/README, samples/codepage.cs, samples/except.cs, samples/fib.cs,
+	samples/getenv.cs, samples/hello.cs, samples/httpsrv.cs,
+	samples/ilrun.sh.in, samples/samples.build: copy the C# samples from
+	pnet to pnetlib.
+
+	* configure.in: look in ${prefix}/bin for important binaries.
+
+	* System.Xml/XmlTextWriter.cs, samples/codepage.cs,
+	runtime/System/Runtime/InteropServices/Marshal.cs: resolve some
+	issues with compiling in ECMA-compatible modes.
+
+2002-12-07  Nguyen, Thong  <tum@veridicus.com>
+
+	* runtime/System/Threading/WaitHandle.cs: Added WaitTimeout const.
+
+	* runtime/System/Threading/WaitEvent.cs: Supplies internal calls for 
+	wait(able) events.
+	
+	* runtime/System/Threading/AutoResetEvent.cs,
+	runtime/System/Threading/ManualResetEvent.cs: Added the reset events.
+	(Patch ID: 780, Gopal)
+
+2002-12-07  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Xml/XmlDocument.cs, System.Xml/XmlDocumentFragment.cs,
+	System.Xml/XmlDocumentType.cs, System.Xml/XmlEntity.cs,
+	System.Xml/XmlNotation.cs, System.Xml/XmlTextReader.cs,
+	System.Xml/XmlTextWriter.cs, resources/en_US/System.Xml/Xml.txt,
+	tests/System.Xml/TestXml.cs, tests/System.Xml/TestXmlComment.cs,
+	tests/System.Xml/TestXmlDocumentFragment.cs,
+	tests/System.Xml/TestXmlDocumentType.cs,
+	tests/System.Xml/TestXmlSignificantWhitespace.cs,
+	tests/System.Xml/TestXmlWhitespace.cs: more test cases and bug
+	fixes for System.Xml.
+
+2002-12-06  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Xml/NameCache.cs, System.Xml/NodeList.cs,
+	System.Xml/XmlAttribute.cs, System.Xml/XmlCharacterData.cs,
+	System.Xml/XmlDeclaration.cs, System.Xml/XmlDocument.cs,
+	System.Xml/XmlDocumentFragment.cs, System.Xml/XmlElement.cs,
+	System.Xml/XmlFragmentTextWriter.cs, System.Xml/XmlNode.cs,
+	System.Xml/XmlProcessingInstruction.cs, System.Xml/XmlText.cs,
+	System.Xml/XmlTextReader.cs, System.Xml/XmlTextWriter.cs,
+	resources/en_US/System.Xml/Xml.txt,
+	runtime/System/Text/StringBuilder.cs, tests/System.Xml/TestXml.cs,
+	tests/System.Xml/TestXmlAttribute.cs,
+	tests/System.Xml/TestXmlCDataSection.cs,
+	tests/System.Xml/TestXmlDocument.cs,
+	tests/System.Xml/TestXmlText.cs: test cases and bug fixes for
+	System.Xml.
+
+2002-12-05  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Xml/NodeList.cs, System.Xml/XmlAttribute.cs,
+	System.Xml/XmlAttributeCollection.cs, System.Xml/XmlDeclaration.cs,
+	System.Xml/XmlDocument.cs, System.Xml/XmlDocumentFragment.cs,
+	System.Xml/XmlDocumentType.cs, System.Xml/XmlElement.cs,
+	System.Xml/XmlEntityReference.cs, System.Xml/XmlFragmentTextWriter.cs,
+	System.Xml/XmlNode.cs, System.Xml/XmlSpecialAttribute.cs,
+	System.Xml/XmlTextReader.cs, resources/en_US/System.Xml/Xml.txt:
+	continue implementing the "System.Xml" namespace.
+
+2002-12-05  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/Runtime/InteropServices/Marshal.cs: Implement the
+	PtrToStructure() methods .
+
+2002-12-04  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Xml/XmlAttributeCollection.cs, System.Xml/XmlCDataSection.cs,
+	System.Xml/XmlCharacterData.cs, System.Xml/XmlComment.cs,
+	System.Xml/XmlDeclaration.cs, System.Xml/XmlDocument.cs,
+	System.Xml/XmlDocumentType.cs, System.Xml/XmlElement.cs,
+	System.Xml/XmlNamedNodeMap.cs, System.Xml/XmlNode.cs,
+	System.Xml/XmlQualifiedName.cs, System.Xml/XmlSignificantWhitespace.cs,
+	System.Xml/XmlText.cs, System.Xml/XmlWhitespace.cs,
+	System.Xml/XmlEntityReference.cs,
+	System.Xml/XmlProcessingInstruction.cs,
+	resources/en_US/System.Xml/Xml.txt: implement many of the DOM
+	node types in the "System.Xml" namespace.
+
+2002-12-03  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Xml/Xml.build, System.Xml/XmlNode.cs,
+	System.Xml/XmlTextReader.cs, System.Xml/XmlTextWriter.cs,
+	System.Xml/XmlValidatingReader.cs, resources/en_US/System.Xml/Xml.txt,
+	tests/System.Xml/TestXmlTextWriter.cs, tests/System.Xml/TestXml.cs:
+	some test cases for XmlTextWriter; build the skeleton for
+	XmlTextReader; implementing XmlValidatingReader as a non-validating
+	wrapper around XmlTextReader.
+
+	* System/ComponentModel/AttributeCollection.cs,
+	System/ComponentModel/ComponentCollection.cs,
+	System/ComponentModel/IBindingList.cs,
+	System/ComponentModel/IComponent.cs,
+	System/ComponentModel/IContainer.cs,
+	System/ComponentModel/ISite.cs,
+	System/ComponentModel/ITypeDescriptorContext.cs,
+	System/ComponentModel/Makefile,
+	System/ComponentModel/MemberDescriptor.cs,
+	System/ComponentModel/PropertyDescriptor.cs,
+	System/ComponentModel/PropertyDescriptorCollection.cs,
+	System/ComponentModel/TypeConverter.cs,
+	runtime/System/IServiceProvider.cs: new ComponentModel classes.
+
+	* runtime/System/Private/DateTimeFormatter.cs,
+	tests/System/TestWebHeaderCollection.cs: semantic errors shown
+	up by csc.
+
+	* System.Xml/XmlAttribute.cs, System.Xml/XmlAttributeCollection.cs,
+	System.Xml/XmlNode.cs, System.Xml/XmlTextReader.cs,
+	resources/en_US/System.Xml/Xml.txt: continue implementing System.Xml.
+
+	* System.Xml/NameCache.cs, System.Xml/Xml.build,
+	System.Xml/XmlAttribute.cs, System.Xml/XmlDocument.cs,
+	System.Xml/XmlDocumentFragment.cs, System.Xml/XmlDocumentType.cs,
+	System.Xml/XmlImplementation.cs, System.Xml/XmlNode.cs,
+	System.Xml/XmlNodeChangedAction.cs,
+	System.Xml/XmlNodeChangedEventArgs.cs,
+	System.Xml/XmlNodeChangedEventHandler.cs,
+	resources/en_US/System.Xml/Xml.txt, tests/System.Xml/TestXml.cs,
+	tests/System.Xml/TestXmlDocument.cs: continue implementing System.Xml.
+
+2002-12-02  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Xml/XmlConvert.cs, tests/System.Xml/TestNameTable.cs,
+	tests/System.Xml/TestXml.cs, tests/System.Xml/TestXmlConvert.cs:
+	test cases and bug fixes for "NameTable" and "XmlConvert".
+
+	* System.Xml/XmlNamespaceManager.cs, tests/System.Xml/TestXml.cs,
+	tests/System.Xml/TestXmlNamespaceManager.cs: test cases and
+	bug fixes for "XmlNamespaceManager".
+
+	* tests/System.Xml/TestXml.cs,
+	tests/System.Xml/TestXmlParserContext.cs: test cases for
+	"XmlParserContext".
+
+	* System.Xml/XmlTextWriter.cs, resources/en_US/System.Xml/Xml.txt:
+	implement some of the missing functionality in "XmlTextWriter".
+
+2002-12-01  Stephen Compall  <rushing@sigecom.net>
+
+	* pnetlib.spec.in: Fixed requires, new & improved description.
+
+2002-12-01  Gopal.V  <gopalv82@symonds.net>
+
+	* runtime/System/DateTime.cs: Plug in the DateTimeFormatter into the
+	general DateTime.ToString() method.
+
+	* runtime/Platform/DirMethods.cs, runtime/System/IO/Directory.cs:
+	Implement SetCurrentDirectory() using internal calls.
+
+2002-11-30  Michael Moore <mtmoore@uga.edu>
+
+	* runtime/System/Private/DateTimeFormatter.cs:
+	code clean up and finish implementing all formatting options (Gopal)
+
+2002-11-29  Jeff Post <j_post@pacbell.net>
+
+	* System/Collections/Specialized/NameValueCollection.cs: fixed
+	bug that caused NullReferenceException if key is not in the collection.
+
+	* tests/System/TestWebHeaderCollection.cs, tests/System/TestSystem.cs: 
+	implement unit tests. (Gopal)
+
+2002-11-30  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/Globalization/DateTimeFormatInfo.cs: Temporary fix
+	for GetEraName()
+
+2002-11-29  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Security/Cryptography/CryptoAPITransform.cs,
+	runtime/System/Security/Cryptography/ECBDecrypt.cs,
+	tests/runtime/System/Security/Cryptography/CryptoTestCase.cs,
+	tests/runtime/System/Security/Cryptography/TestAES.cs,
+	tests/runtime/System/Security/Cryptography/TestDES.cs,
+	tests/runtime/System/Security/Cryptography/TestRC2.cs,
+	tests/runtime/System/Security/Cryptography/TestTripleDES.cs:
+	test cases and bug fixes for the cipher modes.
+
+	* runtime/System/Private/DateTimeFormatter.cs,
+	runtime/System/Private/NumberFormat/CustomFormatter.cs,
+	runtime/System/Private/NumberFormat/Formatter.cs,
+	runtime/System/Private/NumberFormat/GeneralFormatter.cs,
+	runtime/System/Private/NumberFormat/HexadecimalFormatter.cs,
+	runtime/System/Private/NumberFormat/NumberFormatter.cs,
+	runtime/System/Private/NumberFormat/PercentFormatter.cs:
+	fix errors and warnings shown up by csc.
+
+	* resources/en_US/runtime/Format.txt, runtime/System/Guid.cs,
+	tests/runtime/Testruntime.cs, tests/runtime/System/TestGuid.cs:
+	test cases and bug fixes for "System.Guid".
+
+	* System/Collections/Specialized/NameObjectCollectionBase.cs,
+	runtime/System/Collections/Queue.cs,
+	runtime/System/Globalization/CompareInfo.cs,
+	runtime/System/Globalization/DateTimeFormatInfo.cs,
+	runtime/System/Reflection/Assembly.cs,
+	runtime/System/Runtime/Serialization/IDeserializationCallback.cs,
+	tests/System/Net/TestIPAddress.cs,
+	tests/runtime/Testruntime.cs, tests/runtime/System/TestGuid.cs,
+	tests/runtime/System/Security/Cryptography/CryptoTestCase.cs,
+	tests/runtime/System/Security/Cryptography/TestAES.cs,
+	tests/runtime/System/Security/Cryptography/TestCryptography.cs,
+	tests/runtime/System/Security/Cryptography/TestDES.cs,
+	tests/runtime/System/Security/Cryptography/TestMD5.cs,
+	tests/runtime/System/Security/Cryptography/TestRC2.cs,
+	tests/runtime/System/Security/Cryptography/TestRNG.cs,
+	tests/runtime/System/Security/Cryptography/TestSHA1.cs,
+	tests/runtime/System/Security/Cryptography/TestSHA256.cs,
+	tests/runtime/System/Security/Cryptography/TestSHA384.cs,
+	tests/runtime/System/Security/Cryptography/TestSHA512.cs,
+	tests/runtime/System/Security/Cryptography/TestTripleDES.cs:
+	modifications to support the ECMA-compatible compilation mode.
+
+	* tests/Makefile.am, tests/System/TestSystem.cs,
+	tests/System.Xml/TestXml.cs, tests/runtime/Testruntime.cs,
+	tests/runtime/System/SuiteSystem.cs,
+	tests/runtime/System/Collections/SuiteCollections.cs,
+	tests/runtime/System/Security/Cryptography/SuiteCryptography.cs,
+	tests/runtime/System/Security/Cryptography/TestCryptography.cs:
+	rearrange the tests so that each major namespace is in its own suite.
+
+	* tests/runtime/System/TestGuid.cs: semantic errors under csc.
+
+2002-11-28  Michael Moore  <mtmoore@uga.edu>
+
+	* runtime/System/Private/DateTimeFormatter.cs: implement
+	DateTimeFormatter; g,f, and z formatting options not yet implemented.
+
+2002-11-29  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Activator.cs, runtime/System/Reflection/Assembly.cs,
+	runtime/System/Runtime/Remoting/ObjectHandle.cs: implement the
+	missing functionality in "System.Activator".
+
+	* runtime/Platform/DirMethods.cs, runtime/Platform/InfoMethods.cs,
+	runtime/Platform/TaskMethods.cs, runtime/System/Environment.cs:
+	reflect more of "System.Environment" through to the runtime engine.
+
+2002-11-28  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/runtime.build: turn on debug mode for "mscorlib.dll",
+	to aid the development of test cases.
+
+	* runtime/System/Security/Cryptography/CryptoAPITransform.cs,
+	runtime/System/Security/Cryptography/ECBDecrypt.cs,
+	runtime/System/Security/Cryptography/ECBEncrypt.cs,
+	tests/runtime/System/Security/Cryptography/CryptoTestCase.cs,
+	tests/runtime/System/Security/Cryptography/TestDES.cs:
+	fix some ECB mode bugs; add test case support for testing cipher modes.
+
+	* runtime/Platform/TaskMethods.cs, runtime/System/Environment.cs,
+	runtime/System/OperatingSystem.cs, runtime/System/PlatformID.cs,
+	runtime/System/Version.cs: implement/stub the missing methods in
+	"System.Environment"; bug fixes to the order or build/revision
+	numbers in "Version".
+
+	* runtime/System/Text/UTF8Encoding.cs,
+	runtime/System/Text/UnicodeEncoding.cs: apply patches from the
+	Mono project which remove unnecessary preambles from UTF-8 and
+	Unicode text streams.
+
+	* runtime/System/Encoding.cs: the UTF8 object should be created
+	with preambles by default.
+
+	* runtime/System/IO/StreamWriter.cs: convert the stream contents
+	using the prevailing Encoding instance.
+
+	* runtime/System/Console.cs, runtime/System/Private/StdWriter.cs:
+	modify "Console.Out" and "Console.Error" so that they use
+	"StreamWriter" with the "Default" encoding rather than using
+	"StdWriter", and then remove "StdWriter".
+
+2002-11-27  Jonathan Springer <jonathan.springer@verizon.net>
+
+	* runtime/System/Private/NumberFormat/CurrencyFormatter.cs,
+	runtime/System/Private/NumberFormat/CustomFormatter.cs,
+	runtime/System/Private/NumberFormat/DecimalFormatter.cs,
+	runtime/System/Private/NumberFormat/FixedPointFormatter.cs,
+	runtime/System/Private/NumberFormat/Formatter.cs,
+	runtime/System/Private/NumberFormat/GeneralFormatter.cs,
+	runtime/System/Private/NumberFormat/HexadecimalFormatter.cs,
+	runtime/System/Private/NumberFormat/NumberFormatter.cs,
+	runtime/System/Private/NumberFormat/PercentFormatter.cs,
+	runtime/System/Private/NumberFormat/RoundTripFormatter.cs,
+	runtime/System/Private/NumberFormat/ScientificFormatter.cs:
+	Implementation for numeric value types of formatting supported by
+	the IFormattable interface.
+
+	* runtime/System/Byte.cs, runtime/System/Decimal.cs,
+	runtime/System/Double.cs, runtime/System/Int16.cs,
+	runtime/System/Int32.cs, runtime/System/Int64.cs, runtime/System/SByte.cs,
+	runtime/System/Single.cs, runtime/System/UInt16.cs,
+	runtime/System/UInt32.cs, runtime/System/UInt64.cs:  Converted to use new
+	numeric formatting code.
+	
+	* resources/en_US/runtime/Format.txt:  Added two new exception messages.
+
+	* runtime/System/Private/NumberFormatter.cs:  Removed from library.
+
+	* runtime/System/Convert.cs, runtime/System/Guid.cs:  Base conversion code
+	factored in from NumberFormatter.cs.  Guid uses Convert.
+
+	* runtime/System/String.cs, runtime/System/Text/StringBuilder.cs:  Small
+	bug fixes for StringBuilder code.
+
+	* tests/runtime/System/TestString.cs:  Added test cases for some formats.
+	More cases always welcome.
+	
+2002-11-27  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Security/Cryptography/RijndaelManaged.cs,
+	runtime/System/Security/Cryptography/TripleDESCryptoServiceProvider.cs,
+	tests/runtime/System/Security/Cryptography/CryptoTestCase.cs,
+	tests/runtime/System/Security/Cryptography/TestCryptography.cs,
+	tests/runtime/System/Security/Cryptography/TestRNG.cs: implement
+	cryptography tests and fixes that involve random number generation.
+
+	* System/Net/IPAddress.cs,
+	tests/runtime/System/Security/Cryptography/TestRNG.cs.
+	tests/runtime/System/Security/Cryptography/TestTripleDES.cs:
+	semantic bugs shown up by latest MS compiler.
+
+	* aclocal.m4, auto_gen.sh: remove "aclocal.m4" from the
+	repository, as it is causing problems with different versions
+	of automake/autoconf.
+
+	* runtime/System/Array.cs: fix the range-checking code in "Array.Copy"
+	so that zero-length copies at the end of an array actually work the
+	way they are supposed to.
+
+	* tests/runtime/System/Security/Cryptography/CryptoTestCase.cs:
+	test "HashAlgorithm.ComputeHash" on streams.
+
+	* runtime/System/Security/Cryptography/HMACSHA1.cs,
+	runtime/System/Security/Cryptography/KeyedHashAlgorithm.cs,
+	runtime/System/Security/Cryptography/MACTripleDES.cs:
+	implement dispose logic for keyed hash algorithms.
+
+2002-11-26  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* tests/runtime/System/Security/Cryptography/CryptoTestCase.cs,
+	tests/runtime/System/Security/Cryptography/TestAES.cs,
+	tests/runtime/System/Security/Cryptography/TestDES.cs,
+	tests/runtime/System/Security/Cryptography/TestRC2.cs,
+	tests/runtime/System/Security/Cryptography/TestTripleDES.cs:
+	test the properties of symmetric cryptographic objects and
+	for weak DES keys.
+
+	* runtime/System/Boolean.cs, runtime/System/Byte.cs,
+	runtime/System/Char.cs, runtime/System/DateTime.cs,
+	runtime/System/Double.cs, runtime/System/Int16.cs,
+	runtime/System/Int32.cs, runtime/System/Int64.cs,
+	runtime/System/IntPtr.cs, runtime/System/RuntimeArgumentHandle.cs,
+	runtime/System/RuntimeFieldHandle.cs,
+	runtime/System/RuntimeMethodHandle.cs,
+	runtime/System/RuntimeTypeHandle.cs,
+	runtime/System/SByte.cs, runtime/System/Single.cs,
+	runtime/System/TimeSpan.cs, runtime/System/UInt16.cs,
+	runtime/System/UInt32.cs, runtime/System/UInt64.cs,
+	runtime/System/UIntPtr.cs,
+	runtime/System/Collections/DictionaryEntry.cs,
+	System/Net/IPAddress.cs: rename "value__" to "value_" so that
+	MS'es "peverify" doesn't get confused.
+
+	* runtime/System/Security/Cryptography/AsymmetricAlgorithm.cs,
+	runtime/System/Security/Cryptography/CryptoAPITransform.cs,
+	runtime/System/Security/Cryptography/CryptoStream.cs,
+	runtime/System/Security/Cryptography/DSACryptoServiceProvider.cs,
+	runtime/System/Security/Cryptography/FromBase64Transform.cs,
+	runtime/System/Security/Cryptography/HashAlgorithm.cs,
+	runtime/System/Security/Cryptography/MD5CryptoServiceProvider.cs,
+	runtime/System/Security/Cryptography/RSACryptoServiceProvider.cs,
+	runtime/System/Security/Cryptography/SHA1CryptoServiceProvider.cs,
+	runtime/System/Security/Cryptography/SHA1Managed.cs,
+	runtime/System/Security/Cryptography/SHA256Managed.cs,
+	runtime/System/Security/Cryptography/SHA384Managed.cs,
+	runtime/System/Security/Cryptography/SHA512Managed.cs,
+	runtime/System/Security/Cryptography/SymmetricAlgorithm.cs,
+	runtime/System/Security/Cryptography/ToBase64Transform.cs:
+	add the "IDisposable" interface to cryptography classes that need it.
+
+	* tests/runtime/System/Security/Cryptography/CryptoTestCase.cs,
+	tests/runtime/System/Security/Cryptography/TestMD5.cs,
+	tests/runtime/System/Security/Cryptography/TestSHA1.cs,
+	tests/runtime/System/Security/Cryptography/TestSHA256.cs,
+	tests/runtime/System/Security/Cryptography/TestSHA384.cs,
+	tests/runtime/System/Security/Cryptography/TestSHA512.cs:
+	test hash algorithm properties and all forms of "ComputeHash".
+
+2002-11-24  Gopal.V  <gopalv82@symonds.net>
+
+	* pnetlib.spec.in, configure.in : RPM builds for pnetlib
+
+2002-11-23  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* I18N/mklist.sh: remove "-" from the "sed" command lines because
+	it doesn't work with BSD-ish sed programs.
+
+	* NEWS, configure.in: update version for the "0.4.8" release.
+
+	* configure.in: update working version to "0.4.9".
+
+2002-11-23  Gopal.V  <gopalv82@symonds.net>
+
+	* System/Uri.cs: Fix some minor bugs in System.Uri
+	
+	* tests/System/TestUri.cs: Try to correct some of the errors in the
+	testcases and comment the ones that fail.
+
+2002-11-22  Yannis BRES <Yannis.BRES@sophia.inria.fr>
+
+	* runtime/System/IO/FileStream.cs: fix bug in the constructor
+	for Append mode.
+
+2002-11-22  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Security/Cryptography/DES.cs,
+	runtime/System/Security/Cryptography/ECBDecrypt.cs,
+	runtime/System/Security/Cryptography/SymmetricAlgorithm.cs,
+	tests/runtime/Testruntime.cs,
+	tests/runtime/System/Security/Cryptography/CryptoTestCase.cs,
+	tests/runtime/System/Security/Cryptography/Makefile,
+	tests/runtime/System/Security/Cryptography/TestAES.cs,
+	tests/runtime/System/Security/Cryptography/TestCryptography.cs,
+	tests/runtime/System/Security/Cryptography/TestDES.cs,
+	tests/runtime/System/Security/Cryptography/TestMD5.cs,
+	tests/runtime/System/Security/Cryptography/TestRC2.cs,
+	tests/runtime/System/Security/Cryptography/TestSHA1.cs,
+	tests/runtime/System/Security/Cryptography/TestSHA256.cs,
+	tests/runtime/System/Security/Cryptography/TestSHA384.cs,
+	tests/runtime/System/Security/Cryptography/TestSHA512.cs,
+	tests/runtime/System/Security/Cryptography/TestTripleDES.cs:
+	test the behaviour of some of the cryptographic algorithms.
+
+	* HACKING: update the "HACKING" file to reflect that "cscc"
+	can now build "pnetlib" cleanly.
+
+2002-11-22  Gopal.V  <gopalv82@symonds.net>
+
+	* runtime/Platform/RegexpMethods.cs, runtime/System/Private/Regexp.cs:
+	Add basic regex support for pnetlib.
+
+	* runtime/Platform/FileInfo.cs : Change name to prevent future conflicts
+	to System.IO.FileInfo.
+
+	* runtime/Platform/InternalFileInfo.cs, runtime/Platform/DirMethods.cs : 
+	Move FileInfo to InternalFileInfo.
+
+	* runtime/System/IO/Directory.cs, resources/en_US/runtime/IO.txt: Implement
+	the GetDirectories and similar functions.
+
+	* runtime/System/IO/Path.cs: Fix small typo GetTempFilename to 
+	GetTempFileName 
+
+	* System/Net/IPAddress.cs: Fix sign extension bug in Parse()
+
+2002-11-21  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Platform/Errno.cs, System/Platform/SocketMethods.cs,
+	runtime/Platform/Errno.cs, runtime/Platform/SocketMethods.cs:
+	move the "Platform.SocketMethods" class into "System.dll" and
+	make it "internal", to prevent it being exported publicly from
+	"mscorlib.dll" and hence a security problem.
+
+	* System/Net/SocketAddress.cs, runtime/System/Array.cs: the
+	"Array.Count" property is supposed to be private.
+
+	* runtime/System/ParamArrayAttribute.cs: reverse the order of
+	"Inherited" and "AllowMultiple" so that "csdocvalil" doesn't
+	get confused when validating.
+
+	* runtime/System/NonSerializedAttribute.cs: add the "AttributeUsage"
+	declaration for "NonSerializedAttribute".
+
+	* System.Xml/NodeList.cs, System.Xml/XmlNodeList.cs: rename
+	"Itemx" to "Item" now that "IndexerName" works.
+
+2002-11-20  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Makefile.am, System.Xml/Makefile.am, runtime/Makefile.am:
+	add some ".PHONY" directives to the makefiles to force "csant" to
+	be called to do dependency checks.
+
+	* tests/System/TestUri.cs, tests/System/Net/TestIPAddress.cs,
+	tests/System.Xml/TestXmlConvert.cs,
+	tests/System.Xml/TestXmlException.cs,
+	tests/runtime/System/TestSByte.cs, tests/runtime/System/TestString.cs,
+	tests/runtime/System/Collections/TestArrayList.cs,
+	tests/runtime/System/Text/TestStringBuilder.cs:
+	rename some of the test cases to make it clearer which class is
+	failing a particular test.
+
+2002-11-20  Gopal.V  <gopalv82@symonds.net>
+
+	* runtime/System/Array.cs (CopyTo): Minor bug fixed
+
+	* System/Net/HttpWebRequest.cs, System/Net/HttpWebResponse.cs:
+	apply the parts that were broken with the ArrayList bug.
+
+2002-11-19  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Collections/Specialized/BitVector32.cs,
+	System/Collections/Specialized/CollectionsUtil.cs,
+	System/Collections/Specialized/HybridDictionary.cs,
+	System/Collections/Specialized/NameObjectCollectionBase.cs,
+	resources/en_US/System/Arg.txt: complete the implementation of
+	the "System.Collections.Specialized" namespace.
+
+	* System/Net/HttpWebRequest.cs: minor semantic problem shown
+	up by MS'es compiler.
+
+	* runtime/System/Collections/ArrayList.cs,
+	runtime/System/Collections/Makefile,
+	tests/runtime/Testruntime.cs,
+	tests/runtime/System/TestString.cs,
+	tests/runtime/System/Collections/TestArrayList.cs: add test cases
+	for ArrayList to the test suite, fix the "ArrayList.Add" bug, and
+	fix up a few other test suite issues.
+
+2002-11-19  Gopal.V  <gopalv82@symonds.net>
+
+	* System/Net/Sockets/NetworkStream.cs, System/Uri.cs: Fix minor bugs 
+	in code.
+	
+	* System/Net/WebRequest.cs, System/Net/WebHeaderCollection.cs,
+	System/Net/HttpWebRequest.cs, System/Net/HttpWebResponse.cs:
+	Start implementing the Http access classes.
+
+	* System/Net/HttpWebRequest.cs, System/Net/HttpWebResponse.cs,
+	System/Net/WebHeaderCollection.cs, System/Uri.cs, System/UriBuilder.cs:
+	Fill in some more methods of HttpWebResponse and fix some related
+	bugs as well.
+
+	* System/System.build: Enable debug builds by default
+	
+2002-11-18  Gopal.V  <gopalv82@symonds.net>
+
+	* System/Net/Sockets/Socket.cs: Fix Connect() method to set
+	this.connected on successful connect.
+
+2002-11-18  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Collections/Specialized/NameObjectCollectionBase.cs,
+	System/Collections/Specialized/NameValueCollection.cs: implement
+	the "NameValueCollection" class and its supporting structures.
+
+2002-11-17  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Collections/ArrayList.cs: reverse the order
+	of the "ArrayList.IndexRange" parameters to match ECMA.
+
+2002-11-16  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/CodeDom/RuleOutput.cs,
+	System/CodeDom/rules.txt,
+	System/CodeDom/Compiler/CSharpCodeCompiler.cs,
+	System/CodeDom/Compiler/CSharpCodeProvider.cs,
+	System/CodeDom/Compiler/CodeCompiler.cs,
+	System/CodeDom/Compiler/CodeDomProvider.cs,
+	System/CodeDom/Compiler/CodeGenerator.cs,
+	System/CodeDom/Compiler/CompilerError.cs,
+	resources/en_US/System/Arg.txt,
+	resources/en_US/System/Invalid.txt: implement more of the C# code
+	generation routines in "System.CodeDom.Compiler".
+
+2002-11-15  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/CodeDom/CodeArrayCreateExpression.cs,
+	System/CodeDom/CodeAttachEventStatement.cs,
+	System/CodeDom/CodeBinaryOperatorType.cs,
+	System/CodeDom/CodeCastExpression.cs,
+	System/CodeDom/CodeCatchClause.cs,
+	System/CodeDom/CodeCommentStatement.cs,
+	System/CodeDom/CodeConditionStatement.cs,
+	System/CodeDom/CodeMemberEvent.cs,
+	System/CodeDom/CodeMemberField.cs,
+	System/CodeDom/CodeMemberMethod.cs,
+	System/CodeDom/CodeMethodInvokeExpression.cs,
+	System/CodeDom/CodeNamespace.cs,
+	System/CodeDom/CodeNamespaceImport.cs,
+	System/CodeDom/CodeNamespaceImportCollection.cs,
+	System/CodeDom/CodeObject.cs,
+	System/CodeDom/CodeObjectCreateExpression.cs,
+	System/CodeDom/CodeParameterDeclarationExpression.cs,
+	System/CodeDom/CodeRemoveEventStatement.cs,
+	System/CodeDom/CodeSnippetCompileUnit.cs,
+	System/CodeDom/CodeTypeDeclaration.cs,
+	System/CodeDom/CodeTypeDelegate.cs,
+	System/CodeDom/CodeTypeMember.cs,
+	System/CodeDom/CodeTypeOfExpression.cs,
+	System/CodeDom/CodeTypeReference.cs,
+	System/CodeDom/CodeTypeReferenceExpression.cs,
+	System/CodeDom/CodeVariableDeclarationStatement.cs,
+	System/CodeDom/FieldDirection.cs,
+	System/CodeDom/Makefile,
+	System/CodeDom/MemberAttributes.cs,
+	System/CodeDom/README,
+	System/CodeDom/RuleOutput.cs,
+	System/CodeDom/gencdom.c,
+	System/CodeDom/rules.txt,
+	System/Collections/Specialized/ListDictionary.cs,
+	runtime/System/SerializableAttribute.cs: implement the
+	"System.CodeDom" namespace.
+
+	* System/CodeDom/Compiler/CodeGeneratorOptions.cs,
+	System/CodeDom/Compiler/CodeParser.cs,
+	System/CodeDom/Compiler/CompilerError.cs,
+	System/CodeDom/Compiler/CompilerErrorCollection.cs,
+	System/CodeDom/Compiler/CompilerParameters.cs,
+	System/CodeDom/Compiler/CompilerResults.cs,
+	System/CodeDom/Compiler/Executor.cs,
+	System/CodeDom/Compiler/GeneratorSupport.cs,
+	System/CodeDom/Compiler/ICodeCompiler.cs,
+	System/CodeDom/Compiler/ICodeGenerator.cs,
+	System/CodeDom/Compiler/ICodeParser.cs,
+	System/CodeDom/Compiler/IndentedTextWriter.cs,
+	System/CodeDom/Compiler/LanguageOptions.cs,
+	System/CodeDom/Compiler/Makefile,
+	System/CodeDom/Compiler/TempFileCollection.cs: implement some of
+	the classes in the "System.CodeDom.Compiler" namespace.
+
+	* System/CodeDom/RuleOutput.cs,
+	System/CodeDom/rules.txt,
+	System/CodeDom/Compiler/CSharpCodeCompiler.cs,
+	System/CodeDom/Compiler/CodeCompiler.cs,
+	System/CodeDom/Compiler/CodeGenerator.cs,
+	resources/en_US/System/Arg.txt: stub out the code generation
+	classes in "System.CodeDom.Compiler" (not fully implemented yet).
+
+2002-11-14  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Runtime/InteropServices/ClassInterfaceAttribute.cs
+	runtime/System/Runtime/InteropServices/ClassInterfaceType.cs:
+	interoperability classes.
+
+	* resources/en_US/runtime/Arg.txt,
+	runtime/System/String.cs,
+	runtime/System/Globalization/CompareInfo.cs,
+	runtime/System/Globalization/CultureInfo.cs,
+	runtime/System/Globalization/SortKey.cs,
+	runtime/System/Globalization/_I18NCompareInfo.cs,
+	runtime/System/Text/Encoding.cs: add some of the I18N support
+	infrastructure for "System.Globalization.CompareInfo".
+
+	* runtime/System/Globalization/CompareInfo.cs,
+	runtime/System/Globalization/CultureInfo.cs,
+	runtime/System/Globalization/DateTimeFormatInfo.cs,
+	runtime/System/Globalization/NumberFormatInfo.cs,
+	runtime/System/Globalization/_I18NCultureHandler.cs: add some
+	more I18N support to defer the rest of the CultureInfo functionality
+	to the I18N plugin layer.
+
+	* runtime/System/Globalization/CultureInfo.cs: look for internal
+	cultures using either ID or name, because different engines may
+	have different requirements.
+
+	* runtime/System/Globalization/CompareInfo.cs,
+	runtime/System/Globalization/CultureInfo.cs,
+	runtime/System/Private/CultureNameTable.cs: resolve some circularity
+	problems with the initialization of "CurrentCulture".
+
+	* runtime/System/Globalization/CultureInfo.cs,
+	runtime/System/Globalization/TextInfo.cs,
+	runtime/System/Globalization/_I18NTextInfo.cs: implement the
+	TextInfo culture support routines.
+
+	* resources/en_US/runtime/Arg.txt,
+	runtime/System/Globalization/RegionInfo.cs,
+	runtime/System/Private/RegionName.cs,
+	runtime/System/Private/RegionNameTable.cs: implement the
+	System.Globalization.RegionInfo class and its dependencies.
+
+	* runtime/System/Globalization/CompareInfo.cs,
+	runtime/System/Globalization/CultureInfo.cs,
+	runtime/System/Globalization/_I18NCultureHandler.cs:
+	pass the user override flag to I18N when creating cultures.
+
+	* I18N/Common/Manager.cs: implement the "GetCultures" API in
+	the I18N manager.
+
+	* runtime/System/String.cs: uncomment "String.Equals(String)",
+	which is non-ECMA, but required by .NET SDK compatibility.
+
+2002-11-14  Gopal.V  <gopalv82@symonds.net>
+
+	* runtime/System/Array.cs: Fix minor bug in ArrayEnumerator1
+	which was breaking Foreach_Collection on it.
+	
+2002-11-13  Gopal.V  <gopalv82@symonds.net>
+
+	* runtime/System/Globalization/TextInfo.cs, 
+	runtime/System/Globalization/CultureInfo.cs : Add ToUpper/Lower
+	fallback functions for English.
+
+2002-11-12  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/IO/StreamWriter.cs: Commit a patch to a
+	bug suggested by both Jeff Post and Adam Treat.
+
+2002-11-11  Jonathan Springer <jonathan.springer@verizon.net>
+
+	* runtime/System/String.cs, tests/runtime/System/TestString.cs:
+	fixed several small test failures related to exceptions and
+	LastIndexOf/LastIndexOfAny processing.
+
+	* tests/System/TestSystem.build, tests/System.Xml/TestXml.build,
+	tests/runtime/Testruntime.builds:  Added '-g' for cscc compiles for
+	those of us who like to know from where exceptions originate :-).
+
+2002-11-11  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/IO/Directory.cs: correct a small problem
+	checked in by Charlie Carnow.
+
+2002-11-10 Jeff Post <jpost@pacbell.net>
+
+	* runtime/System/IO/StreamWriter.cs: Add code to output
+	strings, single characters, and buffers of chars to stream.
+
+2002-11-09  Jonathan Springer <jonathan.springer@verizon.net>
+
+	* runtime/System/Text/StringBuilder.cs: Correct bugs in
+	StringBuilder.Insert().
+
+2002-11-09  Gopal.V  <gopalv82@symonds.net>
+
+	* runtime/Makefile.am, System/Makefile.am, System.Xml/Makefile.am,
+	I18N/Makefile.am: Allow "make install" on pnet built binaries.
+
+2002-11-08  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/CodeDom/gencdom.c, System/CodeDom/rules.txt: add
+	a rule-based code generator for autogenerating CodeDom classes.
+
+2002-11-08  Gopal.V  <gopalv82@symonds.net>
+
+	* runtime/System/IO/BinaryWriter.cs: Add missing byteCount for
+	Write(String).
+
+	* runtime/System/IO/BinaryReader.cs: Change the charCount to a
+	byteCount header for ReadString().
+
+2002-11-07  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Collections/Specialized/Makefile,
+	System/Collections/Specialized/StringCollection.cs,
+	System/Collections/Specialized/StringDictionary.cs,
+	System/Collections/Specialized/StringEnumerator.cs: implement some
+	missing classes from "System.Collections.Specialized".
+
+	* runtime/System/Reflection/AssemblyCompanyAttribute.cs,
+	runtime/System/Reflection/AssemblyConfigurationAttribute.cs,
+	runtime/System/Reflection/AssemblyCopyrightAttribute.cs,
+	runtime/System/Reflection/AssemblyCultureAttribute.cs,
+	runtime/System/Reflection/AssemblyDefaultAliasAttribute.cs,
+	runtime/System/Reflection/AssemblyDelaySignAttribute.cs,
+	runtime/System/Reflection/AssemblyDescriptionAttribute.cs,
+	runtime/System/Reflection/AssemblyFileVersionAttribute.cs,
+	runtime/System/Reflection/AssemblyFlagsAttribute.cs,
+	runtime/System/Reflection/AssemblyInformationalVersionAttribute.cs,
+	runtime/System/Reflection/AssemblyKeyFileAttribute.cs,
+	runtime/System/Reflection/AssemblyKeyNameAttribute.cs,
+	runtime/System/Reflection/AssemblyProductAttribute.cs,
+	runtime/System/Reflection/AssemblyTitleAttribute.cs,
+	runtime/System/Reflection/AssemblyTrademarkAttribute.cs,
+	runtime/System/Reflection/AssemblyVersionAttribute.cs: add a number
+	of non-ECMA reflection attributes.
+
+	* runtime/System/Runtime/InteropServices/ComVisibleAttribute.cs,
+	System/ComponentModel/AmbientValueAttribute.cs,
+	System/ComponentModel/BindableAttribute.cs,
+	System/ComponentModel/BindableSupport.cs,
+	System/ComponentModel/BrowsableAttribute.cs,
+	System/ComponentModel/CategoryAttribute.cs,
+	System/ComponentModel/CollectionChangeAction.cs,
+	System/ComponentModel/DefaultEventAttribute.cs,
+	System/ComponentModel/DefaultPropertyAttribute.cs,
+	System/ComponentModel/DefaultValueAttribute.cs,
+	System/ComponentModel/DescriptionAttribute.cs,
+	System/ComponentModel/DesignerAttribute.cs,
+	System/ComponentModel/DesignerSerializationVisibility.cs,
+	System/ComponentModel/EditorBrowsableState.cs,
+	System/ComponentModel/InheritanceLevel.cs,
+	System/ComponentModel/LicenseUsageMode.cs,
+	System/ComponentModel/ListChangedType.cs,
+	System/ComponentModel/ListSortDirection.cs,
+	System/ComponentModel/PropertyTabScope.cs,
+	System/ComponentModel/RefreshProperties.cs,
+	System/ComponentModel/ToolboxItemFilterType.cs,
+	System/ComponentModel/TypeConverter.cs,
+	System/ComponentModel/TypeConverterAttribute.cs,
+	System/ComponentModel/Design/IDesigner.cs: implement a number of
+	enumerated types and attributes in "System.ComponentModel".
+
+2002-11-06  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* I18N/Common/ByteEncoding.cs: missing "++" when converting strings
+	(Gonzalo Paniagua Javier <gonzalo@ximian.com>).
+
+	* runtime/System/Reflection/ClrConstructor.cs,
+	runtime/System/Reflection/ClrField.cs,
+	runtime/System/Reflection/ClrMethod.cs,
+	runtime/System/Reflection/ClrProperty.cs: implement "ToString()"
+	for the method, field, constructor, and property reflection types.
+
+	* runtime/System/Activator.cs (CreateInstance): add the flag
+	"BindingFlags.CreateInstance" when calling "Type.InvokeMember".
+
+	* System/pnetlib.here, System.Xml/pnetlib.here,
+	runtime/pnetlib.here, tests/System/Makefile.am,
+	tests/System.Xml/Makefile.am, tests/runtime/Makefile.am:
+	make it possible to run the test suite within the build tree.
+
+2002-11-05  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/DateTime.cs: change to "DateToTicks" to correct
+	for the change Richard made to "YearToTicks".
+
+	* NEWS, configure.in: update version for the "0.3.0" release.
+
+	* configure.in: update working version to "0.3.1".
+
+2002-11-03  Richard Baumann  <biochem333@nyc.rr.com>
+	
+	* runtime/System/Private/NumberFormatter.cs: Implement basic
+	Float and Double ToString() operations using the FormatReal
+	internal call.
+
+2002-11-02  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* runtime/System/Math.cs: changed Math.Max(Decimal,Decimal) to call
+	Decimal.Max instead of Decimal.Min.
+
+2002-10-30  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/IO/Path.cs: Change the code so that SMB
+	mode is entered only if DirectorySeperatorChar is '\\'
+
+	* runtime/Platform/Errno.cs, runtime/System/IO/FileShare.cs, 
+	runtime/System/IO/FileAccess.cs: rollback changes made to
+	to the enums.
+
+	* runtime/runtime.build, System/System.build: Remove the metadata
+	compile mode from the csant build files.
+
+2002-10-30  Charles Shuller  <kyeran@hermes-solutions.biz>
+
+	* runtime/System/IO/Path.cs: Added patch to GetPathRoot
+	to support SMB paths in windows (commit by Gopal)
+
+2002-10-29  Gopal.V  <gopalv82@symonds.net>
+
+	* System/Net/HttpWebRequest.cs, runtime/Platform/Errno.cs,
+	runtime/System/IO/FileShare.cs, runtime/System/IO/FileAccess.cs,
+	runtime/System/IO/FileStream.cs: fixup pnetlib so that it compiles
+	with pnetlib
+	
+2002-10-27  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* runtime/System/IO/Directory.cs, runtime/System/IO/File.cs: added
+	private constructors to prevent instantiations; default constructor
+	goes against the spec. which gives no constructor.
+
+2002-10-27  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* runtime/System/DateTime.cs: fixed a bug in YearToTicks
+
+2002-10-26  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* resources/en_US/runtime/IO.txt, runtime/System/IO/File.cs: implemented
+	the file/dir get*time methods.
+
+2002-10-24  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/Platform/FileInfo.cs,
+	tests/runtime/System/Text/TestStringBuilder.cs:
+	add "using" directives for strict ECMA C# compatibility.
+
+2002-10-23  Gopal.V  <gopalv82@symonds.net>
+
+	* runtime/Platform/DirMethods.cs, runtime/Platform/FileInfo.cs,
+	runtime/Platform/FileType.cs: integrate Charles Schuller's patches 
+	to GetFilesInDirectory
+
+	* runtime/Platform/FileType.cs: Add the values to the enum members
+	for program clarity.
+
+2002-10-19  Gopal.V  <gopalv82@symonds.net>
+
+	* runtime/System/Collections/ArrayList.cs: Fix MoveNext() in the
+	ArrayList enumerator.
+
+2002-10-14  Gopal.V  <gopalv82@symonds.net>
+
+	* runtime/System/Attribute.cs : Fix count bug in System.Attribute
+	GetAttr().
+
+2002-10-09  Jonathan Springer <jonathan.springer@verizon.net>
+
+	* test/runtime/Testruntime.cs, tests/runtime/System/Text/TestStringBuilder.cs:
+	Added some StringBuilder tests to test suite.
+
+2002-10-05  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* tests/System.Xml/TestXml.build: add the "System" assembly
+	to the link line.
+
+	* runtime/System/Collections/BitArray.cs: error in "int[]" constructor.
+
+	* runtime/System/Byte.cs, runtime/System/Int16.cs,
+	runtime/System/Int32.cs, runtime/System/Int64.cs,
+	runtime/System/SByte.cs, runtime/System/UInt16.cs,
+	runtime/System/UInt32.cs, runtime/System/UInt64.cs,
+	runtime/System/Private/CustomNumberFormat.cs,
+	runtime/System/Private/CustomNumberFormatter.cs,
+	runtime/System/Private/FormatNumber.cs,
+	runtime/System/Private/NumberFormatter.cs: apply the number formatting
+	patches to pnetlib.
+
+	* runtime/System/IO/Path.cs,
+	runtime/System/Private/CustomNumberFormatter.cs,
+	runtime/System/Private/FormatNumber.cs,
+	runtime/System/Private/NumberFormatter.cs,
+	tests/System/TestUri.cs,
+	tests/System/Net/TestIPAddress.cs,
+	tests/System.Xml/TestXmlConvert.cs,
+	tests/System.Xml/TestXmlException.cs,
+	tests/runtime/System/TestSByte.cs: fix semantic compile errors
+	discovered by csc.exe.
+
+	* runtime/System/Byte.cs, runtime/System/Int16.cs,
+	runtime/System/Int32.cs, runtime/System/Int64.cs,
+	runtime/System/SByte.cs, runtime/System/UInt16.cs,
+	runtime/System/UInt32.cs, runtime/System/UInt64.cs,
+	runtime/System/Private/CustomNumberFormat.cs,
+	runtime/System/Private/CustomNumberFormatter.cs,
+	runtime/System/Private/FormatNumber.cs,
+	runtime/System/Private/NumberFormatter.cs: remove the number
+	formatting code because it broke too much.
+
+2002-10-01  Jonathan Springer <jonathan.springer@verizon.net>
+
+	* make_patch.sh : Adjust script to include .build files.
+
+	* configure.in : Add Makefiles for new test assemblies.
+
+	* tests/Makefile.am :  Added new sub-directories "System.Xml" and
+	"runtime."
+
+	* tests/runtime/System/TestBoolean.cs, tests/runtime/System/TestString.cs :
+	Moved tests from test/System to test/runtime/System.  See next...
+
+	* tests/runtime/Makefile.am, tests/runtime/Testruntime.cs,
+	tests/runtime/Testruntime.build :  Added runtime assembly test dll.
+
+	* tests/runtime/System/TestSByte.cs,
+	tests/runtime/System/Collections/TestArrayList.cs : New tests for runtime
+	assembly.  (It doesn't do too well at the moment :-).
+
+	* tests/System.Xml/Makefile.am, tests/System.Xml/TestXml.cs,
+	tests/System.Xml/TestXml.build, tests/System.Xml/TestXmlConvert.cs,
+	tests/System.Xml/TestXmlException.cs : New tests for System.Xml assembly.
+	It, too, does not do too well.
+
+	* tests/System/TestSystem.cs : Remove the tests that were moved to
+	"tests/runtime" assembly test.
+
+2002-10-01  Gopal.V  <gopalv82@symonds.net>
+	
+	* tests/System/TestIPAddress.cs ,tests/System/Net/TestIPAddress.cs : 
+	Moved test to tests/System/Net/ to reflect changes in directory,
+	
+	* tests/System/Net/TestIPAddress.cs  : Fix the incorrect function names
+	for HostToNetworkOrder and NetworkToHostOrder tests.
+
+2002-09-28  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Reflection/Emit/TypeBuilder.cs: apply patch
+	from <biochem333@nyc.rr.com>.
+
+2002-09-27  Francis Rogers  <franny644@comcast.net>
+
+	* System/Net/Sockets/TcpListener.cs: New extension class.
+
+	* System/Net/Sockets/TcpClient.cs: Many new methods.
+	
+2002-09-23  Gopal.V  <gopalv82@symonds.net>
+
+	* tests/System/TestString.cs : Rich Baumann's fixes for the AssertEquals
+	order of parameters
+
+2002-09-22  Gopal.V  <gopalv82@symonds.net>
+
+	* runtime/System/IO/Path.cs : Implement the Path operations	for 
+	Unix like filesystems and path specifications.
+
+	* tests/System/TestString.cs : Applied Rich Baumann's patches
+	for TestString
+
+2002-09-20  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* I18N/I18N.build, System/System.build, System.Xml/XmlNodeList.cs,
+	runtime/runtime.build, tests/System/TestSystem.build,
+	tools/csccwrap.sh.in: turn off metadata compiles for most of pnetlib.
+
+2002-09-18  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Xml/NodeList.cs, System.Xml/XmlNodeList.cs: temporary
+	hack to stop compile error, until attributes can be fixed in cscc.
+
+	* Makefile.am, configure.in, tests/System/Makefile.am,
+	tests/System/TestSystem.build, tools/csccwrap.sh.in,
+	tools/run_test.sh.in: add the support code to build the test suite.
+
+	* csunit/Makefile.am, csunit/README, csunit/Test.cs,
+	csunit/TestArray.cs, csunit/TestAssertFailed.cs, csunit/TestCase.cs,
+	csunit/TestException.cs, csunit/TestFailure.cs, csunit/TestMain.cs,
+	csunit/TestResult.cs, csunit/TestStop.cs, csunit/TestSuite.cs,
+	csunit/TestVersion.cs.in, csunit/TestWriterResult.cs: remove
+	the obsolete csunit code - the real one is now in pnet.
+
+2002-09-17  Gopal.V  <gopalv82@symonds.net>
+
+	* tests/System/TestString.cs: fix wrong asserts in TestStringCompare 
+	
+	* tests/System/TestIPAddress.cs, tests/System/TestSystem.cs, 
+	tests/System/Makefile.am: Add new regression tests for the
+	System.Net.IPAddress class.
+
+2002-09-16  Gopal.V  <gopalv82@symonds.net>
+
+	* tests/System/TestUri.cs , tests/System/TestString.cs : fix minor 
+	syntax errors in testcases
+
+	* runtime/System/String.cs (Split) : fix ArrayIndexOutOfRangeException
+	in Split(char,int32)
+
+2002-09-16  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Uri.cs, System/Net/Sockets/TcpClient.cs: fix minor semantic
+	compile errors.
+
+2002-09-15  Gopal.V  <gopalv82@symonds.net>
+
+	* System/Net/Dns.cs : Implement all the synchronous
+	DNS lookup functions 
+
+	* System/Net/IPHostEntry.cs (Constructor): Change constructor
+	visibility.
+
+	* tests/System/TestUri.cs : fix a couple of compile errors 
+
+2002-09-15  Stephen Compall  <rushing@sigecom.net>
+
+	* System/Uri.cs (StripMetaDirectories): Handling of the last
+	element being a slash.
+	(CheckHostName): IPng handling of missing last element because of
+	the previous element being missing also!
+	
+	* tests/System/TestUri.cs: general code formatting cleanup.
+	(TestCheckHostName): IPng checks for aforementioned bug fixes.
+	(TestCanonicalize): Checks for the missing ending / problem.
+
+2002-09-14  Stephen Compall  <rushing@sigecom.net>
+
+	* System/Uri.cs (ParseAuthority): Eliminated.
+	(CheckHostName): Cleaned up code for IPng, decrementing by proper
+	number for last-element-ipv4, and disallowed parts[0] from being
+	the zero-compress; updated Internet-draft.
+	(UriAuthority()): Construction of sub-struct.
+	(Parse): Using new UriAuthority().
+
+2002-09-06  Francis Rogers  <franny644@comcast.net>
+
+	* System/Net/Sockets/TcpClient.cs: New non-standard class.
+
+2002-09-06  Stephen Compall  <rushing@sigecom.net>
+
+	* System/Uri.cs (Parse): Lots of fixes.
+
+	* resources/en_US/System/Arg.txt (Arg_UriNotEscaped): New string.
+
+	* tests/System/TestString.cs: A little more testing for Length
+	weirdness.
+
+	* tests/System/TestUri.cs: Rearrangement of testing to start on
+	constructors.
+
+2002-09-02  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* NEWS, configure.in: update version for the "0.2.8" release.
+
+	* configure.in: update working version to "0.2.9".
+
+2002-08-31  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Text/StringBuilder.cs: patch constructor with
+	reversed test.
+
+2002-08-25  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Text/ASCIIEncoding.cs,
+	runtime/System/Text/Decoder.cs,
+	runtime/System/Text/Encoder.cs,
+	runtime/System/Text/Encoding.cs,
+	runtime/System/Text/UTF7Encoding.cs,
+	runtime/System/Text/UTF8Encoding.cs,
+	runtime/System/Text/UnicodeEncoding.cs: apply patches from Mono.
+
+2002-08-17  Peter Minten  <silvernerd@users.sf.net>
+
+	* System/Net/Sockets/Socket.cs: Implemented missing Receive method.
+
+2002-08-06  Gopal.V  <gopalv82@symonds.net>
+
+	* runtime/System/IO/File.cs : minor fix on File.Delete()
+
+2002-08-09  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* I18N/*, resources/en_US/I18N/I18NRes.txt: modify files so that
+	the I18N code can be used by Mono, as per previous agreements.
+
+2002-08-06  Gopal.V  <gopalv82@symonds.net>
+
+	* runtime/System/String.cs : minor fix on String.Split(char[],int32)
+
+2002-08-03  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Reflection/Module.cs (GetMethod): pass the correct
+	"types" parameter to "GetMethodImpl" when no types were supplied.
+
+2002-07-27  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Xml/XmlWriter.cs: implement missing functionality.
+
+	* System.Xml/XmlSpace.cs, System.Xml/XmlTextWriter.cs,
+	resources/en_US/System.Xml/Xml.txt: begin implementing the missing
+	"System.Xml.XmlTextWriter" class.
+
+	* System.Xml/EntityHandling.cs, System.Xml/Formatting.cs,
+	System.Xml/IHasXmlNode.cs, System.Xml/IXmlLineInfo.cs,
+	System.Xml/NameTable.cs, System.Xml/ReadState.cs,
+	System.Xml/S.cs, System.Xml/TODOAttribute.cs,
+	System.Xml/ValidationType.cs, System.Xml/WhitespaceHandling.cs,
+	System.Xml/WriteState.cs, System.Xml/XmlException.cs,
+	System.Xml/XmlNameTable.cs, System.Xml/XmlNamespaceEntry.cs,
+	System.Xml/XmlNode.cs, System.Xml/XmlNodeOrder.cs,
+	System.Xml/XmlNodeType.cs, System.Xml/XmlParserContext.cs,
+	System.Xml/XmlSpace.cs, System.Xml/XmlTextReader.cs,
+	System.Xml/XmlTokenizedType.cs: improve coding standards in the
+	XML library and add some .NET Framework classes.
+
+	* System.Xml/NodeList.cs, System.Xml/XmlAttribute.cs,
+	System.Xml/XmlAttributeCollection.cs, System.Xml/XmlDocument.cs,
+	System.Xml/XmlElement.cs, System.Xml/XmlLinkedNode.cs,
+	System.Xml/XmlNode.cs, System.Xml/XmlNodeList.cs,
+	System.Xml/XmlTextReader.cs, System.Xml/XPath/IXPathNavigable.cs,
+	System.Xml/XPath/XPathNavigator.cs: begin to implement the new
+	representation for the DOM node tree.
+
+2002-07-26  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Exception.txt,
+	resources/en_US/runtime/Serialize.txt,
+	resources/en_US/runtime/Makefile.am,
+	runtime/System/Runtime/Serialization/Formatter.cs,
+	runtime/System/Runtime/Serialization/FormatterConverter.cs,
+	runtime/System/Runtime/Serialization/FormatterServices.cs,
+	runtime/System/Runtime/Serialization/IDeserializationCallback.cs,
+	runtime/System/Runtime/Serialization/IFormatter.cs,
+	runtime/System/Runtime/Serialization/IFormatterConverter.cs,
+	runtime/System/Runtime/Serialization/IObjectReference.cs,
+	runtime/System/Runtime/Serialization/ISerializable.cs,
+	runtime/System/Runtime/Serialization/ISerializationSurrogate.cs,
+	runtime/System/Runtime/Serialization/ISurrogateSelector.cs,
+	runtime/System/Runtime/Serialization/ObjectIDGenerator.cs,
+	runtime/System/Runtime/Serialization/ObjectManager.cs,
+	runtime/System/Runtime/Serialization/SerializationBinder.cs,
+	runtime/System/Runtime/Serialization/SerializationEntry.cs,
+	runtime/System/Runtime/Serialization/SerializationException.cs,
+	runtime/System/Runtime/Serialization/SerializationInfo.cs,
+	runtime/System/Runtime/Serialization/SerializationInfoEnumerator.cs,
+	runtime/System/Runtime/Serialization/StreamingContext.cs,
+	runtime/System/Runtime/Serialization/StreamingContextStates.cs:
+	add new "System.Runtime.Serialization" classes.
+
+	* System.Xml/NameTable.cs: reimplement "System.Xml.NameTable" to
+	use a hash table, for greater efficiency.
+
+	* System.Xml/XmlConvert.cs, resources/en_US/System.Xml/Xml.txt:
+	implement the missing "System.Xml.XmlConvert" class.
+
+	* System.Xml/XmlException.cs: implement the missing line number
+	and line position handling.
+
+	* System.Xml/XmlNamespaceManager.cs,
+	resources/en_US/System.Xml/Xml.txt: re-implement the
+	XmlNamespaceManager class with the correct scope data structure.
+
+	* System.Xml/XmlParserContext.cs: make the namespace manager test
+	a little clearer to understand.
+
+	* System.Xml/XmlConvert.cs, System.Xml/XmlReader.cs,
+	System.Xml/XmlTextReader.cs, resources/en_US/System.Xml/Xml.txt:
+	re-implement "XmlReader" according to the ECMA specification,
+	and add lots more comments for greater code clarity.
+
+	* System.Xml/Xml.build: add "System.dll" to the references for
+	the "System.Xml.dll" assembly.
+
+	* System.Xml/XmlResolver.cs: implement the XmlResolver class.
+
+	* System.Xml/XmlUrlResolver.cs, resources/en_US/System.Xml/Xml.txt:
+	implement the missing XmlUrlResolver class.
+
+2002-07-25  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* NEWS, configure.in: update version for the "0.2.6" release.
+
+	* configure.in: update working version to "0.2.7".
+
+2002-07-18  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Security/Cryptography/CBCDecrypt.cs,
+	runtime/System/Security/Cryptography/CBCEncrypt.cs,
+	runtime/System/Security/Cryptography/CFBDecrypt.cs,
+	runtime/System/Security/Cryptography/CFBEncrypt.cs,
+	runtime/System/Security/Cryptography/CTSDecrypt.cs,
+	runtime/System/Security/Cryptography/CTSEncrypt.cs,
+	runtime/System/Security/Cryptography/CryptoAPITransform.cs,
+	runtime/System/Security/Cryptography/ECBDecrypt.cs,
+	runtime/System/Security/Cryptography/ECBEncrypt.cs,
+	runtime/System/Security/Cryptography/OFBEncrypt.cs,
+	runtime/System/Security/Cryptography/SymmetricAlgorithm.cs:
+	implement the CBC, CFB, CTS, ECB, and OFB encryption modes.
+
+	* resources/en_US/runtime/Crypto.txt,
+	runtime/System/Security/Cryptography/ASN1Parser.cs,
+	runtime/System/Security/Cryptography/X509Certificates/Makefile,
+	runtime/System/Security/Cryptography/X509Certificates/X509Certificate.cs:
+	implement X.509 certificate handling.
+
+2002-07-17  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Crypto.txt,
+	runtime/Platform/CryptoMethods.cs,
+	runtime/System/Security/Cryptography/RSACryptoServiceProvider.cs,
+	runtime/System/Security/Cryptography/RSAOAEPKeyExchangeDeformatter.cs,
+	runtime/System/Security/Cryptography/RSAOAEPKeyExchangeFormatter.cs,
+	runtime/System/Security/Cryptography/RSAPKCS1KeyExchangeDeformatter.cs,
+	runtime/System/Security/Cryptography/RSAPKCS1KeyExchangeFormatter.cs,
+	runtime/System/Security/Cryptography/RSAPKCS1SignatureDeformatter.cs,
+	runtime/System/Security/Cryptography/RSAPKCS1SignatureFormatter.cs:
+	implement encrypt, decrypt, sign, and verify operations for RSA.
+
+	* runtime/System/Convert.cs,
+	runtime/System/Security/Cryptography/FromBase64Transform.cs,
+	runtime/System/Security/Cryptography/ToBase64Transform.cs:
+	implement base64 converters for the cryptography namespace.
+
+2002-07-14  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/String.cs: replace the "EqualRange" internalcall
+	with "FindInRange" and do most of the "IndexOf" work in the engine.
+	Based on a suggestion by Gopal V.
+
+	* System/Uri.cs: semantic analysis fixes to previous check-in.
+
+2002-07-13  Stephen Compall  <rushing@sigecom.net>
+
+	* System/Uri.cs (MakeRelative): Applied Rich Baumann's new version
+	of MakeRelative.
+
+	* tests/System/TestUri.cs: Made the test template and added some
+	tests, to template for hopeful MakeRelative tests from lurkers.
+
+2002-07-12  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Crypto.txt,
+	runtime/System/Security/Cryptography/ASN1Builder.cs,
+	runtime/System/Security/Cryptography/CryptoConfig.cs,
+	runtime/System/Security/Cryptography/DSAParameters.cs,
+	runtime/System/Security/Cryptography/PasswordDeriveBytes.cs,
+	runtime/System/Security/Cryptography/RSAParameters.cs,
+	runtime/System/Security/Cryptography/SignatureDescription.cs:
+	continue implementation of cryptography classes.
+
+2002-07-11  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Crypto.txt,
+	runtime/System/Security/SecurityElement.cs,
+	runtime/System/Security/Cryptography/AsymmetricAlgorithm.cs,
+	runtime/System/Security/Cryptography/AsymmetricKeyExchangeFormatter.cs,
+	runtime/System/Security/Cryptography/DSA.cs,
+	runtime/System/Security/Cryptography/RSA.cs,
+	runtime/System/Security/Cryptography/RSACryptoServiceProvider.cs,
+	runtime/System/Security/Cryptography/RSAOAEPKeyExchangeDeformatter.cs,
+	runtime/System/Security/Cryptography/RSAOAEPKeyExchangeFormatter.cs,
+	runtime/System/Security/Cryptography/RSAPKCS1KeyExchangeDeformatter.cs,
+	runtime/System/Security/Cryptography/RSAPKCS1KeyExchangeFormatter.cs,
+	runtime/System/Security/Cryptography/RSAPKCS1SignatureDeformatter.cs,
+	runtime/System/Security/Cryptography/RSAPKCS1SignatureFormatter.cs:
+	continue implementing cryptography classes; XML, RSA key exchange
+	and RSA signature formatting.
+
+2002-07-10  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Crypto.txt,
+	runtime/System/Security/Cryptography/ASN1Builder.cs,
+	runtime/System/Security/Cryptography/ASN1Parser.cs,
+	runtime/System/Security/Cryptography/ASN1Type.cs,
+	runtime/System/Security/Cryptography/CryptoConfig.cs,
+	runtime/System/Security/Cryptography/DSACryptoServiceProvider.cs,
+	runtime/System/Security/Cryptography/DSAParameters.cs,
+	runtime/System/Security/Cryptography/RSA.cs,
+	runtime/System/Security/Cryptography/RSACryptoServiceProvider.cs,
+	runtime/System/Security/Cryptography/RSAParameters.cs:
+	continue implementation of the cryptography classes; primarily
+	DSA and RSA support.
+
+2002-07-08  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Crypto.txt,
+	runtime/Platform/CryptoMethods.cs,
+	runtime/System/Security/Cryptography/CryptoConfig.cs,
+	runtime/System/Security/Cryptography/DSA.cs,
+	runtime/System/Security/Cryptography/DSACryptoServiceProvider.cs,
+	runtime/System/Security/Cryptography/DSAParameters.cs,
+	runtime/System/Security/Cryptography/DSASignatureDeformatter.cs,
+	runtime/System/Security/Cryptography/DSASignatureFormatter.cs,
+	runtime/System/Security/Cryptography/MaskGenerationMethod.cs,
+	runtime/System/Security/Cryptography/PKCS1MaskGenerationMethod.cs,
+	runtime/System/Security/Cryptography/RSAParameters.cs:
+	continue implementing the cryptography code, with support for DSA
+	and PKCS #1 mask generation.
+
+2002-07-07  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Crypto.txt,
+	runtime/System/Security/Cryptography/CryptoConfig.cs,
+	runtime/System/Security/Cryptography/HMACSHA1.cs,
+	runtime/System/Security/Cryptography/HashAlgorithm.cs,
+	runtime/System/Security/Cryptography/KeyedHashAlgorithm.cs,
+	runtime/System/Security/Cryptography/MACTripleDES.cs,
+	runtime/System/Security/Cryptography/RNGCryptoServiceProvider.cs,
+	runtime/System/Security/Cryptography/RandomNumberGenerator.cs:
+	continue implementation the crypto classes, with keyed hash
+	algorithms, random number generators, and OID handling.
+
+2002-07-06  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Crypto.txt,
+	resources/en_US/runtime/Makefile.am,
+	runtime/System/Security/Cryptography/AsymmetricAlgorithm.cs,
+	runtime/System/Security/Cryptography/AsymmetricKeyExchangeDeformatter.cs,
+	runtime/System/Security/Cryptography/AsymmetricKeyExchangeFormatter.cs,
+	runtime/System/Security/Cryptography/AsymmetricSignatureDeformatter.cs,
+	runtime/System/Security/Cryptography/AsymmetricSignatureFormatter.cs,
+	runtime/System/Security/Cryptography/BigNum.cs,
+	runtime/System/Security/Cryptography/CipherMode.cs,
+	runtime/System/Security/Cryptography/CryptoAPITransform.cs,
+	runtime/System/Security/Cryptography/CryptoConfig.cs,
+	runtime/System/Security/Cryptography/CryptoStream.cs,
+	runtime/System/Security/Cryptography/CryptoStreamMode.cs,
+	runtime/System/Security/Cryptography/CryptographicException.cs,
+	runtime/System/Security/Cryptography/CryptographicUnexpectedOperationException.cs,
+	runtime/System/Security/Cryptography/CspParameters.cs,
+	runtime/System/Security/Cryptography/CspProviderFlags.cs,
+	runtime/System/Security/Cryptography/DSAParameters.cs,
+	runtime/System/Security/Cryptography/DeriveBytes.cs,
+	runtime/System/Security/Cryptography/FromBase64TransformMode.cs,
+	runtime/System/Security/Cryptography/HashAlgorithm.cs,
+	runtime/System/Security/Cryptography/ICryptoTransform.cs,
+	runtime/System/Security/Cryptography/KeySizes.cs,
+	runtime/System/Security/Cryptography/Makefile,
+	runtime/System/Security/Cryptography/PaddingMode.cs,
+	runtime/System/Security/Cryptography/RSAParameters.cs,
+	runtime/System/Security/Cryptography/RijndaelManagedTransformMode.cs,
+	runtime/System/Security/Cryptography/SymmetricAlgorithm.cs:
+	begin implementing the "System.Security.Cryptography" namespace.
+
+	* resources/en_US/runtime/Crypto.txt,
+	runtime/Platform/CryptoMethods.cs,
+	runtime/System/Security/Cryptography/CryptoConfig.cs,
+	runtime/System/Security/Cryptography/MD5.cs,
+	runtime/System/Security/Cryptography/MD5CryptoServiceProvider.cs,
+	runtime/System/Security/Cryptography/SHA1.cs,
+	runtime/System/Security/Cryptography/SHA1CryptoServiceProvider.cs,
+	runtime/System/Security/Cryptography/SHA1Managed.cs,
+	runtime/System/Security/Cryptography/SHA256.cs,
+	runtime/System/Security/Cryptography/SHA256Managed.cs,
+	runtime/System/Security/Cryptography/SHA384.cs,
+	runtime/System/Security/Cryptography/SHA384Managed.cs,
+	runtime/System/Security/Cryptography/SHA512.cs,
+	runtime/System/Security/Cryptography/SHA512Managed.cs:
+	more classes in the "System.Security.Cryptography" namespace.
+
+	* resources/en_US/runtime/Crypto.txt,
+	runtime/Platform/CryptoMethods.cs,
+	runtime/System/Security/Cryptography/BigNum.cs,
+	runtime/System/Security/Cryptography/CryptoAPITransform.cs,
+	runtime/System/Security/Cryptography/CryptoConfig.cs,
+	runtime/System/Security/Cryptography/DES.cs,
+	runtime/System/Security/Cryptography/DESCryptoServiceProvider.cs,
+	runtime/System/Security/Cryptography/RC2.cs,
+	runtime/System/Security/Cryptography/RC2CryptoServiceProvider.cs,
+	runtime/System/Security/Cryptography/Rijndael.cs,
+	runtime/System/Security/Cryptography/RijndaelManaged.cs,
+	runtime/System/Security/Cryptography/SymmetricAlgorithm.cs,
+	runtime/System/Security/Cryptography/TripleDES.cs,
+	runtime/System/Security/Cryptography/TripleDESCryptoServiceProvider.cs:
+	implement the symmetric encryption support classes.
+
+2002-06-29  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Delegate.cs, runtime/System/MulticastDelegate.cs:
+	be careful when comparing delegates using "==" and "!=" so as
+	not to accidentally pick up the user-defined operator versions.
+
+	* runtime/System/String.cs: improve range checks for negative
+	length values.
+
+	* System/ComponentModel/ITypeDescriptorContext.cs,
+	System/ComponentModel/TypeConverter.cs,
+	System/ComponentModel/TypeConverterAttribute.cs: stub out some
+	classes so that Mono's System.Drawing will load.
+
+2002-06-28  Charlie Carnow   <carnow@gmx.net>
+
+	* System.Xml/XmlReader.cs: Implemented 
+	ReadElementString(System.String), ReadElementString(),
+	ReadEndElement(), ReadStartElement(System.String, System.String),
+	ReadStartElement(System.String), ReadStartElement(), and 
+	the HasAttributes property
+
+2002-06-28  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Xml/XmlReader.cs: fix semantic compile errors.
+
+	* System/ComponentModel/EventHandlerList.cs: new class in the
+	"System" assembly.
+
+	* runtime/System/EventHandler.cs: add missing "sender" argument.
+
+2002-06-27  Charlie Carnow   <carnow@gmx.net>
+
+	* System.Xml/XmlReader.cs: Implemented IsStartElement(System.String,
+	System.String), IsStartElement(System.String), IsStartElement(),
+	MoveToContent(), ReadElementString(System.String, System.String)
+
+2002-06-28  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Runtime/InteropServices/ComMemberType.cs,
+	runtime/System/Runtime/InteropServices/Marshal.cs,
+	runtime/System/Runtime/InteropServices/UCOMITypeInfo.cs,
+	runtime/System/Runtime/InteropServices/UCOMITypeLib.cs:
+	implement the "Marshal" class and supporting types.
+
+2002-06-27  Charlie Carnow   <carnow@gmx.net>
+
+	* System.Xml/XmlReader.cs: Implemented IsName and IsNameToken 
+
+2002-06-27  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* NEWS, configure.in: update version for the "0.2.4" release.
+
+	* configure.in: update working version to "0.2.5".
+
+2002-06-24  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Xml/XmlTextReader.cs: hack around a reachability bug
+	in cscc for the time being.
+
+2002-06-22  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Runtime/Remoting/Messaging/AsyncResult.cs,
+	runtime/System/Runtime/Remoting/Messaging/Makefile: add the
+	"AsyncResult" class, for assisting with asynchronous delegates.
+
+2002-06-21  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Delegate.cs: change the delegate "method" field
+	to "RuntimeMethodHandle" so that delegates can work even if the
+	runtime engine does not fully support reflection.
+
+2002-06-19  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Arg.txt, runtime/System/GC.cs,
+	runtime/System/WeakReference.cs: implement non-ECMA garbage collection
+	functionality.
+
+	* runtime/System/WeakReference.cs,
+	runtime/System/Runtime/InteropServices/GCHandle.cs:
+	implement weak references in terms of GC handles; fine-tune the
+	internalcall interface for GC handles.
+
+	* runtime/System/Enum.cs: rationalise parameter naming for
+	"Enum.GetEnumValueFromName".
+
+	* runtime/System/TypedReference.cs: alter the implementation of
+	"TypedReference.SetTypedReference" so that most of the casting
+	work happens in the C# part of the code.
+
+	* runtime/System/Delegate.cs, runtime/System/MulticastDelegate.cs:
+	use the delegate classes in all profiles (don't #if out for ECMA);
+	add the "closure" field to "Delegate".
+
+2002-06-18  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/NotImplementedException.cs: add the exception
+	class "NotImplementedException".
+
+	* runtime/System/Environment.cs, runtime/System/Exception.cs,
+	runtime/System/Object.cs, runtime/System/Collections/Hashtable.cs,
+	runtime/System/Text/Encoding.cs: change "NotSupportedException"
+	into "NotImplementedException" to be ECMA-compatible.
+
+	* configure.in, I18N/Common/ByteEncoding.cs, I18N/Common/Manager.cs,
+	System/System.build, System.Xml/Xml.build, profiles/compact,
+	profiles/ecma, profiles/full, profiles/kernel, runtime/runtime.build,
+	runtime/System/Reflection/Assembly.cs: integrate profile support
+	into the pnetlib build process.
+
+2002-06-17  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Environment.cs: harden the static constructor
+	against missing functionality in the runtime engine.
+
+	* runtime/System/IO/TextWriter.cs: use "Environment.NewLine" as
+	the default newline string, to be compatible with ECMA.
+
+	* runtime/System/Collections/Hashtable.cs: make hash tables work
+	even if the runtime engine does not support floating-point.
+
+	* runtime/System/Resources/ResourceManager.cs: harden "AttemptLoad"
+	against the runtime engine missing reflection support.
+
+2002-06-16  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Net/SocketAddress.cs: fix semantic compile errors.
+
+	* runtime/System/Reflection/ClrResourceStream.cs,
+	runtime/System/Resources/ResourceManager.cs,
+	runtime/System/Resources/ResourceReader.cs: fix the parsing
+	of text resources so that _(xxx) works properly.
+
+2002-06-14  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Net/SocketAddress.cs: fix some syntax errors.
+
+2002-06-12  Charlie Carnow   <carnow@gmx.net>
+
+	* System/Net/SocketAddress.cs: Completed except for GetHashCode()
+	
+2002-06-12  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Exception.cs, runtime/System/Object.cs,
+	runtime/System/Text/Encoding.cs: harden various classes against
+	the possibility that the runtime engine may be lacking features
+	such as reflection in low-memory environments.
+
+2002-06-10  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Net/CredentialCache.cs, System/Net/Sockets/Socket.cs,
+	System.Xml/XmlNode.cs, System.Xml/XmlReader.cs,
+	System.Xml/XmlTextReader.cs, runtime/System/IO/MemoryStream.cs:
+	fix semantic errors.
+
+	* configure.in, NEWS: update for the "0.2.2" release.
+
+	* configure.in: update working version to "0.2.2".
+
+2002-06-01  Peter Minten  <silvernerd@users.sf.net>
+        * runtime/Platform/DnsMethods.cs: Created
+        * System.Xml/XmlReader.cs: got rid of useless internal methods
+        * System.Xml/XmlTextReader.cs: created and partly implemented parsing
+        * System.Xml/XmlResolver.cs: Created stub class for XmlTextReader
+        * System.Xml/XmlNode.cs: Modified for better operation with XmlTextReader
+        * System.Xml/xmlNamespaceEntry.cs: Created non-ecma class.
+
+2002-05-27 Stephen Compall  <rushing@sigecom.net>
+
+	* System/Uri.cs: Some changes for compatibility with UriBuilder.
+
+	* System/UriBuilder.cs: Completed implementation.
+
+	* runtime/System/IO/MemoryStream.cs: WriteTo(Stream).
+
+2002-05-27 Haran Shivanan  <ch99057@che.iitm.ac.in>
+
+	* runtime/System/IO/MemoryStream.cs: Fix on Read(byte[],int,int)
+	and implemented Write and WriteByte methods.
+
+2002-05-26 Stephen Compall  <rushing@sigecom.net>
+
+	* runtime/System/IO/MemoryStream.cs: Implemented SetLength(long)
+	and fixed Capacity{set;}.
+
+	* System/Uri.cs: A little bugfixing on Canonicalize(), and info
+	about the current situation on MakeRelative.
+
+2002-05-25  Peter Minten  <silvernerd@users.sf.net>
+        * System/Net/Sockets/Socket.cs: Replaced AND operators build up of only one & by &&.
+                Made Connect and SendTo set LocalEndPoint, fixed SendTo for IPv4 operation.
+                Added [TODO] marker for the whole Socket class, lot's of little things need fixing.
+                Improved Listen and ReceiveFrom.
+
+        * System/Net/Authorization.cs: Implemented class.
+
+        * System.Xml/XmlParserContext.cs: Fixed wrong property name
+                and added missing property.
+
+2002-05-25 Stephen Compall  <rushing@sigecom.net>
+
+	* runtime/System/IO/MemoryStream.cs: Added in Mr. Shivanan's
+	code, along with some fixes to same and quite a few comments
+	on overall implementation. Also added an implementation of
+	ToArray().
+
+2002-05-21 Haran Shivanan  <ch99057@che.iitm.ac.in>
+
+	* runtime/System/IO/MemoryStream.cs: Modified MemoryStream class
+	to implement Seek(...).
+
+2002-05-12 Abhaya Agarwal <abhayag@iitk.ac.in>
+
+	* runtime/Platform/DirMethods.cs: Added 2 icalls viz
+	GetCurrentDirectory() and GetFilesInDirectory() stubs
+
+2002-05-11  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* NEWS, configure.in: update version for the "0.2.0" release.
+
+	* configure.in: update working version to "0.2.1".
+
+2002-05-06  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/ArgIterator.cs: declare "ArgIterator.End" as an
+	"internalcall" method.
+
+2002-05-04  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Xml/XmlWriter.cs: declare body of "XmlWriter" constructor
+	so it compiles properly.
+
+	* ChangeLog: repair conflict that was checked in by Peter Minten.
+
+	* System/Net/IPAddress.cs: normalize IP address representation to
+	always be in network byte order; implement internalcalls for
+	converting between host and network orders.
+
+2002-05-04  Peter Minten  <silvernerd@users.sf.net>
+
+	* System.Xml/XmlWriter.cs: Created but not completed.
+
+2002-05-04  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/IO/Directory.cs: correct semantic compile errors.
+
+	* resources/en_US/runtime/Invalid.txt,
+	resources/en_US/runtime/NotSupp.txt,
+	runtime/System/Type.cs,
+	runtime/System/Reflection/Assembly.cs,
+	runtime/System/Reflection/ClrType.cs,
+	runtime/System/Reflection/InterfaceMapping.cs,
+	runtime/System/Reflection/Module.cs,
+	runtime/System/Reflection/Emit/AssemblyBuilder.cs,
+	runtime/System/Reflection/Emit/ConstructorBuilder.cs,
+	runtime/System/Reflection/Emit/CustomAttributeBuilder.cs,
+	runtime/System/Reflection/Emit/EnumBuilder.cs,
+	runtime/System/Reflection/Emit/EventBuilder.cs,
+	runtime/System/Reflection/Emit/EventToken.cs,
+	runtime/System/Reflection/Emit/FieldBuilder.cs,
+	runtime/System/Reflection/Emit/FieldToken.cs,
+	runtime/System/Reflection/Emit/MethodBuilder.cs,
+	runtime/System/Reflection/Emit/MethodToken.cs,
+	runtime/System/Reflection/Emit/ModuleBuilder.cs,
+	runtime/System/Reflection/Emit/ParameterToken.cs,
+	runtime/System/Reflection/Emit/PropertyBuilder.cs,
+	runtime/System/Reflection/Emit/PropertyToken.cs,
+	runtime/System/Reflection/Emit/SignatureHelper.cs,
+	runtime/System/Reflection/Emit/SignatureToken.cs,
+	runtime/System/Reflection/Emit/StringToken.cs,
+	runtime/System/Reflection/Emit/TypeBuilder.cs,
+	runtime/System/Reflection/Emit/TypeToken.cs: implement a large
+	number of "System.Reflection.Emit" classes.
+
+	* System/Uri.cs: fix semantic compile errors.
+
+2002-05-02  Charlie Carnow   <carnow@gmx.net>
+
+	* runtime/System/IO/Directory.cs: new class contributed by
+	Abhaya Agarwal <abhayag@iitk.ac.in>
+		
+2002-05-02  Stephen Compall  <rushing@sigecom.net>
+
+      * System/Uri.cs: Completed IPv6 support, LocalPath property, GetLeftPart
+	method. Not sure on status of MakeRelative.
+
+	* resources/en_US/System/Arg.txt: new "Arg_UriPartial".
+
+2002-04-30  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* I18N/Other/CP57002.cs (GetChars): should add "shift", not subtract.
+
+	* runtime/System/IO/MemoryStream.cs, System/Uri.cs: fix semantic
+	errors.
+
+2002-04-29  Stephen Compall  <rushing@sigecom.net>
+
+	* System/Net/IPAddress.cs: small syntax change for new arrays.
+
+	* System/Uri.cs: Canonicalize(), and CheckHostName(String) works except
+	for IPv6. Minor fix to ToString().
+
+	* resources/en_US/System/Arg.txt: "Arg_UriPathAbs".
+
+2002-04-28  Stephen Compall  <rushing@sigecom.net>
+
+	* runtime/System/IO/MemoryStream.cs: Fixes for ECMA compliance,
+	whatever that means.
+
+	* resources/en_US/runtime/Exception.txt: new "Exception_HiddenBuffer".
+
+2002-04-27  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	*  System/Net/Sockets/Socket.cs: reversed order of parameters to
+	"SocketMethods.Create"; semantic errors in "Socket.Select".
+
+	* runtime/System/IO/MemoryStream.cs: fix semantic errors.
+
+2002-04-26  Stephen Compall  <rushing@sigecom.net>
+
+	* runtime/System/IO/MemoryStream.cs: More implementation, including all
+	constructors, properties, and Read stuff.. Am bringing up ECMA
+	ambiguities left and right. Doesn't compile yet.
+
+2002-04-23  Gopal.V <gopalv82@symonds.net>
+
+	* tests/System/TestString.cs : added a lot of 
+	tests to make it useful to some extent. Still
+	some TODO left for anyone to pick up. 
+	
+2002-04-21  Stephen Compall  <rushing@sigecom.net>
+
+	* runtime/System/IO/StringReader.cs: added implementation.
+
+	* runtime/System/IO/MemoryStream.cs: added beginnings of
+	implementation.
+
+	* maintain.xml: added myself as worker of MemoryStream.
+
+2002-04-21  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/Platform/SocketMethods.cs: remove "using" declarations
+	for "System.Net*" because they cause compile problems with
+	"csc /noconfig".
+
+	* System/S.cs, System/Uri.cs, System/UriBuilder.cs,
+	System/UriFormatException.cs,
+	System/Collections/Specialized/NameValueCollection.cs,
+	System/Net/Authorization.cs, System/Net/Dns.cs,
+	System/Net/EndPoint.cs, System/Net/HttpVersion.cs,
+	System/Net/HttpWebRequest.cs, System/Net/HttpWebResponse.cs,
+	System/Net/IPAddress.cs, System/Net/IPEndPoint.cs,
+	System/Net/IPHostEntry.cs, System/Net/NetworkCredential.cs,
+	System/Net/ServicePoint.cs, System/Net/SocketAddress.cs,
+	System/Net/WebException.cs, System/Net/WebExceptionStatus.cs,
+	System/Net/WebHeaderCollection.cs, System/Net/WebRequest.cs,
+	System/Net/WebResponse.cs, System/Net/Sockets/MulticastOption.cs,
+	System/Net/Sockets/NetworkStream.cs, System/Net/Sockets/Socket.cs,
+	System/Net/Sockets/SocketException.cs, resources/en_US/System/Arg.txt:
+	lots of small changes here and there to make "System" compile
+	using csc.
+
+	* System.Xml/.cvsignore, System.Xml/Makefile.am,
+	System.Xml/NameTable.cs, System.Xml/S.cs,
+	System.Xml/TODOAttribute.cs, System.Xml/XmlException.cs,
+	System.Xml/XmlNameTable.cs, System.Xml/XmlNamespaceManager.cs,
+	System.Xml/XmlParserContext.cs, System.Xml/XmlReader.cs,
+	resources/en_US/System.Xml/.cvsignore: lots of small changes here
+	and there to make "System.Xml" compile using csc.
+
+2002-04-20  Stephen Compall  <rushing@sigecom.net>
+
+	* System/Uri.cs: Compile fixes.
+
+	* runtime/System/IO/StringWriter.cs: Changed exceptions to display
+	IO_StreamClosed.
+
+2002-04-20  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Format.txt, runtime/System/Boolean.cs,
+	runtime/System/Byte.cs, runtime/System/Char.cs,
+	runtime/System/Convert.cs, runtime/System/DBNull.cs,
+	runtime/System/DateTime.cs, runtime/System/Decimal.cs,
+	runtime/System/Double.cs, runtime/System/Enum.cs,
+	runtime/System/Int16.cs, runtime/System/Int32.cs,
+	runtime/System/Int64.cs, runtime/System/SByte.cs,
+	runtime/System/Single.cs, runtime/System/String.cs,
+	runtime/System/UInt16.cs, runtime/System/UInt32.cs,
+	runtime/System/UInt64.cs: fine-tune the "ToType" conversion methods.
+
+	* resources/en_US/runtime/Format.txt, runtime/System/Array.cs,
+	runtime/System/Convert.cs: complete the implementation of
+	"System.Convert"; implement "Array.Copy" in terms of facilities
+	in "System.Convert".
+
+	* configure.in, aclocal.m4: enable maintainer mode support in the
+	autoconf system.
+
+	* configure.in, NEWS: update version for the "0.1.8" release.
+
+	* configure.in: update the working version to "0.1.9".
+
+2002-04-19  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/IO/Makefile, runtime/System/IO/StreamReader.cs,
+	runtime/System/IO/TextReader.cs: implement the reading methods
+	in "StreamReader" properly; change ReadLine/ReadToEnd to use
+	StringBuilder.
+
+	* resources/en_US/runtime/Arg.txt, runtime/System/Array.cs:
+	re-implement the "Array.Copy" method, with only the simple cases
+	handled in the engine.
+
+	* runtime/System/IO/IOException.cs (GetErrnoMessage): don't bother
+	with string resources - go direct to the underlying platform.
+
+	* runtime/System/Reflection/Assembly.cs: pass the calling assembly
+	to "LoadFromName" and "LoadFromFile" to establish the correct search
+	and security contexts.
+
+	* runtime/System/Text/*: remove obselete files that have since
+	been moved to the I18N directory.
+
+	* runtime/System/Reflection/ClrType.cs (InvokeMember): collect up
+	the types of the arguments to method and property invocations to
+	assist in locating the correct override.
+
+	* runtime/System/IO/FileStream.cs, runtime/System/IO/StreamReader.cs:
+	bugs in stream buffer processing.
+
+	* runtime/runtime.build: remove "jis.table" from the assembly
+	manifest for "mscorlib.dll"; it is now in "I18N.CJK.dll".
+
+	* I18N/Common/Manager.cs: bugs in the handler-location code.
+
+	* runtime/System/Text/README: remove obsolete text now that the
+	encoding routines are in "I18N".
+
+	* I18N/CJK/CP932.cs: declare "ENCshift_jis" as public.
+
+	* I18N/mklist.sh: pass the "--public-only" option to "ilfind".
+
+2002-04-19  Stephen Compall  <rushing@sigecom.net>
+
+	* System/Uri.cs: Implemented quite complex Unescape(String).
+
+2002-04-18  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* I18N/*, resources/en_US/I18N/*: move all of the code page support
+	into the "I18N" directory, as the first stage in making the i18n
+	routines in "runtime" dynamically loadable.
+
+2002-04-18  Stephen Compall <rushing@sigecom.net>
+
+	* System/Uri.cs: Wiped out some TODOs, including Parse().
+
+	* resources/en_US/System/Arg.txt: new string.
+
+	* tests/System/TestSystem.cs, tests/System/TestString.cs: added a new
+	String test to deal with a ECMA idiosyncracy I am relying on.
+
+	* tests/System/Makefile.am: added TestUri and TestString to the build.
+
+2002-04-18  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Text/UTF7Encoding.cs: implement the UTF-7 encoding.
+
+	* runtime/System/Text/ucm2cp.c, runtime/System/Text/CP*.cs:
+	optimise the common conversion cases of ASCII and full-width Latin1.
+
+2002-04-17  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Text/*.cs: activate the rare code page handlers.
+
+	* runtime/System/Text/CP21866.cs,
+	runtime/System/Text/cvt.sh,
+	runtime/System/Text/koi8-u.ucm: add the 21866 (KOI8-U) code page.
+
+	* runtime/System/Text/.cvsignore, runtime/System/Text/CP932.cs,
+	runtime/System/Text/jis.table, runtime/System/Text/uni2tab.c,
+	runtime/runtime.build: add the JIS conversion table to "mscorlib.dll".
+
+	* runtime/System/Reflection/ClrResourceStream.cs: reversed test
+	in "ClrResourceStream.Read".
+
+2002-04-16  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/NotSupp.txt,
+	runtime/System/Reflection/ClrResourceStream.cs,
+	runtime/System/Text/CP932.cs,
+	runtime/System/Text/CodeTable.cs,
+	runtime/System/Text/JISConvert.cs: add support for code page 932,
+	Japanese (Shift-JIS); conversion tables are still to be done.
+
+	* runtime/System/Text/CP57002.cs: add ISCII code pages 57002-57011.
+
+	* runtime/System/Text/cvt.sh: remove ISCII pages from the list of
+	unimplemented code pages.
+
+	* runtime/System/Text/README: document the newer classes.
+
+	* runtime/System/Text/UnicodeEncoding.cs: bug fix - the preamble
+	for "UnicodeEncoding" should be zero if byte order marks are disabled.
+
+	* runtime/System/Reflection/ClrType.cs (InvokeMember): add the
+	"DeclaredOnly" flag to constructor lookups to prevent it finding
+	constructors in parent classes.
+
+2002-04-15  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Text/.cvsignore, runtime/System/Text/ByteEncoding.cs,
+	runtime/System/Text/CP10000.cs, runtime/System/Text/CP1250.cs,
+	runtime/System/Text/CP1251.cs, runtime/System/Text/CP1252.cs,
+	runtime/System/Text/CP1253.cs, runtime/System/Text/CP1254.cs,
+	runtime/System/Text/CP1255.cs, runtime/System/Text/CP1256.cs,
+	runtime/System/Text/CP1257.cs, runtime/System/Text/CP1258.cs,
+	runtime/System/Text/CP20866.cs, runtime/System/Text/CP28592.cs,
+	runtime/System/Text/CP28605.cs, runtime/System/Text/CP37.cs,
+	runtime/System/Text/CP437.cs, runtime/System/Text/CP500.cs,
+	runtime/System/Text/CP850.cs, runtime/System/Text/CP860.cs,
+	runtime/System/Text/CP861.cs, runtime/System/Text/CP863.cs,
+	runtime/System/Text/CP865.cs, runtime/System/Text/CP874.cs,
+	runtime/System/Text/Encoding.cs, runtime/System/Text/Latin1Encoding.cs,
+	runtime/System/Text/README, runtime/System/Text/cvt.sh,
+	runtime/System/Text/ibm-1275.ucm, runtime/System/Text/ibm-37.ucm,
+	runtime/System/Text/ibm-437.ucm, runtime/System/Text/ibm-500.ucm,
+	runtime/System/Text/ibm-5346.ucm, runtime/System/Text/ibm-5347.ucm,
+	runtime/System/Text/ibm-5348.ucm, runtime/System/Text/ibm-5349.ucm,
+	runtime/System/Text/ibm-5350.ucm, runtime/System/Text/ibm-5351.ucm,
+	runtime/System/Text/ibm-5352.ucm, runtime/System/Text/ibm-5353.ucm,
+	runtime/System/Text/ibm-5354.ucm, runtime/System/Text/ibm-850.ucm,
+	runtime/System/Text/ibm-860.ucm, runtime/System/Text/ibm-861.ucm,
+	runtime/System/Text/ibm-863.ucm, runtime/System/Text/ibm-865.ucm,
+	runtime/System/Text/ibm-874.ucm, runtime/System/Text/ibm-878.ucm,
+	runtime/System/Text/ibm-912.ucm, runtime/System/Text/ibm-923.ucm,
+	runtime/System/Text/ucm2cp.c: implement code page converters for
+	a large number of single-byte Windows code pages, based on the
+	conversion data from IBM's ICU package.
+
+	* runtime/System/Text/CP10079.cs, runtime/System/Text/cvt.sh,
+	runtime/System/Text/mac-is.ucm: add code page support for the
+	"Icelandic (Mac)" code page, 10079.
+
+	* runtime/System/Text/CP1026.cs, runtime/System/Text/CP1047.cs,
+	runtime/System/Text/CP1140.cs, runtime/System/Text/CP1141.cs,
+	runtime/System/Text/CP1142.cs, runtime/System/Text/CP1143.cs,
+	runtime/System/Text/CP1144.cs, runtime/System/Text/CP1145.cs,
+	runtime/System/Text/CP1146.cs, runtime/System/Text/CP1147.cs,
+	runtime/System/Text/CP1148.cs, runtime/System/Text/CP1149.cs,
+	runtime/System/Text/CP20273.cs, runtime/System/Text/CP20277.cs,
+	runtime/System/Text/CP20278.cs, runtime/System/Text/CP20280.cs,
+	runtime/System/Text/CP20284.cs, runtime/System/Text/CP20285.cs,
+	runtime/System/Text/CP20290.cs, runtime/System/Text/CP20297.cs,
+	runtime/System/Text/CP20420.cs, runtime/System/Text/CP20424.cs,
+	runtime/System/Text/CP20871.cs, runtime/System/Text/CP21025.cs,
+	runtime/System/Text/CP28593.cs, runtime/System/Text/CP28594.cs,
+	runtime/System/Text/CP28595.cs, runtime/System/Text/CP28596.cs,
+	runtime/System/Text/CP28597.cs, runtime/System/Text/CP28598.cs,
+	runtime/System/Text/CP28599.cs, runtime/System/Text/CP38598.cs,
+	runtime/System/Text/CP708.cs, runtime/System/Text/CP852.cs,
+	runtime/System/Text/CP855.cs, runtime/System/Text/CP857.cs,
+	runtime/System/Text/CP858.cs, runtime/System/Text/CP862.cs,
+	runtime/System/Text/CP864.cs, runtime/System/Text/CP866.cs,
+	runtime/System/Text/CP869.cs, runtime/System/Text/CP870.cs,
+	runtime/System/Text/CP875.cs, runtime/System/Text/cvt.sh,
+	runtime/System/Text/ibm-1025.ucm, runtime/System/Text/ibm-1026.ucm,
+	runtime/System/Text/ibm-1047.ucm, runtime/System/Text/ibm-1089.ucm,
+	runtime/System/Text/ibm-1140.ucm, runtime/System/Text/ibm-1141.ucm,
+	runtime/System/Text/ibm-1142.ucm, runtime/System/Text/ibm-1143.ucm,
+	runtime/System/Text/ibm-1144.ucm, runtime/System/Text/ibm-1145.ucm,
+	runtime/System/Text/ibm-1146.ucm, runtime/System/Text/ibm-1147.ucm,
+	runtime/System/Text/ibm-1148.ucm, runtime/System/Text/ibm-1149.ucm,
+	runtime/System/Text/ibm-273.ucm, runtime/System/Text/ibm-277.ucm,
+	runtime/System/Text/ibm-278.ucm, runtime/System/Text/ibm-280.ucm,
+	runtime/System/Text/ibm-284.ucm, runtime/System/Text/ibm-285.ucm,
+	runtime/System/Text/ibm-290.ucm, runtime/System/Text/ibm-297.ucm,
+	runtime/System/Text/ibm-420.ucm, runtime/System/Text/ibm-424.ucm,
+	runtime/System/Text/ibm-4909.ucm, runtime/System/Text/ibm-852.ucm,
+	runtime/System/Text/ibm-855.ucm, runtime/System/Text/ibm-857.ucm,
+	runtime/System/Text/ibm-858.ucm, runtime/System/Text/ibm-862.ucm,
+	runtime/System/Text/ibm-864.ucm, runtime/System/Text/ibm-866.ucm,
+	runtime/System/Text/ibm-869.ucm, runtime/System/Text/ibm-870.ucm,
+	runtime/System/Text/ibm-871.ucm, runtime/System/Text/ibm-875.ucm,
+	runtime/System/Text/ibm-913.ucm, runtime/System/Text/ibm-914.ucm,
+	runtime/System/Text/ibm-915.ucm, runtime/System/Text/ibm-916.ucm,
+	runtime/System/Text/ibm-920.ucm, runtime/System/Text/ucm2cp.c:
+	continue adding support for 8-bit code pages.
+
+	* runtime/System/Text/Latin1Encoding.cs: convert full-width versions
+	of ASCII as well as the regular Latin-1 characters.
+
+2002-04-14  Stephen Compall  <rushing@sigecom.net>
+
+	* tests/System/TestUri.cs, tests/System/TestSystem.cs: added a
+	partial test suite for System.Uri (so I can clean it up!)
+
+	* System/Uri.cs: minor syntax fixes.
+
+2002-04-14  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Arg.txt,
+	runtime/System/Text/Encoding.cs,
+	runtime/System/Text/UTF8Encoding.cs,
+	runtime/System/Text/UnicodeEncoding.cs: complete the implementations
+	of "UTF8Encoding" and "UnicodeEncoding".
+
+	* resources/en_US/runtime/NotSupp.txt,
+	runtime/System/Text/ASCIIEncoding.cs,
+	runtime/System/Text/DefaultEncoding.cs,
+	runtime/System/Text/Encoding.cs,
+	runtime/System/Text/Latin1Encoding.cs,
+	runtime/System/Text/Makefile,
+	runtime/System/Text/README,
+	runtime/System/Text/UTF7Encoding.cs,
+	runtime/System/Text/UTF8Encoding.cs,
+	runtime/System/Text/UnicodeEncoding.cs: add non-ECMA encoding
+	functionality and improve the code page support.
+
+2002-04-13  Gopal.V  <gopalv82@yahoo.com>
+
+	* doc/csunit_howto.html : added a doc on how to write tests
+	using csunit
+
+2002-04-14  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/Platform/SocketMethods.cs: tweaks to the socket API's.
+
+2002-04-13  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/IO.txt,
+	runtime/System/IO/FileStream.cs,
+	runtime/System/Reflection/ClrResourceStream.cs: implement the
+	ClrResourceStream class and its dependencies.
+
+	* runtime/Platform/SocketMethods.cs: declare Close as internalcall;
+	modify the signature of Select to better match Posix behaviour.
+
+	* runtime/System/Reflection/ClrResourceStream.cs: add an extra
+	"start" parameter to the constructor and adjust all resource
+	reads by that amount.
+
+	* runtime/System/Reflection/Assembly.cs: mark "GetFiles" as internal.
+
+	* runtime/System/IO/FileStream.cs,
+	runtime/System/Reflection/Assembly.cs,
+	runtime/System/Reflection/ClrResourceStream.cs,
+	runtime/System/Reflection/ManifestResourceInfo.cs: add the proper
+	manifest resource stream support (it isn't a FileStream after all).
+
+	* System/Resources/BuiltinResourceSet.cs,
+	System/Resources/ResourceManager.cs,
+	System/Resources/ResourceReader.cs,
+	System/Resources/ResourceSet.cs,
+	System/Resources/ResourceWriter.cs: continue implementation of
+	the resource-related classes.
+
+	* System/Resources/ResourceSet.cs: missing exception in "catch"
+	blocks.
+
+2002-04-12  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Resources/IResourceReader.cs,
+	runtime/System/Resources/IResourceWriter.cs,
+	runtime/System/Resources/README.ECMA,
+	runtime/System/Resources/ResourceReader.cs: continue the
+	implementation of resource-related classes.
+
+2002-04-11  Stephen Compall  <rushing@sigecom.net>
+
+	* System/Uri.cs: Fixed character literals, cleaned up Parse()
+	*alot*.
+
+2002-04-10  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/Platform/SocketMethods.cs: add some extra "using"
+	declarations to compile under MS'es compiler.
+
+	* runtime/System/Exception.cs,
+	runtime/System/Diagnostics/StackTrace.cs: print the correct stack
+	trace for exceptions.
+
+	* runtime/runtime.build: minor fix to cause the build script to
+	pass the correct resource information to csc.
+
+	* System/System.build, System.Xml/Xml.build: use the correct names
+	for the ECMA-compatible output assemblies.
+
+2002-04-13  Peter Minten  <silvernerd@users.sf.net>
+
+	* System.Xml/XmlNamespaceManager.cs: Worked on add and remove things.
+
+	* System.Xml/XmlReader.cs: Worked on checking methods.
+
+2002-04-07  Gopal.V <gopalv82@yahoo.com>
+
+	* System/Net/HttpWebRequest.cs: Added property get,set methods
+	  and a connect method to connect to an HTTP server
+	  
+2002-04-07  Peter Minten  <silvernerd@users.sf.net>
+
+	* System/Net/IPEndPoint.cs: Created but not completed
+
+	* System/Net/WebRequest.cs: Changed variable names and added using
+	directive to fix bugs.
+
+	* System/Net/WebHeaderCollection.cs, System/Net/WebResponse.cs,
+	System/Net/Authorization.cs, System/Net/ServicePoint.cs,
+	System/Net/NetworkCredential.cs: Added fake (no implementation yet) classes.
+
+	* System/Net/WebExceptionStatus.cs: Fixed my own namespace bug.
+
+	* System/Net/HttpContinueDelegate, System/UriHostNameType.cs,
+	System.UriPartial.cs: Created
+
+	* System/Net/SocketAddress.cs,
+	System/Net/Sockets/NetworkStream.cs: Made some modifications.
+
+2002-04-06  Peter Minten  <silvernerd@users.sf.net>
+
+	* resources/en_US/System/Makefile.am: Added all resource text files to the resource file (some weren't in it yet).
+
+	* configure.in, Makefile.am: Modified to account for the new System.Xml assembly.
+
+	* System.Xml/Makefile.am, System.Xml/Xml.Build: Created for the new System.Xml assembly.
+
+	* resources/en_US/Makefile.am: Changed to account for the new System.Xml resource file.
+
+	* resource/en_US/System.Xml/Makefile.am: Created for the new Xml resource directory
+
+	* System.Xml/Xml.build, System.Xml/Makefile.am: Created for the new Xml assembly
+
+	* System.Xml/Formatting.cs, System.Xml/ReadState.cs,
+	System.Xml/WhitespaceHandling.cs, System.Xml/WriteState.cs,
+	System.Xml/XmlNodeType.cs, System.Xml/XmlSpace.cs,
+	System.Xml/XmlNameTable.cs, System.Xml/NameTable.cs,
+	System.Xml/XmlParserContext.cs: Created and completed
+
+	* System.Xml/XmlException.cs, XmlNamespaceManager.cs,
+	System.Xml/XmlReader.cs: Created but not completed.
+
+	* System.Xml/XmlNode.cs: Created internal class.
+
+	* System/Net/Sockets/Socket.cs: Changed SocketMethod calls and SocketException calls.
+	* System/Net/Sockets/SocketException.cs: Uncommented
+
+	* runtime/Platform/SocketMethods.cs: Moved into Platform and made public and changed declarations a bit
+	* runtime/Platform/Errno.cs: Made public
+
+2002-04-04  Stephen Compall  <rushing@sigecom.net>
+
+	* System/UriBuilder: little patching of constructors.
+
+2002-04-01  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* doc/native.html: wrong method name in documentation file.
+
+	* resources/en_US/runtime/Format.txt, runtime/System/String.cs:
+	implement "String.Format", "String.ToUpper", "String.ToLower".
+
+	* runtime/Platform/Stdio.cs, runtime/System/Private/StdStream.cs,
+	runtime/System/Console.cs: implement binary access to stdio streams.
+
+	* runtime/System/IO/TextWriter.cs: bug fix to "Write(Object)".
+
+	* runtime/System/RuntimeMethodHandle.cs: "GetFunctionPointer"
+	is not ECMA-compatible.
+
+	* runtime/System/String.cs, runtime/System/Private/StdStream.cs:
+	minor bugs turned up by MS's compiler.
+
+	* runtime/System/IO/File.cs: remove unnecessary break following throw.
+
+2002-03-30  Peter Minten  <silvernerd@users.sf.net>
+
+	* System/Net/Sockets/Socket.cs, System/Net/Sockets/NetworkStream.cs,
+	System/Net/Sockets/SocketException.cs: Fixed bugs
+
+	* System/Net/EndPoint.cs, System/Net/SocketAddress.cs:
+	Added but not completed.
+
+2002-03-28  Stephen Compall  <rushing@sigecom.net>
+
+	* resources/en_US/System/Arg.txt,
+	resources/en_US/System/Exception.txt: Moved some exceptions, added a
+	new one.
+
+	* System/Net/HttpWebRequest.cs: Added a missing using declaration.
+
+	* System/Uri.cs: Spliced more of chiraz's code into this file, hence
+	almost finishing it.
+
+2002-03-26  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* HACKING, System/System.build, tools/csccwrap.sh.in: change
+	pnetlib to use a metadata-only compile.
+
+	* AUTHORS: add Gerard Toonstra to the AUTHORS file.
+
+	* NEWS, configure.in: update version for the "0.1.6" release.
+
+	* configure.in: update working version to "0.1.7".
+
+2002-03-25  Stephen Compall  <rushing@sigecom.net>
+
+	* System/UriBuilder.cs: Fixed compiler error as reported by
+	Mr. Weatherley.
+
+	* maintain.xml: Added information about my current work on
+	pnetlib.
+
+2002-03-23  Peter Minten  <silvernerd@users.sf.net>
+
+	* System/Net/Sockets/Socket.cs: Added methods.
+
+	* System/Net/Sockets/SocketException.cs: Changed to
+	use Errno's and custom messages.
+
+	* System/Net/Sockets/NetworkStream.cs: Implemented Read(), Write()
+	and DataAvaliable().
+
+	* resources/en_US/System/IO.txt: Added socket exception strings to new file.
+
+	* runtime/Platform/SocketMethods.cs: Placed file (made by Sidney Richards)
+	in cvs.
+
+2002-03-22  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Net/HttpWebRequest.cs: remove a stray ';'.
+
+	* System/TODOAttribute.cs: add the pseudo TODO attribute to
+	the "System" assembly, because the version in "runtime" is
+	inaccessible due to being "internal".
+
+	* System/System.build, runtime/runtime.build: add the correct
+	"resources" and "references" tags to the csant build scripts.
+
+	* System/System.build: temporarily comment out the reference
+	to mscorlib.dll because it interferes with cscc compiles.
+
+2002-03-22  Stephen Compall  <rushing@sigecom.net>
+
+	* System/Uri.cs: Began to integrate changes from chiraz's patch
+	and the original implementation into one *working*
+	implementation. Also, fixed syntax errors.
+
+	* System/UriBuilder.cs: Got rid of last `static const' string in
+	favor of the efficient ilrun persistent-string system. Also, fixed
+	syntax errors.
+
+	* System/Net/IPAddress.cs: Made syntax fixes and other minor
+	changes.
+
+	* resources/en_US/runtime/Format.txt: Added new string,
+	"Format_IP", from chiraz's patch.
+
+2002-03-22  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/String.cs, runtime/System/TimeSpan.cs,
+	runtime/System/Version.cs, runtime/System/Threading/Timer.cs:
+	build problems with MS'es compiler.
+
+	* resources/en_US/runtime/Format.txt: new string "Format_Version".
+
+	* runtime/System/Globalization/CharacterInfo.cs,
+	runtime/System/IO/File.cs: build problems with MS'es compiler.
+
+	* HACKING, Makefile.am, configure.in, runtime/System/.cvsignore,
+	runtime/System/Makefile, runtime/System/Makefile.am, tools/.cvsignore,
+	tools/csccwrap.sh.in: modify the pnetlib build process to use csant.
+
+	* tools/mscsc.sh, tools/csccflags.sh: remove obsolete files.
+
+	* tools/csccwrap.sh.in: fix various shell variable expansion bugs.
+
+	* Makefile.am, configure.in, System/.cvsignore, System/Makefile.am,
+	System/System.build: integrate the "System" directory into the build.
+
+2002-03-20 Gerard Toonstra <toonstra@ntlworld.com>
+
+	* System/Net/IPAddress.cs: First class contributed! Mostly
+	finished implementation of System.Net.IPAddress.
+
+2002-03-20 Gopal.V <gopalv82@yahoo.com>
+	* System/net/HttpWebRequest.cs: added a partial implementation
+	of HttWebRequest with most of the methods [TODO]
+
+2002-03-20  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* HACKING: document the location of the daily CVS snapshots.
+
+2002-03-16  Peter Minten  <silvernerd@users.sf.net>
+
+	* resources/en_US/System/Exception.txt: Added Exception_Disposed string.
+
+	* resources/en_US/System/Invalid.txt: Added file and
+	Invalid_AsyncAndBlocking string.
+
+	* resources/en_US/System/Arg.txt: Added file and Arg_SocketCreating string.
+
+2002-03-13  Stephen Compall  <rushing@sigecom.net>
+
+	* System/Uri.cs: Added more high-level properties and methods,
+	including AbsolutePath, Authority, and Escape-ing stuff. Plus,
+	more intelligent interpretation of hidden data methods.
+
+	* System/UriBuilder.cs: Fixed namespace problem, changed Path to
+	match Uri.AbsolutePath changes.
+
+2002-03-12  Stephen Compall  <rushing@sigecom.net>
+
+	* System/Uri.cs: Made the code less kludgy with Strings, added a
+	few simple static methods.
+
+2002-03-12  Abhaya Agarwal  <abhayag@cse.iitk.ac.in>
+
+	* runtime/System/Makefile.am, runtime/System/Threading/Timer.cs,
+	runtime/System/Threading/TimerCallback.cs: new timer classes.
+
+	* runtime/System/String.cs: begin implementing "String.Format".
+
+2002-03-10  Stephen Compall  <rushing@sigecom.net>
+
+	* System/Uri.cs: Moved some const Strings here, fixed
+	Fragment{get;} code, added a few more implementations. Next up is
+	the final answer on internal calls! Also fixed my email address.
+
+	* System/UriBuilder.cs: Cleaned up the code a little, more
+	efficient, barely began offsetting the work to Uri.cs.
+
+2002-03-10  Peter Minten  <silvernerd@users.sf.net>
+
+	* System/Net/Sockets/NetworkStream.cs,
+	System/Net/Sockets/Socket.cs: Started with some simple methods.
+
+2002-03-05  Stephen Compall  <rushing@sigecom.net>
+
+	* System/Uri.cs: Added a few of the basic methods. Eventually,
+	much of the details in UriBuilder will be moved to Uri, to make
+	UriBuilder depend on Uri, but not vice versa.
+
+	* System/UriBuilder.cs: Made a few changes to reflect the updated
+	design, described above. Also a fix or two.
+
+	* resources/en_US/System/Exception.txt: Added some useful
+	exceptions for hexadecimal and URIs.
+
+2002-03-04  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* AUTHORS: update the "AUTHORS" file with a list of all
+	significant contributors to date.
+
+2002-03-03  Peter Minten  <silvernerd@users.sf.net>
+
+	* System/Net/HttpStatusCode.cs, System/Net/HttpVersion.cs,
+	System/Net/IAuthenticationModule.cs, System/Net/ICredentials.cs,
+	System/Net/IPAddress.cs, System/Net/IWebProxy.cs,
+	System/Net/IWebRequestCreate.cs, System/Net/NetworkAccess.cs,
+	System/Net/TransportType.cs, System/Net/WebException.cs,
+	System/Net/WebExceptionStatus.cs, System/Net/WebRequest.cs,
+	System/Net/Sockets/AddressFamily.cs,
+	System/Net/Sockets/LingerOption.cs,
+	System/Net/Sockets/MulticastOption.cs,
+	System/Net/Sockets/ProtocolType.cs,
+	System/Net/Sockets/SelectMode.cs,
+	System/Net/Sockets/SocketException.cs,
+	System/Net/Sockets/SocketFlags.cs,
+	System/Net/Sockets/SocketOptionLevel.cs,
+	System/Net/Sockets/SocketOptionName.cs,
+	System/Net/Sockets/SocketShutdown.cs,
+	System/Net/Sockets/SocketType.cs,
+	resources/en_US/System/Exception.txt: the simple stuff in
+	the System.Net and System.Net.Sockets namespaces.
+
+2002-02-23  Peter Minten  <silvernerd@users.sf.net>
+
+	* runtime/System/Version.cs: Added constructor
+	System.Version.Version(String).
+
+	* runtime/System/TimeSpan.cs: Added method
+	System.TimeSpan.Parse(String).
+
+2002-03-04  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* configure.in, resources/en_US/Makefile.am,
+	resources/en_US/System/.cvsignore,
+	resources/en_US/System/Exception.txt,
+	resources/en_US/System/Makefile.am: add build logic for the
+	"System" resource library.
+
+2002-01-31  Stephen Compall  <rushing@sigecom.net>
+
+	* System/UriBuilder.cs: partial implementation of
+	"System.UriBuilder". Some work is definitely still needed, and I
+	hope to get to that soon.
+
+	* System/UriFormatException.cs: added implementation of
+	"System.UriFormatException".
+
+	* resources/en_US/System/Exception.txt: added US string default
+	for System.UriFormatException.
+
+2002-02-11  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* configure.in, NEWS: update for version "0.1.4" release.
+
+	* configure.in: update the working version to "0.1.5".
+
+2002-02-06  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* HACKING: update URL for ECMA class specification.
+
+	* runtime/System/Int16.cs, runtime/System/Int32.cs,
+	runtime/System/SByte.cs: cast negated values to "uint" before
+	casting up to "ulong", to prevent sign-extension.
+
+	* runtime/System/Security/Permissions/SecurityPermissionAttribute.cs:
+	modify "SecurityPermissionAttribute" so that it gets added when
+	compiling with Microsoft's C# compiler, even though it compiles
+	it wrong.
+
+2002-01-27  Charlie Carnow <carnow@gmx.net>
+
+	* runtime/System/IO/File.cs: Implemented GetAccessTime, and other
+	methods to better fit DirMethods. Fixed syntax errors found by cscc.
+				
+2002-01-26  Abhaya Agarwal  <abhayag@cse.iitk.ac.in>
+
+	* runtime/System/DateTime.cs: implementation of "DateTime.Compare".
+
+2002-01-25  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/Platform/DirMethods.cs: misspelled "InternalCall" in
+	previous version.
+
+	* runtime/System/String.cs: bug fixes to "IndexOf" and "LastIndexOf",
+	when searching for a string.
+
+	* runtime/System/Globalization/NumberFormatInfo.cs: adjust the
+	invariant number formatting information to match the ECMA spec.
+
+2002-01-23  Charlie Carnow <carnow@gmx.net> 
+
+	* runtime/Platform/DirMethods.cs: Added internal methods for
+	copying, renaming, etc.
+
+	* doc/native.html: Changed to fit DirMethods.cs
+
+	* runtime/System/IO/File.cs: Implemented Copy method to use 
+	DirMethods.Copy
+
+	* resources/en_US/runtime/IO.txt: Added new error messages used
+	in System.IO.File
+	
+2002-01-22  Charlie Carnow <carnow@gmx.net>
+
+	* runtime/System/IO/File.cs: Partial Implementation of System.IO.File
+
+2002-01-22  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Private/NumberFormatter.cs: disable decimal digit
+	display so that integers aren't formatted as "N.00".
+
+2002-01-19 Charlie Carnow <carnow@gmx.net>
+
+	* runtime/System/IO/Path.cs: fixed some more errors reported
+	by C# Compiler
+
+2002-01-16 Charlie Carnow <carnow@gmx.net>
+
+	* runtime/System/IO/Path.cs: fix some errors in Path reported
+	by the C# Compiler
+
+2002-01-16  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Makefile.am: add "System.IO.StringWriter" to
+	the build.
+
+2002-01-16  Stephen Compall  <rushing@earthling.net>
+
+	* runtime/System/IO/StringWriter.cs: fixes for compile errors.
+
+2002-01-15  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/IO/Path.cs: remove "System." from the start
+	of the class name, because it confuses the compiler.
+
+2002-01-14  Stephen Compall  <rushing@earthling.net>
+
+	* runtime/System/IO/StringWriter.cs: added implementation.
+
+	* runtime/System/Text/StringBuilder.cs: changed some of the logic
+	in Append(String, int, int) and Append(char[], int, int)
+
+2002-01-14  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/IO/TextWriter.cs: "TextWriter.Write(char)" is
+	not supposed to be implemented.
+
+2002-01-09  Charlie Carnow  <carnow@gmx.net>
+
+	* runtime/System/IO/Path.cs: added Partial Implementations of
+	ChangeExtension, GetFileNameWithoutExtension, HasExtension.
+
+	* runtime/System/IO/Path.cs: added Implentations of Combine and
+	GetTempFilename.
+
+2002-01-10  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* doc/ChangeLog-1: move the contents of ChangeLog into the "doc"
+	directory because it was getting quite large.
+
+	* HACKING: update the HACKING file to contain information on how
+	to submit bug reports and patches.
+
+	* make_patch.sh: add a script that assists with making patch
+	files for users.

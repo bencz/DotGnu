@@ -1,0 +1,7 @@
+#!/bin/sh
+#
+# mkcsharp - make the C# version of the expression example.
+
+set -v
+../treecc -s ../etc expr_cs.tc
+exec csc /target:library expr_cs.cs

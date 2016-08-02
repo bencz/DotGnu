@@ -1,0 +1,35 @@
+treecc
+------
+
+Warning:
+  These are NOT the official Debian packages.  The official
+  packages are maintained by Andrew Mitchell, and are part
+  of Debian.  These packages will probably disappear in time.
+
+The treecc program is used by PNet to help compilers and other
+language-based tools.  It manages the generation of code to
+handle abstract syntax trees and operations upon the trees.
+
+PNet is part of the DotGNU effort.  DotGNU aims to provide
+free toolkit that targets the same areas as Microsofts' .NET
+platform.
+
+You can file DotGNUs' home page here:
+  http://www.dotgnu.org
+
+It was built from this source tarball:
+  http://www.southern-storm.com.au/download/treecc-VERSION.tar.gz
+
+
+Note to package Debian maintainers:
+
+  Most of the files in the debian/ directory are created by the
+  build-debian-packages.sh script which is in the root directory
+  of the sources.  This script uses the information in the rpm
+  .spec file to create the equivelent control files in debian.
+  This means I only have to maintain one set of descriptions,
+  file lists, and so on.
+
+  Look at the comments in that script for more information.
+
+ -- Russell Stuart <russell-debian@stuart.id.au>  Sat,  4 Sep 2004 05:08:17 +1000

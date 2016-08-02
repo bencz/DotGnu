@@ -1,0 +1,12 @@
+Makefile
+Makefile.in
+.deps
+treecc.aux treecc.cp treecc.cps treecc.dvi
+treecc.fn treecc.fns treecc.ky treecc.kys
+treecc.ps treecc.log treecc.pg treecc.toc treecc.tp
+treecc.tps treecc.vr treecc.vrs treecc.op treecc.tr
+treecc.cv treecc.cn treecc.pdf
+treecc.info
+treecc.info-1
+treecc.info-2
+treecc.info-3

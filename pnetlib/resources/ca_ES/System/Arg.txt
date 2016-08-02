@@ -1,0 +1,62 @@
+#
+# Arg.txt - Resources for argument errors.
+#
+# Copyright (C) 2001, 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Exception_UriFormat=No està en un format d'URI correcte
+Arg_UriPartial=No és un valor vàlid UriPartial
+Arg_HexDigit=No és un valor hexadecimal vàlid
+Arg_UriScheme=No és un esquema d'URI vàlid
+Arg_UriPort=El port especificat a l'URI no existeix
+Arg_UriPathAbs=La ruta relativa no pot ser convertida a absoluta
+Arg_UriHostName=Els noms de host han d'estar especificats amb format DNS o IPv4
+Arg_InvalidIdentifier=Idenfiticador no vàlid
+Arg_InvalidCodeDom=Invalid CodeDom node in this context
+Arg_MaskDone=CreateMask ha creat totes les màscares
+Arg_AccessAlreadySet=El valor d'acces ja ha estat definit
+Arg_TransportAlreadySet=El valor de transport ja ha estat definit
+Arg_HostAlreadySet=El host ja ha estat definit
+Arg_PortAlreadySet=El port ja ha estat definit
+Arg_SocketPermission=Permisos de sockets incomplets
+Arg_SocketOption=Opció invàlida per al socket
+Arg_SocketOptionValue=Valor no vàlid per a l'opció del socket
+Arg_NotSocket=No és un socket obert
+Arg_TraceLevel=Nivell de traça invàlid
+Arg_AssertFailed=Assert fallit: {0}
+Arg_CounterCategory=Invalid performance counter category name
+Arg_NoSuchProcess=Procés inexistent
+Arg_NotEnumType=El tipus especificat no és enumerat
+Arg_EmptyArray=L'array està buida
+Arg_InvalidSockAddr=Direcció de socket incorrecte
+Arg_InvalidIPv6Address=Direcció IPv6 no vàlida
+Arg_InvalidIPv6Scope=Abast invàlid per l'IPv6
+ArgRange_NonNegative=El valor no pot ser negatiu
+ArgRange_Port=El port està fora de rang
+ArgRange_SwitchValue={0} està fora de rang pel switch "{1}"
+Arg_InvalidHeader=La capçalera és invàlida
+Arg_RestrictedHeader=La capçalera està restringida
+Arg_DuplicateCredentials=Credencials afegides a la caché credencial
+Arg_DuplicateTempFilename=Nom de fitxer duplicat en els temporals
+ArgRange_InterfaceIndex=Interfície IPv6 fora de rang
+Arg_ArraysSameSize=Ambdues arrays han de ser del mateix tamany
+Arg_InvalidElement=Element invàlid per aquest tipus
+Arg_InvalidCultureName=Nom de cultura invàlid
+Arg_CookieCapacity=S'ha superat la capacitat del contenidor de Cookies
+Arg_WebAcceptAlreadySet=Els permisos de web ja han estat definits
+Arg_WebConnectAlreadySet=Els permisos de conexió ja han estat definits
+Arg_DuplicateComponent=Ja existeix un component amb aquest nom
+Arg_NotCollMember=L'item especificat no existeix

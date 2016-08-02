@@ -1,0 +1,4 @@
+./array2.cs:28: array or indexed value expected
+./array2.cs:29: array or indexed value expected
+./array2.cs:32: no conversion from `System.String' to `int'
+./array2.cs:35: incorrect number of indices for `int[]'

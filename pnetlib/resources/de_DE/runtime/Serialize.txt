@@ -1,0 +1,35 @@
+#
+# Serialize.txt - Resources for serialization-related errors and exceptions.
+#
+# Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Serialize_NoObjectID=Kein Objektbezeichner wurd zugeteilt
+Serialize_BadType=Unzulaessiger Typ fuer SerializationInfo.AddValue angegeben
+Serialize_AlreadyPresent=Der angegebene Name ist bereits vorhanden
+Serialize_NotField=Member Descriptor ist kein FieldInfo Object
+Serialize_NotClrType=Angegebner Typ ist kein Typ der Laufzeitumgebung
+Serialize_MemberDataMismatch=Member und Daten Arrays haben unterschiedliche Laenge
+Serialize_BadObjectID=Ingueltiger Objekt identifier
+Serialize_AlreadyRegistered=Der angegebene Objekt identifier wurd bereits mit einem anderen Objekt registriert
+Serialize_MissingFixup=Fehlender fixup waehrend des deseralisierungs Prozesses
+Serialize_BadFixup=Der Fixup konnte nicht angewendet werden
+Serialize_StateMissing=Einige der benoetigten serialisierungs Stati fehlen
+Serialize_KeyValueMismatch=Das Schluessel- und das Wert Array fuer die Hash Tabellen haben unterschiedliche Groesse
+Serialize_UnknownAssembly=Unbekannte Assembly angegeben
+Serialize_DelegateTargetMismatch=Das Delegate Ziel entspricht nicht dem erwarteten Typ
+Serialize_DelegateNotPublic=Die Delegaten Methode ist nicht public
+Serialize_CannotSerialize=Kann {0} nicht serialisieren

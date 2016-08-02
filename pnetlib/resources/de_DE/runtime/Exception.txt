@@ -1,0 +1,111 @@
+#
+# Exception.txt - Resources for exception messages.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Exception_WasThrown={0} wurde entfernt
+Exception_System=Es trat ein Fehler im System auf
+Exception_InvalidCast=Could not cast to the specified type
+Exception_Overflow=Ueberlauf
+Exception_Arithmetic=Die arithmetische Operation ist nicht erlaubt
+Exception_Argument=Es wurde ein falsches Argument angegeben
+Exception_ArgParamName=Parameter Name: {0}
+Exception_InvalidOperation=Es trat eine unerlaubte Operation auf
+Exception_Format=Die uebermittelte Wert hat ein unerlaubtes Format
+Exception_NoSystemDir=Auf dieser Plattform konnte kein "System" Verzeichnis gefunden werden
+Exception_NoCmdLine=Diese Plattform unterstuetzt keine Kommandozeilenbefehle
+Exception_NotSupported=Die angefragte Funktion ist nicht verfuegbar
+Exception_ComTypeLoad=[Assembly {0}] Type {1} cannot be created through COM
+Exception_TypeLoad=Konnte den angegebenen Typ nicht laden
+Exception_AppDomainUnloaded=Die Anwendungsdomain wurde entladen
+Exception_Application=Es trat eine Anwendungsausnahme auf
+Exception_NotImplemented=Die angefragte Funktionalitaet ist nicht verfuegbar
+Exception_Rank=Falscher Array Rang angegeben
+Exception_ArrayTypeMismatch=Source array type cannot be assigned to destination array type
+Exception_IO=Input/Output Fehler
+Exception_FileNotFound=Konnte angegebene Datei nicht finden
+Exception_FileLoad=Konnte angegebene Datei nicht laden
+Exception_DirNotFound=Konnte angegebenes Verzeichnis nicht finden
+Exception_BadImage=Format der ausfuehrbaren Datei oder Bibliothek ist ungueltig
+Exception_Filename=Dateiname: {0}
+Exception_CannotUnloadAD=Versuch die AppDomain zu entladen schlug fehl
+Exception_DivZero=Division durch null
+Exception_DuplicateWait=Doppelte Argumente im Objekt
+Exception_EntryPoint=Eingangspunkt konnte nicht gefunden werden
+Exception_Engine=Es trat ein interner Fehler auf
+Exception_MemberAccess=Auf Mitglied konnte nicht zugegriffen werden
+Exception_FieldAccess=Attempted to access a private or protected field within a type
+Exception_MethodAccess=Cannot access methodAttempted to access a private or protected method within a type
+Exception_Index=Falscher Bereich fuer Array Index
+Exception_InvalidProgram=Metadata is incorrect
+Exception_MemberMissing=Es wurde versucht auf ein nicht existierendes Mitglied zuzugreifen
+Exception_FieldMissing=Es wurde versucht auf ein nicht existierendes Feld zuzugreifen
+Exception_MethodMissing=Es wurde versucht auf eine nicht existierende Methode zuzugreifen
+Exception_NoMulticast=This operation cannot be performed with the specified delegates
+Exception_NotFinite=The number encountered was not a finite quantity
+Exception_NullRef=The value 'null' was found where an instance of an object was required
+Exception_NoMemory=There was not enough memory to continue the execution of the program
+Exception_StackOverflow=Die angefragte Operation verursachte einen Stack Ueberlauf
+Exception_TypeInit=Typ konnte nicht initialisiert werden
+Exception_TypeInitName=Type initialization failed for {0}
+Exception_TypeUnload=Typ wurde entladen
+Exception_Unauthorized=Es wurde versucht eine unerlaubte Operation durchzufuehren
+Exception_HiddenBuffer=Der Buffer konnte nicht abgefragt werden
+Exception_AmbiguousMatch=Zweideutige Kompatibilitaet gefunden
+Exception_Target=Die Methode konnte nicht auf ein null Ziel angewandt werden
+Exception_TargetInvoke=Exception has been thrown by the target of an invocation
+Exception_TargetParam=Falsche Anzahl an Parametern
+Exception_MissingManRes=Missing manifest resource
+Exception_SyncLock=Synchronization method was invoked from an unsynchronized block of code
+Exception_ThreadState=Die angefragte Operation konnte nicht mit dem aktuellen Thread ausgefuehrt werden
+Exception_ThreadInterrupt=Der Thread wurde unterbrochen
+Exception_ThreadAbort=Der Thread wurde abgebrochen
+Exception_ThreadsNotSupported=Die Laufzeitumgebung unterstuetzt keine Threads
+Exception_ThreadNeedsLock=Der aktuelle Thread bezitzt nicht die Sperre fuer das angegebene Objekt
+Exception_ThreadAlreadyStarted=Der Thread ist bereits gestartet
+Exception_EndOfStream=Es wurde versucht nach dem Ende des Streams zu lesen
+Exception_PathTooLong=Der angegebene Pfad ist zu Lang
+Exception_Security=Es trat ein Sicherheitsfehler auf
+Exception_SecurityNotGranted=Dem Calling Code wurde die angefragte Erlaubnis nicht genehmigt
+Exception_PermitOnly=Es ist bereits eine VerbieteNur (PermitOnly) clause aktiv
+Exception_Remoting=Ausfall waehrend remote Operation
+Exception_RemotingTimeout=Es ist eine Zeitueberschreitung waehrend einer entfernten Operation aufgetreten
+Exception_Server=Ein Server Ausfall trat waehrend einer entfernten Operation auf
+Exception_Verification=Konnte Code nicht verifizieren
+Exception_Serialization=An error occurred during serialization operations
+Exception_XmlSyntax=Syntax Fehler in den XML Daten
+Exception_XmlSyntaxLine=Zeile {0}: Syntax Fehler in den XML Daten
+Exception_XmlSyntaxLineMsg=Zeile {0}: Syntax Fehler in den XML Daten: {1}
+Exception_COM=Es ist eine COM Ausnahme aufgetreten
+Exception_InvalidComObject=Es wurde ein ungueltiges COM Objekt entdeckt
+Exception_InvalidOleType=Ungueltiger OLE variant Typ
+Exception_MarshalDirective=Ungueltige marshalling Directive entdeckt
+Exception_SafeArrayRank=Ranks der sicheren Arrays sind unterschiedlich
+Exception_SafeArrayType=Typen der safe Arrays sind unterschiedlich
+Exception_SEH=Problem mit der strukturierten Ausnahme Behandlung
+Exception_Filter=Ungueltiges Filter Kriterium
+Exception_FilterAttribute=Ungueltiges Attribut Filter Kriterium
+Exception_FilterName=Ungueltiges Namen Filter Kriterium
+Exception_Platform=Die angeforderte Operation wird durch diese Plattform nicht unterstuetzt
+Exception_ContextMarshal=Marshalling ueber eine Kontext Grenze hinweg ist fehlgeschlagen
+Exception_CustomAttrFormat=Ungueltigen binaeres Format fuer custom Attribut
+Exception_ReflectionTypeLoad=Es sind mehrere Fehler beim Laden eines Typs aufgetreten
+Exception_DllNotFound=Eine benoetigte DLL Datei wurde nicht gefunden ({0})
+Exception_IsolatedStorage=Es ist ein Fehler bei der Verarbeitung des isolierten Speichers aufgetreten
+Exception_Policy=Die Sicherheitspolitik verbietet die angeforderte Operation
+Exception_UnexpectedEngineState=Die Ausfuehrungseinheit entdeckte ein ernsthaftes Problem
+

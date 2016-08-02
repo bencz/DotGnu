@@ -1,0 +1,49 @@
+#
+# Format.txt - Resources for formatting errors.
+#
+# Copyright (C) 2001, 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Format_BadBoolean=Bad format for Boolean value
+Format_NeedSingleChar=Eingabe muss ein single-character string sein
+Format_Integer=Wert muss als integer formatiert werden
+Format_Guid=Ungueltiger Wert fuer Guid: sollte "B", "D", "N", oder "P" sein
+Format_GuidValue=Ungueltiges Format fuer einen Guid Wert
+Format_Enum=Ungueltiger Wert fuer enumerated Wert
+Format_Version=Ungueltiges Format fuer Version Wert
+Format_IP=Ungueltiges Format fuer IP adresse
+Format_FormatString=Ungueltige Formatsangabe
+Format_FormatArgNumber=Invalid argument number in format specification
+Format_Base64ArrayChar=Invalid base64 character in input
+Format_TypeException=Ungueltiger Typ fuer das angegebene Format
+Format_StringException=Ungueltige Format angebe
+Format_UnallowedCurrencySymbol=Waehrungssymbol wurde gefunden wo es nicht erlaubt ist
+Format_UnallowedDecimalPoint=Dezimal Komma wurde gefunden wo es nicht erlaubt ist
+Format_MultipleDecimalSeparators=Es wurden mehrere Dezimal Kommas gefunden
+Format_UnallowedLeadingWhite=Fuehrende Leerzeichen gefunden wo sie nicht erlaubt sind
+Format_UnallowedTrailingWhite=Folgende Leerzeichen gefunden wo sie nicht erlaubt sind
+Format_UnbalancedParentheses=Unausgeglichene Klammern wurden im String entdeckt
+Format_ExtraParentheses=Es wurde mehr als ein Paar Klammern im String entdeckt
+Format_UnallowedParentheses=Klammern im String wo sie nicht erlaubt sind
+Format_UnallowedLeadingSign=Vorzeichen gefunden wo keines erlaubt ist
+Format_UnallowedTrailingSign=Folgendes Zeichen gefunden wo keines erlaubt ist
+Format_UnallowedExponent=Exponent gefunden wo keiner erlaubt ist
+Format_TwoSigns=Es wurden sowohl Vorzeichen als auch Nachzeichen gefunden
+Format_HexNotSupported=Hexadezimale Notation wird nicht fuer dezimale und Fliesskommazahlen unterstuetzt
+Format_FileIOPermSetName=Gleiches Verzeichnis Datei IO - {0}
+Format_NetCodeGroupName=Gleiche Web Site
+Format_DateTime=Ungueltiges Format fuer date/time Wert
+Format_Empty=Leerer Format String

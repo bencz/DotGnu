@@ -1,0 +1,841 @@
+/*
+ * c_const.tc - Constant handling for C.
+ *
+ * Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+%decls %end %{
+
+/*
+ * Get the index of a particular string within the string constant pool.
+ */
+ILUInt32 CGenStringIndex(ILGenInfo *info, const char *str, int len);
+
+/*
+ * Get the length of a wide character string.
+ */
+ILUInt32 CGenWStringLength(const char *str, int len);
+
+/*
+ * Get the index of a particular wide string within the string constant pool.
+ */
+ILUInt32 CGenWStringIndex(ILGenInfo *info, const char *str, int len);
+
+/*
+ * Dump the contents of the string constant pool.
+ */
+void CGenStringPool(ILGenInfo *info);
+
+%}
+
+/*
+ * Semantic analysis for the "null" constant.
+ */
+ILNode_CSemAnalysis(ILNode_Null)
+{
+	CSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_ObjectRef;
+	evalValue.un.oValue = 0;
+	CSemSetConstant(value, ILType_Null, evalValue);
+	return value;
+}
+
+/*
+ * Semantic analysis for the "pointer null" constant.
+ */
+ILNode_CSemAnalysis(ILNode_NullPtr)
+{
+	CSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_UnmanagedPtr;
+	evalValue.un.i4Value = 0;
+	CSemSetConstant(value, CTypeCreateVoidPtr(info), evalValue);
+	return value;
+}
+
+/*
+ * Semantic analysis for the "true" constant.
+ */
+ILNode_CSemAnalysis(ILNode_True)
+{
+	CSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Boolean;
+	evalValue.un.i4Value = 1;
+	CSemSetConstant(value, ILType_Boolean, evalValue);
+	return value;
+}
+
+/*
+ * Semantic analysis for the "false" constant.
+ */
+ILNode_CSemAnalysis(ILNode_False)
+{
+	CSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Boolean;
+	evalValue.un.i4Value = 0;
+	CSemSetConstant(value, ILType_Boolean, evalValue);
+	return value;
+}
+
+/*
+ * Semantic analysis for "int8" constants.
+ */
+ILNode_CSemAnalysis(ILNode_Int8)
+{
+	CSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Int8;
+	if(node->isneg)
+	{
+		evalValue.un.i4Value = -((ILInt32)(node->value));
+	}
+	else
+	{
+		evalValue.un.i4Value = (ILInt32)(node->value);
+	}
+	CSemSetConstant(value, ILType_Int8, evalValue);
+	return value;
+}
+
+/*
+ * Semantic analysis for "uint8" constants.
+ */
+ILNode_CSemAnalysis(ILNode_UInt8)
+{
+	CSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_UInt8;
+	evalValue.un.i4Value = (ILInt32)(node->value);
+	CSemSetConstant(value, ILType_UInt8, evalValue);
+	return value;
+}
+
+/*
+ * Semantic analysis for "int16" constants.
+ */
+ILNode_CSemAnalysis(ILNode_Int16)
+{
+	CSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Int16;
+	if(node->isneg)
+	{
+		evalValue.un.i4Value = -((ILInt32)(node->value));
+	}
+	else
+	{
+		evalValue.un.i4Value = (ILInt32)(node->value);
+	}
+	CSemSetConstant(value, ILType_Int16, evalValue);
+	return value;
+}
+
+/*
+ * Semantic analysis for "uint16" constants.
+ */
+ILNode_CSemAnalysis(ILNode_UInt16)
+{
+	CSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_UInt16;
+	evalValue.un.i4Value = (ILInt32)(node->value);
+	CSemSetConstant(value, ILType_UInt16, evalValue);
+	return value;
+}
+
+/*
+ * Semantic analysis for "__wchar__" constants.
+ */
+ILNode_CSemAnalysis(ILNode_Char)
+{
+	CSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Char;
+	evalValue.un.i4Value = (ILInt32)(node->value);
+	CSemSetConstant(value, ILType_Char, evalValue);
+	return value;
+}
+
+/*
+ * Semantic analysis for "int32" constants.
+ */
+ILNode_CSemAnalysis(ILNode_Int32)
+{
+	CSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Int32;
+	if(node->isneg)
+	{
+		evalValue.un.i4Value = -((ILInt32)(node->value));
+	}
+	else
+	{
+		evalValue.un.i4Value = (ILInt32)(node->value);
+	}
+	CSemSetConstant(value, ILType_Int32, evalValue);
+	return value;
+}
+
+/*
+ * Semantic analysis for "uint32" constants.
+ */
+ILNode_CSemAnalysis(ILNode_UInt32)
+{
+	CSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_UInt32;
+	evalValue.un.i4Value = (ILInt32)(node->value);
+	CSemSetConstant(value, ILType_UInt32, evalValue);
+	return value;
+}
+
+/*
+ * Semantic analysis for "int64" constants.
+ */
+ILNode_CSemAnalysis(ILNode_Int64)
+{
+	CSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Int64;
+	if(node->isneg)
+	{
+		evalValue.un.i8Value = -((ILInt64)(node->value));
+	}
+	else
+	{
+		evalValue.un.i8Value = (ILInt64)(node->value);
+	}
+	CSemSetConstant(value, ILType_Int64, evalValue);
+	return value;
+}
+
+/*
+ * Semantic analysis for "int64" constants.
+ */
+ILNode_CSemAnalysis(ILNode_UInt64)
+{
+	CSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_UInt64;
+	evalValue.un.i8Value = (ILInt64)(node->value);
+	CSemSetConstant(value, ILType_UInt64, evalValue);
+	return value;
+}
+
+/*
+ * Semantic analysis for "native int" constants.
+ */
+ILNode_CSemAnalysis(ILNode_Int)
+{
+	CSemValue value;
+	ILEvalValue evalValue;
+	ILType *type;
+	if(node->isneg)
+	{
+		if(node->value > (((ILUInt64)IL_MAX_INT32) + 1))
+		{
+			/* The value may be too big for native integers
+			   on a 32-bit platform, so convert into int64 */
+			evalValue.valueType = ILMachineType_Int64;
+			evalValue.un.i8Value = -((ILInt64)(node->value));
+			type = ILType_Int64;
+		}
+		else
+		{
+			evalValue.valueType = ILMachineType_NativeInt;
+			evalValue.un.i4Value = -((ILInt32)(node->value));
+			type = ILType_Int;
+		}
+	}
+	else
+	{
+		if(node->value > (ILUInt64)IL_MAX_INT32)
+		{
+			/* The value may be too big for native integers
+			   on a 32-bit platform, so convert into int64 */
+			evalValue.valueType = ILMachineType_Int64;
+			evalValue.un.i8Value = (ILInt64)(node->value);
+			type = ILType_Int64;
+		}
+		else
+		{
+			evalValue.valueType = ILMachineType_NativeInt;
+			evalValue.un.i4Value = (ILInt32)(node->value);
+			type = ILType_Int;
+		}
+	}
+	CSemSetConstant(value, type, evalValue);
+	return value;
+}
+
+/*
+ * Semantic analysis for "native uint" constants.
+ */
+ILNode_CSemAnalysis(ILNode_UInt)
+{
+	CSemValue value;
+	ILEvalValue evalValue;
+	ILType *type;
+	if(node->value > (ILUInt64)IL_MAX_UINT32)
+	{
+		/* The value may be too big for native integers
+		   on a 32-bit platform, so convert into uint64 */
+		evalValue.valueType = ILMachineType_UInt64;
+		evalValue.un.i8Value = (ILInt64)(node->value);
+		type = ILType_UInt64;
+	}
+	else
+	{
+		evalValue.valueType = ILMachineType_NativeInt;
+		evalValue.un.i4Value = (ILInt32)(node->value);
+		type = ILType_UInt;
+	}
+	CSemSetConstant(value, type, evalValue);
+	return value;
+}
+
+/*
+ * Semantic analysis for "float32" constants.
+ */
+ILNode_CSemAnalysis(ILNode_Float32)
+{
+	CSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Float32;
+	evalValue.un.r4Value = (ILFloat)(node->value);
+	CSemSetConstant(value, ILType_Float32, evalValue);
+	return value;
+}
+
+/*
+ * Semantic analysis for "float64" constants.
+ */
+ILNode_CSemAnalysis(ILNode_Float64)
+{
+	CSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_Float64;
+	evalValue.un.r8Value = node->value;
+	CSemSetConstant(value, ILType_Float64, evalValue);
+	return value;
+}
+
+/*
+ * Semantic analysis for "native float" constants.
+ */
+ILNode_CSemAnalysis(ILNode_Float)
+{
+	CSemValue value;
+	ILEvalValue evalValue;
+	evalValue.valueType = ILMachineType_NativeFloat;
+	evalValue.un.r8Value = node->value;
+	CSemSetConstant(value, ILType_Float, evalValue);
+	return value;
+}
+
+/*
+ * Semantic analysis for "decimal" constants.
+ */
+ILNode_CSemAnalysis(ILNode_Decimal)
+{
+	/* Decimal constants are not used in C */
+	return CSemValueDefault;
+}
+
+/*
+ * Semantic analysis for "C# string" constants.
+ */
+ILNode_CSemAnalysis(ILNode_String)
+{
+	CSemValue value;
+	CSemSetDynConstant(value, ILFindSystemType(info, "String"));
+	return value;
+}
+
+/*
+ * Semantic analysis for "C string" constants.
+ */
+ILNode_CSemAnalysis(ILNode_CString)
+{
+	CSemValue value;
+	CSemSetDynConstant(value, CTypeCreateCharPtr(info));
+	return value;
+}
+
+/*
+ * Generate value code for a "C string" constant.
+ */
+ILNode_GenValue(ILNode_CString)
+{
+	ILUInt32 index;
+
+	/* Look for this string in the string pool */
+	index = CGenStringIndex(info, node->str, node->len);
+
+	/* Get the address of the string in the pool */
+	if(info->asmOutput)
+	{
+		fprintf(info->asmOutput,
+		        "\tldsflda\tvaluetype '$strings'/'type%d' "
+					"'$strings'::'str%lu'\n",
+				node->len + 1, (unsigned long)index);
+	}
+	ILGenAdjust(info, 1);
+
+	/* Strings are passed on the stack as unmanaged pointers (type I) */
+	return ILMachineType_UnmanagedPtr;
+}
+
+/*
+ * Evaluate a "C string" constant.
+ */
+ILNode_EvalConst(ILNode_CString)
+{
+	/* C string constants must be evaluated at runtime because
+	   we don't know what the address is yet */
+	return 0;
+}
+
+/*
+ * Semantic analysis for "C wide string" constants.
+ */
+ILNode_CSemAnalysis(ILNode_CWString)
+{
+	CSemValue value;
+	CSemSetDynConstant(value, CTypeCreateWCharPtr(info));
+	return value;
+}
+
+/*
+ * Generate value code for a "C wide string" constant.
+ */
+ILNode_GenValue(ILNode_CWString)
+{
+	ILUInt32 len;
+	ILUInt32 index;
+
+	/* Look for this string in the string pool */
+	index = CGenWStringIndex(info, node->str, node->len);
+
+	/* Get the address of the string in the pool */
+	if(info->asmOutput)
+	{
+		len = CGenWStringLength(node->str, node->len);
+		fprintf(info->asmOutput,
+		        "\tldsflda\tvaluetype '$strings'/'wtype%lu' "
+					"'$strings'::'wstr%lu'\n",
+				(unsigned long)(len + 1), (unsigned long)index);
+	}
+	ILGenAdjust(info, 1);
+
+	/* Strings are passed on the stack as unmanaged pointers (type I) */
+	return ILMachineType_UnmanagedPtr;
+}
+
+/*
+ * Evaluate a "C wide string" constant.
+ */
+ILNode_EvalConst(ILNode_CWString)
+{
+	/* C wide string constants must be evaluated at runtime because
+	   we don't know what the address is yet */
+	return 0;
+}
+
+/*
+ * Get the type of a C string or C wide string constants
+ */
+ILNode_GetType(ILNode_CString),
+ILNode_GetType(ILNode_CWString)
+{
+	return ILMachineType_UnmanagedPtr;
+}
+
+%end %{
+
+/*
+ * Temporary storage for the string constant pool.
+ */
+#define	C_STRBUF_SIZE	1024
+typedef struct _tagStringBuffer
+{
+	struct _tagStringBuffer *next;
+	int used;
+	int size;
+	char buffer[1];
+
+} StringBuffer;
+typedef struct
+{
+	const char *str;
+	int len;
+	int isWide;
+	ILUInt32 index;
+
+} StringHashEntry;
+static unsigned long poolSize = 0;
+static StringBuffer *poolFirst = 0;
+static StringBuffer *poolLast = 0;
+static ILHashTable  *poolHash = 0;
+static ILUInt32      poolIndex = 0;
+
+/*
+ * Compute the hash value for a string pool element.
+ */
+static unsigned long PoolHash_Compute(const StringHashEntry *elem)
+{
+	return ILHashString(0, elem->str, elem->len);
+}
+
+/*
+ * Determine if we have a match between and element and a key.
+ */
+static int PoolHash_Match(const StringHashEntry *elem,
+						  const StringHashEntry *key)
+{
+	if(elem->len != key->len)
+	{
+		return 0;
+	}
+	if(elem->isWide != key->isWide)
+	{
+		return 0;
+	}
+	return (elem->len == 0 || !ILMemCmp(elem->str, key->str, elem->len));
+}
+
+static ILUInt32 GenStringIndex(ILGenInfo *info, const char *str,
+							   int len, int isWide)
+{
+	StringHashEntry *entry;
+	StringHashEntry key;
+	StringBuffer *buf;
+	int size;
+
+	/* Look up the string in the hash table */
+	if(poolHash)
+	{
+		key.str = str;
+		key.len = len;
+		key.isWide = isWide;
+		entry = ILHashFindType(poolHash, &key, StringHashEntry);
+		if(entry)
+		{
+			return entry->index;
+		}
+	}
+
+	/* Add the string to the pool */
+	if(!poolLast || (poolLast->used + len + 1) > poolLast->size)
+	{
+		size = len + 1;
+		if(size < C_STRBUF_SIZE)
+		{
+			size = C_STRBUF_SIZE;
+		}
+		buf = (StringBuffer *)ILMalloc(sizeof(StringBuffer) + size - 1);
+		if(!buf)
+		{
+			ILGenOutOfMemory(info);
+		}
+		buf->next = 0;
+		if(poolLast)
+		{
+			poolLast->next = buf;
+		}
+		else
+		{
+			poolFirst = buf;
+		}
+		poolLast = buf;
+		buf->used = 0;
+		buf->size = size;
+	}
+	ILMemCpy(poolLast->buffer + poolLast->used, str, len);
+	poolLast->buffer[poolLast->used + len] = '\0';
+	str = poolLast->buffer + poolLast->used;
+	poolLast->used += len + 1;
+	poolSize += (unsigned long)(len + 1);
+
+	/* Add the string to the hash table */
+	if(!poolHash)
+	{
+		poolHash = ILHashCreate(0, (ILHashComputeFunc)PoolHash_Compute,
+							    (ILHashKeyComputeFunc)PoolHash_Compute,
+								(ILHashMatchFunc)PoolHash_Match,
+								(ILHashFreeFunc)ILFree);
+		if(!poolHash)
+		{
+			ILGenOutOfMemory(info);
+		}
+	}
+	entry = (StringHashEntry *)ILMalloc(sizeof(StringHashEntry));
+	if(!entry)
+	{
+		ILGenOutOfMemory(info);
+	}
+	entry->str = str;
+	entry->len = len;
+	entry->isWide = isWide;
+	entry->index = poolIndex;
+	if(!ILHashAdd(poolHash, entry))
+	{
+		ILGenOutOfMemory(info);
+	}
+
+	/* Return the index to the caller */
+	return poolIndex++;
+}
+
+ILUInt32 CGenStringIndex(ILGenInfo *info, const char *str, int len)
+{
+	return GenStringIndex(info, str, len, 0);
+}
+
+ILUInt32 CGenWStringLength(const char *str, int len)
+{
+	unsigned long ch;
+	ILUInt32 slen = 0;
+	int posn = 0;
+	while(posn < len)
+	{
+		ch = ILUTF8ReadChar(str, len, &posn);
+		if(ch < 0x10000)
+		{
+			++slen;
+		}
+		else
+		{
+			slen += 2;
+		}
+	}
+	return slen;
+}
+
+ILUInt32 CGenWStringIndex(ILGenInfo *info, const char *str, int len)
+{
+	return GenStringIndex(info, str, len, 1);
+}
+
+#if HAVE_QSORT
+
+static int IntCompare(const void *e1, const void *e2)
+{
+	if(*((int *)e1) < *((int *)e2))
+	{
+		return -1;
+	}
+	else if(*((int *)e1) > *((int *)e2))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+#endif
+
+void CGenStringPool(ILGenInfo *info)
+{
+	FILE *stream = info->asmOutput;
+	int column;
+	const char *str;
+	int len;
+	ILHashIter iter;
+	StringHashEntry *entry;
+	int *lengths;
+	int *wideLengths;
+	int numLengths;
+	int numWideLengths;
+
+	/* Bail out if no assembly output stream or string pool */
+	if(!stream || !poolSize)
+	{
+		return;
+	}
+
+	/* Generate the type information for the pool */
+	fputs(".class private sealed '$strings' extends [.library]System.Object\n",
+		  stream);
+	fputs("{\n", stream);
+
+	/* Collect up the length values of all strings and sort them */
+	lengths = (int *)ILMalloc(sizeof(int) * poolIndex);
+	if(!lengths)
+	{
+		ILGenOutOfMemory(info);
+	}
+	wideLengths = (int *)ILMalloc(sizeof(int) * poolIndex);
+	if(!wideLengths)
+	{
+		ILGenOutOfMemory(info);
+	}
+	numLengths = 0;
+	numWideLengths = 0;
+	ILHashIterInit(&iter, poolHash);
+	while((entry = ILHashIterNextType(&iter, StringHashEntry)) != 0)
+	{
+		if(!(entry->isWide))
+		{
+			lengths[numLengths++] = entry->len + 1;
+		}
+		else
+		{
+			wideLengths[numWideLengths++] =
+				(int)(CGenWStringLength(entry->str, entry->len) + 1);
+		}
+	}
+#if HAVE_QSORT
+	qsort(lengths, numLengths, sizeof(int), IntCompare);
+	qsort(wideLengths, numWideLengths, sizeof(int), IntCompare);
+#else
+	{
+		int x, y;
+		for(x = 0; x < (numLengths - 1); ++x)
+		{
+			for(y = x + 1; y < numLengths; ++y)
+			{
+				if(lengths[x] > lengths[y])
+				{
+					len = lengths[x];
+					lengths[x] = lengths[y];
+					lengths[y] = len;
+				}
+			}
+		}
+		for(x = 0; x < (numWideLengths - 1); ++x)
+		{
+			for(y = x + 1; y < numWideLengths; ++y)
+			{
+				if(wideLengths[x] > wideLengths[y])
+				{
+					len = wideLengths[x];
+					wideLengths[x] = wideLengths[y];
+					wideLengths[y] = len;
+				}
+			}
+		}
+	}
+#endif
+
+	/* Declare value types for each distinct length value */
+	for(len = 0; len < numLengths; ++len)
+	{
+		if(len < (numLengths - 1) && lengths[len] == lengths[len + 1])
+		{
+			continue;
+		}
+		fprintf(stream, ".class nested public sealed explicit "
+						"'type%d' extends [.library]System.ValueType\n",
+				lengths[len]);
+		fprintf(stream, "{\n\t.pack 1\n\t.size %d\n}\n", lengths[len]);
+	}
+	for(len = 0; len < numWideLengths; ++len)
+	{
+		if(len < (numWideLengths - 1) &&
+		   wideLengths[len] == wideLengths[len + 1])
+		{
+			continue;
+		}
+		fprintf(stream, ".class nested public sealed explicit "
+						"'wtype%d' extends [.library]System.ValueType\n",
+				wideLengths[len]);
+		fprintf(stream, "{\n\t.pack 2\n\t.size %d\n}\n",
+		        wideLengths[len] * 2);
+	}
+
+	/* Dump the contents of all "char *" strings to the ".sdata" section */
+	ILHashIterInit(&iter, poolHash);
+	while((entry = ILHashIterNextType(&iter, StringHashEntry)) != 0)
+	{
+		if(entry->isWide)
+		{
+			fprintf(stream, ".field public static valuetype "
+							"'$strings'/'wtype%d' wstr%lu\n",
+					CGenWStringLength(entry->str, entry->len) + 1,
+				    (unsigned long)(entry->index));
+			continue;
+		}
+		fprintf(stream, ".data StrData%lu = bytearray(\n",
+				(unsigned long)(entry->index));
+		column = 0;
+		str = entry->str;
+		len = entry->len + 1;
+		while(len > 0)
+		{
+			fprintf(stream, " %02X", (int)(*str));
+			--len;
+			++str;
+			++column;
+			if(len > 0 && (column % 24) == 0)
+			{
+				putc('\n', stream);
+				column = 0;
+			}
+		}
+		fputs(")\n", stream);
+		fprintf(stream, ".field public static valuetype '$strings'/'type%d' "
+						"str%lu at StrData%lu\n",
+				entry->len + 1, (unsigned long)(entry->index),
+				(unsigned long)(entry->index));
+	}
+
+	/* Output the end of the "$strings" type */
+	fputs("}\n", stream);
+
+	/* Dump the contents of all "wchar *" strings to an initializer method */
+	if(numWideLengths > 0)
+	{
+		fputs(".method private static specialname void '.init-wstrings'() "
+					"cil managed\n", stream);
+		fputs("{\n", stream);
+		fputs(".custom instance void OpenSystem.C.InitializerAttribute::.ctor()"
+				" = (01 00 00 00)\n", stream);
+		fputs(".custom instance void OpenSystem.C.InitializerOrderAttribute"
+			  	"::.ctor(int32) = (01 00 FF FF FF FF 00 00)\n", stream);
+		fputs("\t.maxstack 2\n", stream);
+		ILHashIterInit(&iter, poolHash);
+		while((entry = ILHashIterNextType(&iter, StringHashEntry)) != 0)
+		{
+			if(!(entry->isWide))
+			{
+				continue;
+			}
+			fprintf(stream, "\tldsflda valuetype '$strings'/'wtype%d' "
+							"'$strings'::wstr%lu\n",
+				    (int)(CGenWStringLength(entry->str, entry->len) + 1),
+					(unsigned long)(entry->index));
+			ILGenLoadString(info, entry->str, entry->len);
+			fputs("\tcall void [OpenSystem.C]OpenSystem.C.Crt0::"
+				  "SetWideString(char *, class [.library]System.String)\n",
+				  stream);
+		}
+		fputs("\tret\n", stream);
+		fputs("}\n", stream);
+	}
+
+	/* Done */
+	ILFree(lengths);
+	ILFree(wideLengths);
+}
+
+%}

@@ -1,0 +1,108 @@
+#
+# Exception.txt - Resources for exception messages.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Exception_WasThrown={0} Ha excepcionat
+Exception_System=Hi ha hagut un error en el sistema
+Exception_InvalidCast=No s'ha pogut convertir al tipus demanat
+Exception_Overflow=Hi ha hagut un Overflow
+Exception_Arithmetic=La operació aritmètica no es permesa
+Exception_Argument=S'ha especificat un argument invalid
+Exception_ArgParamName=Nom del paràmetre: {0}
+Exception_InvalidOperation=S'ha produït una operació invalida
+Exception_Format=El argument passat no té un format correcte
+Exception_NoSystemDir=Aquesta plataforma no té una carpeta anomenada "System"
+Exception_NoCmdLine=Aquesta plataforma no suporta argument de la línia de comandes
+Exception_NotSupported=La opció escollida no està suportada
+Exception_ComTypeLoad=[Assembly {0}] Type {1} cannot be created through COM
+Exception_TypeLoad=No s'ha pogut carregar el tipus especificat
+Exception_AppDomainUnloaded=La aplicació domain ha sigut descarregada 
+Exception_Application=Hi ha hagut una excepció de aplicació
+Exception_NotImplemented=La funció escollida encara no està suportada
+Exception_Rank=S'ha especificat un rang del array incorrecte
+Exception_ArrayTypeMismatch=Source array type cannot be assigned to destination array type, El tipus del array de origen no pot ser assignat al array de destí
+Exception_IO=La Entrada o la Sortida han fallat
+Exception_FileNotFound=No s'ha pogut trobar el fitxer especificat
+Exception_FileLoad=No s'ha pogut carregar el arxiu especificat
+Exception_DirNotFound=No s'ha pogut trobar el directori especificat
+Exception_BadImage=El formar del executable o la llibreria son incorrectes
+Exception_Filename=Nom del fitxer: {0}
+Exception_CannotUnloadAD=El intent de descarregar la AppDomain ha
+Exception_DivZero=S'ha intentat de dividir per 0
+Exception_DuplicateWait=Hi han objectes duplicats en el argument
+Exception_EntryPoint=El punt de entrada no s'ha trobat
+Exception_Engine=Hi ha hagut un error intern
+Exception_MemberAccess=No s'ha pogut accedir al membre
+Exception_FieldAccess=Intent d'accedir a un element privat o protegit
+Exception_MethodAccess=No s'ha pogut accedir al mètode
+Exception_Index=El index del array esta fora del rang
+Exception_InvalidProgram=la Metadata es incorrecte
+Exception_MemberMissing=Intentant d'accedir a un membre inexistent
+Exception_FieldMissing=Intentant d'accedir a un camp inexistent
+Exception_MethodMissing=Intentant d'accedir a un mètode inexistent
+Exception_NoMulticast=Aqeusta operació no es pot realitzar amb els delegats especificats
+Exception_NotFinite=El nombre trobat no es una quantitat finita
+Exception_NullRef=El valor de 'null' s'ha trobat quan una instancia de un objecte ha sigut cridada
+Exception_NoMemory=No hi ha hagut suficient memòria per continuar amb la execució del programa
+Exception_StackOverflow=La operació demanada a causat un Overflow en la pilaException_TypeInit=La inicialització del tipus ha fallat
+Exception_TypeInitName=La inicialització del tipus ha fallat per {0}
+Exception_TypeUnload=El tipus ha sigut descarregat
+Exception_Unauthorized=S'ha intentat realitzar una operació no permesa
+Exception_HiddenBuffer=El buffer no ha pogut ser retornada per aquesta instancia
+Exception_AmbiguousMatch=S'ha trobat una igualtat ambigua
+Exception_Target=El mètode de la instància no pot ser invocat en un objectiu nullException_TargetInvoke=S'ha llençat una Excepció per el objectiu de la invocació
+Exception_TargetParam=El nombre de paràmetres no concorda
+Exception_MissingManRes=Falten les fonts del manifest
+Exception_SyncLock=Un mètode síncron ha sigut invocat des de un bloc de codi asíncron
+Exception_ThreadState=La operació demanada no ha pogut ser fer-se en el fil degut al seu estat
+Exception_ThreadInterrupt=El fil ha sigut interromput
+Exception_ThreadAbort=El fil ha sigut abortat
+Exception_ThreadsNotSupported=El runtime no suporta fils
+Exception_ThreadNeedsLock=El fil actual no te el seu propi bloqueig per el objecte especificat
+Exception_ThreadAlreadyStarted=El fil ja ha sigut inicialitzat
+Exception_EndOfStream=Intentant de llegir de un stream passat el final 
+Exception_PathTooLong=El path especificat es massa llarg
+Exception_Security=Hi ha hagut una violació de la seguretat
+Exception_SecurityNotGranted=El codi cridat no tenia els permisos Exception_PermitOnly=Ja hi ha una PermitOnly 
+Exception_Remoting=S'ha fracassat durant la operació remota
+Exception_RemotingTimeout=S'ha sobrepassat el temps durant una operació remota
+Exception_Server=El server ha fallat durant una operació remota
+Exception_Verification=No s'ha pogut verificar el codi
+Exception_Serialization=Hi ha hagut un error durant la operació de serialització 
+Exception_XmlSyntax=Error de sintaxi en el XML
+Exception_XmlSyntaxLine=línia {0}: Error de sintaxi
+Exception_XmlSyntaxLineMsg=línia {0}: Error de sintaxi : {1}
+Exception_COM=Hi ha hagut una excepció COM
+Exception_InvalidComObject=S'ha trobat una objecte invalid COM
+Exception_InvalidOleType=Invàlid objecte OLE 
+Exception_MarshalDirective=S'ha trobat una directiva d'ordenació invàlida
+Exception_SafeArrayRank=Els rangs dels arrays saludables do concorden
+Exception_SafeArrayType=Els tipus dels arrays saludables no concorden
+Exception_SEH=Hi ha hagut un problema amb el maneig de l'excepció estructurada
+Exception_Filter=Filtre incorrecte
+Exception_FilterAttribute=Atribut del filtre invalid
+Exception_FilterName=Nom del filtre invalid
+Exception_Platform=La operació demanada no està suportada en aquesta plataforma
+Exception_ContextMarshal=El control a través del límit del contexte ha fallat
+Exception_CustomAttrFormat=Format binari incorrecte per a un atribut customitzat
+Exception_ReflectionTypeLoad=La carrega de múltiples tipus ha fracassat 
+Exception_DllNotFound=La DLL no s'ha trobat ({0})
+Exception_IsolatedStorage=Ha succeït un error processant el magatzem aïllat
+Exception_Policy=Les polices de seguretat prohibeixen la operació demanda
+Exception_UnexpectedEngineState=La engine ha trobat un problema serios
+

@@ -1,0 +1,6 @@
+#!/bin/sh
+
+update-alternatives --install /usr/bin/cli cli /usr/bin/ilrun 4 --slave /usr/share/man/man1/cli.1.gz cli.1.gz /usr/share/man/man1/ilrun.1.gz
+
+#DEBHELPER#
+

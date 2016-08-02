@@ -1,0 +1,73 @@
+#
+# System.Windows.Forms.txt - Resources for the "System.Windows.Forms" assembly.
+#
+# Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+SWF_CouldNotActivate=Could not activate the specified control
+SWF_SettingTopLevelParent=Cannot set the parent of top-level controls
+SWF_CircularityDetected=Setting the parent will cause of circularity
+SWF_ControlDisposed=Control has already been disposed
+SWF_InvalidControlIndex=Control index is out of range
+SWF_NotAControl=The specified value is not a control
+SWF_ControlNotAChild=The specified control is not a child of this one
+SWF_NonNegative=Value must not be negative
+SWF_MenuItemIndex=Menu item index is out of range
+SWF_InvalidMenuItem=The specified value is not a menu item
+SWF_ItemAlreadyInUse=The menu item has already been added to a menu
+SWF_MessageBox_OK=OK
+SWF_MessageBox_Cancel=Cancel
+SWF_MessageBox_Abort=&Abort
+SWF_MessageBox_Retry=&Retry
+SWF_MessageBox_Ignore=&Ignore
+SWF_MessageBox_Yes=&Yes
+SWF_MessageBox_No=&No
+SWF_MessageBox_Apply=Apply
+SWF_MessageBox_Help=Help
+SWF_InvalidInterval=Invalid timer interval specification
+Invalid_CollectionModified=The collection has been modified
+Invalid_BadEnumeratorPosition=The enumerator is not positioned on an element
+SWF_FileDialog_OpenButton=Open
+SWF_FileDialog_SaveButton=Save
+SWF_FileDialog_FileNotFound={0}\nFile not found.\nPlease verify that the correct file name was given.
+SWF_FileDialog_PathNotFound={0}\nPath not found.\nPlease verify that the correct path name was given.
+SWF_FileDialog_FileName=File name:
+SWF_FileDialog_FilesOfType=Files of type:
+SWF_FileDialog_ReadOnly=Open as read-only
+SWF_FileDialog_Overwrite={0}\nThis file already exists.\nReplace existing file?
+SWF_FileDialog_Create={0}\nThis file does not exist.\nCreate new file?
+SWF_FileDialog_AllFiles=All files (*.*)
+SWF_FileDialog_Filter=Invalid file dialog filter string
+SWF_FileDialog_FilterIndex=Invalid file dialog filter index
+SWF_FileDialog_NewFolder=New Folder
+SWF_FileDialog_NewFolderName=Enter new folder name:
+SWF_FileDialog_InvalidChar=Invalid character in folder name
+SWF_FileDialog_Exists={0}\nThis path already exists
+SWF_FileDialog_CannotMkdir={0}\nCould not create new folder
+SWF_DockStyle=Invalid dock style specified
+SWF_Binding_AlreadyPresent=Already present in the specified binding manager
+SWF_Binding_AlreadyAdded=Already added to another binding manager
+SWF_Binding_NotPresent=Not present in the specified binding manager
+SWF_Binding_Empty=The binding list is empty
+SWF_Binding_IndexRange=Array index is out of range
+SWF_FontDialog_Title=Font
+SWF_FontDialog_Name=Font:
+SWF_FontDialog_Style=Font style:
+SWF_FontDialog_Size=Size:
+SWF_FontDialog_Bold=Bold
+SWF_FontDialog_Italic=Italic
+SWF_FontDialog_Underline=Underline
+SWF_FontDialog_Strikeout=Strikeout

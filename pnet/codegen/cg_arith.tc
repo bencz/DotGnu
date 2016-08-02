@@ -1,0 +1,3693 @@
+%output "cg_arith.c"
+
+%{
+/*
+ * cg_arith.tc - Arithmetic operator nodes.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <codegen/cg_nodes.h>
+
+/*
+ * Bit count stuff to get the correct power of 2 for stuff
+ */
+static int IsPowOfTwo(ILEvalValue evalValue)
+{
+	int bitpos=-1;
+	int bitcount=0;
+	ILUInt32 word;
+	ILUInt64 longWord;
+	switch(evalValue.valueType)
+	{
+		case ILMachineType_Int8:
+		case ILMachineType_Int16:
+		case ILMachineType_Int32:
+		{
+			if(evalValue.un.i4Value<0)
+			{
+				return -1;
+			}
+		}
+		/* fall through */
+		case ILMachineType_UInt8:
+		case ILMachineType_UInt16:
+		case ILMachineType_UInt32:
+		{
+			for(word=evalValue.un.i4Value;word!=0;word=word>>1)
+			{
+				if(word & 0x01)bitcount++;
+				bitpos++;
+			}
+		}
+		break;
+		
+		case ILMachineType_Int64:
+		{
+			if(evalValue.un.i8Value<0)
+			{
+				return -1;
+			}
+		}
+		/* fall through */
+		
+		case ILMachineType_UInt64:
+		{
+			for(longWord=evalValue.un.i8Value;longWord!=0;longWord=longWord>>1)
+			{
+				if(longWord & 0x01)bitcount++;
+				bitpos++;
+			}
+		}
+		break;
+		default:
+			return -1;
+	}
+	if(bitcount==1)return bitpos;
+	return -1;
+}
+
+/*
+ * Check if the constant is a zero
+ */
+static int IsConstZero(ILEvalValue evalValue)
+{
+	switch(evalValue.valueType)
+	{
+		case ILMachineType_Int8:
+		case ILMachineType_Int16:
+		case ILMachineType_Int32:
+		case ILMachineType_UInt8:
+		case ILMachineType_UInt16:
+		case ILMachineType_UInt32:
+		case ILMachineType_NativeInt:
+		case ILMachineType_NativeUInt:
+		{
+			return (evalValue.un.i4Value == 0);
+		}
+		break;
+
+		case ILMachineType_Int64:
+		case ILMachineType_UInt64:
+		{
+			return (evalValue.un.i8Value == 0);
+		}
+		break;
+
+		case ILMachineType_Float32:
+		{
+			return (evalValue.un.r4Value == (ILFloat)0.0);
+		}
+		break;
+
+		case ILMachineType_Float64:
+		case ILMachineType_NativeFloat:
+		{
+			return (evalValue.un.r8Value == (ILDouble)0.0);
+		}
+		break;
+
+		default:
+			break;
+	}
+	return 0;
+}
+
+/*
+ * Check if the constant is a 1
+ */
+static int IsConstOne(ILEvalValue evalValue)
+{
+	switch(evalValue.valueType)
+	{
+		case ILMachineType_Int8:
+		case ILMachineType_Int16:
+		case ILMachineType_Int32:
+		case ILMachineType_UInt8:
+		case ILMachineType_UInt16:
+		case ILMachineType_UInt32:
+		case ILMachineType_NativeInt:
+		case ILMachineType_NativeUInt:
+		{
+			return (evalValue.un.i4Value == 1);
+		}
+		break;
+
+		case ILMachineType_Int64:
+		case ILMachineType_UInt64:
+		{
+			return (evalValue.un.i8Value == 1);
+		}
+		break;
+
+		case ILMachineType_Float32:
+		{
+			return (evalValue.un.r4Value == (ILFloat)1.0);
+		}
+		break;
+
+		case ILMachineType_Float64:
+		case ILMachineType_NativeFloat:
+		{
+			return (evalValue.un.r8Value == (ILDouble)1.0);
+		}
+		break;
+
+		default:
+			break;
+	}
+	return 0;
+}
+
+/*
+ * Check if the constant is a -1
+ */
+static int IsConstMinusOne(ILEvalValue evalValue)
+{
+	switch(evalValue.valueType)
+	{
+		case ILMachineType_Int8:
+		case ILMachineType_Int16:
+		case ILMachineType_Int32:
+		case ILMachineType_NativeInt:
+		{
+			return (evalValue.un.i4Value == -1);
+		}
+		break;
+
+		case ILMachineType_Int64:
+		{
+			return (evalValue.un.i8Value == -1);
+		}
+		break;
+
+		case ILMachineType_Float32:
+		{
+			return (evalValue.un.r4Value == (ILFloat)-1.0);
+		}
+		break;
+
+		case ILMachineType_Float64:
+		case ILMachineType_NativeFloat:
+		{
+			return (evalValue.un.r8Value == (ILDouble)-1.0);
+		}
+		break;
+
+		default:
+			break;
+	}
+	return 0;
+}
+
+/*
+ * Reduce operator strength for arithmetic operators
+ */
+static int ReduceOperator(ILGenInfo *info, ILNode *node,
+		ILNode** parent,ILMachineType commonType)
+{
+	ILEvalValue evalValue1;
+	ILEvalValue evalValue2;
+	int expr1IsConst;
+	int expr2IsConst;
+
+	ILNode_BinaryExpression *expr;
+	int bitpos;
+
+	/* if(info->overflowInsns || !(info->optimizeFlag)) */
+	if(info->overflowInsns)
+	{
+		return 0;
+	}
+	if(!yyisa(node,ILNode_BinaryExpression))
+	{
+		return 0;
+	}
+
+	expr=(ILNode_BinaryExpression*)(node);
+	expr1IsConst = ILNode_EvalConst(expr->expr1, info, &evalValue1);
+	expr2IsConst = ILNode_EvalConst(expr->expr2, info, &evalValue2);
+
+	if(!expr1IsConst && !expr2IsConst)
+	{
+		return 0;
+	}
+	
+	switch(commonType)
+	{
+		case ILMachineType_Int8:
+		case ILMachineType_Int16:
+		case ILMachineType_Int32:
+		case ILMachineType_Int64:
+		case ILMachineType_NativeInt:
+		{
+			/*
+			 * Handle the optimizations that are allowed only for numeric
+			 * types.
+			 */
+			if(expr1IsConst)
+			{
+				if(IsConstMinusOne(evalValue1))
+				{
+					if(yyisa(node, ILNode_Mul))
+					{
+						*parent = ILNode_Neg_create(expr->expr2);
+						return 1;
+					}
+				}
+				else if((bitpos = IsPowOfTwo(evalValue1)) > 0)
+				{
+					if(yyisa(node, ILNode_Mul))
+					{
+						*parent = ILNode_Shl_create(expr->expr2,
+										ILNode_Int32_create(bitpos, 0, 0));
+						return 1;
+					}
+				}
+			}
+			else if(expr2IsConst)
+			{
+				if(IsConstMinusOne(evalValue2))
+				{
+					if(yyisa(node, ILNode_Mul) ||
+					   yyisa(node, ILNode_Div))
+					{
+						*parent = ILNode_Neg_create(expr->expr1);
+						return 1;
+					}
+				}
+				else if((bitpos = IsPowOfTwo(evalValue2)) > 0)
+				{
+					if(yyisa(node, ILNode_Mul))
+					{
+						*parent = ILNode_Shl_create(expr->expr1,
+										ILNode_Int32_create(bitpos, 0, 0));
+						return 1;
+					}
+				}
+			}
+		}
+		/* Fall through */
+
+		case ILMachineType_UnmanagedPtr:
+		case ILMachineType_ManagedPtr:
+		{
+			if(expr1IsConst)
+			{
+				if(IsConstZero(evalValue1))
+				{
+					if(yyisa(node, ILNode_Add))
+					{
+						*parent = expr->expr2;
+						return 1;
+					}
+				}
+				else if(IsConstOne(evalValue1))
+				{
+					if(yyisa(node, ILNode_Mul))
+					{
+						*parent = expr->expr2;
+						return 1;
+					}
+				}
+			}
+			else if(expr2IsConst)
+			{
+				if(IsConstZero(evalValue2))
+				{
+					if(yyisa(node, ILNode_Add) ||
+					   yyisa(node, ILNode_Sub))
+					{
+						*parent = expr->expr1;
+						return 1;
+					}
+				}
+				else if(IsConstOne(evalValue2))
+				{
+					if(yyisa(node, ILNode_Mul) ||
+					   yyisa(node, ILNode_Div))
+					{
+						*parent = expr->expr1;
+						return 1;
+					}
+				}
+			}
+		}
+		break;
+
+		case ILMachineType_UInt8:
+		case ILMachineType_UInt16:
+		case ILMachineType_UInt32:
+		case ILMachineType_UInt64:
+		case ILMachineType_NativeUInt:
+		{
+			if(expr1IsConst)
+			{
+				if(IsConstZero(evalValue1))
+				{
+					if(yyisa(node, ILNode_Add))
+					{
+						*parent = expr->expr2;
+						return 1;
+					}
+				}
+				else if(IsConstOne(evalValue1))
+				{
+					if(yyisa(node, ILNode_Mul))
+					{
+						*parent = expr->expr2;
+						return 1;
+					}
+				}
+				else if((bitpos = IsPowOfTwo(evalValue1)) > 0)
+				{
+					if(yyisa(node, ILNode_Mul))
+					{
+						*parent = ILNode_Shl_create(expr->expr2,
+										ILNode_Int32_create(bitpos, 0, 0));
+						return 1;
+					}
+				}
+			}
+			else if(expr2IsConst)
+			{
+				if(IsConstZero(evalValue2))
+				{
+					if(yyisa(node, ILNode_Add) ||
+					   yyisa(node, ILNode_Sub))
+					{
+						*parent = expr->expr1;
+						return 1;
+					}
+				}
+				else if(IsConstOne(evalValue2))
+				{
+					if(yyisa(node, ILNode_Mul) ||
+					   yyisa(node, ILNode_Div))
+					{
+						*parent = expr->expr1;
+						return 1;
+					}
+				}
+				else if((bitpos = IsPowOfTwo(evalValue2)) > 0)
+				{
+					if(yyisa(node, ILNode_Mul))
+					{
+						*parent = ILNode_Shl_create(expr->expr1,
+										ILNode_Int32_create(bitpos, 0, 0));
+						return 1;
+					}
+					else if(yyisa(node, ILNode_Div))
+					{
+						*parent = ILNode_Shr_create(expr->expr1,
+										ILNode_Int32_create(bitpos, 0, 0));
+						return 1;
+					}
+				}
+			}
+		}
+		break;
+
+		case ILMachineType_Float32:
+		case ILMachineType_Float64:
+		case ILMachineType_NativeFloat:
+		{
+			if(expr1IsConst)
+			{
+				if(IsConstZero(evalValue1))
+				{
+					if(yyisa(node, ILNode_Add))
+					{
+						*parent = expr->expr2;
+						return 1;
+					}
+				}
+				else if(IsConstOne(evalValue1))
+				{
+					if(yyisa(node, ILNode_Mul))
+					{
+						*parent = expr->expr2;
+						return 1;
+					}
+				}
+				else if(IsConstMinusOne(evalValue1))
+				{
+					if(yyisa(node, ILNode_Mul))
+					{
+						*parent = ILNode_Neg_create(expr->expr2);
+						return 1;
+					}
+				}
+			}
+			else if(expr2IsConst)
+			{
+				if(IsConstZero(evalValue2))
+				{
+					if(yyisa(node, ILNode_Add) ||
+					   yyisa(node, ILNode_Sub))
+					{
+						*parent = expr->expr1;
+						return 1;
+					}
+				}
+				else if(IsConstOne(evalValue2))
+				{
+					if(yyisa(node, ILNode_Mul) ||
+					   yyisa(node, ILNode_Div))
+					{
+						*parent = expr->expr1;
+						return 1;
+					}
+				}
+				else if(IsConstMinusOne(evalValue2))
+				{
+					if(yyisa(node, ILNode_Mul) ||
+					   yyisa(node, ILNode_Div))
+					{
+						*parent = ILNode_Neg_create(expr->expr1);
+						return 1;
+					}
+				}
+			}
+		}
+		break;
+
+		default:
+			break;
+	}
+
+	return 0;
+}
+%}
+
+/*
+ * Apply a binary operator to two values on the stack
+ * that have been coerced to a common type.
+ */
+%operation void ILBinary_ApplyOp(ILGenInfo *info,
+								 [ILNode_BinaryArith *node],
+								 [ILMachineType commonType])
+
+/*
+ * Evaluate a binary operator on two constant values
+ * that have been coerced to a common type.
+ */
+%operation int ILBinary_EvalOp(ILGenInfo *info,
+							   [ILNode_BinaryArith *node],
+							   [ILMachineType commonType],
+							   ILEvalValue *value1,
+							   ILEvalValue *value2) = {0}
+
+/*
+ * Apply a bitwise operator to two values on the stack
+ * that have been coerced to a common type.
+ */
+%operation void ILBitwise_ApplyOp(ILGenInfo *info,
+								  [ILNode_BinaryBitwise *node],
+								  [ILMachineType commonType])
+
+/*
+ * Evaluate a bitwise operator on two constant values
+ * that have been coerced to a common type.
+ */
+%operation int ILBitwise_EvalOp(ILGenInfo *info,
+								[ILNode_BinaryBitwise *node],
+								[ILMachineType commonType],
+								ILEvalValue *value1,
+								ILEvalValue *value2) = {0}
+
+/*
+ * Apply a shift operator to two values on the stack
+ * that have been coerced to appropriate types.
+ */
+%operation void ILShift_ApplyOp(ILGenInfo *info,
+								[ILNode_BinaryShift *node],
+								[ILMachineType commonType])
+
+/*
+ * Evaluate a shift operator on two constant values
+ * that have been coerced to appropriate types.
+ */
+%operation int ILShift_EvalOp(ILGenInfo *info,
+							  [ILNode_BinaryShift *node],
+							  [ILMachineType commonType],
+							  ILEvalValue *value1,
+							  ILEvalValue *value2) = {0}
+
+/*
+ * Apply the negate operator to a value on the stack.
+ */
+%operation %inline void ILNegate_ApplyOp(ILGenInfo *info, ILNode_Neg *node,
+								 		 [ILMachineType commonType])
+
+/*
+ * Evaluate the negate operator on a constant value.
+ */
+%operation %inline int ILNegate_EvalOp(ILGenInfo *info,
+								 	   [ILMachineType commonType],
+									   ILEvalValue *value) = {0}
+
+/*
+ * Apply the bitwise NOT operator to a value on the stack.
+ */
+%operation %inline void ILNot_ApplyOp(ILGenInfo *info,
+							 		  [ILMachineType commonType])
+
+/*
+ * Evaluate the bitwise NOT operator on a constant value.
+ */
+%operation %inline int ILNot_EvalOp(ILGenInfo *info,
+							 		[ILMachineType commonType],
+									ILEvalValue *value) = {0}
+
+/*
+ * Get the type associated with a binary arithmetic operator.
+ */
+ILNode_GetType(ILNode_BinaryArith)
+{
+	return ILCommonType(info,
+						ILNode_GetType(node->expr1, info),
+						ILNode_GetType(node->expr2, info),
+						0);
+}
+
+/*
+ * Get the type associated with a binary bitwise operator.
+ */
+ILNode_GetType(ILNode_BinaryBitwise)
+{
+	return ILCommonType(info,
+						ILNode_GetType(node->expr1, info),
+						ILNode_GetType(node->expr2, info),
+						1);
+}
+
+/*
+ * Get the type associated with a binary shift operator.
+ */
+ILNode_GetType(ILNode_BinaryShift)
+{
+	ILMachineType type = ILNode_GetType(node->expr1, info);
+	return ILCommonType(info, type, type, 1);
+}
+
+/*
+ * Get the type associated with a negate or unary plus operator.
+ */
+ILNode_GetType(ILNode_Neg),
+ILNode_GetType(ILNode_UnaryPlus)
+{
+	ILMachineType type = ILNode_GetType(node->expr, info);
+	return ILCommonType(info, type, type, 0);
+}
+
+/*
+ * Get the type associated with a bitwise NOT operator.
+ */
+ILNode_GetType(ILNode_Not)
+{
+	ILMachineType type = ILNode_GetType(node->expr, info);
+	return ILCommonType(info, type, type, 1);
+}
+
+/*
+ * Get the type associated with a user-defined unary operator.
+ */
+ILNode_GetType(ILNode_UserUnaryOp)
+{
+	return node->machineType;
+}
+
+/*
+ * Get the type associated with a user-defined binary operator.
+ */
+ILNode_GetType(ILNode_UserBinaryOp)
+{
+	return node->machineType;
+}
+
+/*
+ * Get the type associated with a string concatenation.
+ */
+ILNode_GetType(ILNode_Concat)
+{
+	return ILMachineType_String;
+}
+
+/*
+ * Get the type associated with a delegate operator.
+ */
+ILNode_GetType(ILNode_DelegateAdd),
+ILNode_GetType(ILNode_DelegateSub)
+{
+	return ILMachineType_ObjectRef;
+}
+
+/*
+ * Generate discard code for various arithmetic operator types.
+ */
+ILNode_GenDiscard(ILNode_BinaryArith),
+ILNode_GenDiscard(ILNode_BinaryBitwise),
+ILNode_GenDiscard(ILNode_BinaryShift),
+ILNode_GenDiscard(ILNode_UserBinaryOp),
+ILNode_GenDiscard(ILNode_Concat),
+ILNode_GenDiscard(ILNode_DelegateAdd),
+ILNode_GenDiscard(ILNode_DelegateSub)
+{
+	ILNode_GenDiscard(node->expr1, info);
+	ILNode_GenDiscard(node->expr2, info);
+}
+ILNode_GenDiscard(ILNode_Neg),
+ILNode_GenDiscard(ILNode_UnaryPlus),
+ILNode_GenDiscard(ILNode_Not),
+ILNode_GenDiscard(ILNode_UserUnaryOp)
+{
+	ILNode_GenDiscard(node->expr, info);
+}
+
+/*
+ * Generate value code for a binary arithmetic operator.
+ */
+ILNode_GenValue(ILNode_BinaryArith)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+	ILNode *reducedNode = NULL;
+
+	/* Get the types of the sub-expressions */
+	type1 = ILNode_GetType(node->expr1, info);
+	type2 = ILNode_GetType(node->expr2, info);
+
+	/* Determine the common type */
+	commonType = ILCommonType(info, type1, type2, 0);
+
+	if(ReduceOperator(info,(ILNode*)node,(ILNode**)(&reducedNode),commonType))
+	{
+		if(reducedNode != NULL)
+		{
+			return ILNode_GenValue(reducedNode,info);
+		}
+	}
+
+	/* Evaluate the sub-expressions and cast to the common type */
+	ILGenCast(info, ILNode_GenValue(node->expr1, info), commonType);
+	ILGenCast(info, ILNode_GenValue(node->expr2, info), commonType);
+
+	/* Apply the operator */
+	ILBinary_ApplyOp(info, node, commonType);
+	ILGenAdjust(info, -1);
+
+	/* Return the common type to the caller */
+	return commonType;
+}
+
+/*
+ * Generate value code for the addition operator.
+ */
+ILNode_GenValue(ILNode_Add)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+
+	/* Get the types of the sub-expressions */
+	type1 = ILNode_GetType(node->expr1, info);
+	type2 = ILNode_GetType(node->expr2, info);
+
+	/* Determine the common type */
+	if(type1 == ILMachineType_String || type2 == ILMachineType_String)
+	{
+		/* Perform string concatenation on the arguments */
+		commonType = ILMachineType_String;
+	}
+	else
+	{
+		ILNode *reducedNode = NULL;
+
+		/* Numeric addition operator */
+		commonType = ILCommonType(info, type1, type2, 0);
+
+		if(ReduceOperator(info, (ILNode*)node, &reducedNode, commonType))
+		{
+			if(reducedNode != NULL)
+			{
+				return ILNode_GenValue(reducedNode, info);
+			}
+		}
+	}
+
+	/* Evaluate the sub-expressions and cast to the common type */
+	ILGenCast(info, ILNode_GenValue(node->expr1, info), commonType);
+	ILGenCast(info, ILNode_GenValue(node->expr2, info), commonType);
+
+	/* Apply the operator */
+	ILBinary_ApplyOp(info, (ILNode_BinaryArith *)node, commonType);
+	ILGenAdjust(info, -1);
+
+	/* Return the common type to the caller */
+	return commonType;
+}
+
+/*
+ * Generate value code for a binary bitwise operator.
+ */
+ILNode_GenValue(ILNode_BinaryBitwise)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+
+	/* Get the types of the sub-expressions */
+	type1 = ILNode_GetType(node->expr1, info);
+	type2 = ILNode_GetType(node->expr2, info);
+
+	/* Determine the common type */
+	commonType = ILCommonType(info, type1, type2, 1);
+
+	/* Evaluate the sub-expressions and cast to the common type */
+	ILGenCast(info, ILNode_GenValue(node->expr1, info), commonType);
+	ILGenCast(info, ILNode_GenValue(node->expr2, info), commonType);
+
+	/* Apply the operator */
+	ILBitwise_ApplyOp(info, node, commonType);
+	ILGenAdjust(info, -1);
+
+	/* Return the common type to the caller */
+	return commonType;
+}
+
+/*
+ * Generate value code for a binary shift operator.
+ */
+ILNode_GenValue(ILNode_BinaryShift)
+{
+	ILMachineType type;
+	ILMachineType commonType;
+
+	/* Determine the common type */
+	type = ILNode_GetType(node->expr1, info);
+	commonType = ILCommonType(info, type, type, 1);
+
+	/* Evaluate the first sub-expression and cast to the common type */
+	ILGenCast(info, ILNode_GenValue(node->expr1, info), commonType);
+
+	/* If we are doing an unsigned shift right on an 8-bit or
+	   16-bit value, we need to mask off the sign bits first */
+	if(commonType == ILMachineType_Int8 &&
+	   yykind(node) == yykindof(ILNode_UShr))
+	{
+		ILGenSimple(info, IL_OP_CONV_U1);
+	}
+	else if(commonType == ILMachineType_Int16 &&
+	        yykind(node) == yykindof(ILNode_UShr))
+	{
+		ILGenSimple(info, IL_OP_CONV_U2);
+	}
+
+	/* Evaluate the second sub-expression and cast to "native uint" */
+	ILGenCast(info, ILNode_GenValue(node->expr2, info),
+			  ILMachineType_NativeUInt);
+
+	/* Apply the operator */
+	ILShift_ApplyOp(info, node, commonType);
+	ILGenAdjust(info, -1);
+
+	/* Return the common type to the caller */
+	return commonType;
+}
+
+/*
+ * Generate value code for the negation operator.
+ */
+ILNode_GenValue(ILNode_Neg)
+{
+	ILMachineType type;
+	ILMachineType commonType;
+
+	/* Determine the common type to use */
+	type = ILNode_GetType(node->expr, info);
+	commonType = ILCommonType(info, type, type, 0);
+
+	/* Apply the operator */
+	ILNegate_ApplyOp(info, node, commonType);
+
+	/* Return the common type to the caller */
+	return commonType;
+}
+
+/*
+ * Generate value code for the unary plus operator.
+ */
+ILNode_GenValue(ILNode_UnaryPlus)
+{
+	ILMachineType type;
+	ILMachineType commonType;
+
+	/* Determine the common type to use */
+	type = ILNode_GetType(node->expr, info);
+	commonType = ILCommonType(info, type, type, 0);
+
+	/* Generate code for the sub-expression and cast to the common type */
+	ILGenCast(info, ILNode_GenValue(node->expr, info), commonType);
+
+	/* Return the common type to the caller */
+	return commonType;
+}
+
+/*
+ * Generate value code for the bitwise NOT operator.
+ */
+ILNode_GenValue(ILNode_Not)
+{
+	ILMachineType type;
+	ILMachineType commonType;
+
+	/* Determine the common type to use */
+	type = ILNode_GetType(node->expr, info);
+	commonType = ILCommonType(info, type, type, 1);
+
+	/* Generate code for the sub-expression and cast to the common type */
+	ILGenCast(info, ILNode_GenValue(node->expr, info), commonType);
+
+	/* Apply the operator */
+	ILNot_ApplyOp(info, commonType);
+
+	/* Return the common type to the caller */
+	return commonType;
+}
+
+/*
+ * Generate value code for user-defined unary operators.
+ */
+ILNode_GenValue(ILNode_UserUnaryOp)
+{
+	/* Generate code to compute the value of the argument */
+	ILNode_GenValue(node->expr, info);
+
+	/* Call the operator */
+	ILGenCallByMethod(info, node->method);
+	return node->machineType;
+}
+
+/*
+ * Generate value code for user-defined binary operators.
+ */
+ILNode_GenValue(ILNode_UserBinaryOp)
+{
+	/* Generate code to compute the value of the arguments */
+	ILNode_GenValue(node->expr1, info);
+	ILNode_GenValue(node->expr2, info);
+
+	/* Call the operator */
+	ILGenCallByMethod(info, node->method);
+	ILGenAdjust(info, -1);
+	return node->machineType;
+}
+
+/*
+ * Generate value code for string concatenation.
+ */
+ILNode_GenValue(ILNode_Concat)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+
+	/* Generate code for the two arguments */
+	type1 = ILNode_GenValue(node->expr1, info);
+	if(type1 >= ILMachineType_Boolean &&
+	   type1 <= ILMachineType_Decimal)
+	{
+		ILGenCast(info, type1, ILMachineType_String);
+		type1 = ILMachineType_String;
+	}
+	else
+	{
+		ILGenCast(info, type1, ILMachineType_ObjectRef);
+	}
+	type2 = ILNode_GenValue(node->expr2, info);
+	if(type2 >= ILMachineType_Boolean &&
+	   type2 <= ILMachineType_Decimal)
+	{
+		ILGenCast(info, type2, ILMachineType_String);
+		type2 = ILMachineType_String;
+	}
+	else
+	{
+		ILGenCast(info, type2, ILMachineType_ObjectRef);
+	}
+
+	/* Apply either the string or the object concatenation function */
+	if(type1 == ILMachineType_String && type2 == ILMachineType_String)
+	{
+		ILGenCallByName(info,
+		  "class [.library]System.String [.library]System.String::Concat"
+			"(class [.library]System.String, class [.library]System.String)");
+	}
+	else
+	{
+		ILGenCallByName(info,
+		  "class [.library]System.String [.library]System.String::Concat"
+			"(class [.library]System.Object, class [.library]System.Object)");
+	}
+	ILGenAdjust(info, -1);
+	return ILMachineType_String;
+}
+
+/*
+ * Generate value code for delegate addition.
+ */
+ILNode_GenValue(ILNode_DelegateAdd)
+{
+	/* Generate code for the two arguments */
+	ILNode_GenValue(node->expr1, info);
+	ILNode_GenValue(node->expr2, info);
+
+	/* Call the delegate combination operator in "System.Delegate" */
+	ILGenCallByName(info,
+	  "class [.library]System.Delegate [.library]System.Delegate::Combine"
+		"(class [.library]System.Delegate, class [.library]System.Delegate)");
+	ILGenAdjust(info, -1);
+	ILGenClassToken(info, IL_OP_CASTCLASS, node->delegateClass);
+
+	/* The result is always an object reference */
+	return ILMachineType_ObjectRef;
+}
+
+/*
+ * Generate value code for delegate subtraction.
+ */
+ILNode_GenValue(ILNode_DelegateSub)
+{
+	/* Generate code for the two arguments */
+	ILNode_GenValue(node->expr1, info);
+	ILNode_GenValue(node->expr2, info);
+
+	/* Call the delegate removal operator in "System.Delegate" */
+	ILGenCallByName(info,
+	  "class [.library]System.Delegate [.library]System.Delegate::Remove"
+		"(class [.library]System.Delegate, class [.library]System.Delegate)");
+	ILGenAdjust(info, -1);
+	ILGenClassToken(info, IL_OP_CASTCLASS, node->delegateClass);
+
+	/* The result is always an object reference */
+	return ILMachineType_ObjectRef;
+}
+
+/*
+ * Evaluate the constant value for a binary arithmetic operator.
+ */
+ILNode_EvalConst(ILNode_BinaryArith)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+	ILEvalValue value2;
+
+	/* Get the types of the sub-expressions */
+	type1 = ILNode_GetType(node->expr1, info);
+	type2 = ILNode_GetType(node->expr2, info);
+
+	/* Determine the common type */
+	commonType = ILCommonType(info, type1, type2, 0);
+
+	/* Evaluate the sub-expressions and cast to the common type */
+	if(!ILNode_EvalConst(node->expr1, info, value) ||
+	   !ILGenCastConst(info, value, value->valueType, commonType))
+	{
+		return 0;
+	}
+	if(!ILNode_EvalConst(node->expr2, info, &value2) ||
+	   !ILGenCastConst(info, &value2, value2.valueType, commonType))
+	{
+		return 0;
+	}
+
+	/* Evaluate the operator */
+	return ILBinary_EvalOp(info, node, commonType, value, &value2);
+}
+
+/*
+ * Evaluate the constant value for a binary bitwise operator.
+ */
+ILNode_EvalConst(ILNode_BinaryBitwise)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+	ILEvalValue value2;
+
+	/* Get the types of the sub-expressions */
+	type1 = ILNode_GetType(node->expr1, info);
+	type2 = ILNode_GetType(node->expr2, info);
+
+	/* Determine the common type */
+	commonType = ILCommonType(info, type1, type2, 1);
+
+	/* Evaluate the sub-expressions and cast to the common type */
+	if(!ILNode_EvalConst(node->expr1, info, value) ||
+	   !ILGenCastConst(info, value, value->valueType, commonType))
+	{
+		return 0;
+	}
+	if(!ILNode_EvalConst(node->expr2, info, &value2) ||
+	   !ILGenCastConst(info, &value2, value2.valueType, commonType))
+	{
+		return 0;
+	}
+
+	/* Evaluate the operator */
+	return ILBitwise_EvalOp(info, node, commonType, value, &value2);
+}
+
+/*
+ * Evaluate the constant value for a binary shift operator.
+ */
+ILNode_EvalConst(ILNode_BinaryShift)
+{
+	ILMachineType type;
+	ILMachineType commonType;
+	ILEvalValue value2;
+
+	/* Determine the common type */
+	type = ILNode_GetType(node->expr1, info);
+	commonType = ILCommonType(info, type, type, 1);
+
+	/* Evaluate the first sub-expression and cast to the common type */
+	if(!ILNode_EvalConst(node->expr1, info, value) ||
+	   !ILGenCastConst(info, value, value->valueType, commonType))
+	{
+		return 0;
+	}
+
+	/* If we are doing an unsigned shift right on an 8-bit or
+	   16-bit value, we need to mask off the sign bits first */
+	if(commonType == ILMachineType_Int8 &&
+	   yykind(node) == yykindof(ILNode_UShr))
+	{
+		value->un.i4Value &= 0xFF;
+	}
+	else if(commonType == ILMachineType_Int16 &&
+	        yykind(node) == yykindof(ILNode_UShr))
+	{
+		value->un.i4Value &= 0xFFFF;
+	}
+
+	/* Evaluate the second sub-expression and cast to "native uint" */
+	if(!ILNode_EvalConst(node->expr2, info, &value2) ||
+	   !ILGenCastConst(info, &value2, value2.valueType,
+	   				   ILMachineType_NativeUInt))
+	{
+		return 0;
+	}
+
+	/* Apply the operator */
+	return ILShift_EvalOp(info, node, commonType, value, &value2);
+}
+
+/*
+ * Evaluate the constant value for the negation operator.
+ */
+ILNode_EvalConst(ILNode_Neg)
+{
+	ILMachineType type;
+	ILMachineType commonType;
+
+	/* Determine the common type to use */
+	type = ILNode_GetType(node->expr, info);
+	commonType = ILCommonType(info, type, type, 0);
+
+	/* Evaluate the argument and cast to the common type */
+	if(!ILNode_EvalConst(node->expr, info, value) ||
+	   !ILGenCastConst(info, value, value->valueType, commonType))
+	{
+		return 0;
+	}
+
+	/* Apply the operator */
+	return ILNegate_EvalOp(info, commonType, value);
+}
+
+/*
+ * Evaluate the constant value for the unary plus operator.
+ */
+ILNode_EvalConst(ILNode_UnaryPlus)
+{
+	ILMachineType type;
+	ILMachineType commonType;
+
+	/* Determine the common type to use */
+	type = ILNode_GetType(node->expr, info);
+	commonType = ILCommonType(info, type, type, 0);
+
+	/* Generate code for the sub-expression and cast to the common type */
+	if(!ILNode_EvalConst(node->expr, info, value) ||
+	   !ILGenCastConst(info, value, value->valueType, commonType))
+	{
+		return 0;
+	}
+	return 1;
+}
+
+/*
+ * Evaluate the constant value for the bitwise NOT operator.
+ */
+ILNode_EvalConst(ILNode_Not)
+{
+	ILMachineType type;
+	ILMachineType commonType;
+
+	/* Determine the common type to use */
+	type = ILNode_GetType(node->expr, info);
+	commonType = ILCommonType(info, type, type, 1);
+
+	/* Evaluate the sub-expression and cast to the common type */
+	if(!ILNode_EvalConst(node->expr, info, value) ||
+	   !ILGenCastConst(info, value, value->valueType, commonType))
+	{
+		return 0;
+	}
+
+	/* Apply the operator */
+	return ILNot_EvalOp(info, commonType, value);
+}
+
+ILNode_EvalConst(ILNode_Concat)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILEvalValue value2;
+	ILIntString new_string;
+
+	type1 = ILNode_GetType(node->expr1, info);
+	type2 = ILNode_GetType(node->expr2, info);
+	if(type1 != ILMachineType_String || type2 != ILMachineType_String)
+	{
+		return 0;
+	}
+	if(!ILNode_EvalConst(node->expr1,info,value)) 
+	{
+		return 0;
+	}
+	if(!ILNode_EvalConst(node->expr2,info,&value2)) 
+	{
+		return 0;
+	}
+	new_string = ILInternAppendedString
+				(ILInternString(value->un.strValue.str, 
+					value->un.strValue.len),
+				 ILInternString(value2.un.strValue.str,
+				 	value2.un.strValue.len));
+	value->un.strValue.str=new_string.string; 
+	value->un.strValue.len=new_string.len;
+	return 1;
+}
+
+/*
+ * Apply the addition operator to various types.
+ */
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	ILGenSimple(info, IL_OP_ADD);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I1);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I1);
+	}
+}
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	ILGenSimple(info, IL_OP_ADD);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U1);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U1);
+	}
+}
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	ILGenSimple(info, IL_OP_ADD);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I2);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I2);
+	}
+}
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_UInt16),
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	ILGenSimple(info, IL_OP_ADD);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U2);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U2);
+	}
+}
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_Int32),
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_Int64),
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_NativeInt)
+{
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_ADD_OVF);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_ADD);
+	}
+}
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_UInt32),
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_UInt64),
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_UnmanagedPtr),
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_NativeUInt)
+{
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_ADD_OVF_UN);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_ADD);
+	}
+}
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_Float32)
+{
+	ILGenSimple(info, IL_OP_ADD);
+	if(info->pedanticArith)
+	{
+		/* Clamp the result back to "float32" */
+		ILGenSimple(info, IL_OP_CONV_R4);
+	}
+}
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_Float64)
+{
+	ILGenSimple(info, IL_OP_ADD);
+	if(info->pedanticArith)
+	{
+		/* Clamp the result back to "float64" */
+		ILGenSimple(info, IL_OP_CONV_R8);
+	}
+}
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_NativeFloat)
+{
+	ILGenSimple(info, IL_OP_ADD);
+}
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"valuetype [.library]System.Decimal "
+			"[.library]System.Decimal::op_Addition"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+}
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_String)
+{
+	ILGenCallByName(info,
+		"class [.library]System.String [.library]System.String::Concat"
+			"(class [.library]System.String, class [.library]System.String)");
+}
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_Void),
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_Boolean),
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_ObjectRef),
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_ManagedPtr),
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_TransientPtr),
+ILBinary_ApplyOp(ILNode_Add, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	ILGenSimple(info, IL_OP_POP);
+}
+
+/*
+ * Apply the subtraction operator to various types.
+ */
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	ILGenSimple(info, IL_OP_SUB);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I1);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I1);
+	}
+}
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	ILGenSimple(info, IL_OP_SUB);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U1);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U1);
+	}
+}
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	ILGenSimple(info, IL_OP_SUB);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I2);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I2);
+	}
+}
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_UInt16),
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	ILGenSimple(info, IL_OP_SUB);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U2);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U2);
+	}
+}
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_Int32),
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_Int64),
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_NativeInt)
+{
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_SUB_OVF);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_SUB);
+	}
+}
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_UInt32),
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_UInt64),
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_UnmanagedPtr),
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_NativeUInt)
+{
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_SUB_OVF_UN);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_SUB);
+	}
+}
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_Float32)
+{
+	ILGenSimple(info, IL_OP_SUB);
+	if(info->pedanticArith)
+	{
+		/* Clamp the result back to "float32" */
+		ILGenSimple(info, IL_OP_CONV_R4);
+	}
+}
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_Float64)
+{
+	ILGenSimple(info, IL_OP_SUB);
+	if(info->pedanticArith)
+	{
+		/* Clamp the result back to "float64" */
+		ILGenSimple(info, IL_OP_CONV_R8);
+	}
+}
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_NativeFloat)
+{
+	ILGenSimple(info, IL_OP_SUB);
+}
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"valuetype [.library]System.Decimal "
+			"[.library]System.Decimal::op_Subtraction"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+}
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_Void),
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_Boolean),
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_String),
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_ObjectRef),
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_ManagedPtr),
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_TransientPtr),
+ILBinary_ApplyOp(ILNode_Sub, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	ILGenSimple(info, IL_OP_POP);
+}
+
+/*
+ * Apply the multiplication operator to various types.
+ */
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	ILGenSimple(info, IL_OP_MUL);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I1);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I1);
+	}
+}
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	ILGenSimple(info, IL_OP_MUL);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U1);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U1);
+	}
+}
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	ILGenSimple(info, IL_OP_MUL);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I2);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I2);
+	}
+}
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_UInt16),
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	ILGenSimple(info, IL_OP_MUL);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U2);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U2);
+	}
+}
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_Int32),
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_Int64),
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_NativeInt)
+{
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_MUL_OVF);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_MUL);
+	}
+}
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_UInt32),
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_UInt64),
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_NativeUInt)
+{
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_MUL_OVF_UN);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_MUL);
+	}
+}
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_Float32)
+{
+	ILGenSimple(info, IL_OP_MUL);
+	if(info->pedanticArith)
+	{
+		/* Clamp the result back to "float32" */
+		ILGenSimple(info, IL_OP_CONV_R4);
+	}
+}
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_Float64)
+{
+	ILGenSimple(info, IL_OP_MUL);
+	if(info->pedanticArith)
+	{
+		/* Clamp the result back to "float64" */
+		ILGenSimple(info, IL_OP_CONV_R8);
+	}
+}
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_NativeFloat)
+{
+	ILGenSimple(info, IL_OP_MUL);
+}
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"valuetype [.library]System.Decimal "
+			"[.library]System.Decimal::op_Multiply"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+}
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_Void),
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_Boolean),
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_String),
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_ObjectRef),
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_UnmanagedPtr),
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_ManagedPtr),
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_TransientPtr),
+ILBinary_ApplyOp(ILNode_Mul, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	ILGenSimple(info, IL_OP_POP);
+}
+
+/*
+ * Apply the division operator to various types.
+ */
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	ILGenSimple(info, IL_OP_DIV);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I1);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I1);
+	}
+}
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	ILGenSimple(info, IL_OP_DIV);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U1);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U1);
+	}
+}
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	ILGenSimple(info, IL_OP_DIV);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I2);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I2);
+	}
+}
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_UInt16),
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	ILGenSimple(info, IL_OP_DIV);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U2);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U2);
+	}
+}
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_Int32),
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_Int64),
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_NativeInt),
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_NativeFloat)
+{
+	ILGenSimple(info, IL_OP_DIV);
+}
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_UInt32),
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_UInt64),
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_NativeUInt)
+{
+	ILGenSimple(info, IL_OP_DIV_UN);
+}
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_Float32)
+{
+	ILGenSimple(info, IL_OP_DIV);
+	if(info->pedanticArith)
+	{
+		/* Clamp the result back to "float32" */
+		ILGenSimple(info, IL_OP_CONV_R4);
+	}
+}
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_Float64)
+{
+	ILGenSimple(info, IL_OP_DIV);
+	if(info->pedanticArith)
+	{
+		/* Clamp the result back to "float64" */
+		ILGenSimple(info, IL_OP_CONV_R8);
+	}
+}
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"valuetype [.library]System.Decimal "
+			"[.library]System.Decimal::op_Division"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+}
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_Void),
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_Boolean),
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_String),
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_ObjectRef),
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_UnmanagedPtr),
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_ManagedPtr),
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_TransientPtr),
+ILBinary_ApplyOp(ILNode_Div, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	ILGenSimple(info, IL_OP_POP);
+}
+
+/*
+ * Apply the remainder operator to various types.
+ */
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	ILGenSimple(info, IL_OP_REM);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I1);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I1);
+	}
+}
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	ILGenSimple(info, IL_OP_REM);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U1);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U1);
+	}
+}
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	ILGenSimple(info, IL_OP_REM);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I2);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I2);
+	}
+}
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_UInt16),
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	ILGenSimple(info, IL_OP_REM);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U2);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U2);
+	}
+}
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_Int32),
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_Int64),
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_NativeInt),
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_NativeFloat)
+{
+	ILGenSimple(info, IL_OP_REM);
+}
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_UInt32),
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_UInt64),
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_NativeUInt)
+{
+	ILGenSimple(info, IL_OP_REM_UN);
+}
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_Float32)
+{
+	ILGenSimple(info, IL_OP_REM);
+	if(info->pedanticArith)
+	{
+		/* Clamp the result back to "float32" */
+		ILGenSimple(info, IL_OP_CONV_R4);
+	}
+}
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_Float64)
+{
+	ILGenSimple(info, IL_OP_REM);
+	if(info->pedanticArith)
+	{
+		/* Clamp the result back to "float64" */
+		ILGenSimple(info, IL_OP_CONV_R8);
+	}
+}
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"valuetype [.library]System.Decimal "
+			"[.library]System.Decimal::op_Modulus"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+}
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_Void),
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_Boolean),
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_String),
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_ObjectRef),
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_UnmanagedPtr),
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_ManagedPtr),
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_TransientPtr),
+ILBinary_ApplyOp(ILNode_Rem, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	ILGenSimple(info, IL_OP_POP);
+}
+
+/*
+ * Apply the bitwise AND operator to various types.
+ */
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_Boolean)
+{
+	/* Returns true if both arguments are true.  We assume
+	   that both arguments are clamped to the set {0,1} */
+	ILGenSimple(info, IL_OP_AND);
+}
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	ILGenSimple(info, IL_OP_AND);
+	ILGenSimple(info, IL_OP_CONV_I1);
+}
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	ILGenSimple(info, IL_OP_AND);
+	ILGenSimple(info, IL_OP_CONV_U1);
+}
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	ILGenSimple(info, IL_OP_AND);
+	ILGenSimple(info, IL_OP_CONV_I2);
+}
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_UInt16),
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	ILGenSimple(info, IL_OP_AND);
+	ILGenSimple(info, IL_OP_CONV_U2);
+}
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_Int32),
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_Int64),
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_NativeInt),
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_UInt32),
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_UInt64),
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_NativeUInt)
+{
+	ILGenSimple(info, IL_OP_AND);
+}
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_Float32),
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_Float64),
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_NativeFloat),
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_Decimal),
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_Void),
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_String),
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_ObjectRef),
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_UnmanagedPtr),
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_ManagedPtr),
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_TransientPtr),
+ILBitwise_ApplyOp(ILNode_And, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	ILGenSimple(info, IL_OP_POP);
+}
+
+/*
+ * Apply the bitwise OR operator to various types.
+ */
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_Boolean)
+{
+	/* Returns true if one of the arguments is true.  We assume
+	   that both arguments are clamped to the set {0,1} */
+	ILGenSimple(info, IL_OP_OR);
+}
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	ILGenSimple(info, IL_OP_OR);
+	ILGenSimple(info, IL_OP_CONV_I1);
+}
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	ILGenSimple(info, IL_OP_OR);
+	ILGenSimple(info, IL_OP_CONV_U1);
+}
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	ILGenSimple(info, IL_OP_OR);
+	ILGenSimple(info, IL_OP_CONV_I2);
+}
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_UInt16),
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	ILGenSimple(info, IL_OP_OR);
+	ILGenSimple(info, IL_OP_CONV_U2);
+}
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_Int32),
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_Int64),
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_NativeInt),
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_UInt32),
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_UInt64),
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_NativeUInt)
+{
+	ILGenSimple(info, IL_OP_OR);
+}
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_Float32),
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_Float64),
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_NativeFloat),
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_Decimal),
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_Void),
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_String),
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_ObjectRef),
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_UnmanagedPtr),
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_ManagedPtr),
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_TransientPtr),
+ILBitwise_ApplyOp(ILNode_Or, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	ILGenSimple(info, IL_OP_POP);
+}
+
+/*
+ * Apply the bitwise XOR operator to various types.
+ */
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_Boolean)
+{
+	/* Returns the XOR of the boolean arguments.  We assume
+	   that both arguments are clamped to the set {0,1} */
+	ILGenSimple(info, IL_OP_XOR);
+}
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	ILGenSimple(info, IL_OP_XOR);
+	ILGenSimple(info, IL_OP_CONV_I1);
+}
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	ILGenSimple(info, IL_OP_XOR);
+	ILGenSimple(info, IL_OP_CONV_U1);
+}
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	ILGenSimple(info, IL_OP_XOR);
+	ILGenSimple(info, IL_OP_CONV_I2);
+}
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_UInt16),
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	ILGenSimple(info, IL_OP_XOR);
+	ILGenSimple(info, IL_OP_CONV_U2);
+}
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_Int32),
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_Int64),
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_NativeInt),
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_UInt32),
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_UInt64),
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_NativeUInt)
+{
+	ILGenSimple(info, IL_OP_XOR);
+}
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_Float32),
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_Float64),
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_NativeFloat),
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_Decimal),
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_Void),
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_String),
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_ObjectRef),
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_UnmanagedPtr),
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_ManagedPtr),
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_TransientPtr),
+ILBitwise_ApplyOp(ILNode_Xor, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	ILGenSimple(info, IL_OP_POP);
+}
+
+/*
+ * Apply the left shift operator to various types.
+ */
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	ILGenSimple(info, IL_OP_SHL);
+	ILGenSimple(info, IL_OP_CONV_I1);
+}
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	ILGenSimple(info, IL_OP_SHL);
+	ILGenSimple(info, IL_OP_CONV_U1);
+}
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	ILGenSimple(info, IL_OP_SHL);
+	ILGenSimple(info, IL_OP_CONV_I2);
+}
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_UInt16),
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	ILGenSimple(info, IL_OP_SHL);
+	ILGenSimple(info, IL_OP_CONV_U2);
+}
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_Int32),
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_Int64),
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_NativeInt),
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_UInt32),
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_UInt64),
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_NativeUInt)
+{
+	ILGenSimple(info, IL_OP_SHL);
+}
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_Float32),
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_Float64),
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_NativeFloat),
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_Decimal),
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_Void),
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_Boolean),
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_String),
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_ObjectRef),
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_UnmanagedPtr),
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_ManagedPtr),
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_TransientPtr),
+ILShift_ApplyOp(ILNode_Shl, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	ILGenSimple(info, IL_OP_POP);
+}
+
+/*
+ * Apply the right shift operator to various types.
+ */
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_Int8),
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_UInt8),
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_Int16),
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_UInt16),
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_Char),
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_Int32),
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_Int64),
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_NativeInt)
+{
+	ILGenSimple(info, IL_OP_SHR);
+}
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_UInt32),
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_UInt64),
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_NativeUInt)
+{
+	ILGenSimple(info, IL_OP_SHR_UN);
+}
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_Float32),
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_Float64),
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_NativeFloat),
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_Decimal),
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_Void),
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_Boolean),
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_String),
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_ObjectRef),
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_UnmanagedPtr),
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_ManagedPtr),
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_TransientPtr),
+ILShift_ApplyOp(ILNode_Shr, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	ILGenSimple(info, IL_OP_POP);
+}
+
+/*
+ * Apply the unsigned right shift operator to various types.
+ */
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_Int8),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_UInt8),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_Int16),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_UInt16),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_Char),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_Int32),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_Int64),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_NativeInt),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_UInt32),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_UInt64),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_NativeUInt)
+{
+	ILGenSimple(info, IL_OP_SHR_UN);
+}
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_Float32),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_Float64),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_NativeFloat),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_Decimal),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_Void),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_Boolean),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_String),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_ObjectRef),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_UnmanagedPtr),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_ManagedPtr),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_TransientPtr),
+ILShift_ApplyOp(ILNode_UShr, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	ILGenSimple(info, IL_OP_POP);
+}
+
+/*
+ * Apply the unary negation operator to various types.
+ */
+ILNegate_ApplyOp(ILMachineType_Int8)
+{
+	ILGenCast(info, ILNode_GenValue(node->expr, info), commonType);
+	ILGenSimple(info, IL_OP_NEG);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I1);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I1);
+	}
+}
+ILNegate_ApplyOp(ILMachineType_UInt8)
+{
+	ILGenCast(info, ILNode_GenValue(node->expr, info), commonType);
+	ILGenSimple(info, IL_OP_NEG);
+	ILGenSimple(info, IL_OP_CONV_U1);
+}
+ILNegate_ApplyOp(ILMachineType_Int16)
+{
+	ILGenCast(info, ILNode_GenValue(node->expr, info), commonType);
+	ILGenSimple(info, IL_OP_NEG);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I2);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I2);
+	}
+}
+ILNegate_ApplyOp(ILMachineType_UInt16),
+ILNegate_ApplyOp(ILMachineType_Char)
+{
+	ILGenCast(info, ILNode_GenValue(node->expr, info), commonType);
+	ILGenSimple(info, IL_OP_NEG);
+	ILGenSimple(info, IL_OP_CONV_U2);
+}
+ILNegate_ApplyOp(ILMachineType_Int32)
+{
+	if(info->overflowInsns)
+	{
+		/* We need to detect overflow while performing the negation,
+		   and there is no "NEG_OVF" operation to do that.  So, we
+		   subtract the argument from zero instead */
+		ILGenSimple(info, IL_OP_LDC_I4_0);
+		ILGenAdjust(info, 1);
+		ILGenCast(info, ILNode_GenValue(node->expr, info), commonType);
+		ILGenSimple(info, IL_OP_SUB_OVF);
+		ILGenAdjust(info, -1);
+	}
+	else
+	{
+		ILGenCast(info, ILNode_GenValue(node->expr, info), commonType);
+		ILGenSimple(info, IL_OP_NEG);
+	}
+}
+ILNegate_ApplyOp(ILMachineType_Int64)
+{
+	if(info->overflowInsns)
+	{
+		/* We need to detect overflow while performing the negation,
+		   and there is no "NEG_OVF" operation to do that.  So, we
+		   subtract the argument from zero instead */
+		ILGenInt64(info, (ILInt64)0);
+		ILGenAdjust(info, 1);
+		ILGenCast(info, ILNode_GenValue(node->expr, info), commonType);
+		ILGenSimple(info, IL_OP_SUB_OVF);
+		ILGenAdjust(info, -1);
+	}
+	else
+	{
+		ILGenCast(info, ILNode_GenValue(node->expr, info), commonType);
+		ILGenSimple(info, IL_OP_NEG);
+	}
+}
+ILNegate_ApplyOp(ILMachineType_NativeInt)
+{
+	if(info->overflowInsns)
+	{
+		/* We need to detect overflow while performing the negation,
+		   and there is no "NEG_OVF" operation to do that.  So, we
+		   subtract the argument from zero instead */
+		ILGenIntNative(info, (ILInt32)0);
+		ILGenAdjust(info, 1);
+		ILGenCast(info, ILNode_GenValue(node->expr, info), commonType);
+		ILGenSimple(info, IL_OP_SUB_OVF);
+		ILGenAdjust(info, -1);
+	}
+	else
+	{
+		ILGenCast(info, ILNode_GenValue(node->expr, info), commonType);
+		ILGenSimple(info, IL_OP_NEG);
+	}
+}
+ILNegate_ApplyOp(ILMachineType_UInt32),
+ILNegate_ApplyOp(ILMachineType_UInt64),
+ILNegate_ApplyOp(ILMachineType_NativeUInt),
+ILNegate_ApplyOp(ILMachineType_Float32),
+ILNegate_ApplyOp(ILMachineType_Float64),
+ILNegate_ApplyOp(ILMachineType_NativeFloat)
+{
+	ILGenCast(info, ILNode_GenValue(node->expr, info), commonType);
+	ILGenSimple(info, IL_OP_NEG);
+}
+ILNegate_ApplyOp(ILMachineType_Decimal)
+{
+	ILGenCast(info, ILNode_GenValue(node->expr, info), commonType);
+	ILGenCallByName(info,
+		"valuetype [.library]System.Decimal "
+			"[.library]System.Decimal::op_UnaryNegation"
+			"(valuetype [.library]System.Decimal)");
+}
+ILNegate_ApplyOp(ILMachineType_Void),
+ILNegate_ApplyOp(ILMachineType_Boolean),
+ILNegate_ApplyOp(ILMachineType_String),
+ILNegate_ApplyOp(ILMachineType_ObjectRef),
+ILNegate_ApplyOp(ILMachineType_UnmanagedPtr),
+ILNegate_ApplyOp(ILMachineType_ManagedPtr),
+ILNegate_ApplyOp(ILMachineType_TransientPtr),
+ILNegate_ApplyOp(ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	ILGenCast(info, ILNode_GenValue(node->expr, info), commonType);
+}
+
+/*
+ * Apply the bitwise NOT operator to various types.
+ */
+ILNot_ApplyOp(ILMachineType_Int8)
+{
+	ILGenSimple(info, IL_OP_NOT);
+	ILGenSimple(info, IL_OP_CONV_I1);
+}
+ILNot_ApplyOp(ILMachineType_UInt8)
+{
+	ILGenSimple(info, IL_OP_NOT);
+	ILGenSimple(info, IL_OP_CONV_U1);
+}
+ILNot_ApplyOp(ILMachineType_Int16)
+{
+	ILGenSimple(info, IL_OP_NOT);
+	ILGenSimple(info, IL_OP_CONV_I2);
+}
+ILNot_ApplyOp(ILMachineType_UInt16),
+ILNot_ApplyOp(ILMachineType_Char)
+{
+	ILGenSimple(info, IL_OP_NOT);
+	ILGenSimple(info, IL_OP_CONV_U2);
+}
+ILNot_ApplyOp(ILMachineType_Int32),
+ILNot_ApplyOp(ILMachineType_Int64),
+ILNot_ApplyOp(ILMachineType_NativeInt),
+ILNot_ApplyOp(ILMachineType_UInt32),
+ILNot_ApplyOp(ILMachineType_UInt64),
+ILNot_ApplyOp(ILMachineType_NativeUInt)
+{
+	ILGenSimple(info, IL_OP_NOT);
+}
+ILNot_ApplyOp(ILMachineType_Float32),
+ILNot_ApplyOp(ILMachineType_Float64),
+ILNot_ApplyOp(ILMachineType_NativeFloat),
+ILNot_ApplyOp(ILMachineType_Decimal),
+ILNot_ApplyOp(ILMachineType_Void),
+ILNot_ApplyOp(ILMachineType_Boolean),
+ILNot_ApplyOp(ILMachineType_String),
+ILNot_ApplyOp(ILMachineType_ObjectRef),
+ILNot_ApplyOp(ILMachineType_UnmanagedPtr),
+ILNot_ApplyOp(ILMachineType_ManagedPtr),
+ILNot_ApplyOp(ILMachineType_TransientPtr),
+ILNot_ApplyOp(ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+}
+
+/*
+ * Evaluate the addition operator for various types.
+ */
+ILBinary_EvalOp(ILNode_Add, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	if(info->overflowInsns)
+	{
+		value1->un.i4Value += value2->un.i4Value;
+		if(value1->un.i4Value < (ILInt32)(-128) ||
+		   value1->un.i4Value > (ILInt32)127)
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		value1->un.i4Value =
+			(ILInt32)(ILInt8)(value1->un.i4Value + value2->un.i4Value);
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Add, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	if(info->overflowInsns)
+	{
+		value1->un.i4Value += value2->un.i4Value;
+		if(value1->un.i4Value < (ILInt32)0 ||
+		   value1->un.i4Value > (ILInt32)255)
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		value1->un.i4Value =
+			(ILInt32)(ILUInt8)(value1->un.i4Value + value2->un.i4Value);
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Add, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	if(info->overflowInsns)
+	{
+		value1->un.i4Value += value2->un.i4Value;
+		if(value1->un.i4Value < (ILInt32)(-32768) ||
+		   value1->un.i4Value > (ILInt32)32767)
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		value1->un.i4Value =
+			(ILInt32)(ILInt16)(value1->un.i4Value + value2->un.i4Value);
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Add, ILMachineType_UInt16),
+ILBinary_EvalOp(ILNode_Add, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	if(info->overflowInsns)
+	{
+		value1->un.i4Value += value2->un.i4Value;
+		if(value1->un.i4Value < (ILInt32)0 ||
+		   value1->un.i4Value > (ILInt32)65535)
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		value1->un.i4Value =
+			(ILInt32)(ILUInt16)(value1->un.i4Value + value2->un.i4Value);
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Add, ILMachineType_Int32),
+ILBinary_EvalOp(ILNode_Add, ILMachineType_UInt32)
+{
+	if(info->overflowInsns)
+	{
+		value1->un.i4Value += value2->un.i4Value;
+		if(((ILUInt32)(value1->un.i4Value)) <
+				((ILUInt32)(value2->un.i4Value)))
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		value1->un.i4Value += value2->un.i4Value;
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Add, ILMachineType_Int64),
+ILBinary_EvalOp(ILNode_Add, ILMachineType_UInt64)
+{
+	if(info->overflowInsns)
+	{
+		value1->un.i8Value += value2->un.i8Value;
+		if(((ILUInt64)(value1->un.i8Value)) <
+				((ILUInt64)(value2->un.i8Value)))
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		value1->un.i8Value += value2->un.i8Value;
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Add, ILMachineType_NativeInt)
+{
+	ILInt64 testResult = ((ILInt64)(value1->un.i4Value)) +
+						 ((ILInt64)(value2->un.i4Value));
+	value1->un.i4Value += value2->un.i4Value;
+	if(((ILInt64)(value1->un.i4Value)) != testResult)
+	{
+		/* The operation behaves differently on 32-bit and
+		   64-bit platforms, so we must evaluate at runtime */
+		return 0;
+	}
+	if(info->overflowInsns)
+	{
+		if(((ILUInt32)(value1->un.i4Value)) <
+				((ILUInt32)(value2->un.i4Value)))
+		{
+			return 0;
+		}
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Add, ILMachineType_NativeUInt)
+{
+	ILUInt64 testResult = ((ILUInt64)(ILUInt32)(value1->un.i4Value)) +
+						  ((ILUInt64)(ILUInt32)(value2->un.i4Value));
+	value1->un.i4Value += value2->un.i4Value;
+	if(((ILUInt64)(ILUInt32)(value1->un.i4Value)) != testResult)
+	{
+		/* The operation behaves differently on 32-bit and
+		   64-bit platforms, so we must evaluate at runtime */
+		return 0;
+	}
+	if(info->overflowInsns)
+	{
+		if(((ILUInt32)(value1->un.i4Value)) <
+				((ILUInt32)(value2->un.i4Value)))
+		{
+			return 0;
+		}
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Add, ILMachineType_Float32)
+{
+	value1->un.r4Value += value2->un.r4Value;
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Add, ILMachineType_Float64),
+ILBinary_EvalOp(ILNode_Add, ILMachineType_NativeFloat)
+{
+	value1->un.r8Value += value2->un.r8Value;
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Add, ILMachineType_Decimal)
+{
+	return ILDecimalAdd(&(value1->un.decValue),
+						&(value1->un.decValue),
+						&(value2->un.decValue),
+						info->decimalRoundMode);
+}
+ILBinary_EvalOp(ILNode_Add, ILMachineType)
+{
+	return 0;
+}
+
+/*
+ * Evaluate the subtraction operator for various types.
+ */
+ILBinary_EvalOp(ILNode_Sub, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	if(info->overflowInsns)
+	{
+		value1->un.i4Value -= value2->un.i4Value;
+		if(value1->un.i4Value < (ILInt32)(-128) ||
+		   value1->un.i4Value > (ILInt32)127)
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		value1->un.i4Value =
+			(ILInt32)(ILInt8)(value1->un.i4Value - value2->un.i4Value);
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Sub, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	if(info->overflowInsns)
+	{
+		value1->un.i4Value -= value2->un.i4Value;
+		if(value1->un.i4Value < (ILInt32)0 ||
+		   value1->un.i4Value > (ILInt32)255)
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		value1->un.i4Value =
+			(ILInt32)(ILUInt8)(value1->un.i4Value - value2->un.i4Value);
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Sub, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	if(info->overflowInsns)
+	{
+		value1->un.i4Value -= value2->un.i4Value;
+		if(value1->un.i4Value < (ILInt32)(-32768) ||
+		   value1->un.i4Value > (ILInt32)32767)
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		value1->un.i4Value =
+			(ILInt32)(ILInt16)(value1->un.i4Value - value2->un.i4Value);
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Sub, ILMachineType_UInt16),
+ILBinary_EvalOp(ILNode_Sub, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	if(info->overflowInsns)
+	{
+		value1->un.i4Value -= value2->un.i4Value;
+		if(value1->un.i4Value < (ILInt32)0 ||
+		   value1->un.i4Value > (ILInt32)65535)
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		value1->un.i4Value =
+			(ILInt32)(ILUInt16)(value1->un.i4Value - value2->un.i4Value);
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Sub, ILMachineType_Int32)
+{
+	int RetVal = 1;
+	ILInt32 diff = value1->un.i4Value - value2->un.i4Value;
+	if(info->overflowInsns)
+	{
+
+		if (((ILUInt32)diff > (ILUInt32)value1->un.i4Value)
+			!= (diff < 0))
+		{
+			RetVal = 0;
+		}
+	}
+	value1->un.i4Value = diff;
+	return RetVal;
+}
+ILBinary_EvalOp(ILNode_Sub, ILMachineType_UInt32)
+{
+	int RetVal = 1;
+	if(info->overflowInsns && 
+	   (ILUInt32)value1->un.i4Value < (ILUInt32)value2->un.i4Value)
+	{
+		RetVal = 0;
+	}
+	value1->un.i4Value -= value2->un.i4Value;
+	return RetVal;
+}
+ILBinary_EvalOp(ILNode_Sub, ILMachineType_Int64),
+ILBinary_EvalOp(ILNode_Sub, ILMachineType_UInt64)
+{
+	if(info->overflowInsns)
+	{
+		value1->un.i8Value -= value2->un.i8Value;
+		if(((ILUInt64)(value1->un.i8Value)) >
+				((ILUInt64)(value2->un.i8Value)))
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		value1->un.i8Value -= value2->un.i8Value;
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Sub, ILMachineType_NativeInt)
+{
+	ILInt64 testResult = ((ILInt64)(value1->un.i4Value)) -
+						 ((ILInt64)(value2->un.i4Value));
+	value1->un.i4Value -= value2->un.i4Value;
+	if(((ILInt64)(value1->un.i4Value)) != testResult)
+	{
+		/* The operation behaves differently on 32-bit and
+		   64-bit platforms, so we must evaluate at runtime */
+		return 0;
+	}
+	if(info->overflowInsns)
+	{
+		if(((ILUInt32)(value1->un.i4Value)) >
+				((ILUInt32)(value2->un.i4Value)))
+		{
+			return 0;
+		}
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Sub, ILMachineType_NativeUInt)
+{
+	ILUInt64 testResult = ((ILUInt64)(ILUInt32)(value1->un.i4Value)) -
+						  ((ILUInt64)(ILUInt32)(value2->un.i4Value));
+	value1->un.i4Value -= value2->un.i4Value;
+	if(((ILUInt64)(ILUInt32)(value1->un.i4Value)) != testResult)
+	{
+		/* The operation behaves differently on 32-bit and
+		   64-bit platforms, so we must evaluate at runtime */
+		return 0;
+	}
+	if(info->overflowInsns)
+	{
+		if(((ILUInt32)(value1->un.i4Value)) >
+				((ILUInt32)(value2->un.i4Value)))
+		{
+			return 0;
+		}
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Sub, ILMachineType_Float32)
+{
+	value1->un.r4Value -= value2->un.r4Value;
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Sub, ILMachineType_Float64),
+ILBinary_EvalOp(ILNode_Sub, ILMachineType_NativeFloat)
+{
+	value1->un.r8Value -= value2->un.r8Value;
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Sub, ILMachineType_Decimal)
+{
+	return ILDecimalSub(&(value1->un.decValue),
+						&(value1->un.decValue),
+						&(value2->un.decValue),
+						info->decimalRoundMode);
+}
+ILBinary_EvalOp(ILNode_Sub, ILMachineType)
+{
+	return 0;
+}
+
+/*
+ * Evaluate the multiplication operator for various types.
+ */
+ILBinary_EvalOp(ILNode_Mul, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	if(info->overflowInsns)
+	{
+		value1->un.i4Value *= value2->un.i4Value;
+		if(value1->un.i4Value < (ILInt32)(-128) ||
+		   value1->un.i4Value > (ILInt32)127)
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		value1->un.i4Value =
+			(ILInt32)(ILInt8)(value1->un.i4Value * value2->un.i4Value);
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Mul, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	if(info->overflowInsns)
+	{
+		value1->un.i4Value *= value2->un.i4Value;
+		if(value1->un.i4Value < (ILInt32)0 ||
+		   value1->un.i4Value > (ILInt32)255)
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		value1->un.i4Value =
+			(ILInt32)(ILUInt8)(value1->un.i4Value * value2->un.i4Value);
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Mul, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	if(info->overflowInsns)
+	{
+		value1->un.i4Value *= value2->un.i4Value;
+		if(value1->un.i4Value < (ILInt32)(-32768) ||
+		   value1->un.i4Value > (ILInt32)32767)
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		value1->un.i4Value =
+			(ILInt32)(ILInt16)(value1->un.i4Value * value2->un.i4Value);
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Mul, ILMachineType_UInt16),
+ILBinary_EvalOp(ILNode_Mul, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	if(info->overflowInsns)
+	{
+		value1->un.i4Value *= value2->un.i4Value;
+		if(value1->un.i4Value < (ILInt32)0 ||
+		   value1->un.i4Value > (ILInt32)65535)
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		value1->un.i4Value =
+			(ILInt32)(ILUInt16)(value1->un.i4Value * value2->un.i4Value);
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Mul, ILMachineType_Int32)
+{
+	if(info->overflowInsns)
+	{
+		ILInt64 testResult = ((ILInt64)(value1->un.i4Value)) *
+							 ((ILInt64)(value2->un.i4Value));
+		value1->un.i4Value *= value2->un.i4Value;
+		if(((ILInt64)(value1->un.i4Value)) != testResult)
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		value1->un.i4Value *= value2->un.i4Value;
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Mul, ILMachineType_UInt32)
+{
+	if(info->overflowInsns)
+	{
+		ILUInt64 testResult = ((ILUInt64)(ILUInt32)(value1->un.i4Value)) *
+							  ((ILUInt64)(ILUInt32)(value2->un.i4Value));
+		value1->un.i4Value =
+			(ILInt32)(((ILUInt32)(value1->un.i4Value)) *
+					  ((ILUInt32)(value2->un.i4Value)));
+		if(((ILUInt64)(ILUInt32)(value1->un.i4Value)) != testResult)
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		value1->un.i4Value =
+			(ILInt32)(((ILUInt32)(value1->un.i4Value)) *
+					  ((ILUInt32)(value2->un.i4Value)));
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Mul, ILMachineType_Int64)
+{
+	if(info->overflowInsns)
+	{
+		if(!ILInt64MulOvf(&(value1->un.i8Value),
+						  value1->un.i8Value, value2->un.i8Value))
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		value1->un.i8Value *= value2->un.i8Value;
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Mul, ILMachineType_UInt64)
+{
+	if(info->overflowInsns)
+	{
+		if(!ILUInt64MulOvf((ILUInt64 *)&(value1->un.i8Value),
+						   (ILUInt64)(value1->un.i8Value),
+						   (ILUInt64)(value2->un.i8Value)))
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		value1->un.i8Value = (ILInt64)(((ILUInt64)(value1->un.i8Value)) *
+									   ((ILUInt64)(value2->un.i8Value)));
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Mul, ILMachineType_NativeInt)
+{
+	ILInt64 testResult = ((ILInt64)(value1->un.i4Value)) *
+						 ((ILInt64)(value2->un.i4Value));
+	value1->un.i4Value *= value2->un.i4Value;
+	if(((ILInt64)(value1->un.i4Value)) != testResult)
+	{
+		/* The operation behaves differently on 32-bit and
+		   64-bit platforms, so we must evaluate at runtime.
+		   This can also happen because of overflow */
+		return 0;
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Mul, ILMachineType_NativeUInt)
+{
+	ILUInt64 testResult = ((ILUInt64)(ILUInt32)(value1->un.i4Value)) *
+						  ((ILUInt64)(ILUInt32)(value2->un.i4Value));
+	value1->un.i4Value *= value2->un.i4Value;
+	if(((ILUInt64)(ILUInt32)(value1->un.i4Value)) != testResult)
+	{
+		/* The operation behaves differently on 32-bit and
+		   64-bit platforms, so we must evaluate at runtime.
+		   This can also happen because of overflow */
+		return 0;
+	}
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Mul, ILMachineType_Float32)
+{
+	value1->un.r4Value *= value2->un.r4Value;
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Mul, ILMachineType_Float64),
+ILBinary_EvalOp(ILNode_Mul, ILMachineType_NativeFloat)
+{
+	value1->un.r8Value *= value2->un.r8Value;
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Mul, ILMachineType_Decimal)
+{
+	return ILDecimalMul(&(value1->un.decValue),
+						&(value1->un.decValue),
+						&(value2->un.decValue),
+						info->decimalRoundMode);
+}
+ILBinary_EvalOp(ILNode_Mul, ILMachineType)
+{
+	return 0;
+}
+
+/*
+ * Evaluate the division operator for various types.
+ */
+ILBinary_EvalOp(ILNode_Div, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	if(!(value2->un.i4Value))
+	{
+		return 0;
+	}
+	value1->un.i4Value =
+		(ILInt32)(ILInt8)(value1->un.i4Value / value2->un.i4Value);
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Div, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	if(!(value2->un.i4Value))
+	{
+		return 0;
+	}
+	value1->un.i4Value =
+		(ILInt32)(ILUInt8)(value1->un.i4Value / value2->un.i4Value);
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Div, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	if(!(value2->un.i4Value))
+	{
+		return 0;
+	}
+	value1->un.i4Value =
+		(ILInt32)(ILInt16)(value1->un.i4Value / value2->un.i4Value);
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Div, ILMachineType_UInt16),
+ILBinary_EvalOp(ILNode_Div, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	if(!(value2->un.i4Value))
+	{
+		return 0;
+	}
+	value1->un.i4Value =
+		(ILInt32)(ILUInt16)(value1->un.i4Value / value2->un.i4Value);
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Div, ILMachineType_Int32),
+ILBinary_EvalOp(ILNode_Div, ILMachineType_NativeInt)
+{
+	if(!(value2->un.i4Value))
+	{
+		return 0;
+	}
+	value1->un.i4Value /= value2->un.i4Value;
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Div, ILMachineType_UInt32),
+ILBinary_EvalOp(ILNode_Div, ILMachineType_NativeUInt)
+{
+	if(!(value2->un.i4Value))
+	{
+		return 0;
+	}
+	value1->un.i4Value =
+		(ILInt32)(((ILUInt32)(value1->un.i4Value)) /
+				  ((ILUInt32)(value2->un.i4Value)));
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Div, ILMachineType_Int64)
+{
+	if(!(value2->un.i8Value))
+	{
+		return 0;
+	}
+	value1->un.i8Value /= value2->un.i8Value;
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Div, ILMachineType_UInt64)
+{
+	if(!(value2->un.i8Value))
+	{
+		return 0;
+	}
+	value1->un.i8Value =
+		(ILInt64)(((ILUInt64)(value1->un.i8Value)) /
+				  ((ILUInt64)(value2->un.i8Value)));
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Div, ILMachineType_Float32)
+{
+	value1->un.r4Value /= value2->un.r4Value;
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Div, ILMachineType_Float64),
+ILBinary_EvalOp(ILNode_Div, ILMachineType_NativeFloat)
+{
+	value1->un.r8Value /= value2->un.r8Value;
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Div, ILMachineType_Decimal)
+{
+	return ILDecimalDiv(&(value1->un.decValue),
+						&(value1->un.decValue),
+						&(value2->un.decValue),
+						info->decimalRoundMode);
+}
+ILBinary_EvalOp(ILNode_Div, ILMachineType)
+{
+	return 0;
+}
+
+/*
+ * Evaluate the remainder operator for various types.
+ */
+ILBinary_EvalOp(ILNode_Rem, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	if(!(value2->un.i4Value))
+	{
+		return 0;
+	}
+	value1->un.i4Value =
+		(ILInt32)(ILInt8)(value1->un.i4Value % value2->un.i4Value);
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Rem, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	if(!(value2->un.i4Value))
+	{
+		return 0;
+	}
+	value1->un.i4Value =
+		(ILInt32)(ILUInt8)(value1->un.i4Value % value2->un.i4Value);
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Rem, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	if(!(value2->un.i4Value))
+	{
+		return 0;
+	}
+	value1->un.i4Value =
+		(ILInt32)(ILInt16)(value1->un.i4Value % value2->un.i4Value);
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Rem, ILMachineType_UInt16),
+ILBinary_EvalOp(ILNode_Rem, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	if(!(value2->un.i4Value))
+	{
+		return 0;
+	}
+	value1->un.i4Value =
+		(ILInt32)(ILUInt16)(value1->un.i4Value % value2->un.i4Value);
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Rem, ILMachineType_Int32),
+ILBinary_EvalOp(ILNode_Rem, ILMachineType_NativeInt)
+{
+	if(!(value2->un.i4Value))
+	{
+		return 0;
+	}
+	value1->un.i4Value %= value2->un.i4Value;
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Rem, ILMachineType_UInt32),
+ILBinary_EvalOp(ILNode_Rem, ILMachineType_NativeUInt)
+{
+	if(!(value2->un.i4Value))
+	{
+		return 0;
+	}
+	value1->un.i4Value =
+		(ILInt32)(((ILUInt32)(value1->un.i4Value)) %
+				  ((ILUInt32)(value2->un.i4Value)));
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Rem, ILMachineType_Int64)
+{
+	if(!(value2->un.i8Value))
+	{
+		return 0;
+	}
+	value1->un.i8Value %= value2->un.i8Value;
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Rem, ILMachineType_UInt64)
+{
+	if(!(value2->un.i8Value))
+	{
+		return 0;
+	}
+	value1->un.i8Value =
+		(ILInt64)(((ILUInt64)(value1->un.i8Value)) %
+				  ((ILUInt64)(value2->un.i8Value)));
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Rem, ILMachineType_Float32)
+{
+	value1->un.r4Value = (ILFloat)ILNativeFloatRem(value1->un.r4Value,
+												   value2->un.r4Value);
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Rem, ILMachineType_Float64),
+ILBinary_EvalOp(ILNode_Rem, ILMachineType_NativeFloat)
+{
+	value1->un.r8Value = (ILDouble)ILNativeFloatRem(value1->un.r8Value,
+												    value2->un.r8Value);
+	return 1;
+}
+ILBinary_EvalOp(ILNode_Rem, ILMachineType_Decimal)
+{
+	return ILDecimalRem(&(value1->un.decValue),
+						&(value1->un.decValue),
+						&(value2->un.decValue),
+						info->decimalRoundMode);
+}
+ILBinary_EvalOp(ILNode_Rem, ILMachineType)
+{
+	return 0;
+}
+
+/*
+ * Evaluate the bitwise AND operator for various types.
+ */
+ILBitwise_EvalOp(ILNode_And, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	value1->un.i4Value =
+		(ILInt32)(ILInt8)(value1->un.i4Value & value2->un.i4Value);
+	return 1;
+}
+ILBitwise_EvalOp(ILNode_And, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	value1->un.i4Value =
+		(ILInt32)(ILUInt8)(value1->un.i4Value & value2->un.i4Value);
+	return 1;
+}
+ILBitwise_EvalOp(ILNode_And, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	value1->un.i4Value =
+		(ILInt32)(ILInt16)(value1->un.i4Value & value2->un.i4Value);
+	return 1;
+}
+ILBitwise_EvalOp(ILNode_And, ILMachineType_UInt16),
+ILBitwise_EvalOp(ILNode_And, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	value1->un.i4Value =
+		(ILInt32)(ILUInt16)(value1->un.i4Value & value2->un.i4Value);
+	return 1;
+}
+ILBitwise_EvalOp(ILNode_And, ILMachineType_Int32),
+ILBitwise_EvalOp(ILNode_And, ILMachineType_UInt32),
+ILBitwise_EvalOp(ILNode_And, ILMachineType_NativeInt),
+ILBitwise_EvalOp(ILNode_And, ILMachineType_NativeUInt)
+{
+	value1->un.i4Value &= value2->un.i4Value;
+	return 1;
+}
+ILBitwise_EvalOp(ILNode_And, ILMachineType_Int64),
+ILBitwise_EvalOp(ILNode_And, ILMachineType_UInt64)
+{
+	value1->un.i8Value &= value2->un.i8Value;
+	return 1;
+}
+ILBitwise_EvalOp(ILNode_And, ILMachineType)
+{
+	return 0;
+}
+
+/*
+ * Evaluate the bitwise OR operator for various types.
+ */
+ILBitwise_EvalOp(ILNode_Or, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	value1->un.i4Value =
+		(ILInt32)(ILInt8)(value1->un.i4Value | value2->un.i4Value);
+	return 1;
+}
+ILBitwise_EvalOp(ILNode_Or, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	value1->un.i4Value =
+		(ILInt32)(ILUInt8)(value1->un.i4Value | value2->un.i4Value);
+	return 1;
+}
+ILBitwise_EvalOp(ILNode_Or, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	value1->un.i4Value =
+		(ILInt32)(ILInt16)(value1->un.i4Value | value2->un.i4Value);
+	return 1;
+}
+ILBitwise_EvalOp(ILNode_Or, ILMachineType_UInt16),
+ILBitwise_EvalOp(ILNode_Or, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	value1->un.i4Value =
+		(ILInt32)(ILUInt16)(value1->un.i4Value | value2->un.i4Value);
+	return 1;
+}
+ILBitwise_EvalOp(ILNode_Or, ILMachineType_Int32),
+ILBitwise_EvalOp(ILNode_Or, ILMachineType_UInt32),
+ILBitwise_EvalOp(ILNode_Or, ILMachineType_NativeInt),
+ILBitwise_EvalOp(ILNode_Or, ILMachineType_NativeUInt)
+{
+	value1->un.i4Value |= value2->un.i4Value;
+	return 1;
+}
+ILBitwise_EvalOp(ILNode_Or, ILMachineType_Int64),
+ILBitwise_EvalOp(ILNode_Or, ILMachineType_UInt64)
+{
+	value1->un.i8Value |= value2->un.i8Value;
+	return 1;
+}
+ILBitwise_EvalOp(ILNode_Or, ILMachineType)
+{
+	return 0;
+}
+
+/*
+ * Evaluate the bitwise XOR operator for various types.
+ */
+ILBitwise_EvalOp(ILNode_Xor, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	value1->un.i4Value =
+		(ILInt32)(ILInt8)(value1->un.i4Value ^ value2->un.i4Value);
+	return 1;
+}
+ILBitwise_EvalOp(ILNode_Xor, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	value1->un.i4Value =
+		(ILInt32)(ILUInt8)(value1->un.i4Value ^ value2->un.i4Value);
+	return 1;
+}
+ILBitwise_EvalOp(ILNode_Xor, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	value1->un.i4Value =
+		(ILInt32)(ILInt16)(value1->un.i4Value ^ value2->un.i4Value);
+	return 1;
+}
+ILBitwise_EvalOp(ILNode_Xor, ILMachineType_UInt16),
+ILBitwise_EvalOp(ILNode_Xor, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	value1->un.i4Value =
+		(ILInt32)(ILUInt16)(value1->un.i4Value ^ value2->un.i4Value);
+	return 1;
+}
+ILBitwise_EvalOp(ILNode_Xor, ILMachineType_Int32),
+ILBitwise_EvalOp(ILNode_Xor, ILMachineType_UInt32),
+ILBitwise_EvalOp(ILNode_Xor, ILMachineType_NativeInt),
+ILBitwise_EvalOp(ILNode_Xor, ILMachineType_NativeUInt)
+{
+	value1->un.i4Value ^= value2->un.i4Value;
+	return 1;
+}
+ILBitwise_EvalOp(ILNode_Xor, ILMachineType_Int64),
+ILBitwise_EvalOp(ILNode_Xor, ILMachineType_UInt64)
+{
+	value1->un.i8Value ^= value2->un.i8Value;
+	return 1;
+}
+ILBitwise_EvalOp(ILNode_Xor, ILMachineType)
+{
+	return 0;
+}
+
+/*
+ * Evaluate the left shift operator for various types.
+ */
+ILShift_EvalOp(ILNode_Shl, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	value1->un.i4Value =
+		(ILInt32)(ILInt8)(value1->un.i4Value <<
+						  (ILUInt32)(value2->un.i4Value));
+	return 1;
+}
+ILShift_EvalOp(ILNode_Shl, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	value1->un.i4Value =
+		(ILInt32)(ILUInt8)(value1->un.i4Value <<
+						  (ILUInt32)(value2->un.i4Value));
+	return 1;
+}
+ILShift_EvalOp(ILNode_Shl, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	value1->un.i4Value =
+		(ILInt32)(ILInt16)(value1->un.i4Value <<
+						  (ILUInt32)(value2->un.i4Value));
+	return 1;
+}
+ILShift_EvalOp(ILNode_Shl, ILMachineType_UInt16),
+ILShift_EvalOp(ILNode_Shl, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	value1->un.i4Value =
+		(ILInt32)(ILUInt16)(value1->un.i4Value <<
+						  (ILUInt32)(value2->un.i4Value));
+	return 1;
+}
+ILShift_EvalOp(ILNode_Shl, ILMachineType_Int32),
+ILShift_EvalOp(ILNode_Shl, ILMachineType_UInt32),
+ILShift_EvalOp(ILNode_Shl, ILMachineType_NativeInt),
+ILShift_EvalOp(ILNode_Shl, ILMachineType_NativeUInt)
+{
+	value1->un.i4Value <<= (ILUInt32)(value2->un.i4Value);
+	return 1;
+}
+ILShift_EvalOp(ILNode_Shl, ILMachineType_Int64),
+ILShift_EvalOp(ILNode_Shl, ILMachineType_UInt64)
+{
+	value1->un.i8Value <<= (ILUInt32)(value2->un.i4Value);
+	return 1;
+}
+ILShift_EvalOp(ILNode_Shl, ILMachineType)
+{
+	return 0;
+}
+
+/*
+ * Evaluate the right shift operator for various types.
+ */
+ILShift_EvalOp(ILNode_Shr, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	value1->un.i4Value =
+		(ILInt32)(ILInt8)(value1->un.i4Value >>
+						  (ILUInt32)(value2->un.i4Value));
+	return 1;
+}
+ILShift_EvalOp(ILNode_Shr, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	value1->un.i4Value =
+		(ILInt32)(ILUInt8)((ILUInt32)(value1->un.i4Value) >>
+						  (ILUInt32)(value2->un.i4Value));
+	return 1;
+}
+ILShift_EvalOp(ILNode_Shr, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	value1->un.i4Value =
+		(ILInt32)(ILInt16)(value1->un.i4Value >>
+						  (ILUInt32)(value2->un.i4Value));
+	return 1;
+}
+ILShift_EvalOp(ILNode_Shr, ILMachineType_UInt16),
+ILShift_EvalOp(ILNode_Shr, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	value1->un.i4Value =
+		(ILInt32)(ILUInt16)((ILUInt32)(value1->un.i4Value) >>
+						  (ILUInt32)(value2->un.i4Value));
+	return 1;
+}
+ILShift_EvalOp(ILNode_Shr, ILMachineType_Int32),
+ILShift_EvalOp(ILNode_Shr, ILMachineType_NativeInt)
+{
+	value1->un.i4Value >>= (ILUInt32)(value2->un.i4Value);
+	return 1;
+}
+ILShift_EvalOp(ILNode_Shr, ILMachineType_UInt32),
+ILShift_EvalOp(ILNode_Shr, ILMachineType_NativeUInt)
+{
+	value1->un.i4Value =
+		(ILInt32)((ILUInt32)(value1->un.i4Value) >>
+						  (ILUInt32)(value2->un.i4Value));
+	return 1;
+}
+ILShift_EvalOp(ILNode_Shr, ILMachineType_Int64)
+{
+	value1->un.i8Value >>= (ILUInt32)(value2->un.i4Value);
+	return 1;
+}
+ILShift_EvalOp(ILNode_Shr, ILMachineType_UInt64)
+{
+	value1->un.i8Value =
+		(ILInt64)((ILUInt64)(value1->un.i8Value) >>
+						  (ILUInt32)(value2->un.i4Value));
+	return 1;
+}
+ILShift_EvalOp(ILNode_Shr, ILMachineType)
+{
+	return 0;
+}
+
+/*
+ * Evaluate the unsigned right shift operator for various types.
+ */
+ILShift_EvalOp(ILNode_UShr, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	value1->un.i4Value =
+		(ILInt32)(ILInt8)((ILUInt32)(value1->un.i4Value) >>
+						  (ILUInt32)(value2->un.i4Value));
+	return 1;
+}
+ILShift_EvalOp(ILNode_UShr, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	value1->un.i4Value =
+		(ILInt32)(ILUInt8)((ILUInt32)(value1->un.i4Value) >>
+						  (ILUInt32)(value2->un.i4Value));
+	return 1;
+}
+ILShift_EvalOp(ILNode_UShr, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	value1->un.i4Value =
+		(ILInt32)(ILInt16)((ILUInt32)(value1->un.i4Value) >>
+						  (ILUInt32)(value2->un.i4Value));
+	return 1;
+}
+ILShift_EvalOp(ILNode_UShr, ILMachineType_UInt16),
+ILShift_EvalOp(ILNode_UShr, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	value1->un.i4Value =
+		(ILInt32)(ILUInt16)((ILUInt32)(value1->un.i4Value) >>
+						  (ILUInt32)(value2->un.i4Value));
+	return 1;
+}
+ILShift_EvalOp(ILNode_UShr, ILMachineType_Int32),
+ILShift_EvalOp(ILNode_UShr, ILMachineType_NativeInt),
+ILShift_EvalOp(ILNode_UShr, ILMachineType_UInt32),
+ILShift_EvalOp(ILNode_UShr, ILMachineType_NativeUInt)
+{
+	value1->un.i4Value =
+		(ILInt32)((ILUInt32)(value1->un.i4Value) >>
+						  (ILUInt32)(value2->un.i4Value));
+	return 1;
+}
+ILShift_EvalOp(ILNode_UShr, ILMachineType_Int64),
+ILShift_EvalOp(ILNode_UShr, ILMachineType_UInt64)
+{
+	value1->un.i8Value =
+		(ILInt64)((ILUInt64)(value1->un.i8Value) >>
+						  (ILUInt32)(value2->un.i4Value));
+	return 1;
+}
+ILShift_EvalOp(ILNode_UShr, ILMachineType)
+{
+	return 0;
+}
+
+/*
+ * Evaluate the unary negation operator for various types.
+ */
+ILNegate_EvalOp(ILMachineType_Int8)
+{
+	if(info->overflowInsns)
+	{
+		value->un.i4Value = -(value->un.i4Value);
+		if(value->un.i4Value < (ILInt32)(-128) ||
+		   value->un.i4Value > (ILInt32)127)
+		{
+			return 0;
+		}
+		return 1;
+	}
+	else
+	{
+		value->un.i4Value = (ILInt32)(ILInt8)(-(value->un.i4Value));
+		return 1;
+	}
+}
+ILNegate_EvalOp(ILMachineType_UInt8)
+{
+	value->un.i4Value = (ILInt32)(ILUInt8)(-(value->un.i4Value));
+	return 1;
+}
+ILNegate_EvalOp(ILMachineType_Int16)
+{
+	if(info->overflowInsns)
+	{
+		value->un.i4Value = -(value->un.i4Value);
+		if(value->un.i4Value < (ILInt32)(-32768) ||
+		   value->un.i4Value > (ILInt32)32767)
+		{
+			return 0;
+		}
+		return 1;
+	}
+	else
+	{
+		value->un.i4Value = (ILInt32)(ILInt16)(-(value->un.i4Value));
+		return 1;
+	}
+}
+ILNegate_EvalOp(ILMachineType_UInt16),
+ILNegate_EvalOp(ILMachineType_Char)
+{
+	value->un.i4Value = (ILInt32)(ILUInt16)(-(value->un.i4Value));
+	return 1;
+}
+ILNegate_EvalOp(ILMachineType_Int32),
+ILNegate_EvalOp(ILMachineType_NativeInt)
+{
+	if(info->overflowInsns)
+	{
+		if(value->un.i4Value == IL_MIN_INT32)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = -(value->un.i4Value);
+	return 1;
+}
+ILNegate_EvalOp(ILMachineType_Int64)
+{
+	if(info->overflowInsns)
+	{
+		if(value->un.i8Value == IL_MIN_INT64)
+		{
+			return 0;
+		}
+	}
+	value->un.i8Value = -(value->un.i8Value);
+	return 1;
+}
+ILNegate_EvalOp(ILMachineType_UInt32),
+ILNegate_EvalOp(ILMachineType_NativeUInt)
+{
+	value->un.i4Value = -(value->un.i4Value);
+	return 1;
+}
+ILNegate_EvalOp(ILMachineType_UInt64)
+{
+	value->un.i8Value = -(value->un.i4Value);
+	return 1;
+}
+ILNegate_EvalOp(ILMachineType_Float32)
+{
+	value->un.r4Value = -(value->un.r4Value);
+	return 1;
+}
+ILNegate_EvalOp(ILMachineType_Float64),
+ILNegate_EvalOp(ILMachineType_NativeFloat)
+{
+	value->un.r8Value = -(value->un.r8Value);
+	return 1;
+}
+ILNegate_EvalOp(ILMachineType_Decimal)
+{
+	ILDecimalNeg(&(value->un.decValue), &(value->un.decValue));
+	return 1;
+}
+ILNegate_EvalOp(ILMachineType)
+{
+	return 0;
+}
+
+/*
+ * Evaluate the bitwise NOT operator for various types.
+ */
+ILNot_EvalOp(ILMachineType_Int8)
+{
+	value->un.i4Value = (ILInt32)(ILInt8)(~(value->un.i4Value));
+	return 1;
+}
+ILNot_EvalOp(ILMachineType_UInt8)
+{
+	value->un.i4Value = (ILInt32)(ILUInt8)(~(value->un.i4Value));
+	return 1;
+}
+ILNot_EvalOp(ILMachineType_Int16)
+{
+	value->un.i4Value = (ILInt32)(ILInt16)(~(value->un.i4Value));
+	return 1;
+}
+ILNot_EvalOp(ILMachineType_UInt16),
+ILNot_EvalOp(ILMachineType_Char)
+{
+	value->un.i4Value = (ILInt32)(ILInt32)(~(value->un.i4Value));
+	return 1;
+}
+ILNot_EvalOp(ILMachineType_Int32),
+ILNot_EvalOp(ILMachineType_UInt32)
+{
+	value->un.i4Value = ~(value->un.i4Value);
+	return 1;
+}
+ILNot_EvalOp(ILMachineType_NativeInt)
+{
+	/* Because we don't know the size of native integers
+	   at compile time, we need to be careful.  We can
+	   only perform the operation if the 32-bit and 64-bit
+	   results would be the same */
+	ILInt64 testResult = ~((ILInt64)(value->un.i4Value));
+	value->un.i4Value = ~(value->un.i4Value);
+	return (((ILInt64)(value->un.i4Value)) == testResult);
+}
+ILNot_EvalOp(ILMachineType_NativeUInt)
+{
+	/* We cannot use bitwise NOT because we don't know
+	   the size of native integers at compile time */
+	return 0;
+}
+ILNot_EvalOp(ILMachineType_Int64),
+ILNot_EvalOp(ILMachineType_UInt64)
+{
+	value->un.i8Value = ~(value->un.i8Value);
+	return 1;
+}
+ILNot_EvalOp(ILMachineType)
+{
+	return 0;
+}
+
+%end %{
+
+ILMachineType ILCommonType(ILGenInfo *info, ILMachineType type1,
+						   ILMachineType type2, int intonly)
+{
+	if(type1 == ILMachineType_Decimal || type2 == ILMachineType_Decimal)
+	{
+		if(intonly)
+			return ILMachineType_Int32;
+		else
+			return ILMachineType_Decimal;
+	}
+	if(type1 == ILMachineType_NativeFloat || type2 == ILMachineType_NativeFloat)
+	{
+		if(intonly)
+			return ILMachineType_Int32;
+		else
+			return ILMachineType_NativeFloat;
+	}
+	if(type1 == ILMachineType_Float64 || type2 == ILMachineType_Float64)
+	{
+		if(intonly)
+			return ILMachineType_Int32;
+		else if(info->pedanticArith || info->outputIsJava)
+			return ILMachineType_Float64;
+		else
+			return ILMachineType_NativeFloat;
+	}
+	if(type1 == ILMachineType_Float32 || type2 == ILMachineType_Float32)
+	{
+		if(intonly)
+			return ILMachineType_Int32;
+		else if(info->pedanticArith || info->outputIsJava)
+			return ILMachineType_Float32;
+		else
+			return ILMachineType_NativeFloat;
+	}
+	if(type1 == ILMachineType_UInt64 || type2 == ILMachineType_UInt64)
+	{
+		return ILMachineType_UInt64;
+	}
+	if(type1 == ILMachineType_Int64 || type2 == ILMachineType_Int64)
+	{
+		return ILMachineType_Int64;
+	}
+	if(type1 == ILMachineType_UnmanagedPtr ||
+	   type2 == ILMachineType_UnmanagedPtr)
+	{
+		return ILMachineType_UnmanagedPtr;
+	}
+	if(type1 == ILMachineType_NativeUInt || type2 == ILMachineType_NativeUInt)
+	{
+		return ILMachineType_NativeUInt;
+	}
+	if(type1 == ILMachineType_NativeInt || type2 == ILMachineType_NativeInt)
+	{
+		return ILMachineType_NativeInt;
+	}
+	if(type1 == ILMachineType_UInt32 || type2 == ILMachineType_UInt32)
+	{
+		return ILMachineType_UInt32;
+	}
+	if(type1 == ILMachineType_Int32 || type2 == ILMachineType_Int32)
+	{
+		return ILMachineType_Int32;
+	}
+	if(type1 == ILMachineType_UInt16 || type2 == ILMachineType_UInt16)
+	{
+		return ILMachineType_UInt16;
+	}
+	if(type1 == ILMachineType_Char || type2 == ILMachineType_Char)
+	{
+		return ILMachineType_Char;
+	}
+	if(type1 == ILMachineType_Int16 || type2 == ILMachineType_Int16)
+	{
+		return ILMachineType_Int16;
+	}
+	if(type1 == ILMachineType_UInt8 || type2 == ILMachineType_UInt8)
+	{
+		return ILMachineType_UInt8;
+	}
+	if(type1 == ILMachineType_Int8 || type2 == ILMachineType_Int8)
+	{
+		return ILMachineType_Int8;
+	}
+	if(type1 == ILMachineType_Boolean || type2 == ILMachineType_Boolean)
+	{
+		/* Arithmetic operations on booleans give an "int32" result */
+		return ILMachineType_Int32;
+	}
+	return ILMachineType_Void;
+}
+
+%}

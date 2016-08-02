@@ -1,0 +1,27 @@
+pnet-libclr for Debian
+----------------------
+
+Warning:
+  These are NOT the official Debian packages.  The official
+  packages are maintained by Andrew Mitchell, and are part
+  of Debian.  These packages will probably disappear in time.
+
+This is the CLR runtime library for Portable .NET.  It is only
+useful with the pnet-compiler and pnet-interpreter packages.
+
+It was built from this source tarball:
+  http://www.southern-storm.com.au/download/pnetlib-VERSION.tar.gz
+
+
+Note to package Debian maintainers:
+
+  Most of the files in the debian/ directory are created by the
+  build-debian-packages.sh script which is in the root directory
+  of the sources.  This script uses the information in the rpm
+  .spec file to create the equivelent control files in debian.
+  This means I only have to maintain one set of descriptions,
+  file lists, and so on.
+
+  Look at the comments in that script for more information.
+
+ -- Russell Stuart <russell-debian@stuart.id.au>  Thu,  2 Sep 2004 03:07:33 +1000

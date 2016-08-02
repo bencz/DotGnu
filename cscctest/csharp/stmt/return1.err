@@ -1,0 +1,8 @@
+./return1.cs:33: `return' with a value, in method returning void
+./return1.cs:59: control reaches end of non-void method
+./return1.cs:64: control reaches end of non-void method
+./return1.cs:83: `return' with no value, in method returning non-void
+./return1.cs:89: `return' with a value, in method returning void
+./return1.cs:111: invalid return value
+./return1.cs:117: incompatible types in return: no conversion from `System.Decimal' to `int'
+./return1.cs:50: `return' with a value, in method returning void

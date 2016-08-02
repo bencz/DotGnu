@@ -1,0 +1,95 @@
+.\" Copyright (c) 2001 Southern Storm Software, Pty Ltd.
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.TH ildasm 1 "22 March 2001" "Southern Storm Software" "Portable.NET Development Tools"
+.SH NAME
+ildasm \- the Intermediate Language (IL) disassembler
+.SH SYNOPSIS
+\fBildasm\fR [ options ] \fIinput\fR ...
+.SH DESCRIPTION
+.B Ildasm
+converts IL object files (.obj), IL executables (.exe),
+and IL dynamic link libraries (.dll) into Intermediate Language (IL)
+assembly code.  The output is suitable for input to \fBilasm\fR(1).
+
+.B Ildasm
+is useful for diagnosing problems with compilers and other development
+tools.  It is rarely useful to regular users or programmers.
+.SH OPTIONS
+.TP
+.B \-o FILE, --output FILE
+Specify the name of the file to write the assembler output to.  The
+default is standard output.  Specifying FILE as `-' also indicates that
+the output should be set to standard output.
+.TP
+.B \-d, --dump-sections
+Dump the contents of the IL program sections in hexadecimal instead
+of as IL assembly code.  This may be useful for diagnosing problems
+with badly formatted IL binaries.
+.TP
+.B \-r, --real-offsets
+By default, \fBildasm\fR prints "relative virtual addresses", or RVA's,
+when dumping IL program sections in hexadecimal, and when dumping the
+names of labels within methods.  The `\fB-r\fR' option informs \fBildasm\fR
+to use real file offsets instead.  This may assist in locating data within
+the file with separate tools.
+.TP
+.B \-R, --resolve-all
+\fBildasm\fR does not resolve image data by default, which may cause
+problems with valuetype markers. The `\fB-R\fR` option enables resolution
+while loading.
+.TP
+.B \-t, --show-tokens
+Show the token codes of program elements within the disassembly output.
+.TP
+.B \-q, --quote-names
+Quote all identifiers within the disassembly output so that they are not
+confused with reserved words.  This is useful if the output will be fed
+into \fBilasm\fR(1).
+.TP
+.B \-w, --whole-file
+Dump the contents of the whole input file in hexadecimal.  If the
+file is not otherwise recognized by \fBildasm\fR(1) as an IL binary,
+this may be the only way to inspect the contents to determine what
+the problem is.
+.TP
+.B \-b, --dump-bytes
+Dump the IL instruction bytes in hexadecimal.
+.TP
+.B \-n, --no-il
+Do not dump the IL instructions within the methods.
+.TP
+.B \-\-help
+Print a usage message for the \fBildasm\fR program.
+.TP
+.B \-v, --version
+Print the version of the \fBildasm\fR program.
+.TP
+.B \-\-
+Marks the end of the command-line options, and the beginning of
+the input filenames.  You may need to use this if your filename
+begins with '-'.  e.g. "ildasm -- -input.obj".  This is not needed
+if the input is stdin: "ildasm -" is perfectly valid.
+.SH "AUTHOR"
+Written by Southern Storm Software, Pty Ltd.
+
+http://www.southern-storm.com.au/
+.SH "SEE ALSO"
+ilasm(1), ilsize(1), ilnative(1), cscc(1)
+.SH "DIAGNOSTICS"
+Exit status is 1 if an error occurred while processing the input.
+Otherwise the exit status is 0.  See the manual page for \fBilsize\fR(1)
+for a list of diagnostic messages that may occur when the IL image
+file is loaded.

@@ -1,0 +1,69 @@
+
+TESTS = addressof1.cs \
+		arglist1.cs \
+		arglist2.cs \
+		array1.cs \
+		array2.cs \
+		array3.cs \
+		as1.cs \
+		as2.cs \
+		binary1.cs \
+		binary2.cs \
+		binary3.cs \
+		binary4.cs \
+		bitwise1.cs \
+		bitwise2.cs \
+		cast1.cs \
+		cast2.cs \
+		cast3.cs \
+		cast4.cs \
+		cast5.cs \
+		cast6.cs \
+		cast7.cs \
+		cast8.cs \
+		const1.cs \
+		delegate1.cs \
+		delegate2.cs \
+		delegate3.cs \
+		enum1.cs \
+		enum2.cs \
+		enum3.cs \
+		ident1.cs \
+		incdec1.cs \
+		incdec2.cs \
+		indexer1.cs \
+		invoke1.cs \
+		invoke2.cs \
+		invoke3.cs \
+		is1.cs \
+		is2.cs \
+		new1.cs \
+		new2.cs \
+		new3.cs \
+		newarray1.cs \
+		newarray2.cs \
+		newarray3.cs \
+		newarray4.cs \
+		pointer1.cs \
+		pointer2.cs \
+		pointer3.cs \
+		ref1.cs \
+		ref2.cs \
+		relop1.cs \
+		relop2.cs \
+		relop3.cs \
+		shift1.cs \
+		sizeof1.cs \
+		sizeof2.cs \
+		ternary1.cs \
+		this1.cs \
+		typedref1.cs \
+		typedref2.cs \
+		typeof1.cs \
+		typeof2.cs \
+		unary1.cs \
+		unary2.cs
+
+TESTS_ENVIRONMENT = $(SHELL) $(top_srcdir)/tools/run_test.sh
+
+all-redirect: check-TESTS

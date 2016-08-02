@@ -1,0 +1,82 @@
+treecc (0.3.2-1) unstable; urgency=low
+
+  * New upstream release 
+  * Removed debian/files in upstream release
+
+ -- Russell Stuart <russell-debian@stuart.id.au>  Mon, 23 Aug 2004 07:49:34 +1000
+
+treecc (0.3.0-1) unstable; urgency=low
+
+  * New upstream release 
+  * Close old ITP/RFP (Closes: #123416)
+
+ -- Andrew Mitchell <ajmitch@gnu.org>  Sun, 14 Mar 2004 00:21:03 +1300
+
+treecc (0.2.8-3) unstable; urgency=low
+
+  * Add texinfo to Build-Depends
+
+ -- Andrew Mitchell <ajmitch@gnu.org>  Wed, 25 Feb 2004 14:00:03 +1300
+
+treecc (0.2.8-2) unstable; urgency=low
+
+  * Fixed email address in debian/control
+  * Removed old files from debian/
+  * Cleaned up debian/rules
+
+ -- Andrew Mitchell <ajmitch@gnu.org>  Tue,  3 Feb 2004 02:19:08 +1300
+
+treecc (0.2.8-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Andrew Mitchell <ajmitch@gnu.org>  Sat,  3 Jan 2004 13:19:03 +1300
+
+treecc (0.2.6-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Andrew Mitchell <ajmitch@dunedin.lug.net.nz>  Sat, 26 Jul 2003 17:09:32 +1200
+
+treecc (0.2.4-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Andrew Mitchell <ajmitch@dunedin.lug.net.nz>  Mon, 31 Mar 2003 16:22:42 +1200
+ 
+treecc (0.1.8-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Andrew Mitchell <ajmitch@dunedin.lug.net.nz>  Sat, 23 Nov 2002 19:33:46 +1300
+
+treecc (0.1.2-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Andrew Mitchell <ajmitch@dunedin.lug.net.nz>  Sat, 29 Jun 2002 18:01:14 +1200
+
+treecc (0.1.0-2) unstable; urgency=low
+
+  * Fixed some packaging bugs
+
+ -- Andrew Mitchell <ajmitch@dunedin.lug.net.nz>  Sun, 21 Apr 2002 10:37:30 +1300
+
+treecc (0.1.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Andrew Mitchell <ajmitch@dunedin.lug.net.nz>  Sat, 20 Apr 2002 18:01:30 +1300
+
+treecc (0.0.6-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Andrew Mitchell <ajmitch@ajmitch.dhis.org>  Fri, 18 Jan 2002 18:01:30 +1300
+treecc (0.0.4-1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Andrew Mitchell <ajmitch@ajmitch.dhis.org>  Wed, 05 Dec 2001 18:39:43 +1300
+
+

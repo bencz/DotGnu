@@ -1,0 +1,323 @@
+/*
+ * cs_semantics.tc - Semantic analysis routines for C#.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/*
+ * Inherit the common definitions.
+ */
+%include %readonly "cg_all.tc"
+
+/*
+ * Set a new header for definitions that follow.
+ */
+%header "cs_defs.h"
+
+/*
+ * Copy includes to the top of the "cs_defs.h" file.
+ */
+%decls %{
+
+#include <codegen/cg_nodes.h>
+#include <codegen/cg_coerce.h>
+#include <codegen/cg_resolve.h>
+#include <codegen/cg_scope.h>
+#include <cscc/common/cc_preproc.h>
+#include <cscc/common/cc_options.h>
+#include <cscc/csharp/cs_semvalue.h>
+
+%}
+
+%output "cs_nodes.c"
+
+%{
+#include <cscc/csharp/cs_internal.h>
+%}
+
+/*
+ * Node types that are specific to C#.
+ */
+
+/*
+ * Dummy node with no semantic analysis.
+ */
+%node ILNode_DummySem ILNode_Dummy
+
+/*
+ * Types.
+ */
+%node ILNode_ArrayType ILNode_Dummy =
+{
+	ILNode  *type;
+	ILUInt32 numDimensions;
+}
+%node ILNode_PtrType ILNode_Dummy =
+{
+	ILNode *type;
+}
+%node ILNode_PrimitiveType ILNode_Dummy =
+{
+	ILUInt32 elementType;
+}
+%node ILNode_SystemType ILNode_Dummy =
+{
+	char* className;
+}
+%node ILNode_TypeSuffix ILNode_Dummy =
+{
+	ILUInt32 count;		/* 0 for '*', 1 + for dimension separators */
+}
+%node ILNode_LocalVariableType ILNode_Dummy =
+{
+	ILNode *type;
+	ILNode *suffixes;
+}
+%node ILNode_TypeActuals ILNode_Dummy =
+{
+	ILNode *left;
+	ILNode *right;
+}
+%node ILNode_GenericConstraint ILNode_Dummy =
+{
+	const char  *name;
+	ILUInt32	constraint;
+	ILNode_List *typeConstraints;
+}
+%node ILNode_GenericTypeConstraint ILNode_Dummy =
+{
+	ILNode	   *identifier;
+	%nocreate ILType *type = {0};
+	%nocreate ILVisitMode visited = {ILVisitMode_NotVisited};
+}
+
+/*
+ * Misc nodes.
+ */
+%node ILNode_TypeOf ILNode_UnaryExpression =
+{
+	%nocreate ILType *type = {0};
+}
+%node ILNode_SizeOf ILNode_UnaryExpression =
+{
+	%nocreate ILType *type = {0};
+	%nocreate ILInt32 size = {0};
+}
+%node ILNode_StackAlloc ILNode_BinaryExpression
+%node ILNode_UserCast ILNode_DummyBinaryExpr
+%node ILNode_IsUntyped ILNode_DummyBinaryExpr
+%node ILNode_AsUntyped ILNode_DummyBinaryExpr
+%node ILNode_SemGuard ILNode_AsIs =
+{
+	CSSemValue	value;
+}
+%node ILNode_ToAttrConst ILNode_ToConst
+%node ILNode_AttrQualIdent ILNode_QualIdent
+%node ILNode_AttrIdentifier ILNode_Identifier
+
+/*
+ * Statements.
+ */
+%node ILNode_Fixed ILNode_Statement =
+{
+	ILNode *type;
+	ILNode *decls;
+	ILNode *stmt;
+}
+%node ILNode_FixedVariable ILNode_Dummy %abstract =
+{
+	ILNode *name;
+}
+%node ILNode_FixAddress ILNode_FixedVariable =
+{
+	ILNode *address;
+}
+%node ILNode_FixExpr ILNode_FixedVariable =
+{
+	ILNode *expr;
+}
+%node ILNode_ResourceDeclaration ILNode_Dummy =
+{
+	ILNode *type;
+	ILNode *variables;
+}
+%node ILNode_UsingStatement ILNode_Statement =
+{
+	ILNode *resource;
+	ILNode *stmt;
+}
+%node ILNode_Using ILNode_Statement =
+{
+	ILNode_LocalVar	   *localVar;
+	ILNode			   *init;
+	ILNode			   *stmt;
+	ILType			   *type;
+}
+
+%node ILNode_Unsafe ILNode_Statement =
+{
+	ILNode *stmt;
+}
+%node ILNode_BaseDestructor ILNode_Dummy =
+{
+	ILNode *destructor;
+}
+
+/*
+ * Documentation comments.
+ */
+%node ILNode_DocComment ILNode_Dummy =
+{
+	const char *str;
+	int len;
+}
+
+/*
+ * Namespaces.
+ */
+%node ILNode_Namespace ILNode_DummySem =
+{
+	const char *name;
+	ILNode_Namespace *enclosing;
+	%nocreate ILNode_UsingNamespace *using = {0};
+	%nocreate ILNode_Alias *alias = {0};
+	%nocreate ILScope *localScope = {0};
+}
+%node ILNode_UsingAlias ILNode_Alias =
+{
+	ILNode *ref;
+}
+%node ILNode_UsingNamespace ILNode_DummySem =
+{
+	const char *name;
+	%nocreate ILNode_UsingNamespace *next = {0};
+}
+%node ILNode_GlobalNamespace ILNode_AsIs
+
+/*
+ * Standalone attributes.
+ */
+%node ILNode_StandaloneAttr ILNode_Dummy =
+{
+	ILNode *namespaceNode;
+	ILNode *attributes;
+}
+
+/*
+ * Include C#-specific definitions.
+ */
+%include "cs_semantics.tc"
+%include "cs_cast.tc"
+%include "cs_const.tc"
+%include "cs_decls.tc"
+%include "cs_lvalue.tc"
+%include "cs_misc.tc"
+%include "cs_invoke.tc"
+%include "cs_oper.tc"
+%include "cs_stmt.tc"
+%include "cs_types.tc"
+
+/*
+ * Declare operations that manage namespaces.
+ */
+%decls %end %{
+
+/*
+ * Add an alias to a namespace body.
+ * If the namespace has no enclosing namespace then this is the 
+ * global / compilation unit scope.
+ */
+void ILNamespaceAddAlias(ILNode_Namespace *namespace, ILNode_Alias *node);
+
+/*
+ * Resolve an alias in the namspace and the enclosing namespaces if up is != 0.
+ */
+ILNode *ILNamespaceResolveAlias(ILNode_Namespace *namespace, const char *alias, int up);
+
+/*
+ * Add a using namespace declaration to the namespace.
+ */
+void ILNamespaceAddUsing(ILNode_Namespace *namespace,
+						 ILNode_UsingNamespace *using);
+
+/*
+ * Get the last using-namespace declared in this namespace.
+ */
+ILNode_UsingNamespace *ILNamespaceGetUsing(ILNode_Namespace *namespace);
+
+%}
+
+/*
+ * Implement the namespace operations.
+ */
+%end %{
+
+void ILNamespaceAddAlias(ILNode_Namespace *namespace, ILNode_Alias *node)
+{
+	if(namespace && node)
+	{
+		node->next = namespace->alias;
+		namespace->alias = node;
+	}
+}
+
+ILNode *ILNamespaceResolveAlias(ILNode_Namespace *namespace, const char *alias, int up)
+{
+	while(namespace)
+	{
+		ILNode_Alias *next = namespace->alias;
+
+		while(next)
+		{
+			if(next->name == alias)
+			{
+				return (ILNode *)next;
+			}
+			next = next->next;
+		}
+		if(up)
+		{
+			namespace = namespace->enclosing;
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	return 0;
+}
+
+void ILNamespaceAddUsing(ILNode_Namespace *namespace,
+						 ILNode_UsingNamespace *using)
+{
+	if(namespace && using)
+	{
+		using->next = namespace->using;
+		namespace->using = using;
+	}
+}
+
+ILNode_UsingNamespace *ILNamespaceGetUsing(ILNode_Namespace *namespace)
+{
+	if(namespace)
+	{
+		return namespace->using;
+	}
+	return 0;
+}
+
+%}

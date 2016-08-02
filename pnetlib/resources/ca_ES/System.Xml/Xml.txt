@@ -1,0 +1,61 @@
+#
+# Xml.txt - Resources for xml exception messages.
+#
+# Copyright (C) 2001, 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Xml_Default=Ha ocorregut un error XML
+Xml_WrongNameTable=S'ha utilitzat un XmlNameTable erroni
+Xml_InvalidPrefix=El prefixe utilitzat és invàlid
+Xml_BooleanFormat=Format invàlid per a un valor booleà
+Xml_InvalidName=El nom no està en un format XML vàlid
+Xml_InvalidNamespace=S'ha especificat un 'namespace' invàlid
+Xml_InvalidNamespaceURI=S'ha especificat un 'namespace' invàlid per l'URI
+Xml_IncorrectNode=No s'esperava aquest node a l'entrada XML
+Xml_UnexpectedEOF=L'entrada XML-stream s'ha finalitzat de forma inesperada
+Xml_MustBeStream=El tipus d'objecte ha de ser del tipus null o typeof(Stream)
+Xml_UnspecifiedUri=No s'ha especificat cap URI
+Xml_InvalidWriteState=Estat invàlid per l'operació d'escriptura
+Xml_InvalidReadState=Estat invàlid per l'operació de lectura
+Xml_InvalidQuoteChar=Caràcter de cotització invàlid
+Xml_NamespacesNotSupported=Els namespaces no estan suportats per aquest escriptor
+Xml_InvalidSurrogate=Sustitució invàlida de la parella de caràcters
+Xml_InvalidXmlWritten=S'ha escrit una seqüència XML invàlida
+Xml_InvalidWhitespace=Caràcter d'espai invàlid
+Xml_InvalidWhitespaceHandling=El valor de maneig d'espais és invàlid
+Xml_InvalidEntityRef=Referència invàlida al nom de l'entitat
+Xml_InvalidEntityHandling=El valor de maneig de l'entitat és invàlid
+Xml_InvalidNodeType=Tipus de node invàlid
+Xml_InvalidValidationType=Tipus de validació invàlida
+Xml_NotTextReader=El especificat XmlReader no és XmlTextReader
+Xml_InvalidAttributeIndex=El valor de l'Índex d'atribut no és correcte
+Xml_CannotSetInnerXml=No es pot definir l'interior del XML per aquest node
+Xml_CannotSetValue=No es pot definir el valor per aquest tipus de node
+Xml_NotSameDocument=Els nodes especificats no estan en el mateix document
+Xml_ReadOnly=El node especificat es de només lectura
+Xml_IsAncestor=Intent d'afegir un avanpassat com a fill
+Xml_AttrCollectionWrongNode=Tipus de node incorrecte per a una col·lecció d'atributs
+Xml_NotAttrCollectionMember=El node de referència no es un membre de la col·lecció
+Xml_InvalidStandalone=Atribut independent incorrecte
+Xml_InvalidVersion=El valor de la versió de XML ha de ser 1.0
+Xml_InvalidSpecialAttribute=Nom incorrecte per a un atribut especial
+Xml_CannotInsert=No es pot insertar el node en aquesta posició
+Xml_CannotRemove=No es pot eliminar aquest node
+Xml_ReaderClosed=El lector XML ja ha estat tancat anteriorment o no existeix
+Xml_ReaderError=S'ha detectat un error a l'entrada XML
+Xml_RefNotChild=El node de referència no és un fill del parent especificat
+Xml_CannotClone=No es pot clonar aquest de node
+Xml_AttrAlreadySet=L'atribut espeicificat ja ha estat definit en un element

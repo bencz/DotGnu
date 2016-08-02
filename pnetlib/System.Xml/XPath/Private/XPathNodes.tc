@@ -1,0 +1,225 @@
+%{
+/*
+ * XPathNodes.tc - node definitions for XPath 
+ *
+ * Copyright (C) 2004  Southern Storm Software, Pty Ltd.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+%}
+
+%option lang="C#"
+%output "XPathNodes.cs"
+%option base_type="XPathExpressionBase"
+%option internal_access
+%option namespace = "System.Xml.XPath.Private"
+
+%{
+using System.IO;
+using System.Xml;
+using System.Xml.XPath;
+using System.Collections;
+
+#if CONFIG_XPATH
+
+%}
+
+%node Expression %abstract %typedef
+
+%node BinaryExpression Expression = 
+{
+	Expression left;
+	Expression right;
+}
+
+%node UnionExpression BinaryExpression
+
+%node BooleanExpression BinaryExpression
+
+%node OrExpression BooleanExpression
+%node AndExpression BooleanExpression
+
+%node CompareExpression BooleanExpression=
+{
+	bool invert;
+}
+
+%node EqualityExpression CompareExpression
+%node RelationalExpr CompareExpression
+
+%node ArithmeticExpression BinaryExpression
+%node AddExpression ArithmeticExpression
+%node SubExpression ArithmeticExpression
+%node MulExpression ArithmeticExpression
+%node DivExpression ArithmeticExpression
+%node ModExpression ArithmeticExpression
+
+%node UnaryExpression Expression =
+{
+	Expression expr;
+}
+
+%node NegExpression UnaryExpression
+
+%node PathExpression Expression 
+
+%node RootPathExpression PathExpression
+
+%node SlashExpression PathExpression =
+{
+	Expression left;
+	Expression right;
+}
+
+%node RecursiveDescentPathExpression PathExpression = 
+{
+	Expression left;
+	Expression right;
+}
+
+
+%node StepExpression PathExpression=
+{
+	XPathAxis axis;
+	Expression filter;
+}
+
+
+%node FilterExpression Expression =
+{
+	Expression expr;
+	Expression predicate;
+}
+
+/*
+   [7]    NodeTest 
+*/
+
+%node NodeTest Expression=
+{
+	XPathAxis axis;
+	XPathNodeType nodeType;
+	// null name == only nodeType
+	XmlQualifiedName name;
+}
+
+%node ConstantExpression Expression %abstract
+
+%node LiteralExpression ConstantExpression =
+{
+	String value;
+}
+
+%node NumberExpression ConstantExpression =
+{
+	Double number;
+}
+
+%node ArgumentList Expression =
+{
+	Expression expr;
+	%nocreate ArgumentList next = {null};
+}
+
+%node FunctionCallExpression Expression %abstract =
+{
+	String name;
+	ArgumentList args;
+	%nocreate int argCount = {0};
+}
+
+%node XPathBuiltinFunction FunctionCallExpression %abstract
+
+/* Nodeset Functions 
+	count()
+	id()
+	last()
+	local-name()
+	name()
+	namespace-uri()
+	position()
+*/
+
+%node XPathCountFunction XPathBuiltinFunction
+%node XPathIdFunction XPathBuiltinFunction
+%node XPathLastFunction XPathBuiltinFunction
+%node XPathLocalNameFunction XPathBuiltinFunction
+%node XPathNameFunction XPathBuiltinFunction
+%node XPathNamespaceUriFunction XPathBuiltinFunction
+%node XPathPositionFunction XPathBuiltinFunction
+
+/*
+Boolean Functions
+	boolean()
+	false()
+	true()
+	lang()
+	not()
+*/
+
+%node XPathBooleanFunction XPathBuiltinFunction
+%node XPathTrueFunction XPathBuiltinFunction
+%node XPathFalseFunction XPathBuiltinFunction
+%node XPathLangFunction XPathBuiltinFunction
+%node XPathNotFunction XPathBuiltinFunction
+
+/*
+Number Functions
+	ceiling()
+	floor()
+	number()
+	round()
+	sum()
+*/
+
+%node XPathCeilingFunction XPathBuiltinFunction
+%node XPathFloorFunction XPathBuiltinFunction
+%node XPathNumberFunction XPathBuiltinFunction
+%node XPathRoundFunction XPathBuiltinFunction
+%node XPathSumFunction XPathBuiltinFunction
+
+/*
+String Functions
+	concat()
+	contains()
+	normalize-space()
+	starts-with()
+	string()
+	string-length()
+	substring()
+	substring-after()
+	substring-before()
+	translate()
+*/
+
+%node XPathConcatFunction XPathBuiltinFunction
+%node XPathContainsFunction XPathBuiltinFunction
+%node XPathNormalizeFunction XPathBuiltinFunction
+%node XPathStartsWithFunction XPathBuiltinFunction
+%node XPathStringFunction XPathBuiltinFunction
+%node XPathStringLengthFunction XPathBuiltinFunction
+%node XPathSubstringFunction XPathBuiltinFunction
+%node XPathSubstringAfterFunction XPathBuiltinFunction
+%node XPathSubstringBeforeFunction XPathBuiltinFunction
+%node XPathTranslateFunction XPathBuiltinFunction
+
+%node XPathExternalFunction FunctionCallExpression
+
+%include "XPathCompile.tc"
+%include "XPathEvaluate.tc"
+
+%end %{
+#endif // CONFIG_XPATH
+%}

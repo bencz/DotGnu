@@ -1,0 +1,62 @@
+#
+# Basic.txt - Resources for VB.NET.
+#
+# Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+VB_BothBeforeAndAfter="Before" und "After" koennen nicht gleichzeitig angegeben werden wenn ein Element zu einer Collection hinzugefuegt wird
+VB_InvalidCollectionIndex=Ungueltiger Collection Index
+VB_KeyAlreadyExists=Der angegebene Schluessel existiert bereits in der Collection
+VB_InvalidErrorNumber=Es wurde eine ungueltige Fehlernummer angegeben
+VB_InvalidFileMode=Es wurde ein ungueltiger Datei Modus Wert angegeben (mode)
+VB_InvalidFileAccess=Es wurde ein ungueltiger Dateizugriffswert angegeben (access)
+VB_InvalidFileShare=Es wurde ein ungueltiger Datei share Wert angegeben
+VB_InvalidRecordLength=Die Satzlaenge muss zwischen 1 und 32767 liegen, inclusive
+VB_Obsolete=Obsolete Funktionalitaet
+VB_InvalidRank=Es wurde ein ungueltiger rank für den Array Typ angegeben
+VB_InvalidColorIndex=Es wurde ein ungueltiger QB Farb Index angegeben
+VB_NonNegative=Der Wert darf nicht negativ sein
+VB_EmptyString=Es darf kein leerer String angegeben werden
+VB_InvalidArrayBound=Ungueltige Array Grenzen angegeben
+VB_InvalidStringIndex=Ungueltiger String Index angegeben
+VB_InvalidStringLength=Ungueltige String Laenge angegeben
+VB_InvalidCast=Kan die Typumwandlung von {0} nach {1} nicht durchfuehren
+VB_IsValueType=Das angegebene Objekt hat einen Wert Typ
+VB_ValueIsNull=Der Parameter darf nicht null sein
+VB_CommonForType=Konnte keinen gemeinsamen Typ fuer die arithmetische Operation finden
+VB_LoopCounterIsNull=Schleifenzaehler wurde nicht angegeben
+VB_InvalidHexOrOct=Ungueltiges hexadezimal oder oktal Zahlenformat
+VB_InvalidAddArguments=Ungueltige Parameter fuer eine zweiparametrische Addition
+VB_InvalidBitAndArguments=Ungueltige Parameter fuer ein zweiparametrisches bitweises AND
+VB_InvalidBitOrArguments=Ungueltige Parameter fuer ein zweiparametrisches bitweises OR
+VB_InvalidBitXorArguments=Ungueltige Parameter fuer ein zweiparametrischens bitweises XOR
+VB_InvalidDivArguments=Ungueltige Parameter fuer eine zweiparametrische Division
+VB_InvalidIDivArguments=Ungueltige Parameter fuer eine zweiparametrische ganzzahlige Division
+VB_InvalidModArguments=Ungueltige Parameter fuer einen zweiparametrischen Modulus
+VB_InvalidMulArguments=Ungueltige Parameter fuer eine zweiparametrische Multiplikation
+VB_InvalidNegArgument=Ungueltiger Parameter fuer eine Negation
+VB_InvalidNotArgument=Ungueltiger Parameter fuer ein bitweises NOT
+VB_InvalidTstArguments=Ungueltige Parameter fuer einen zweiparametrischen Test und Vergleich (test and compare)
+VB_InvalidPlusArgument=Ungueltiger Parameter fuer ein einparametrisches Plus
+VB_InvalidPowArguments=Ungueltige Parameter fuer eine zweiparametrische Hoch Operation (power)
+VB_InvalidShiftLeftArguments=Ungueltige Parameter fuer ein zweiparametrisches links schieben (left shift)
+VB_InvalidShiftRightArguments=Ungueltige Parameter fuer ein zweiparametrisches rechts schieben (right shift)
+VB_InvalidSubArguments=Ungueltige Parameter fuer eine zweiparametrische Subtraktion
+VB_InvalidXorArguments=Ungueltige Parameter fuer ein zweiparametrisches boolsches XOR
+VB_InvalidPattern=Ungueltiges "like" Muster
+VB_MismatchedRanks=Array ranks passen nicht zusammen
+VB_MismatchedDimensions=Array Dimensionen passen nicht zusammen
+VB_DateTimeRange=DateTime Wert ist ausserhalb des zulaessigen Bereichs

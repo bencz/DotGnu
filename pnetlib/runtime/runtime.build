@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<project name="pnetlib runtime" default="all">
+	<target name="all">
+
+		<!-- Build the primary mscorlib.dll library -->
+		<compile output="mscorlib.dll"
+				 target="library"
+				 unsafe="true"
+				 nostdlib="true"
+				 debug="${CONFIG_DEBUG_LINES}"
+				 optimize="true"
+				 install="true"
+				 installasdefault="${INSTALL_AS_DEFAULT}">
+
+			<sources>
+				<includes name="**/*.cs"/>
+			</sources>
+
+			<resources>
+				<includes if="${CONFIG_RUNTIME_INFRA}"
+						  name="../resources/en_US/runtime/runtime.resources"/>
+			</resources>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=neutral"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="cscc" value="-fmetadata-version=${METADATA_VERSION}"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+	</target>
+</project>

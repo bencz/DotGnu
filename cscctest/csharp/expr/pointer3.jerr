@@ -1,0 +1,19 @@
+./pointer3.cs:21: unsafe class declaration not permitted with Java output
+./pointer3.cs:23: unsafe method declaration not permitted with Java output
+./pointer3.cs:38: unsafe method declaration not permitted with Java output
+./pointer3.cs:53: unsafe method declaration not permitted with Java output
+./pointer3.cs:68: unsafe method declaration not permitted with Java output
+./pointer3.cs:83: unsafe method declaration not permitted with Java output
+./pointer3.cs:88: unsafe pointer dereference not permitted with Java output
+./pointer3.cs:89: unsafe pointer dereference not permitted with Java output
+./pointer3.cs:90: unsafe pointer dereference not permitted with Java output
+./pointer3.cs:91: unsafe pointer dereference not permitted with Java output
+./pointer3.cs:92: unsafe pointer-based array access not permitted with Java output
+./pointer3.cs:93: unsafe pointer-based array access not permitted with Java output
+./pointer3.cs:96: unsafe method declaration not permitted with Java output
+./pointer3.cs:101: unsafe pointer dereference not permitted with Java output
+./pointer3.cs:102: unsafe pointer dereference not permitted with Java output
+./pointer3.cs:103: unsafe pointer dereference not permitted with Java output
+./pointer3.cs:104: unsafe pointer dereference not permitted with Java output
+./pointer3.cs:105: unsafe pointer-based array access not permitted with Java output
+./pointer3.cs:106: unsafe pointer-based array access not permitted with Java output

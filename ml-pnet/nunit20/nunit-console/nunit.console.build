@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+
+<project name="nunit.console" default="all">
+	<target name="all">
+		<compile target="executable"
+				 output="nunit-console-pnet.exe"
+				 debug="${debug.flag}"
+				 unsafe="false"
+				 install="true"
+				 installasdefault="true">
+
+			<sources basedir="${mono.sources}/nunit20/nunit-console/">
+				<includes name="**/*.cs"/> 
+			</sources>
+
+			<references>
+				<file name="../util/nunit.util.dll"/>
+				<file name="../core/nunit.core.dll"/>
+				<file name="../framework/nunit.framework.dll"/>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="${pnet.libdir}/System.Drawing/System.Drawing.dll"/>
+				<file name="${pnet.libdir}/System.Windows.Forms/System.Windows.Forms.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+		</compile>
+	</target>
+</project>

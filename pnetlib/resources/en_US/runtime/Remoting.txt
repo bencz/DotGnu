@@ -1,0 +1,30 @@
+#
+# Remoting.txt - Resources for remoting errors.
+#
+# Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Remoting_ChannelAlreadyRegistered=The specified channel is already registered
+Remoting_SinkNotFoundOnStack=The specified sink was not found on the sink stack
+Remoting_SinkStackEmpty=The sink stack is empty
+Remoting_SinkStackNonEmpty=The sink stack is not empty
+Remoting_NotMarshalOrInterface=Type is not MarshalByRef or an interface
+Remoting_CtorMsg=Constructor message is not applicable to the type
+Remoting_InvalidKey=Cannot use special key in this context
+Remoting_NoIdentity=The object does not have a remoting identity
+Remoting_NotLocal=The object is not local to the current application domain
+Remoting_HasIdentity=The object's identity has already been set
+Remoting_NoProxy=The object does not have a remoting proxy

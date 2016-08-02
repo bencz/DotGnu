@@ -1,0 +1,5 @@
+
+This directory contains copies of some classes in "pnetlib/runtime"
+so that the "Microsoft.VisualBasic" assembly can be built in ECMA
+compatible configurations.  The classes are used internally, and
+are not exported from the assembly.

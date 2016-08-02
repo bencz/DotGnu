@@ -1,0 +1,72 @@
+
+Meanings for the XML tags in cvm*.c:
+-----------------------------------
+
+Tag: opcode
+    Meaning: Defines the documentation for a specific CVM opcode.
+
+    Attribute: name
+    Meaning: Name of the opcode.
+
+    Attribute: group
+    Meaning: Group that the opcode belongs to.
+
+Tag: operation
+    Parent: opcode
+    Meaning: Short description of the opcode for a heading
+
+Tag: format
+    Parent: opcode
+    Meaning: List of values, separated by "<fsep/>", that describes
+             the bytes that make up the instruction.  There may be
+             more than one format tag if there are multiple versions.
+             e.g. "normal" and "wide".
+
+Tag: dformat
+    Parent: opcode
+    Meaning: List of values, separated by "<fsep/>", that describes
+             the words that make up the instruction when a direct
+             threaded interpreter is being used.
+
+Tag: form
+    Parent: opcode
+    Meaning: Defines the canonical name and COP_* number for the opcode.
+             There may be multiple forms.
+
+    Attribute: name
+    Meaning: Name of the form.
+
+    Attribute: code
+    Meaning: The COP_* value from "cvm.h" to use as the bytecode number.
+
+Tag: before
+    Parent: opcode
+    Meaning: State of the stack before the operation.
+
+Tag: after
+    Parent: opcode
+    Meaning: State of the stack after the operation.
+
+Tag: description
+    Parent: opcode
+    Meaning: Verbose description of the opcode, complete with HTML-style
+             formatting tags.
+
+Tag: notes
+    Parent: opcode
+    Meaning: Additional notes.
+
+Tag: exceptions
+    Parent: opcode
+    Meaning: List of exceptions that may be raised by the opcode.
+
+Tag: exception
+    Parent: exceptions
+    Meaning: Single exception that may be raised by the opcode.
+             The body of the tag contains the HTML-style description.
+
+    Attribute: name
+    Meaning: Class name for the exception that is raised.
+
+HTML-style tags that may be encountered (not necessarily a complete list):
+    i, code, ul, li, p

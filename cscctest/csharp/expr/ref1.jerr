@@ -1,0 +1,7 @@
+./ref1.cs:23: `ref' parameters not permitted when compiling to Java bytecode
+./ref1.cs:30: `out' parameters not permitted when compiling to Java bytecode
+./ref1.cs:41: `ref' parameters not permitted when compiling to Java bytecode
+./ref1.cs:37: `ref' arguments not permitted when compiling to Java bytecode
+./ref1.cs:38: `out' arguments not permitted when compiling to Java bytecode
+./ref1.cs:43: `ref' arguments not permitted when compiling to Java bytecode
+./ref1.cs:44: `out' arguments not permitted when compiling to Java bytecode

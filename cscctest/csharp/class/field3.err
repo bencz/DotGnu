@@ -1,0 +1,4 @@
+./field3.cs:24: declaration of `x' conflicts with an existing member
+./field3.cs:27: declaration of `y' conflicts with an existing member
+./field3.cs:32: declaration of `w' conflicts with an existing member
+./field3.cs:37: warning: declaration of `x' hides an inherited member, and `new' was not present

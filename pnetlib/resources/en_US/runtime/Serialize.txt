@@ -1,0 +1,35 @@
+#
+# Serialize.txt - Resources for serialization-related errors and exceptions.
+#
+# Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Serialize_NoObjectID=No object identifier has been assigned
+Serialize_BadType=Bad type specified for SerializationInfo.AddValue
+Serialize_AlreadyPresent=The specified name is already present
+Serialize_NotField=Member descriptor is not a FieldInfo object
+Serialize_NotClrType=Specified type is not a runtime engine type
+Serialize_MemberDataMismatch=Member and data arrays have different lengths
+Serialize_BadObjectID=Invalid object identifier
+Serialize_AlreadyRegistered=The specified object identifier has already been registered with a different object
+Serialize_MissingFixup=Missing fixup during deseralization process
+Serialize_BadFixup=Fixup could not be applied
+Serialize_StateMissing=Some of the required serialization state is missing
+Serialize_KeyValueMismatch=The key and value arrays for the hash table have different sizes
+Serialize_UnknownAssembly=Unknown assembly specified
+Serialize_DelegateTargetMismatch=The delegate target does not match the expected type
+Serialize_DelegateNotPublic=The delegate method is not public
+Serialize_CannotSerialize=Cannot serialize {0}

@@ -1,0 +1,61 @@
+#
+# Xml.txt - Resources for xml exception messages.
+#
+# Copyright (C) 2001, 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Xml_Default=Ein XML Fehler ist aufgetreten
+Xml_WrongNameTable=Ein falscher XmlNameTable wurde benutzt
+Xml_InvalidPrefix=Das angegebene prefix ist ungueltig
+Xml_BooleanFormat=Ungueltiges Format fuer boolean Wert
+Xml_InvalidName=Name ist nicht in einem gueltigen XML Format
+Xml_InvalidNamespace=Ungueltiger namespace angegeben
+Xml_InvalidNamespaceURI=Ungueltiger namespace URI angegeben
+Xml_IncorrectNode=Node war unerwartet an diesem Punkt der XML Eingabe
+Xml_UnexpectedEOF=Das Ende der XML Eingabe trat unerwartet ein
+Xml_MustBeStream=Object type muss null sein oder typeof(Stream)
+Xml_UnspecifiedUri=Keine URI angegeben
+Xml_InvalidWriteState=Ungueltiger Status fuer angegebenen Schreibauftrag
+Xml_InvalidReadState=Ungueltiger Status fuer angegebenen Leseauftrag
+Xml_InvalidQuoteChar=Ungueltiger Anfuehrungs-Buchstabe
+Xml_NamespacesNotSupported=Namespaces werden von diesem writer nicht unterstuetzt
+Xml_InvalidSurrogate=Unzulaessiges stellvertretendes Buchstabenpaar
+Xml_InvalidXmlWritten=Ungueltige XML Datenreihenfolge geschrieben
+Xml_InvalidWhitespace=Ungueltiger Leerzeichen String
+Xml_InvalidWhitespaceHandling=Ungueltiger Wert fuer die Leerzeichenverarbeitung 
+Xml_InvalidEntityRef=Ungueltiger Name fuer eine Entity Referenz
+Xml_InvalidEntityHandling=Ungueltiger Wert fuer die Entity Verarbeitung
+Xml_InvalidNodeType=Ungueltiger Node Typ
+Xml_InvalidValidationType=Ungueltiger Wert fuer den Validierungstyp
+Xml_NotTextReader=Der angegebene XmlReader ist kein XmlTextReader
+Xml_InvalidAttributeIndex=Ungueltiger Attribut Index Wert
+Xml_CannotSetInnerXml=Kann den inneren XML fuer diesen Node Typ nicht setzen
+Xml_CannotSetValue=Kann den Wert fuer diesen Node Typ nicht setzen
+Xml_NotSameDocument=Die angegebenen Nodes sind nicht im selben Dokument
+Xml_ReadOnly=Die angegebene Node kann nur gelesen werden
+Xml_IsAncestor=Es wurde versucht ein Vorfahr als ein Kind zu setzen
+Xml_AttrCollectionWrongNode=Falscher Node Typ fuer eine Attribut Collection
+Xml_NotAttrCollectionMember=Die Referenz Node ist kein Mitglied der Collection
+Xml_InvalidStandalone=Ungueltiger einzelnstehender Attributwert
+Xml_InvalidVersion=Ungueltige XML Version - nuss 1.0 sein
+Xml_InvalidSpecialAttribute=Ungueltiger Name fuer ein spezielles Attribut
+Xml_CannotInsert=Kann die angegebene Node nicht an der angegebenen Position einfuegen
+Xml_CannotRemove=Kann die angegebene Node nicht entfernen
+Xml_ReaderClosed=Der XML Leser wurde bereits geschlossen oder existiert nicht
+Xml_ReaderError=Es wurde ein Fehler im XML Eingabestrom
+Xml_RefNotChild=Die Referenz Node ist kein child des angegebenen Parent
+Xml_CannotClone=Kann diesen Typ von node nicht klonen
+Xml_AttrAlreadySet=Das angegebene Attribut wurde bereits auf einem Element gesetzt

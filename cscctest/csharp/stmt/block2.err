@@ -1,0 +1,4 @@
+./block2.cs:26: `x' is already declared in this scope
+./block2.cs:24: previous declaration here
+./block2.cs:35: `x' is not declared in the current scope
+./block2.cs:35: invalid return value

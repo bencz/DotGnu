@@ -1,0 +1,3 @@
+We use the "System.Private" namespace for miscellaneous internal
+classes that the rest of the library uses.  All classes in this
+namespace must be declared "internal".

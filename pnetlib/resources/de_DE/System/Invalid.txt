@@ -1,0 +1,40 @@
+#
+# Invalid.txt - Resources for invalid operation messages.
+#
+# Copyright (C) 2001, 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Invalid_CGWriterExists=Dieser code Generator hat bereits einen anderen text writer
+Invalid_ServerNotCreated=Hoerender TCP Server wurde nicht erzeugt
+Invalid_SendToOnConnected=Versuch SendTo auf einem verbundenen datagram socket zu verwenden
+Invalid_SendOnNonConnected=Versuch Send auf einem nicht verbundenen datagram socket zu verwenden
+Invalid_RemoteEventSource=Kann nicht auf entfernte Event Quellen zugreifen
+Invalid_CounterNotInited=Performance Zaehler wurde noch nicht initialisiert
+Invalid_CategoryNotInited=Performance Zaehler Kategorie wurde noch nicht initialisiert
+Invalid_ProcessNotExited=Der Prozess ist noch nicht beendet
+Invalid_ProcessNotStarted=Der Prozess ist noch nicht gestarted
+Invalid_ProcessExited=Der Prozess ist beendet
+Invalid_Platform=Die angeforderte Operation ist auf dieser Plattform nicht verfuegbar
+Invalid_NotWaiting=Der angegebene Thread wartet zur Zeit nicht
+Invalid_StandardStream=Der Standard stream ist nicht definiert oder umgeleitet
+Invalid_ProcessStartInfo=Ungueltige Prozess Startinformationen
+Invalid_PermissionPresent=Die angegeben Berechtigung ist bereits vorhanden
+Invalid_PermissionNotPresent=Die angegeben Berechtigung ist nicht vorhanden
+Invalid_PathMismatch=Die Laenge der Berechtigungspfade passt nicht zusammen
+Invalid_AuthModuleNotRegistered=Das angegeben Authentifizierungsmodul ist nicht registriert
+Invalid_LicenseContextChange=Der Lizenz Kontext kann nicht geaendert werden
+Invalid_LicenseContextLocked=Der Lizenz Kontext ist bereits gesperrt
+Invalid_LicenseContextNotLocked=Der Lizenz Kontext wurde nicht durch den angegebenen Kontext Benutzer gesperrt

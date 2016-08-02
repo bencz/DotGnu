@@ -1,0 +1,301 @@
+%output "cs_semantics.c"
+
+%{
+/*
+ * cs_semantics.tc - Semantic analysis routines for C#.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <cscc/csharp/cs_internal.h>
+%}
+
+/*
+ * Semantic analysis operation.  "parent" points to the location
+ * that should be overwritten if the node is being replaced.
+ */
+%operation CSSemValue ILNode_SemAnalysis([ILNode *node], ILGenInfo *info,
+									     ILNode **parent) = {CSSemValueDefault}
+
+/*
+ * A subspecies of semantic analysis intended to give preference to
+ * returning Type information.  Used in local variable declarations,
+ * object creation, and some obscure cases of Method Access.
+ */
+%operation CSSemValue ILNode_SemAnalysisType([ILNode *node], ILGenInfo *info,
+									     ILNode **parent) = {CSSemValueDefault}
+
+/*
+ * Stub for dummy semantic analysis routines.
+ */
+ILNode_SemAnalysis(ILNode_DummySem)
+{
+	return CSSemValueDefault;
+}
+
+ILNode_SemAnalysisType(ILNode)
+{
+	return ILNode_SemAnalysis(node, info, parent);
+}
+
+ILNode_SemAnalysis(ILNode_Alias)
+{
+	return CSSemValueDefault;
+}
+
+%decls %end %{
+
+/*
+ * Create a type for a built-in class or value type.
+ */
+/*
+ILType *CSCreateClassType(CSSemContext *sctx, const char *namespace,
+						  const char *name);
+ILType *CSCreateValueType(CSSemContext *sctx, const char *namespace,
+						  const char *name);
+*/
+
+/*
+ * Perform semantic analysis on a type.  This is
+ * guaranteed to always return a correct type value.
+ * The "void" type will produce an error, if present.
+ */
+ILType *CSSemType(ILNode *type, ILGenInfo *info, ILNode **parent);
+
+/*
+ * Perform semantic analysis on a literal type identifier.
+ * This function changes the compiler state and then calls
+ * CSSemType;
+ */
+ILType *CSSemTypeLiteral(ILNode *type, ILGenInfo *info, ILNode **parent);
+
+/*
+ * Perform semantic analysis on a type that can also
+ * include the "void" type.
+ */
+ILType *CSSemTypeVoid(ILNode *type, ILGenInfo *info, ILNode **parent);
+
+/*
+ * Perform semantic analysis on a base type.  Returns
+ * zero if not a legal base type.
+ */
+int CSSemBaseType(ILNode *type, ILGenInfo *info, ILNode **parent,
+				  ILNode **baseNode, ILProgramItem **baseItem);
+
+/*
+ * Perform semantic analysis on a node and expect a value.
+ * Returns non-zero if a value, or zero on error.
+ */
+int CSSemExpectValue(ILNode *node, ILGenInfo *info,
+					 ILNode **parent, CSSemValue *value);
+
+/*
+ * Perform semantic analysis on a node and expect a type.
+ * Returns non-zero if a value, or zero on error.
+ */
+int CSSemExpectType (ILNode *type, ILGenInfo *info, ILNode **parent);
+
+/*
+ * Perform semantic analysis on the node corresponding to a
+ * program item.  This is used to finialize semantic analysis
+ * on declarations that are forward-declared at the point of use.
+ */
+void CSSemProgramItem(ILGenInfo *info, ILProgramItem *item);
+
+/*
+ * Perform semantic analysis on a set of type actuals
+ * and add them to a "with" type.
+ */
+void CSSemWithType(ILNode *actuals, ILGenInfo *info,
+				   ILNode **parent, ILType *withType);
+
+%}
+
+%{
+
+#include <codegen/cg_nodemap.h>
+
+%}
+
+%end %{
+
+static ILType *CSSemFilterVoid(ILType *resultType, ILNode *type)
+{
+	if(resultType == ILType_Void)
+	{
+		CCErrorOnLine(yygetfilename(type), yygetlinenum(type),
+					  "`void' type is not allowed in this context");
+		resultType = ILType_Int32;
+	}
+	return resultType;
+}
+
+static ILType *CSSemValidate(ILNode *type, CSSemValue value)
+{
+	if(!CSSemIsType(value))
+	{
+		if(!CSSemIsError(value))
+		{
+			if(yyisa(type, ILNode_QualIdent) 
+				|| yyisa(type, ILNode_Identifier))
+			{
+				CCErrorOnLine(yygetfilename(type), yygetlinenum(type),
+						  "invalid type specification `%s' ", 
+						  ILQualIdentName(type,0));
+			}
+			else if(yyisa(type, ILNode_MemberAccess))
+			{
+				CCErrorOnLine(yygetfilename(type), yygetlinenum(type),
+						  "invalid type specification `%s' ", 
+						  ILMemberAccessName(type));
+			}
+			else
+			{
+				CCErrorOnLine(yygetfilename(type), yygetlinenum(type),
+						  "invalid type specification");
+			}
+		}
+		return ILType_Int32;
+	}
+	else
+	{
+		return CSSemGetType(value);
+	}
+}
+
+ILType *CSSemType(ILNode *type, ILGenInfo *info, ILNode **parent)
+{
+	return CSSemFilterVoid(CSSemTypeVoid(type, info, parent), type);
+}
+
+ILType *CSSemTypeLiteral(ILNode *type, ILGenInfo *info, ILNode **parent)
+{
+	CSSemValue value;
+	int save;
+
+	/* NULL is used in some places in the grammar to indicate "void" */
+	if(!type) return CSSemFilterVoid(ILType_Void, type);
+	
+	save = info->inSemType;
+	info->inSemType = info->typeGather;
+	value = ILNode_SemAnalysisType(type, info, parent);
+	info->inSemType = save;
+	return CSSemFilterVoid(CSSemValidate(type, value),type);
+}
+
+ILType *CSSemTypeVoid(ILNode *type, ILGenInfo *info, ILNode **parent)
+{
+	CSSemValue value;
+	int save;
+
+	/* NULL is used in some places in the grammar to indicate "void" */
+	if(!type) return ILType_Void;
+ 	
+	save = info->inSemType;
+	info->inSemType = info->typeGather;
+	value = ILNode_SemAnalysisType(type, info, parent);
+	info->inSemType = save;
+
+	return CSSemValidate(type, value);
+}
+
+int CSSemExpectType (ILNode *type, ILGenInfo *info, ILNode **parent)
+{
+	CSSemValue value;
+	value = ILNode_SemAnalysisType(type, info, parent);
+	return CSSemIsType(value);
+}
+
+int CSSemBaseType(ILNode *type, ILGenInfo *info, ILNode **parent,
+				  ILNode **baseNode, ILProgramItem **baseItem)
+{
+	CSSemValue value;
+	int save = info->inSemType;
+	ILClassAccessCheck saveAccessCheck = info->accessCheck;
+	info->inSemType = -1;
+	info->accessCheck = ILClassInheritable;
+	value = ILNode_SemAnalysisType(type, info, parent);
+	info->inSemType = save;
+	info->accessCheck = saveAccessCheck;
+	if(CSSemIsType(value))
+	{
+		*baseNode = 0;
+		*baseItem = ILTypeToProgramItem(info, CSSemGetType(value));
+		return (*baseItem != 0);
+	}
+	else if(CSSemIsTypeNode(value))
+	{
+		*baseNode = CSSemGetTypeNode(value);
+		*baseItem = 0;
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+int CSSemExpectValue(ILNode *node, ILGenInfo *info,
+					 ILNode **parent, CSSemValue *value)
+{
+	*value = ILNode_SemAnalysis(node, info, parent);
+	return CSSemIsValue(*value);
+}
+
+void CSSemProgramItem(ILGenInfo *info, ILProgramItem *item)
+{
+	ILGenItemContext context;
+	ILNode *node;
+	node = ILEnterProgramItemContext(info, item, info->globalScope, &context);
+	if(node)
+	{
+		ILNode_SemAnalysis(node, info, &node);
+		ILLeaveProgramItemContext(info, &context);
+	}
+}
+
+/*
+ * Perform semantic analysis on a set of type actuals
+ * and add them to a "with" type.
+ */
+void CSSemWithType(ILNode *actuals, ILGenInfo *info, ILNode **parent,
+				   ILType *withType)
+{
+	ILNode_ListIter iter;
+	ILNode *child;
+
+	ILNode_ListIter_Init(&iter, actuals);
+	while((child = ILNode_ListIter_Next(&iter)) != 0)
+	{
+		CSSemValue value;
+
+		value = ILNode_SemAnalysisType(child, info, &child);
+
+		if(!CSSemIsType(value))
+		{
+			CCErrorOnLine(yygetfilename(actuals), yygetlinenum(actuals),
+					      "type name expected in generic type argument");
+			CSSemSetType(value, ILType_Int32);
+		}
+		if(!ILTypeAddWithParam(info->context, withType, CSSemGetType(value)))
+		{
+			CCOutOfMemory();
+		}
+	}
+}
+
+%}

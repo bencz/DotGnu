@@ -1,0 +1,4 @@
+./newarray2.cs:30: invalid array element type
+./newarray2.cs:33: incompatible types in dimension specifier: no conversion from `double' to `int', `uint', `long', or `ulong'
+./newarray2.cs:34: incompatible types in dimension specifier: no conversion from `System.Object' to `int', `uint', `long', or `ulong'
+./newarray2.cs:35: incompatible types in dimension specifier: no conversion from `System.Object' to `int', `uint', `long', or `ulong'

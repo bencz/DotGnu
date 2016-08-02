@@ -1,0 +1,4 @@
+./warning.cs:21: warning: 
+./warning.cs:22: warning: This is an unquoted warning
+./warning.cs:23: warning: "This is a quoted warning"
+./warning.cs:26: warning: file contains no declarations

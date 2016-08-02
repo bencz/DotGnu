@@ -1,0 +1,87 @@
+.\" Copyright (c) 2003 Southern Storm Software, Pty Ltd.
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.TH csant 1 "25 September 2003" "Southern Storm Software" "Portable.NET Development Tools"
+.SH NAME
+csant \- the C-Sharp compilation build tool
+.SH SYNOPSIS
+\fBcsant\fR [ options ] [\fItarget\fR... ]
+.SH DESCRIPTION
+.B Csant
+is an XML based build tool used mainly to compile C# (pronounced C-Sharp)
+projects.  \fBCsant\fR supports multiple compilers and generates appropriate 
+command line specifications for each compiler.
+.SH OPTIONS
+.TP
+.B \-\-file \fIname\fB, \-f \fIname\fR
+Specify the \fIname\fR of the build file to use.  If this option is not
+present, then csant will look for a file in the base source directory
+ending with the extension `\fB.csant\fR' or `\fB.build\fR'.
+.TP
+.B \-\-base\-src\-dir \fIname\fB, \-b \fIname\fR
+Specify the base source directory for the build tree.  By default,
+this is the current directory.
+.TP
+.B \-\-base\-build\-dir \fIname\fB, \-B \fIname\fR
+Specify the base build directory for the build tree.  By default,
+this is the current directory.
+.TP
+.B \-D\fIname\fR=\fIvalue\fB, \-\-define \fIname\fB=\fIvalue\fR
+Define the property `\fIname\fR' and set it to `\fIvalue\fR'.
+.TP
+.B \-\-profile \fIname\fB, \-p \fIname\fR
+Specify the definition profile to use.  The definition profile is
+loaded before the main build file, and typically modifies properties.
+This can be used to create multiple build configurations.
+.TP
+.B \-\-just\-print, \-n
+Print the names of the commands, but do not execute them.
+.TP
+.B \-\-dummy\-doc, \-d
+Output dummy documentation files.
+.TP
+.B \-\-keep\-going, \-k
+Keep processing even after an error.
+.TP
+.B \-\-silent, \-s
+Do not print the names of commands as they are executed.
+.TP
+.B \-\-csc\-redirect, \-c
+Treat <csc> tags as <compile> tags (for NAnt compatibility).
+.TP
+.B \-\-mono\-corlib, \-m
+Use Mono's corlib instead of mscorlib during C# compiles.
+.TP
+.B \-\-compiler \fIname\fB, \-C \fIname\fR
+Specify which compiler to use (`\fBcscc\fR' (default), `\fBcsc\fR',
+or `\fBmcs\fR').  Whenever csant encounters a <compile> tag,
+it will launch the specified compiler, using the appropriate
+command-line options.
+.TP
+.B \-\-version, \-v
+Print the version of the program.
+.TP
+.B \-\-help
+Print this help message.
+.SH "NANT COMPATIBILITY"
+.B Csant
+is compatible with a subset of NAnt build files . The "\fB-c\fR" command 
+line option turns on NAnt compatibility.
+.SH "COMPILER COMPATIBILITY"
+.B Csant
+works with all other C# compilers currently in distribution. The
+choice of compiler is using the "\fB-C\fR" option.
+.SH "SEE ALSO"
+ilasm(1), cscc(1)

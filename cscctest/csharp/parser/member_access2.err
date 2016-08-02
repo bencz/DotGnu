@@ -1,0 +1,45 @@
+./member_access2.cs:26: cannot use both `public' and `private'
+./member_access2.cs:27: cannot use both `public' and `protected'
+./member_access2.cs:28: cannot use both `public' and `internal'
+./member_access2.cs:29: cannot use both `private' and `internal'
+./member_access2.cs:30: cannot use both `private' and `protected'
+./member_access2.cs:33: `abstract' cannot be used in this context
+./member_access2.cs:34: `sealed' cannot be used in this context
+./member_access2.cs:35: `virtual' cannot be used in this context
+./member_access2.cs:36: `override' cannot be used in this context
+./member_access2.cs:37: `extern' cannot be used in this context
+./member_access2.cs:40: `abstract' cannot be used in this context
+./member_access2.cs:41: `sealed' cannot be used in this context
+./member_access2.cs:42: `static' cannot be used in this context
+./member_access2.cs:43: `readonly' cannot be used in this context
+./member_access2.cs:44: `virtual' cannot be used in this context
+./member_access2.cs:45: `override' cannot be used in this context
+./member_access2.cs:46: `extern' cannot be used in this context
+./member_access2.cs:47: `unsafe' cannot be used in this context
+./member_access2.cs:48: `volatile' cannot be used in this context
+./member_access2.cs:51: cannot use both `static' and `virtual'
+./member_access2.cs:52: cannot use both `static' and `abstract'
+./member_access2.cs:53: cannot use both `static' and `override'
+./member_access2.cs:54: cannot use both `override' and `new'
+./member_access2.cs:55: cannot use both `abstract' and `virtual'
+./member_access2.cs:56: cannot use both `virtual' and `override'
+./member_access2.cs:57: cannot use both `override' and `new'
+./member_access2.cs:58: `volatile' cannot be used in this context
+./member_access2.cs:60: cannot use `sealed' without `override'
+./member_access2.cs:61: cannot use both `static' and `sealed'
+./member_access2.cs:62: cannot use both `abstract' and `sealed'
+./member_access2.cs:63: cannot use both `virtual' and `sealed'
+./member_access2.cs:66: `extern' cannot be used in this context
+./member_access2.cs:67: `volatile' cannot be used in this context
+./member_access2.cs:71: `volatile' cannot be used in this context
+./member_access2.cs:74: operators must have `public' access
+./member_access2.cs:75: operators must have `static' access
+./member_access2.cs:76: `new' cannot be used in this context
+./member_access2.cs:77: `sealed' cannot be used in this context
+./member_access2.cs:54: warning: declaration of `m4' includes unnecessary `new' keyword
+./member_access2.cs:57: warning: declaration of `m7' includes unnecessary `new' keyword
+./member_access2.cs:84: warning: declaration of `m1' hides an inherited member, and `new' was not present
+./member_access2.cs:85: warning: declaration of `m6' hides an inherited member, and `new' was not present
+./member_access2.cs:62: `abstract' cannot be used with a method body
+./member_access2.cs:70: `extern' cannot be used with a method body
+./member_access2.cs:70: `extern' cannot be used with a method body

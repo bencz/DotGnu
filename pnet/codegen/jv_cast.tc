@@ -1,0 +1,2101 @@
+%output "jv_cast.c"
+
+%{
+/*
+ * jv_cast.tc - Cast operations.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <codegen/cg_nodes.h>
+%}
+
+/*
+ * Declare the general-purpose machine type cast operation.
+ */
+%operation %inline %split void JavaGenCast
+		(ILGenInfo *info, [ILMachineType fromType], [ILMachineType toType])
+
+%{
+
+/*
+ * Cast from one type to another, while forcing overflow checking.
+ */
+void JavaGenCastOverflow(ILGenInfo *info, ILMachineType fromType,
+						 ILMachineType toType)
+{
+	int overflow = info->overflowInsns;
+	info->overflowInsns = -1;
+	JavaGenCast(info, fromType, toType);
+	info->overflowInsns = overflow;
+}
+
+%}
+
+/*
+ * Cast to "void".
+ */
+JavaGenCast(ILMachineType_Void, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaGenCast(ILMachineType_Int64, ILMachineType_Void),
+JavaGenCast(ILMachineType_UInt64, ILMachineType_Void),
+JavaGenCast(ILMachineType_Float64, ILMachineType_Void),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_Void)
+{
+	JavaGenSimple(info, JAVA_OP_POP2);
+	JavaGenAdjust(info, -2);
+}
+JavaGenCast(ILMachineType, ILMachineType_Void)
+{
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenAdjust(info, -1);
+}
+
+/*
+ * Cast to "boolean".
+ */
+JavaGenCast(ILMachineType_Void, ILMachineType_Boolean)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenAdjust(info, 1);
+}
+JavaGenCast(ILMachineType_Boolean, ILMachineType_Boolean)
+{
+	/* Nothing to do here */
+}
+JavaGenCast(ILMachineType_Int8, ILMachineType_Boolean),
+JavaGenCast(ILMachineType_UInt8, ILMachineType_Boolean),
+JavaGenCast(ILMachineType_Int16, ILMachineType_Boolean),
+JavaGenCast(ILMachineType_UInt16, ILMachineType_Boolean),
+JavaGenCast(ILMachineType_Char, ILMachineType_Boolean),
+JavaGenCast(ILMachineType_Int32, ILMachineType_Boolean),
+JavaGenCast(ILMachineType_UInt32, ILMachineType_Boolean),
+JavaGenCast(ILMachineType_NativeInt, ILMachineType_Boolean),
+JavaGenCast(ILMachineType_NativeUInt, ILMachineType_Boolean)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenJump(info, JAVA_OP_IFEQ, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+}
+JavaGenCast(ILMachineType_ObjectRef, ILMachineType_Boolean),
+JavaGenCast(ILMachineType_UnmanagedPtr, ILMachineType_Boolean),
+JavaGenCast(ILMachineType_ManagedPtr, ILMachineType_Boolean),
+JavaGenCast(ILMachineType_TransientPtr, ILMachineType_Boolean)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenJump(info, JAVA_OP_IFNULL, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+}
+JavaGenCast(ILMachineType_Int64, ILMachineType_Boolean),
+JavaGenCast(ILMachineType_UInt64, ILMachineType_Boolean)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+    JavaGenSimple(info, JAVA_OP_LCONST_0);
+    JavaGenSimple(info, JAVA_OP_LCMP);
+    JavaGenJump(info, JAVA_OP_IFEQ, &label1);
+    JavaGenSimple(info, JAVA_OP_ICONST_1);
+    JavaGenJump(info, JAVA_OP_GOTO, &label2);
+    JavaGenLabel(info, &label1);
+    JavaGenSimple(info, JAVA_OP_ICONST_0);
+    JavaGenLabel(info, &label2);
+    JavaGenExtend(info, 2);
+	JavaGenAdjust(info, -1);
+}
+JavaGenCast(ILMachineType_Float32, ILMachineType_Boolean)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+    JavaGenSimple(info, JAVA_OP_FCONST_0);
+    JavaGenSimple(info, JAVA_OP_FCMPL);
+    JavaGenJump(info, JAVA_OP_IFEQ, &label1);
+    JavaGenSimple(info, JAVA_OP_ICONST_1);
+    JavaGenJump(info, JAVA_OP_GOTO, &label2);
+    JavaGenLabel(info, &label1);
+    JavaGenSimple(info, JAVA_OP_ICONST_0);
+    JavaGenLabel(info, &label2);
+    JavaGenExtend(info, 1);
+}
+JavaGenCast(ILMachineType_Float64, ILMachineType_Boolean),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_Boolean)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+    JavaGenSimple(info, JAVA_OP_DCONST_0);
+    JavaGenSimple(info, JAVA_OP_DCMPL);
+    JavaGenJump(info, JAVA_OP_IFEQ, &label1);
+    JavaGenSimple(info, JAVA_OP_ICONST_1);
+    JavaGenJump(info, JAVA_OP_GOTO, &label2);
+    JavaGenLabel(info, &label1);
+    JavaGenSimple(info, JAVA_OP_ICONST_0);
+    JavaGenLabel(info, &label2);
+    JavaGenExtend(info, 2);
+	JavaGenAdjust(info, -1);
+}
+JavaGenCast(ILMachineType_Decimal, ILMachineType_Boolean)
+{
+	if(info->useJavaLib)
+	{
+	    JavaGenSimple(info, JAVA_OP_LCONST_0);
+		JavaGenCallByName(info, "java/math/BigDecimal", "valueOf",
+						  "(J)Ljava/math/BigDecimal;");
+		JavaGenExtend(info, 2);
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "equals",
+						   "(Ljava/lang/Object;)Z");
+	}
+	else
+	{
+	    JavaGenSimple(info, JAVA_OP_ICONST_0);
+		JavaGenCallByName(info, "System/Decimal", "op_Implicit__iV",
+						  "(I)LSystem/Decimal;");
+		JavaGenCallByName(info, "System/Decimal", "op_Equality__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenExtend(info, 1);
+	}
+}
+JavaGenCast(ILMachineType_String, ILMachineType_Boolean)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/Boolean", "valueOf",
+						  "(Ljava/lang/String;)Ljava/lang/Boolean;");
+		JavaGenCallVirtual(info, "java/lang/Boolean", "booleanValue", "()Z");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Boolean", "FromString",
+						  "(LSystem/String;)Z");
+	}
+}
+JavaGenCast(ILMachineType_ManagedValue, ILMachineType_Boolean)
+{
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+}
+
+/*
+ * Cast to "int8".
+ */
+JavaGenCast(ILMachineType_Void, ILMachineType_Int8)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenAdjust(info, 1);
+}
+JavaGenCast(ILMachineType_Boolean, ILMachineType_Int8),
+JavaGenCast(ILMachineType_Int8, ILMachineType_Int8)
+{
+	/* Nothing to do here */
+}
+JavaGenCast(ILMachineType_Int16, ILMachineType_Int8),
+JavaGenCast(ILMachineType_Int32, ILMachineType_Int8),
+JavaGenCast(ILMachineType_NativeInt, ILMachineType_Int8)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "i2b_ovf", "(I)B");
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2B);
+	}
+}
+JavaGenCast(ILMachineType_UInt8, ILMachineType_Int8),
+JavaGenCast(ILMachineType_UInt16, ILMachineType_Int8),
+JavaGenCast(ILMachineType_UInt32, ILMachineType_Int8),
+JavaGenCast(ILMachineType_NativeUInt, ILMachineType_Int8),
+JavaGenCast(ILMachineType_Char, ILMachineType_Int8)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "ui2b_ovf", "(I)B");
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2B);
+	}
+}
+JavaGenCast(ILMachineType_Int64, ILMachineType_Int8)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "l2b_ovf", "(J)B");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_L2I);
+		JavaGenSimple(info, JAVA_OP_I2B);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaGenCast(ILMachineType_UInt64, ILMachineType_Int8)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "ul2b_ovf", "(J)B");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_L2I);
+		JavaGenSimple(info, JAVA_OP_I2B);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaGenCast(ILMachineType_Float32, ILMachineType_Int8)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Float32, ILMachineType_Int32);
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_Int8);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_F2I);
+		JavaGenSimple(info, JAVA_OP_I2B);
+	}
+}
+JavaGenCast(ILMachineType_Float64, ILMachineType_Int8),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_Int8)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Float64, ILMachineType_Int32);
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_Int8);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_D2I);
+		JavaGenSimple(info, JAVA_OP_I2B);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaGenCast(ILMachineType_Decimal, ILMachineType_Int8)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCastOverflow(info, ILMachineType_Decimal, ILMachineType_Int32);
+		JavaGenCastOverflow(info, ILMachineType_Int32, ILMachineType_Int8);
+	}
+	else if(info->clsCompliant)
+	{
+		/* CLS does not have a conversion from Decimal to int8, so
+		   down-convert from int32 instead */
+		JavaGenCallByName(info, "System/Decimal", "op_Explicit__Vi",
+						  "(LSystem/Decimal;)I");
+		JavaGenCastOverflow(info, ILMachineType_Int32, ILMachineType_Int8);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Explicit__V",
+						  "(LSystem/Decimal;)B");
+	}
+}
+JavaGenCast(ILMachineType_String, ILMachineType_Int8)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/Byte", "parseByte",
+						  "(Ljava/lang/String;)B");
+	}
+	else if(info->clsCompliant)
+	{
+		/* CLS does not have the SByte class, so down-convert from Int32 */
+		JavaGenCallByName(info, "System/Int32", "FromString",
+						  "(LSystem/String;)I");
+		JavaGenCastOverflow(info, ILMachineType_Int32, ILMachineType_Int8);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/SByte", "FromString",
+						  "(LSystem/String;)B");
+	}
+}
+JavaGenCast(ILMachineType_ObjectRef, ILMachineType_Int8),
+JavaGenCast(ILMachineType_UnmanagedPtr, ILMachineType_Int8),
+JavaGenCast(ILMachineType_ManagedPtr, ILMachineType_Int8),
+JavaGenCast(ILMachineType_TransientPtr, ILMachineType_Int8),
+JavaGenCast(ILMachineType_ManagedValue, ILMachineType_Int8)
+{
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+}
+
+/*
+ * Cast to "uint8".
+ */
+JavaGenCast(ILMachineType_Void, ILMachineType_UInt8)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenAdjust(info, 1);
+}
+JavaGenCast(ILMachineType_Boolean, ILMachineType_UInt8),
+JavaGenCast(ILMachineType_UInt8, ILMachineType_UInt8)
+{
+	/* Nothing to do here */
+}
+JavaGenCast(ILMachineType_Int8, ILMachineType_UInt8),
+JavaGenCast(ILMachineType_Int16, ILMachineType_UInt8),
+JavaGenCast(ILMachineType_UInt16, ILMachineType_UInt8),
+JavaGenCast(ILMachineType_Char, ILMachineType_UInt8),
+JavaGenCast(ILMachineType_Int32, ILMachineType_UInt8),
+JavaGenCast(ILMachineType_UInt32, ILMachineType_UInt8),
+JavaGenCast(ILMachineType_NativeInt, ILMachineType_UInt8),
+JavaGenCast(ILMachineType_NativeUInt, ILMachineType_UInt8)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "i2ub_ovf", "(I)I");
+	}
+	else
+	{
+		JavaGenInt32(info, 0xFF);
+		JavaGenSimple(info, JAVA_OP_IAND);
+		JavaGenExtend(info, 1);
+	}
+}
+JavaGenCast(ILMachineType_Int64, ILMachineType_UInt8),
+JavaGenCast(ILMachineType_UInt64, ILMachineType_UInt8)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "l2ub_ovf", "(J)I");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_L2I);
+		JavaGenInt32(info, 0xFF);
+		JavaGenSimple(info, JAVA_OP_IAND);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaGenCast(ILMachineType_Float32, ILMachineType_UInt8)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Float32, ILMachineType_UInt32);
+		JavaGenCast(info, ILMachineType_UInt32, ILMachineType_UInt8);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_F2I);
+		JavaGenInt32(info, 0xFF);
+		JavaGenSimple(info, JAVA_OP_IAND);
+		JavaGenExtend(info, 1);
+	}
+}
+JavaGenCast(ILMachineType_Float64, ILMachineType_UInt8),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_UInt8)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Float64, ILMachineType_UInt32);
+		JavaGenCast(info, ILMachineType_UInt32, ILMachineType_UInt8);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_D2I);
+		JavaGenInt32(info, 0xFF);
+		JavaGenSimple(info, JAVA_OP_IAND);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaGenCast(ILMachineType_Decimal, ILMachineType_UInt8)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCastOverflow(info, ILMachineType_Decimal, ILMachineType_Int32);
+		JavaGenCastOverflow(info, ILMachineType_Int32, ILMachineType_UInt8);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Explicit__VB",
+						  "(LSystem/Decimal;)I");
+	}
+}
+JavaGenCast(ILMachineType_String, ILMachineType_UInt8)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/Integer", "parseInt",
+						  "(Ljava/lang/String;)I");
+		JavaGenCastOverflow(info, ILMachineType_Int32, ILMachineType_UInt8);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Byte", "FromString__CB",
+						  "(LSystem/String;)I");
+	}
+}
+JavaGenCast(ILMachineType_ObjectRef, ILMachineType_UInt8),
+JavaGenCast(ILMachineType_UnmanagedPtr, ILMachineType_UInt8),
+JavaGenCast(ILMachineType_ManagedPtr, ILMachineType_UInt8),
+JavaGenCast(ILMachineType_TransientPtr, ILMachineType_UInt8),
+JavaGenCast(ILMachineType_ManagedValue, ILMachineType_UInt8)
+{
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+}
+
+/*
+ * Cast to "int16".
+ */
+JavaGenCast(ILMachineType_Void, ILMachineType_Int16)
+{
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenAdjust(info, 1);
+}
+JavaGenCast(ILMachineType_Boolean, ILMachineType_Int16),
+JavaGenCast(ILMachineType_Int8, ILMachineType_Int16),
+JavaGenCast(ILMachineType_UInt8, ILMachineType_Int16),
+JavaGenCast(ILMachineType_Int16, ILMachineType_Int16)
+{
+	/* Nothing to do here */
+}
+JavaGenCast(ILMachineType_Int32, ILMachineType_Int16),
+JavaGenCast(ILMachineType_NativeInt, ILMachineType_Int16)
+{
+	/* Convert a signed input value */
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "i2s_ovf", "(I)S");
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2S);
+	}
+}
+JavaGenCast(ILMachineType_UInt16, ILMachineType_Int16),
+JavaGenCast(ILMachineType_UInt32, ILMachineType_Int16),
+JavaGenCast(ILMachineType_NativeUInt, ILMachineType_Int16),
+JavaGenCast(ILMachineType_Char, ILMachineType_Int16)
+{
+	/* Convert an unsigned input value */
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "ui2s_ovf", "(I)S");
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2S);
+	}
+}
+JavaGenCast(ILMachineType_Int64, ILMachineType_Int16)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "l2s_ovf", "(J)S");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_L2I);
+		JavaGenSimple(info, JAVA_OP_I2S);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaGenCast(ILMachineType_UInt64, ILMachineType_Int16)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "ul2s_ovf", "(J)S");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_L2I);
+		JavaGenSimple(info, JAVA_OP_I2S);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaGenCast(ILMachineType_Float32, ILMachineType_Int16)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Float32, ILMachineType_Int32);
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_Int16);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_F2I);
+		JavaGenSimple(info, JAVA_OP_I2S);
+	}
+}
+JavaGenCast(ILMachineType_Float64, ILMachineType_Int16),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_Int16)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Float64, ILMachineType_Int32);
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_Int16);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_D2I);
+		JavaGenSimple(info, JAVA_OP_I2S);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaGenCast(ILMachineType_Decimal, ILMachineType_Int16)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCastOverflow(info, ILMachineType_Decimal, ILMachineType_Int32);
+		JavaGenCastOverflow(info, ILMachineType_Int32, ILMachineType_Int16);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Explicit__V",
+						  "(LSystem/Decimal;)S");
+	}
+}
+JavaGenCast(ILMachineType_String, ILMachineType_Int16)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/Short", "parseShort",
+						  "(Ljava/lang/String;)S");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Int16", "FromString",
+						  "(LSystem/String;)S");
+	}
+}
+JavaGenCast(ILMachineType_ObjectRef, ILMachineType_Int16),
+JavaGenCast(ILMachineType_UnmanagedPtr, ILMachineType_Int16),
+JavaGenCast(ILMachineType_ManagedPtr, ILMachineType_Int16),
+JavaGenCast(ILMachineType_TransientPtr, ILMachineType_Int16),
+JavaGenCast(ILMachineType_ManagedValue, ILMachineType_Int16)
+{
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+}
+
+/*
+ * Cast to "uint16" or "char".
+ */
+JavaGenCast(ILMachineType_Void, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_Void, ILMachineType_Char)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenAdjust(info, 1);
+}
+JavaGenCast(ILMachineType_Boolean, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_UInt8, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_UInt16, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_Char, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_Boolean, ILMachineType_Char),
+JavaGenCast(ILMachineType_UInt8, ILMachineType_Char),
+JavaGenCast(ILMachineType_UInt16, ILMachineType_Char),
+JavaGenCast(ILMachineType_Char, ILMachineType_Char)
+{
+	/* Nothing to do here */
+}
+JavaGenCast(ILMachineType_Int8, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_Int16, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_Int32, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_NativeInt, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_Int8, ILMachineType_Char),
+JavaGenCast(ILMachineType_Int16, ILMachineType_Char),
+JavaGenCast(ILMachineType_Int32, ILMachineType_Char),
+JavaGenCast(ILMachineType_NativeInt, ILMachineType_Char),
+JavaGenCast(ILMachineType_UInt32, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_NativeUInt, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_UInt32, ILMachineType_Char),
+JavaGenCast(ILMachineType_NativeUInt, ILMachineType_Char)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "i2us_ovf", "(I)C");
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2C);
+	}
+}
+JavaGenCast(ILMachineType_Int64, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_UInt64, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_Int64, ILMachineType_Char),
+JavaGenCast(ILMachineType_UInt64, ILMachineType_Char)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "l2us_ovf", "(J)C");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_L2I);
+		JavaGenSimple(info, JAVA_OP_I2C);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaGenCast(ILMachineType_Float32, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_Float32, ILMachineType_Char)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Float32, ILMachineType_Int32);
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_UInt16);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_F2I);
+		JavaGenSimple(info, JAVA_OP_I2C);
+	}
+}
+JavaGenCast(ILMachineType_Float64, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_Float64, ILMachineType_Char),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_Char)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Float64, ILMachineType_Int32);
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_UInt16);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_D2I);
+		JavaGenSimple(info, JAVA_OP_I2C);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaGenCast(ILMachineType_Decimal, ILMachineType_UInt16)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCastOverflow(info, ILMachineType_Decimal, ILMachineType_Int32);
+		JavaGenCastOverflow(info, ILMachineType_Int32, ILMachineType_UInt16);
+	}
+	else if(info->clsCompliant)
+	{
+		/* CLS does not have a conversion from Decimal to uint16, so
+		   down-convert from int32 instead */
+		JavaGenCallByName(info, "System/Decimal", "op_Explicit__VS",
+						  "(LSystem/Decimal;)I");
+		JavaGenCastOverflow(info, ILMachineType_Int32, ILMachineType_UInt16);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Explicit__VS",
+						  "(LSystem/Decimal;)I");
+	}
+}
+JavaGenCast(ILMachineType_Decimal, ILMachineType_Char)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCastOverflow(info, ILMachineType_Decimal, ILMachineType_Int32);
+		JavaGenCastOverflow(info, ILMachineType_Int32, ILMachineType_UInt16);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Explicit__V",
+						  "(LSystem/Decimal;)C");
+	}
+}
+JavaGenCast(ILMachineType_String, ILMachineType_UInt16)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/Integer", "parseInt",
+						  "(Ljava/lang/String;)I");
+		JavaGenCastOverflow(info, ILMachineType_Int32, ILMachineType_UInt16);
+	}
+	else if(info->clsCompliant)
+	{
+		/* CLS does not have the UInt16 class, so down-convert from Int32 */
+		JavaGenCallByName(info, "System/Int32", "FromString",
+						  "(LSystem/String;)I");
+		JavaGenCastOverflow(info, ILMachineType_Int32, ILMachineType_UInt16);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/UInt16", "FromString__CS",
+						  "(LSystem/String;)I");
+	}
+}
+JavaGenCast(ILMachineType_String, ILMachineType_Char)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenSimple(info, JAVA_OP_ICONST_0);
+		JavaGenCallVirtual(info, "java/lang/String", "charAt", "(I)C");
+		JavaGenExtend(info, 1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Char", "FromString",
+						  "(LSystem/String;)C");
+	}
+}
+JavaGenCast(ILMachineType_ObjectRef, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_UnmanagedPtr, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_ManagedPtr, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_TransientPtr, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_ManagedValue, ILMachineType_UInt16),
+JavaGenCast(ILMachineType_ObjectRef, ILMachineType_Char),
+JavaGenCast(ILMachineType_UnmanagedPtr, ILMachineType_Char),
+JavaGenCast(ILMachineType_ManagedPtr, ILMachineType_Char),
+JavaGenCast(ILMachineType_TransientPtr, ILMachineType_Char),
+JavaGenCast(ILMachineType_ManagedValue, ILMachineType_Char)
+{
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+}
+
+/*
+ * Cast to "int32" or "native int".
+ */
+JavaGenCast(ILMachineType_Void, ILMachineType_Int32),
+JavaGenCast(ILMachineType_Void, ILMachineType_NativeInt)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenAdjust(info, 1);
+}
+JavaGenCast(ILMachineType_Boolean, ILMachineType_Int32),
+JavaGenCast(ILMachineType_Int8, ILMachineType_Int32),
+JavaGenCast(ILMachineType_UInt8, ILMachineType_Int32),
+JavaGenCast(ILMachineType_Int16, ILMachineType_Int32),
+JavaGenCast(ILMachineType_UInt16, ILMachineType_Int32),
+JavaGenCast(ILMachineType_Int32, ILMachineType_Int32),
+JavaGenCast(ILMachineType_Char, ILMachineType_Int32),
+JavaGenCast(ILMachineType_NativeInt, ILMachineType_Int32),
+JavaGenCast(ILMachineType_Boolean, ILMachineType_NativeInt),
+JavaGenCast(ILMachineType_Int8, ILMachineType_NativeInt),
+JavaGenCast(ILMachineType_UInt8, ILMachineType_NativeInt),
+JavaGenCast(ILMachineType_Int16, ILMachineType_NativeInt),
+JavaGenCast(ILMachineType_UInt16, ILMachineType_NativeInt),
+JavaGenCast(ILMachineType_Int32, ILMachineType_NativeInt),
+JavaGenCast(ILMachineType_Char, ILMachineType_NativeInt),
+JavaGenCast(ILMachineType_NativeInt, ILMachineType_NativeInt)
+{
+	/* Nothing to do here */
+}
+JavaGenCast(ILMachineType_UInt32, ILMachineType_Int32),
+JavaGenCast(ILMachineType_NativeUInt, ILMachineType_Int32),
+JavaGenCast(ILMachineType_UInt32, ILMachineType_NativeInt),
+JavaGenCast(ILMachineType_NativeUInt, ILMachineType_NativeInt)
+{
+	/* Convert an unsigned input value, but only in overflow mode */
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "ui2i_ovf", "(I)I");
+	}
+}
+JavaGenCast(ILMachineType_Int64, ILMachineType_Int32),
+JavaGenCast(ILMachineType_Int64, ILMachineType_NativeInt)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "l2i_ovf", "(J)I");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_L2I);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaGenCast(ILMachineType_UInt64, ILMachineType_Int32),
+JavaGenCast(ILMachineType_UInt64, ILMachineType_NativeInt)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "ul2i_ovf", "(J)I");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_L2I);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaGenCast(ILMachineType_Float32, ILMachineType_Int32),
+JavaGenCast(ILMachineType_Float32, ILMachineType_NativeInt)
+{
+	if(info->overflowInsns)
+	{
+		/* Up-convert to "double" and then convert that to "int" */
+		JavaGenSimple(info, JAVA_OP_F2D);
+		JavaGenCallIntrinsic(info, "d2i_ovf", "(D)I");
+		JavaGenExtend(info, 1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_F2I);
+	}
+}
+JavaGenCast(ILMachineType_Float64, ILMachineType_Int32),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_Int32),
+JavaGenCast(ILMachineType_Float64, ILMachineType_NativeInt),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_NativeInt)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "d2i_ovf", "(D)I");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_D2I);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaGenCast(ILMachineType_Decimal, ILMachineType_Int32),
+JavaGenCast(ILMachineType_Decimal, ILMachineType_NativeInt)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallIntrinsic(info, "D2i_ovf", "(Ljava/math/BigDecimal;)I");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Explicit__Vi",
+						  "(LSystem/Decimal;)I");
+	}
+}
+JavaGenCast(ILMachineType_String, ILMachineType_Int32),
+JavaGenCast(ILMachineType_String, ILMachineType_NativeInt)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/Integer", "parseInt",
+						  "(Ljava/lang/String;)I");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Int32", "FromString",
+						  "(LSystem/String;)I");
+	}
+}
+JavaGenCast(ILMachineType_ObjectRef, ILMachineType_Int32),
+JavaGenCast(ILMachineType_UnmanagedPtr, ILMachineType_Int32),
+JavaGenCast(ILMachineType_ManagedPtr, ILMachineType_Int32),
+JavaGenCast(ILMachineType_TransientPtr, ILMachineType_Int32),
+JavaGenCast(ILMachineType_ManagedValue, ILMachineType_Int32),
+JavaGenCast(ILMachineType_ObjectRef, ILMachineType_NativeInt),
+JavaGenCast(ILMachineType_UnmanagedPtr, ILMachineType_NativeInt),
+JavaGenCast(ILMachineType_ManagedPtr, ILMachineType_NativeInt),
+JavaGenCast(ILMachineType_TransientPtr, ILMachineType_NativeInt),
+JavaGenCast(ILMachineType_ManagedValue, ILMachineType_NativeInt)
+{
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+}
+
+/*
+ * Cast to "uint32" or "native unsigned int".
+ */
+JavaGenCast(ILMachineType_Void, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_Void, ILMachineType_NativeUInt)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenAdjust(info, 1);
+}
+JavaGenCast(ILMachineType_Boolean, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_UInt8, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_UInt16, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_UInt32, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_Char, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_NativeUInt, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_Boolean, ILMachineType_NativeUInt),
+JavaGenCast(ILMachineType_UInt8, ILMachineType_NativeUInt),
+JavaGenCast(ILMachineType_UInt16, ILMachineType_NativeUInt),
+JavaGenCast(ILMachineType_UInt32, ILMachineType_NativeUInt),
+JavaGenCast(ILMachineType_Char, ILMachineType_NativeUInt),
+JavaGenCast(ILMachineType_NativeUInt, ILMachineType_NativeUInt)
+{
+	/* Nothing to do here */
+}
+JavaGenCast(ILMachineType_Int8, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_Int16, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_Int32, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_NativeInt, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_Int8, ILMachineType_NativeUInt),
+JavaGenCast(ILMachineType_Int16, ILMachineType_NativeUInt),
+JavaGenCast(ILMachineType_Int32, ILMachineType_NativeUInt),
+JavaGenCast(ILMachineType_NativeInt, ILMachineType_NativeUInt)
+{
+	/* Convert a signed input value, but only in overflow mode */
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "i2ui_ovf", "(I)I");
+	}
+}
+JavaGenCast(ILMachineType_Int64, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_UInt64, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_Int64, ILMachineType_NativeUInt),
+JavaGenCast(ILMachineType_UInt64, ILMachineType_NativeUInt)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "l2ui_ovf", "(J)I");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_L2I);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaGenCast(ILMachineType_Float32, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_Float32, ILMachineType_NativeUInt)
+{
+	if(info->overflowInsns)
+	{
+		/* Convert to "double" and then convert that to "uint32" */
+		JavaGenSimple(info, JAVA_OP_F2D);
+		JavaGenCallIntrinsic(info, "d2ui_ovf", "(D)I");
+		JavaGenExtend(info, 1);
+	}
+	else
+	{
+		/* Convert to "double" and then convert that to "uint32" */
+		JavaGenSimple(info, JAVA_OP_F2D);
+		JavaGenCallIntrinsic(info, "d2ui", "(D)I");
+		JavaGenExtend(info, 1);
+	}
+}
+JavaGenCast(ILMachineType_Float64, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_Float64, ILMachineType_NativeUInt),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_NativeUInt)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "d2ui_ovf", "(D)I");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallIntrinsic(info, "d2ui", "(D)I");
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaGenCast(ILMachineType_Decimal, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_Decimal, ILMachineType_NativeUInt)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCastOverflow(info, ILMachineType_Decimal, ILMachineType_Int64);
+		JavaGenCastOverflow(info, ILMachineType_Int64, ILMachineType_UInt32);
+	}
+	else if(info->clsCompliant)
+	{
+		/* CLS does not have a conversion from Decimal to uint32, so
+		   down-convert from int64 instead */
+		JavaGenCallByName(info, "System/Decimal", "op_Explicit__Vl",
+						  "(LSystem/Decimal;)J");
+		JavaGenAdjust(info, 1);
+		JavaGenCastOverflow(info, ILMachineType_Int64, ILMachineType_UInt32);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Explicit__VI",
+						  "(LSystem/Decimal;)I");
+	}
+}
+JavaGenCast(ILMachineType_String, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_String, ILMachineType_NativeUInt)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/Long", "parseLong",
+						  "(Ljava/lang/String;)J");
+		JavaGenAdjust(info, 1);
+		JavaGenCastOverflow(info, ILMachineType_Int64, ILMachineType_UInt32);
+	}
+	else if(info->clsCompliant)
+	{
+		/* CLS does not have the UInt32 class, so down-convert from Int64 */
+		JavaGenCallByName(info, "System/Int64", "FromString",
+						  "(LSystem/String;)J");
+		JavaGenAdjust(info, 1);
+		JavaGenCastOverflow(info, ILMachineType_Int64, ILMachineType_UInt32);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/UInt32", "FromString__CI",
+						  "(LSystem/String;)I");
+	}
+}
+JavaGenCast(ILMachineType_ObjectRef, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_UnmanagedPtr, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_ManagedPtr, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_TransientPtr, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_ManagedValue, ILMachineType_UInt32),
+JavaGenCast(ILMachineType_ObjectRef, ILMachineType_NativeUInt),
+JavaGenCast(ILMachineType_UnmanagedPtr, ILMachineType_NativeUInt),
+JavaGenCast(ILMachineType_ManagedPtr, ILMachineType_NativeUInt),
+JavaGenCast(ILMachineType_TransientPtr, ILMachineType_NativeUInt),
+JavaGenCast(ILMachineType_ManagedValue, ILMachineType_NativeUInt)
+{
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+}
+
+/*
+ * Cast to "int64".
+ */
+JavaGenCast(ILMachineType_Void, ILMachineType_Int64)
+{
+	JavaGenSimple(info, JAVA_OP_LCONST_0);
+	JavaGenAdjust(info, 2);
+}
+JavaGenCast(ILMachineType_Boolean, ILMachineType_Int64),
+JavaGenCast(ILMachineType_Int8, ILMachineType_Int64),
+JavaGenCast(ILMachineType_UInt8, ILMachineType_Int64),
+JavaGenCast(ILMachineType_Int16, ILMachineType_Int64),
+JavaGenCast(ILMachineType_UInt16, ILMachineType_Int64),
+JavaGenCast(ILMachineType_Int32, ILMachineType_Int64),
+JavaGenCast(ILMachineType_NativeInt, ILMachineType_Int64),
+JavaGenCast(ILMachineType_Char, ILMachineType_Int64)
+{
+	/* A simple sign-extend is sufficient */
+	JavaGenSimple(info, JAVA_OP_I2L);
+	JavaGenAdjust(info, 1);
+}
+JavaGenCast(ILMachineType_UInt32, ILMachineType_Int64),
+JavaGenCast(ILMachineType_NativeUInt, ILMachineType_Int64)
+{
+	/* A simple zero-extend is sufficient */
+	JavaGenSimple(info, JAVA_OP_I2L);
+	JavaGenInt64(info, (ILInt64)(ILUInt32)0xFFFFFFFF);
+	JavaGenSimple(info, JAVA_OP_LAND);
+	JavaGenExtend(info, 3);
+	JavaGenAdjust(info, 1);
+}
+JavaGenCast(ILMachineType_Int64, ILMachineType_Int64)
+{
+	/* Nothing to do here */
+}
+JavaGenCast(ILMachineType_UInt64, ILMachineType_Int64)
+{
+	/* Convert an unsigned input value, but only in overflow mode */
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "ul2l_ovf", "(J)J");
+	}
+}
+JavaGenCast(ILMachineType_Float32, ILMachineType_Int64)
+{
+	if(info->overflowInsns)
+	{
+		/* Convert to "double" and then convert that */
+		JavaGenSimple(info, JAVA_OP_F2D);
+		JavaGenAdjust(info, 1);
+		JavaGenCallIntrinsic(info, "d2l_ovf", "(D)J");
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_F2L);
+		JavaGenAdjust(info, 1);
+	}
+}
+JavaGenCast(ILMachineType_Float64, ILMachineType_Int64),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_Int64)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "d2l_ovf", "(D)J");
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_D2L);
+	}
+}
+JavaGenCast(ILMachineType_Decimal, ILMachineType_Int64)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallIntrinsic(info, "D2l_ovf", "(Ljava/math/BigDecimal;)J");
+		JavaGenAdjust(info, 1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Explicit__Vl",
+						  "(LSystem/Decimal;)J");
+		JavaGenAdjust(info, 1);
+	}
+}
+JavaGenCast(ILMachineType_String, ILMachineType_Int64)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/Long", "parseLong",
+						  "(Ljava/lang/String;)J");
+		JavaGenAdjust(info, 1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Int64", "FromString",
+						  "(LSystem/String;)J");
+		JavaGenAdjust(info, 1);
+	}
+}
+JavaGenCast(ILMachineType_ObjectRef, ILMachineType_Int64),
+JavaGenCast(ILMachineType_UnmanagedPtr, ILMachineType_Int64),
+JavaGenCast(ILMachineType_ManagedPtr, ILMachineType_Int64),
+JavaGenCast(ILMachineType_TransientPtr, ILMachineType_Int64),
+JavaGenCast(ILMachineType_ManagedValue, ILMachineType_Int64)
+{
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenSimple(info, JAVA_OP_LCONST_0);
+	JavaGenAdjust(info, 1);
+}
+
+/*
+ * Cast to "uint64".
+ */
+JavaGenCast(ILMachineType_Void, ILMachineType_UInt64)
+{
+	JavaGenSimple(info, JAVA_OP_LCONST_0);
+	JavaGenAdjust(info, 2);
+}
+JavaGenCast(ILMachineType_Int8, ILMachineType_UInt64),
+JavaGenCast(ILMachineType_Int16, ILMachineType_UInt64),
+JavaGenCast(ILMachineType_Int32, ILMachineType_UInt64),
+JavaGenCast(ILMachineType_NativeInt, ILMachineType_UInt64)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "i2ul_ovf", "(I)J");
+		JavaGenAdjust(info, 1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2L);
+		JavaGenAdjust(info, 1);
+	}
+}
+JavaGenCast(ILMachineType_Boolean, ILMachineType_UInt64),
+JavaGenCast(ILMachineType_UInt8, ILMachineType_UInt64),
+JavaGenCast(ILMachineType_UInt16, ILMachineType_UInt64),
+JavaGenCast(ILMachineType_Char, ILMachineType_UInt64)
+{
+	/* A simple sign-extend is sufficient, because the high bit is zero */
+	JavaGenSimple(info, JAVA_OP_I2L);
+	JavaGenAdjust(info, 1);
+}
+JavaGenCast(ILMachineType_UInt32, ILMachineType_UInt64),
+JavaGenCast(ILMachineType_NativeUInt, ILMachineType_UInt64)
+{
+	/* Zero-extend a 32-bit value to a 64-bit value */
+	JavaGenSimple(info, JAVA_OP_I2L);
+	JavaGenInt64(info, (ILInt64)(ILUInt32)0xFFFFFFFF);
+	JavaGenSimple(info, JAVA_OP_LAND);
+	JavaGenExtend(info, 3);
+	JavaGenAdjust(info, 1);
+}
+JavaGenCast(ILMachineType_UInt64, ILMachineType_UInt64)
+{
+	/* Nothing to do here */
+}
+JavaGenCast(ILMachineType_Int64, ILMachineType_UInt64)
+{
+	/* Convert a signed input value, but only in overflow mode */
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "l2ul_ovf", "(J)J");
+	}
+}
+JavaGenCast(ILMachineType_Float32, ILMachineType_UInt64)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenSimple(info, JAVA_OP_F2D);
+		JavaGenAdjust(info, 1);
+		JavaGenCallIntrinsic(info, "d2ul_ovf", "(D)J");
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_F2D);
+		JavaGenAdjust(info, 1);
+		JavaGenCallIntrinsic(info, "d2ul", "(D)J");
+	}
+}
+JavaGenCast(ILMachineType_Float64, ILMachineType_UInt64),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_UInt64)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "d2ul_ovf", "(D)J");
+	}
+	else
+	{
+		JavaGenCallIntrinsic(info, "d2ul", "(D)J");
+	}
+}
+JavaGenCast(ILMachineType_Decimal, ILMachineType_UInt64)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallIntrinsic(info, "D2ul_ovf", "(Ljava/math/BigDecimal;)J");
+		JavaGenAdjust(info, 1);
+	}
+	else if(info->clsCompliant)
+	{
+		/* CLS does not have a conversion from Decimal to uint64,
+		   so we need to do this in a more round-about fashion.
+		   We subtract 0x8000000000000000, convert to int64, and
+		   then add 0x8000000000000000 to the result */
+		JavaGenNewObj(info, "System/Decimal");
+		JavaGenSimple(info, JAVA_OP_DUP);
+		JavaGenAdjust(info, 2);
+		JavaGenSimple(info, JAVA_OP_ICONST_0);		/* low */
+		JavaGenInt32(info, (ILInt32)0x80000000);	/* mid */
+		JavaGenSimple(info, JAVA_OP_ICONST_0);		/* high */
+		JavaGenSimple(info, JAVA_OP_ICONST_0);		/* isNegative */
+		JavaGenSimple(info, JAVA_OP_ICONST_0);		/* scale */
+		JavaGenAdjust(info, 5);
+		JavaGenCallCtor(info, "System/Decimal", "<init>__iiiB", "(IIIZI)V");
+		JavaGenAdjust(info, -6);
+		JavaGenCallByName(info, "System/Decimal", "op_Subtraction__VVV",
+						  "(LSystem/Decimal;LSystem/Decimal;)LSystem/Decimal;");
+		JavaGenAdjust(info, -1);
+		JavaGenCallByName(info, "System/Decimal", "op_Explicit__Vl",
+						  "(LSystem/Decimal;)J");
+		JavaGenAdjust(info, 1);
+		JavaGenInt64(info, IL_MIN_INT64);
+		JavaGenAdjust(info, 2);
+		JavaGenSimple(info, JAVA_OP_LADD);
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Explicit__VL",
+						  "(LSystem/Decimal;)J");
+		JavaGenAdjust(info, 1);
+	}
+}
+JavaGenCast(ILMachineType_String, ILMachineType_UInt64)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenInt32(info, 10);
+		JavaGenAdjust(info, 1);
+		JavaGenCallIntrinsic(info, "S2ul_ovf", "(Ljava/lang/String;)J");
+	}
+	else if(info->clsCompliant)
+	{
+		/* CLS does not have the UInt64 class, so down-convert from Decimal */
+		JavaGenCallByName(info, "System/Decimal", "FromString__CV",
+						  "(LSystem/String;)LSystem/Decimal;");
+		JavaGenCast(info, ILMachineType_Decimal, ILMachineType_UInt64);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/UInt64", "FromString__CL",
+						  "(LSystem/String;)J");
+		JavaGenAdjust(info, 1);
+	}
+}
+JavaGenCast(ILMachineType_ObjectRef, ILMachineType_UInt64),
+JavaGenCast(ILMachineType_UnmanagedPtr, ILMachineType_UInt64),
+JavaGenCast(ILMachineType_ManagedPtr, ILMachineType_UInt64),
+JavaGenCast(ILMachineType_TransientPtr, ILMachineType_UInt64),
+JavaGenCast(ILMachineType_ManagedValue, ILMachineType_UInt64)
+{
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenSimple(info, JAVA_OP_LCONST_0);
+	JavaGenAdjust(info, 1);
+}
+
+/*
+ * Cast to "float32".
+ */
+JavaGenCast(ILMachineType_Void, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FCONST_0);
+	JavaGenAdjust(info, 1);
+}
+JavaGenCast(ILMachineType_Boolean, ILMachineType_Float32),
+JavaGenCast(ILMachineType_Int8, ILMachineType_Float32),
+JavaGenCast(ILMachineType_Int16, ILMachineType_Float32),
+JavaGenCast(ILMachineType_Int32, ILMachineType_Float32),
+JavaGenCast(ILMachineType_NativeInt, ILMachineType_Float32),
+JavaGenCast(ILMachineType_UInt8, ILMachineType_Float32),
+JavaGenCast(ILMachineType_UInt16, ILMachineType_Float32),
+JavaGenCast(ILMachineType_Char, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_I2F);
+}
+JavaGenCast(ILMachineType_UInt32, ILMachineType_Float32),
+JavaGenCast(ILMachineType_NativeUInt, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_I2L);
+	JavaGenInt64(info, (ILInt64)(ILUInt32)0xFFFFFFFF);
+	JavaGenSimple(info, JAVA_OP_LAND);
+	JavaGenSimple(info, JAVA_OP_L2F);
+	JavaGenExtend(info, 3);
+}
+JavaGenCast(ILMachineType_Int64, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_L2F);
+	JavaGenAdjust(info, -1);
+}
+JavaGenCast(ILMachineType_UInt64, ILMachineType_Float32)
+{
+	JavaGenCallIntrinsic(info, "ul2f", "(J)F");
+	JavaGenAdjust(info, -1);
+}
+JavaGenCast(ILMachineType_Float32, ILMachineType_Float32)
+{
+	/* Nothing to do here */
+}
+JavaGenCast(ILMachineType_Float64, ILMachineType_Float32),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_D2F);
+	JavaGenAdjust(info, -1);
+}
+JavaGenCast(ILMachineType_Decimal, ILMachineType_Float32)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "floatValue", "()F");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Explicit__V",
+						  "(LSystem/Decimal;)F");
+	}
+}
+JavaGenCast(ILMachineType_String, ILMachineType_Float32)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/Float", "parseFloat",
+						  "(Ljava/lang/String;)F");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Single", "FromString",
+						  "(LSystem/String;)F");
+	}
+}
+JavaGenCast(ILMachineType_ObjectRef, ILMachineType_Float32),
+JavaGenCast(ILMachineType_UnmanagedPtr, ILMachineType_Float32),
+JavaGenCast(ILMachineType_ManagedPtr, ILMachineType_Float32),
+JavaGenCast(ILMachineType_TransientPtr, ILMachineType_Float32),
+JavaGenCast(ILMachineType_ManagedValue, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenSimple(info, JAVA_OP_FCONST_0);
+}
+
+/*
+ * Cast to "float64" or "native float".
+ */
+JavaGenCast(ILMachineType_Void, ILMachineType_Float64),
+JavaGenCast(ILMachineType_Void, ILMachineType_NativeFloat)
+{
+	JavaGenFloat32(info, (ILFloat)0.0);
+	JavaGenAdjust(info, 1);
+}
+JavaGenCast(ILMachineType_Boolean, ILMachineType_Float64),
+JavaGenCast(ILMachineType_Int8, ILMachineType_Float64),
+JavaGenCast(ILMachineType_Int16, ILMachineType_Float64),
+JavaGenCast(ILMachineType_Int32, ILMachineType_Float64),
+JavaGenCast(ILMachineType_NativeInt, ILMachineType_Float64),
+JavaGenCast(ILMachineType_UInt8, ILMachineType_Float64),
+JavaGenCast(ILMachineType_UInt16, ILMachineType_Float64),
+JavaGenCast(ILMachineType_Char, ILMachineType_Float64),
+JavaGenCast(ILMachineType_Boolean, ILMachineType_NativeFloat),
+JavaGenCast(ILMachineType_Int8, ILMachineType_NativeFloat),
+JavaGenCast(ILMachineType_Int16, ILMachineType_NativeFloat),
+JavaGenCast(ILMachineType_Int32, ILMachineType_NativeFloat),
+JavaGenCast(ILMachineType_NativeInt, ILMachineType_NativeFloat),
+JavaGenCast(ILMachineType_UInt8, ILMachineType_NativeFloat),
+JavaGenCast(ILMachineType_UInt16, ILMachineType_NativeFloat),
+JavaGenCast(ILMachineType_Char, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_I2D);
+}
+JavaGenCast(ILMachineType_UInt32, ILMachineType_Float64),
+JavaGenCast(ILMachineType_NativeUInt, ILMachineType_Float64),
+JavaGenCast(ILMachineType_UInt32, ILMachineType_NativeFloat),
+JavaGenCast(ILMachineType_NativeUInt, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_I2L);
+	JavaGenInt64(info, (ILInt64)(ILUInt32)0xFFFFFFFF);
+	JavaGenSimple(info, JAVA_OP_LAND);
+	JavaGenSimple(info, JAVA_OP_L2D);
+	JavaGenExtend(info, 3);
+	JavaGenAdjust(info, 1);
+}
+JavaGenCast(ILMachineType_Int64, ILMachineType_Float64),
+JavaGenCast(ILMachineType_Int64, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_L2D);
+}
+JavaGenCast(ILMachineType_UInt64, ILMachineType_Float64),
+JavaGenCast(ILMachineType_UInt64, ILMachineType_NativeFloat)
+{
+	JavaGenCallIntrinsic(info, "ul2d", "(J)D");
+}
+JavaGenCast(ILMachineType_Float32, ILMachineType_Float64),
+JavaGenCast(ILMachineType_Float32, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_F2D);
+	JavaGenAdjust(info, 1);
+}
+JavaGenCast(ILMachineType_Float64, ILMachineType_Float64),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_Float64),
+JavaGenCast(ILMachineType_Float64, ILMachineType_NativeFloat),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_NativeFloat)
+{
+	/* Nothing to do here */
+}
+JavaGenCast(ILMachineType_Decimal, ILMachineType_Float64),
+JavaGenCast(ILMachineType_Decimal, ILMachineType_NativeFloat)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "doubleValue", "()D");
+		JavaGenAdjust(info, 1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Explicit__V",
+						  "(LSystem/Decimal;)D");
+		JavaGenAdjust(info, 1);
+	}
+}
+JavaGenCast(ILMachineType_String, ILMachineType_Float64),
+JavaGenCast(ILMachineType_String, ILMachineType_NativeFloat)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/Double", "parseDouble",
+						  "(Ljava/lang/String;)D");
+		JavaGenAdjust(info, 1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Double", "FromString",
+						  "(LSystem/String;)D");
+		JavaGenAdjust(info, 1);
+	}
+}
+JavaGenCast(ILMachineType_ObjectRef, ILMachineType_Float64),
+JavaGenCast(ILMachineType_UnmanagedPtr, ILMachineType_Float64),
+JavaGenCast(ILMachineType_ManagedPtr, ILMachineType_Float64),
+JavaGenCast(ILMachineType_TransientPtr, ILMachineType_Float64),
+JavaGenCast(ILMachineType_ManagedValue, ILMachineType_Float64),
+JavaGenCast(ILMachineType_ObjectRef, ILMachineType_NativeFloat),
+JavaGenCast(ILMachineType_UnmanagedPtr, ILMachineType_NativeFloat),
+JavaGenCast(ILMachineType_ManagedPtr, ILMachineType_NativeFloat),
+JavaGenCast(ILMachineType_TransientPtr, ILMachineType_NativeFloat),
+JavaGenCast(ILMachineType_ManagedValue, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenSimple(info, JAVA_OP_DCONST_0);
+	JavaGenAdjust(info, 1);
+}
+
+/*
+ * Cast to "decimal".
+ */
+JavaGenCast(ILMachineType_Void, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenSimple(info, JAVA_OP_LCONST_0);
+		JavaGenCallByName(info, "java/math/BigDecimal", "valueOf",
+						  "(J)Ljava/math/BigDecimal;");
+		JavaGenExtend(info, 2);
+		JavaGenAdjust(info, 1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_ICONST_0);
+		JavaGenCallByName(info, "System/Decimal", "op_Implicit__iV",
+						  "(I)LSystem/Decimal;");
+		JavaGenAdjust(info, 1);
+	}
+}
+JavaGenCast(ILMachineType_Boolean, ILMachineType_Decimal),
+JavaGenCast(ILMachineType_Int8, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenSimple(info, JAVA_OP_I2L);
+		JavaGenCallByName(info, "java/math/BigDecimal", "valueOf",
+						  "(J)Ljava/math/BigDecimal;");
+		JavaGenExtend(info, 1);
+	}
+	else if(info->clsCompliant)
+	{
+		/* CLS cannot convert from int8 to decimal, so use int32 instead */
+		JavaGenCallByName(info, "System/Decimal", "op_Implicit__iV",
+						  "(I)LSystem/Decimal;");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Implicit__V",
+						  "(B)LSystem/Decimal;");
+	}
+}
+JavaGenCast(ILMachineType_UInt8, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenSimple(info, JAVA_OP_I2L);
+		JavaGenCallByName(info, "java/math/BigDecimal", "valueOf",
+						  "(J)Ljava/math/BigDecimal;");
+		JavaGenExtend(info, 1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Implicit__BV",
+						  "(I)LSystem/Decimal;");
+	}
+}
+JavaGenCast(ILMachineType_Int16, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenSimple(info, JAVA_OP_I2L);
+		JavaGenCallByName(info, "java/math/BigDecimal", "valueOf",
+						  "(J)Ljava/math/BigDecimal;");
+		JavaGenExtend(info, 1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Implicit__V",
+						  "(S)LSystem/Decimal;");
+	}
+}
+JavaGenCast(ILMachineType_UInt16, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenSimple(info, JAVA_OP_I2L);
+		JavaGenCallByName(info, "java/math/BigDecimal", "valueOf",
+						  "(J)Ljava/math/BigDecimal;");
+		JavaGenExtend(info, 1);
+	}
+	else if(info->clsCompliant)
+	{
+		/* CLS cannot convert from uint16 to decimal, so use int32 instead */
+		JavaGenCallByName(info, "System/Decimal", "op_Implicit__iV",
+						  "(I)LSystem/Decimal;");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Implicit__SV",
+						  "(I)LSystem/Decimal;");
+	}
+}
+JavaGenCast(ILMachineType_Char, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenSimple(info, JAVA_OP_I2L);
+		JavaGenCallByName(info, "java/math/BigDecimal", "valueOf",
+						  "(J)Ljava/math/BigDecimal;");
+		JavaGenExtend(info, 1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Implicit__V",
+						  "(C)LSystem/Decimal;");
+	}
+}
+JavaGenCast(ILMachineType_Int32, ILMachineType_Decimal),
+JavaGenCast(ILMachineType_NativeInt, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenSimple(info, JAVA_OP_I2L);
+		JavaGenCallByName(info, "java/math/BigDecimal", "valueOf",
+						  "(J)Ljava/math/BigDecimal;");
+		JavaGenExtend(info, 1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Implicit__iV",
+						  "(I)LSystem/Decimal;");
+	}
+}
+JavaGenCast(ILMachineType_UInt32, ILMachineType_Decimal),
+JavaGenCast(ILMachineType_NativeUInt, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCast(info, ILMachineType_UInt32, ILMachineType_Int64);
+		JavaGenCallByName(info, "java/math/BigDecimal", "valueOf",
+						  "(J)Ljava/math/BigDecimal;");
+		JavaGenAdjust(info, -1);
+	}
+	else if(info->clsCompliant)
+	{
+		/* CLS cannot convert from uint32 to decimal, so use int64 instead */
+		JavaGenCast(info, ILMachineType_UInt32, ILMachineType_Int64);
+		JavaGenCallByName(info, "System/Decimal", "op_Implicit__lV",
+						  "(J)LSystem/Decimal;");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Implicit__IV",
+						  "(I)LSystem/Decimal;");
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaGenCast(ILMachineType_Int64, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/math/BigDecimal", "valueOf",
+						  "(J)Ljava/math/BigDecimal;");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Implicit__lV",
+						  "(J)LSystem/Decimal;");
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaGenCast(ILMachineType_UInt64, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallIntrinsic(info, "ul2D", "(J)Ljava/math/BigDecimal;");
+		JavaGenAdjust(info, -1);
+	}
+	else if(info->clsCompliant)
+	{
+		/* CLS cannot convert directly from uint64 to decimal,
+		   so we need to do this in a round-about fashion.
+		   We subtract 0x8000000000000000, convert to decimal,
+		   and then add 0x8000000000000000 */
+		JavaGenInt64(info, IL_MIN_INT64);
+		JavaGenAdjust(info, 2);
+		JavaGenSimple(info, JAVA_OP_LSUB);
+		JavaGenAdjust(info, -2);
+		JavaGenCallByName(info, "System/Decimal", "op_Implicit__lV",
+						  "(J)LSystem/Decimal;");
+		JavaGenAdjust(info, -1);
+		JavaGenNewObj(info, "System/Decimal");
+		JavaGenSimple(info, JAVA_OP_DUP);
+		JavaGenAdjust(info, 2);
+		JavaGenSimple(info, JAVA_OP_ICONST_0);		/* low */
+		JavaGenInt32(info, (ILInt32)0x80000000);	/* mid */
+		JavaGenSimple(info, JAVA_OP_ICONST_0);		/* high */
+		JavaGenSimple(info, JAVA_OP_ICONST_0);		/* isNegative */
+		JavaGenSimple(info, JAVA_OP_ICONST_0);		/* scale */
+		JavaGenAdjust(info, 5);
+		JavaGenCallCtor(info, "System/Decimal", "<init>__iiiB", "(IIIZI)V");
+		JavaGenAdjust(info, -6);
+		JavaGenCallByName(info, "System/Decimal", "op_Addition__VVV",
+						  "(LSystem/Decimal;LSystem/Decimal;)LSystem/Decimal;");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Implicit__LV",
+						  "(J)LSystem/Decimal;");
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaGenCast(ILMachineType_Float32, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenSimple(info, JAVA_OP_F2D);
+		JavaGenAdjust(info, 1);
+		JavaGenNewObj(info, "java/math/BigDecimal");
+		JavaGenSimple(info, JAVA_OP_DUP_X2);
+		JavaGenAdjust(info, 2);
+		JavaGenSimple(info, JAVA_OP_DUP_X2);
+		JavaGenAdjust(info, 1);
+		JavaGenSimple(info, JAVA_OP_POP);
+		JavaGenAdjust(info, -1);
+		JavaGenCallCtor(info, "java/math/BigDecimal", "<init>", "(D)V");
+		JavaGenAdjust(info, -3);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Explicit__V",
+						  "(F)LSystem/Decimal;");
+	}
+}
+JavaGenCast(ILMachineType_Float64, ILMachineType_Decimal),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenNewObj(info, "java/math/BigDecimal");
+		JavaGenSimple(info, JAVA_OP_DUP_X2);
+		JavaGenAdjust(info, 2);
+		JavaGenSimple(info, JAVA_OP_DUP_X2);
+		JavaGenAdjust(info, 1);
+		JavaGenSimple(info, JAVA_OP_POP);
+		JavaGenAdjust(info, -1);
+		JavaGenCallCtor(info, "java/math/BigDecimal", "<init>", "(D)V");
+		JavaGenAdjust(info, -3);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Explicit__V",
+						  "(D)LSystem/Decimal;");
+	}
+}
+JavaGenCast(ILMachineType_Decimal, ILMachineType_Decimal)
+{
+	/* Nothing to do here */
+}
+JavaGenCast(ILMachineType_String, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenNewObj(info, "java/math/BigDecimal");
+		JavaGenSimple(info, JAVA_OP_DUP_X1);
+		JavaGenAdjust(info, 2);
+		JavaGenSimple(info, JAVA_OP_SWAP);
+		JavaGenCallCtor(info, "java/math/BigDecimal", "<init>",
+					    "(Ljava/lang/String;)V");
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "FromString__CV",
+						  "(LSystem/String;)LSystem/Decimal;");
+	}
+}
+JavaGenCast(ILMachineType_ObjectRef, ILMachineType_Decimal),
+JavaGenCast(ILMachineType_UnmanagedPtr, ILMachineType_Decimal),
+JavaGenCast(ILMachineType_ManagedPtr, ILMachineType_Decimal),
+JavaGenCast(ILMachineType_TransientPtr, ILMachineType_Decimal),
+JavaGenCast(ILMachineType_ManagedValue, ILMachineType_Decimal)
+{
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenAdjust(info, -1);
+	JavaGenCast(info, ILMachineType_Void, ILMachineType_Decimal);
+}
+
+/*
+ * Cast to "string".
+ */
+JavaGenCast(ILMachineType_Void, ILMachineType_String)
+{
+	JavaGenSimple(info, JAVA_OP_ACONST_NULL);
+	JavaGenAdjust(info, 1);
+}
+JavaGenCast(ILMachineType_Boolean, ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenNewObj(info, "java/lang/Boolean");
+		JavaGenSimple(info, JAVA_OP_DUP_X1);
+		JavaGenAdjust(info, 2);
+		JavaGenSimple(info, JAVA_OP_SWAP);
+		JavaGenCallCtor(info, "java/lang/Boolean", "<init>", "(Z)V");
+		JavaGenAdjust(info, -2);
+		JavaGenCallVirtual(info, "java/lang/Boolean", "toString",
+						   "()Ljava/lang/String;");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Boolean", "ToString",
+						  "(Z)LSystem/String;");
+	}
+}
+JavaGenCast(ILMachineType_Int8, ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/Byte", "toString",
+						  "(B)Ljava/lang/String;");
+	}
+	else if(info->clsCompliant)
+	{
+		/* CLS does not have the SByte class, so use Int32 instead */
+		JavaGenCallByName(info, "System/Int32", "ToString",
+						  "(I)LSystem/String;");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/SByte", "ToString",
+						  "(B)LSystem/String;");
+	}
+}
+JavaGenCast(ILMachineType_UInt8, ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/Integer", "toString",
+						  "(I)Ljava/lang/String;");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Byte", "ToString__BC",
+						  "(I)LSystem/String;");
+	}
+}
+JavaGenCast(ILMachineType_Int16, ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/Short", "toString",
+						  "(S)Ljava/lang/String;");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Int16", "ToString",
+						  "(S)LSystem/String;");
+	}
+}
+JavaGenCast(ILMachineType_UInt16, ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/Integer", "toString",
+						  "(I)Ljava/lang/String;");
+	}
+	else if(info->clsCompliant)
+	{
+		/* CLS does not have the UInt16 class, so use Int32 instead */
+		JavaGenCallByName(info, "System/Int32", "ToString",
+						  "(I)LSystem/String;");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/UInt16", "ToString__SC",
+						  "(I)LSystem/String;");
+	}
+}
+JavaGenCast(ILMachineType_Char, ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/String", "valueOf",
+						  "(C)Ljava/lang/String;");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Char", "ToString",
+						  "(C)LSystem/String;");
+	}
+}
+JavaGenCast(ILMachineType_Int32, ILMachineType_String),
+JavaGenCast(ILMachineType_NativeInt, ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/Integer", "toString",
+						  "(I)Ljava/lang/String;");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Int32", "ToString",
+						  "(I)LSystem/String;");
+	}
+}
+JavaGenCast(ILMachineType_UInt32, ILMachineType_String),
+JavaGenCast(ILMachineType_NativeUInt, ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCast(info, ILMachineType_UInt32, ILMachineType_Int64);
+		JavaGenCallByName(info, "java/lang/Long", "toString",
+						  "(J)Ljava/lang/String;");
+		JavaGenAdjust(info, -1);
+	}
+	else if(info->clsCompliant)
+	{
+		/* CLS does not have the UInt32 class, so use Int64 instead */
+		JavaGenCast(info, ILMachineType_UInt32, ILMachineType_Int64);
+		JavaGenCallByName(info, "System/Int64", "ToString",
+						  "(J)LSystem/String;");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/UInt32", "ToString__IC",
+						  "(I)LSystem/String;");
+	}
+}
+JavaGenCast(ILMachineType_Int64, ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/Long", "toString",
+						  "(J)Ljava/lang/String;");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Int64", "ToString",
+						  "(J)LSystem/String;");
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaGenCast(ILMachineType_UInt64, ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallIntrinsic(info, "ul2S", "(J)Ljava/lang/String;");
+	}
+	else if(info->clsCompliant)
+	{
+		/* CLS does not have the UInt64 class, so convert via Decimal */
+		JavaGenCast(info, ILMachineType_UInt64, ILMachineType_Decimal);
+		JavaGenCallByName(info, "System/Decimal", "ToString__VC",
+						  "(LSystem/Decimal;)LSystem/String;");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/UInt64", "ToString__LC",
+						  "(J)LSystem/String;");
+	}
+}
+JavaGenCast(ILMachineType_Float32, ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/Float", "toString",
+						  "(F)Ljava/lang/String;");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Single", "ToString",
+						  "(F)LSystem/String;");
+	}
+}
+JavaGenCast(ILMachineType_Float64, ILMachineType_String),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/Double", "toString",
+						  "(D)Ljava/lang/String;");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Double", "ToString",
+						  "(D)LSystem/String;");
+	}
+}
+JavaGenCast(ILMachineType_Decimal, ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "toString",
+						  "()Ljava/lang/String;");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "ToString__VC",
+						  "(LSystem/Decimal;)LSystem/String;");
+	}
+}
+JavaGenCast(ILMachineType_String, ILMachineType_String)
+{
+	/* Nothing to do here */
+}
+JavaGenCast(ILMachineType_ObjectRef, ILMachineType_String)
+{
+	/* Nothing to do here */
+}
+JavaGenCast(ILMachineType_UnmanagedPtr, ILMachineType_String),
+JavaGenCast(ILMachineType_ManagedPtr, ILMachineType_String),
+JavaGenCast(ILMachineType_TransientPtr, ILMachineType_String),
+JavaGenCast(ILMachineType_ManagedValue, ILMachineType_String)
+{
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenSimple(info, JAVA_OP_ACONST_NULL);
+}
+
+/*
+ * Cast to a pointer type.
+ */
+JavaGenCast(ILMachineType_Void, ILMachineType_ObjectRef),
+JavaGenCast(ILMachineType_Void, ILMachineType_UnmanagedPtr),
+JavaGenCast(ILMachineType_Void, ILMachineType_ManagedPtr),
+JavaGenCast(ILMachineType_Void, ILMachineType_TransientPtr),
+JavaGenCast(ILMachineType_Void, ILMachineType_ManagedValue)
+{
+	/* The default object reference value is "null" */
+	JavaGenSimple(info, JAVA_OP_ACONST_NULL);
+	JavaGenAdjust(info, 1);
+}
+JavaGenCast(ILMachineType_ObjectRef, ILMachineType_ObjectRef),
+JavaGenCast(ILMachineType_String, ILMachineType_ObjectRef),
+JavaGenCast(ILMachineType_UnmanagedPtr, ILMachineType_UnmanagedPtr),
+JavaGenCast(ILMachineType_ManagedPtr, ILMachineType_ManagedPtr),
+JavaGenCast(ILMachineType_TransientPtr, ILMachineType_TransientPtr),
+JavaGenCast(ILMachineType_ManagedValue, ILMachineType_ManagedValue)
+{
+	/* Nothing to do here */
+}
+JavaGenCast(ILMachineType_Int64, ILMachineType_ObjectRef),
+JavaGenCast(ILMachineType_UInt64, ILMachineType_ObjectRef),
+JavaGenCast(ILMachineType_Float64, ILMachineType_ObjectRef),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_ObjectRef),
+JavaGenCast(ILMachineType_Int64, ILMachineType_UnmanagedPtr),
+JavaGenCast(ILMachineType_UInt64, ILMachineType_UnmanagedPtr),
+JavaGenCast(ILMachineType_Float64, ILMachineType_UnmanagedPtr),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_UnmanagedPtr),
+JavaGenCast(ILMachineType_Int64, ILMachineType_ManagedPtr),
+JavaGenCast(ILMachineType_UInt64, ILMachineType_ManagedPtr),
+JavaGenCast(ILMachineType_Float64, ILMachineType_ManagedPtr),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_ManagedPtr),
+JavaGenCast(ILMachineType_Int64, ILMachineType_TransientPtr),
+JavaGenCast(ILMachineType_UInt64, ILMachineType_TransientPtr),
+JavaGenCast(ILMachineType_Float64, ILMachineType_TransientPtr),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_TransientPtr),
+JavaGenCast(ILMachineType_Int64, ILMachineType_ManagedValue),
+JavaGenCast(ILMachineType_UInt64, ILMachineType_ManagedValue),
+JavaGenCast(ILMachineType_Float64, ILMachineType_ManagedValue),
+JavaGenCast(ILMachineType_NativeFloat, ILMachineType_ManagedValue)
+{
+	/* Cannot convert numeric values into objects this way.
+	   We probably should look into boxing the value later */
+	JavaGenSimple(info, JAVA_OP_POP2);
+	JavaGenSimple(info, JAVA_OP_ACONST_NULL);
+	JavaGenAdjust(info, -1);
+}
+JavaGenCast(ILMachineType, ILMachineType_ObjectRef),
+JavaGenCast(ILMachineType, ILMachineType_UnmanagedPtr),
+JavaGenCast(ILMachineType, ILMachineType_ManagedPtr),
+JavaGenCast(ILMachineType, ILMachineType_TransientPtr),
+JavaGenCast(ILMachineType, ILMachineType_ManagedValue)
+{
+	/* Cannot convert numeric values into objects this way.
+	   We probably should look into boxing the value later */
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenSimple(info, JAVA_OP_ACONST_NULL);
+}

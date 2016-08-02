@@ -1,0 +1,19 @@
+./pointer3.cs:21: warning: unsafe class declaration
+./pointer3.cs:23: warning: unsafe method declaration
+./pointer3.cs:38: warning: unsafe method declaration
+./pointer3.cs:53: warning: unsafe method declaration
+./pointer3.cs:68: warning: unsafe method declaration
+./pointer3.cs:83: warning: unsafe method declaration
+./pointer3.cs:88: warning: unsafe pointer dereference
+./pointer3.cs:89: warning: unsafe pointer dereference
+./pointer3.cs:90: warning: unsafe pointer dereference
+./pointer3.cs:91: warning: unsafe pointer dereference
+./pointer3.cs:92: warning: unsafe pointer-based array access
+./pointer3.cs:93: warning: unsafe pointer-based array access
+./pointer3.cs:96: warning: unsafe method declaration
+./pointer3.cs:101: warning: unsafe pointer dereference
+./pointer3.cs:102: warning: unsafe pointer dereference
+./pointer3.cs:103: warning: unsafe pointer dereference
+./pointer3.cs:104: warning: unsafe pointer dereference
+./pointer3.cs:105: warning: unsafe pointer-based array access
+./pointer3.cs:106: warning: unsafe pointer-based array access

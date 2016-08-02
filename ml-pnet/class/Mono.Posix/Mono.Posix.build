@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+
+<project name="Mono.Posix" default="all">
+	<target name="all">
+		<compile target="library"
+				 output="Mono.Posix.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="true"
+				 installasdefault="true">
+
+			<sources basedir="${mono.sources}/class/Mono.Posix">
+				<includes name="**/*.cs"/> 
+				<excludes name="Test/**"/>
+			</sources>
+
+			<references>
+				<file name="System.dll"/>
+			</references>
+
+		</compile>
+	</target>
+</project>

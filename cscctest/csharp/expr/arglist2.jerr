@@ -1,0 +1,18 @@
+./arglist2.cs:24: `__arglist' is disallowed when compiling to Java bytecode
+./arglist2.cs:24: `__arglist' must be the last formal parameter
+./arglist2.cs:27: `__arglist' is disallowed when compiling to Java bytecode
+./arglist2.cs:27: `__arglist' cannot be used with indexers
+./arglist2.cs:49: `__arglist' is disallowed when compiling to Java bytecode
+./arglist2.cs:32: `__arglist' is disallowed when compiling to Java bytecode
+./arglist2.cs:32: `__arglist' must be used inside a vararg method
+./arglist2.cs:38: `__arglist' cannot be used with arguments in this context
+./arglist2.cs:39: `__arglist' cannot be used with arguments in this context
+./arglist2.cs:39: invalid operands to binary `+'
+./arglist2.cs:45: no matching method for call to `m3(System.String, __arglist)'
+./arglist2.cs:53: cannot use `ref' arguments with `__arglist'
+./arglist2.cs:53: cannot use `out' arguments with `__arglist'
+./arglist2.cs:54: cannot use `ref' or `out' with `__arglist' arguments
+./arglist2.cs:55: cannot use `ref' or `out' with `__arglist' arguments
+./arglist2.cs:61: `__arglist' must be the last argument
+./arglist2.cs:68: invalid argument used with `__arglist'
+./arglist2.cs:69: invalid argument used with `__arglist'

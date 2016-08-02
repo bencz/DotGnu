@@ -1,0 +1,232 @@
+<html>
+<head>
+<title>PInvoke Conventions for Unix</title>
+</head>
+<body bgcolor="#ffffff">
+<h1>PInvoke Conventions for Unix</h1>
+
+Rhys Weatherley, <a href="mailto:rweather@southern-storm.com.au">rweather@southern-storm.com.au</a>.<br>
+Last Modified: $Date: 2002/05/27 04:03:35 $<p>
+
+Copyright &copy; 2001, 2002 Southern Storm Software, Pty Ltd.<br>
+Permission to distribute unmodified copies of this work is hereby granted.<p>
+
+<h2>1. Introduction</h2>
+
+The ECMA Common Language Infrastructure (CLI) specification defines
+a mechanism that can be used to invoke functions that are written in
+native code, as opposed to IL bytecode.  This mechanism is typically
+referred to as "PInvoke" or "It Just Works".<p>
+
+Implementations of the Common Language Runtime (CLR) on Win32 provide
+a large number of tools for converting between the well-defined world of
+CLR conventions, and the ill-defined world of Win32 API conventions.
+Attributes are added to method declarations that identify the DLL that
+contains the function, and the mechanism to use to convert CLR types
+into parameter types for the function.  These attributes are converted
+into flags and token structures within the metadata of the program.<p>
+
+Implementations of the CLR on Unix need a similar set of tools.  However,
+the problem is exacerbated by the variations in CPU types, API type
+definitions, and calling conventions that are common in the Unix
+community.<p>
+
+Because of this variation, it is difficult to build a comprehensive
+set of PInvoke tools that "just work".  So, we have instead focused
+on defining a set of basic building blocks for marshalling parameters
+and return values.  The programmer can build more complex marshalling rules
+on top of these building blocks using wrapper methods written in C# or C.<p>
+
+<h2>2. Importing functions from shared objects</h2>
+
+Functions are imported from Unix shared objects using the
+"<code>DllImport</code>" attribute:<p>
+
+<blockquote>
+<code>[DllImport("libc")]<br>
+extern int puts(String s);</code>
+</blockquote>
+
+This ensures that a PInvoke record is created in the metadata with the
+module reference set appropriately.  All such functions are assumed to
+have C calling conventions and a fixed number of arguments (i.e. no
+variable argument lists).<p>
+
+However, things are not quite that simple.  Different versions of Unix
+may have the function in a different shared object.  For example,
+"<code>socket</code>" appears in "<code>libsocket.so</code>"
+on Solaris 2.x, "<code>libc.so.6</code>" on GNU/Linux, and
+"<code>libc.so</code>" on most other systems.  The
+"<code>DllImportMap</code>" attribute can be used to specify
+platform-specific mappings:<p>
+
+<blockquote>
+<code>[DllImportMap("*-solaris2*", "cygwin1.dll", "libsocket.so")]<br>
+[DllImportMap("*-linux-*", "cygwin1.dll", "libc.so.6")]<br>
+[DllImportMap("std-shared-object", "cygwin1.dll", "libc.so")]<br>
+internal sealed class Native<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;[DllImport("cygwin1.dll")]<br>
+&nbsp;&nbsp;&nbsp;&nbsp;extern public static int socket(int domain, int type, int protocol);<br>
+}</code></blockquote>
+
+Here, we have placed the Win32 name of the library (<code>cygwin1.dll</code>)
+into the "<code>DllImport</code>" attribute.  At runtime, the CLR will
+use this value to look through the "<code>DllImportMap</code>" specifications
+for a platform-specific override.<p>
+
+The "<code>DllImportMap</code>" attribute has three parameters: platform
+key, original name, and new name.  The engine searches for a platform key and
+original name match, and uses the new name if a match is found.  If no
+match is found, it will fall back to whatever "<code>DllImport</code>"
+specifies.  The attributes are searched in order of declaration.<p>
+
+The platform keys use the same host naming conventions as GNU autotools.
+Asterisk wildcards can be used to match any sequence of characters.
+Two special platform keys exist: "<code>std-shared-object</code>" and
+"<code>std-win32-dll</code>".  These provide fallbacks for Unix and Win32
+respectiviely.<p>
+
+As a matter of coding style, the Win32 name should be specified in
+"<code>DllImport</code>" if it is available.  This improves interoperability
+with pre-existing CLR's.<p>
+
+Because the "<code>DllImportMap</code>" attribute is not currently part
+of the ECMA standard, the programmer must declare it themselves in their
+application:
+
+<blockquote>
+<code>[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method,<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;AllowMultiple=true, Inherited=false)]<br>
+internal sealed class DllImportMapAttribute : Attribute<br>
+{<br>
+&nbsp;&nbsp;&nbsp;&nbsp;public DllImportMapAttribute<br>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;(String platform, String origName, String newName) {}<br>
+}</code></blockquote>
+
+The class can be declared in any namespace: the CLR ignores the namespace
+when looking for the attribute.<p>
+
+<h2>3. Marshalling rules for types</h2>
+
+The following table defines all of the C# type categories and their
+C counterparts when used as parameters or return values:<p>
+
+<center>
+<table border="1">
+<tr><td>C# Type</td>
+    <td>Parameter</td>
+    <td>Return</td></tr>
+<tr><td><code>bool</code></td>
+    <td><code>int8</code></td>
+    <td><code>int8</code></td></tr>
+<tr><td><code>sbyte</code></td>
+    <td><code>int8</code></td>
+    <td><code>int8</code></td></tr>
+<tr><td><code>byte</code></td>
+    <td><code>uint8</code></td>
+    <td><code>uint8</code></td></tr>
+<tr><td><code>short</code></td>
+    <td><code>int16</code></td>
+    <td><code>int16</code></td></tr>
+<tr><td><code>ushort</code></td>
+    <td><code>uint16</code></td>
+    <td><code>uint16</code></td></tr>
+<tr><td><code>char</code></td>
+    <td><code>uint16</code></td>
+    <td><code>uint16</code></td></tr>
+<tr><td><code>int</code></td>
+    <td><code>int32</code></td>
+    <td><code>int32</code></td></tr>
+<tr><td><code>uint</code></td>
+    <td><code>uint32</code></td>
+    <td><code>uint32</code></td></tr>
+<tr><td><code>long</code></td>
+    <td><code>int64</code></td>
+    <td><code>int64</code></td></tr>
+<tr><td><code>ulong</code></td>
+    <td><code>uint64</code></td>
+    <td><code>uint64</code></td></tr>
+<tr><td><code>float</code></td>
+    <td><code>float32</code></td>
+    <td><code>float32</code></td></tr>
+<tr><td><code>double</code></td>
+    <td><code>float64</code></td>
+    <td><code>float64</code></td></tr>
+<tr><td><code>System.IntPtr</code></td>
+    <td><code>int32/int64</code> <sup>1</sup></td>
+    <td><code>int32/int64</code> <sup>1</sup></td></tr>
+<tr><td><code>System.UIntPtr</code></td>
+    <td><code>uint32/uint64</code> <sup>1</sup></td>
+    <td><code>uint32/uint64</code> <sup>1</sup></td></tr>
+<tr><td><code>System.Object</code></td>
+    <td>Object handle</td>
+    <td>Object handle</td></tr>
+<tr><td><code>System.String</code></td>
+    <td>const char * <sup>2</sup></td>
+    <td>const char * <sup>3</sup></td></tr>
+<tr><td><code>System.Enum</code></td>
+    <td>Underlying type <sup>4</sup></td>
+    <td>Underlying type <sup>4</sup></td></tr>
+<tr><td><code>System.ValueType</code></td>
+    <td>Struct passed by value</td>
+    <td>Struct returned by value</td></tr>
+<tr><td><code>type *</code></td>
+    <td><code>type *</code></td>
+    <td><code>type *</code></td></tr>
+<tr><td><code>type[]</code></td>
+    <td><code>type *</code> <sup>5</code></td>
+    <td>Object handle</td></tr>
+<tr><td><code>delegate</code></td>
+    <td>Function pointer <sup>6</code></td>
+    <td>Object handle</td></tr>
+</table><p>
+</center>
+
+Notes:
+
+<ol>
+	<li><code>System.IntPtr</code> and <code>System.UIntPtr</code> are
+		passed as either 32-bit or 64-bit integers, depending upon the
+		underlying platform.  These types are guaranteed to be the
+		same size as a C pointer value.</li>
+	<li>String parameters are converted into a character
+	    buffer and passed as "<code>const char *</code>".  The engine
+		uses either the current locale's character set or UTF-8,
+		depending upon the PInvoke character set settings.
+		If the string is <code>null</code>, then <code>NULL</code>
+		will be passed to the underlying function.</li>
+	<li>Character buffers that are returned from the underlying function
+		are converted back into C# string objects.  The character set
+		is dependent upon the PInvoke settings.  If the
+		function returns <code>NULL</code>, then the <code>null</code>
+		string will be returned.</li>
+	<li>Enumerated values are converted into the underlying integer
+		type and then passed using the same conventions as the integer
+		type.</li>
+	<li>When passed as parameters, arrays are converted into a pointer
+		to their first element.</li>
+	<li>When passed as parameters, delegates are wrapped in a native
+		closure to turn them into a function pointer suitable for
+		calling from C code.  If the delegate is <code>null</code>,
+		then the function pointer will be <code>NULL</code>.</li>
+</ol>
+
+The conversions that are performed on strings, arrays, and delegates
+can be disabled by specifying an explicit marshalling type:
+
+<blockquote>
+<code>[DllImport("libput")]<br>
+extern int PutString([MarshalAs(UnmanagedType.Interface)] String s);</code>
+</blockquote>
+
+The unmanaged type code "<code>Interface</code>" is always recognised
+on parameters and return values to disable special marshalling behaviours.<p>
+
+<hr>
+
+Copyright &copy; 2001, 2002 Southern Storm Software, Pty Ltd.<br>
+Permission to distribute unmodified copies of this work is hereby granted.
+
+</body>
+</html>

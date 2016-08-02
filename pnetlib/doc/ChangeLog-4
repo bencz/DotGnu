@@ -1,0 +1,3137 @@
+
+2003-09-05  Neil Cawse  <neilcawse@geotab.com>
+
+	* Xsharp/Display.cs : improved handling of 0 length timer.
+
+2003-09-05  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Collections/Specialized/NameObjectCollectionBase.cs,
+	System/Collections/Specialized/StringCollection.cs,
+	System/Collections/Specialized/StringDictionary.cs:
+	signature-compatibility fixes in "System.Collections.Specialized".
+
+	* System/ComponentModel/ToolboxItemFilterAttribute.cs,
+	System.Drawing/Printing/PrintDocument.cs: signature-compatibility
+	fixes in "System.Drawing.Printing", plus a missing class in
+	"System.ComponentModel".
+
+	* System/Net/Sockets/IPv6MulticastOption.cs,
+	System/Net/Sockets/NetworkStream.cs,
+	System/Net/Sockets/ProtocolType.cs, System/Net/Sockets/Socket.cs,
+	System/Net/Sockets/SocketException.cs,
+	System/Net/Sockets/SocketOptionLevel.cs,
+	System/Net/Sockets/TcpClient.cs, System/Net/Sockets/TcpListener.cs,
+	System/Net/Sockets/UdpClient.cs, resources/en_US/System/Arg.txt:
+	signature-compatibility fixes for "System.Net.Sockets".
+
+2003-09-04  Neil Cawse  <neilcawse@geotab.com>
+
+	* System.Windows.Forms/Control.cs, System.Windows.Forms/Form.cs,
+	System.Windows.Forms/PopupControl.cs,
+	System.Windows.Forms/StatusBar.cs, System.Windows.Forms/TextBox.cs,
+	System.Windows.Forms/TextBoxBase.cs, System.Windows.Forms/ToolBar.cs
+	: Control now uses BorderStyleInternal so each control doesnt have to
+	implement borders. Change TextBox to work like this. Other minor csc
+	compile fixes.
+
+	* Xsharp/GrabWindow.cs,System.Drawing.Win32/DrawingPopupWindow.cs,
+	System.Drawing.Win32/DrawingToolkit.cs,
+	System.Drawing.Win32/DrawingWindow.cs: popup windows now dispatch mouse
+	and keyboard events to child controls of the windows.
+
+	* System.Drawing/Graphics.cs: client window handling fix.
+
+	* System.Drawing/Bitmap.cs, System.Drawing/Image.cs,
+	System.Drawing/Region.cs,System.Drawing/Imaging/PropertyItem.cs: minor
+	warning fixes.
+
+2003-09-04  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* tools/run_test.sh.in: set the locale to "C" when running tests
+	so that locale-sensitive tests work on non-English systems.
+
+	* System.Configuration.Install/IManagedInstaller.cs,
+	System.Configuration.Install/Installer.cs: signature-compatibility
+	fixes for "System.Configuration.Install".
+
+	* runtime/System/Attribute.cs,
+	runtime/System/AttributeUsageAttribute.cs,
+	runtime/System/CLSCompliantAttribute.cs,
+	runtime/System/FlagsAttribute.cs, runtime/System/ObsoleteAttribute.cs,
+	runtime/System/ParamArrayAttribute.cs,
+	runtime/System/Reflection/DefaultMemberAttribute.cs,
+	runtime/System/Runtime/CompilerServices/DecimalConstantAttribute.cs,
+	runtime/System/Runtime/CompilerServices/MethodImplAttribute.cs,
+	runtime/System/Runtime/InteropServices/FieldOffsetAttribute.cs,
+	runtime/System/Runtime/InteropServices/InAttribute.cs,
+	runtime/System/Runtime/InteropServices/MarshalAsAttribute.cs,
+	runtime/System/Runtime/InteropServices/OutAttribute.cs,
+	runtime/System/Runtime/InteropServices/StructLayoutAttribute.cs:
+	signature-compatibility fixes for "AttributeUsage" declarations.
+
+2003-09-03  Neil Cawse  <neilcawse@geotab.com>
+
+	* System.Windows.Forms/ScrollBar.cs: apply patch #1873,
+	from Brian Luft <brian@electroly.com>, initial implementation of
+	ListBox, small compile fixes.
+
+2003-09-03  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/CodeDom/Compiler/CSharpCodeCompiler.cs,
+	System/CodeDom/Compiler/VBCodeCompiler.cs: implement the VB
+	code generator for CodeDom; fix some minor bugs in the C# generator.
+
+	* System/CodeDom/Compiler/CSharpCodeCompiler.cs,
+	System/CodeDom/Compiler/CodeCompiler.cs: implement the
+	remaining TODO's in "System.CodeDom.Compiler".
+
+	* System.Drawing/Printing/Duplex.cs,
+	System.Drawing/Printing/Margins.cs,
+	System.Drawing/Printing/ModeField.cs,
+	System.Drawing/Printing/PaperKind.cs,
+	System.Drawing/Printing/PrintDocument.cs,
+	System.Drawing/Printing/PrinterSettings.cs,
+	System.Drawing/Printing/PrintingPermissionAttribute.cs:
+	signature-compatibility fixes in "System.Drawing.Printing".
+
+	* JScript/Vsa/BaseVsaEngine.cs, compat/Vsa.cs:
+	signature-compatibility fixes in "Microsoft.Vsa".
+
+2003-09-02  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/IO/BinaryWriter.cs,
+	runtime/System/Resources/ResourceWriter.cs: finish the implementation
+	of "ResourceWriter".
+
+	* System/CodeDom/Compiler/CSharpCodeCompiler.cs,
+	System/CodeDom/Compiler/CodeCompiler.cs,
+	System/CodeDom/Compiler/CodeGenerator.cs,
+	System/CodeDom/Compiler/TempFileCollection.cs,
+	System/CodeDom/Compiler/VBCodeCompiler.cs:
+	continue the implementation of "System.CodeDom.Compiler".
+
+2003-09-01  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Runtime/Serialization/FormatterServices.cs:
+	convert "GetSerializableMembers" into an internalcall so that
+	it is more efficient and can more easily get same-named fields
+	in parent classes.
+
+	* runtime/System/TypeLoadException.cs,
+	tests/runtime/System/ExceptionTester.cs,
+	tests/runtime/System/SuiteSystem.cs,
+	tests/runtime/System/TestSystemExceptions.cs,
+	tests/runtime/System/code-review.txt: test cases and bug
+	fixes for exception classes in "runtime/System".
+
+	* System/Net/Cookie.cs, System/Net/CredentialCache.cs,
+	runtime/System/Resources/ResourceReader.cs: ECMA compat fixes.
+
+	* resources/en_US/runtime/Security.txt,
+	runtime/System/Security/NamedPermissionSet.cs,
+	runtime/System/Security/PermissionSet.cs,
+	runtime/System/Security/Policy/PolicyLevel.cs: TODO's in "PolicyLevel".
+
+2003-08-31  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/Microsoft/Win32/FileKeyProvider.cs,
+	runtime/Platform/InfoMethods.cs,
+	runtime/System/IO/IsolatedStorage/IsolatedStorageFile.cs:
+	add internalcalls for getting the user storage and global
+	configuration directories.
+
+	* runtime/System/Security/MiniXml.cs: new constructors for
+	"MiniXml" to load from streams or text readers.
+
+	* runtime/System/Security/MiniXml.cs,
+	runtime/System/Security/SecurityElement.cs: add some utility
+	routines to "SecurityElement" and "MiniXml".
+
+2003-08-30  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* I18N/Other/CP20838.cs, I18N/Other/ibm-838.ucm, I18N/Rare/CP20105.cs,
+	I18N/Rare/CP20106.cs, I18N/Rare/CP20107.cs, I18N/Rare/CP20108.cs,
+	I18N/Rare/CP20423.cs, I18N/Rare/CP20880.cs, I18N/Rare/CP20905.cs,
+	I18N/Rare/CP20924.cs, I18N/Rare/ia5-20105.ucm, I18N/Rare/ia5-20106.ucm,
+	I18N/Rare/ia5-20107.ucm, I18N/Rare/ia5-20108.ucm,
+	I18N/Rare/ibm-1154.ucm, I18N/Rare/ibm-20924.ucm, I18N/tools/cvt.sh:
+	new EBCDIC and IA5 code pages.
+
+	* I18N/Rare/CP709.cs, I18N/Rare/iso-9036.ucm,
+	I18N/tools/cvt.sh, I18N/tools/ucm2cp.c: add code page 709 (ASMO 449).
+
+2003-08-29  Neil Cawse  <neilcawse@geotab.com>
+
+	* System.Drawing.Xsharp/DrawingGraphics.cs : maximum internal coord is
+	a short, not just the parameters passed to Xlib.
+
+	* System.Windows.Forms/ComboBox.cs, 
+	System.Windows.Forms/Themes/DefaultThemePainter.cs,
+	samples/FormsTest.cs : incomplete combo box implementation by Simon
+	Guindon and changed by Neil. 
+
+2003-08-29  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* Xsharp/Events/XAnyEvent.cs, Xsharp/Events/XButtonEvent.cs,
+	Xsharp/Events/XCirculateEvent.cs,
+	Xsharp/Events/XCirculateRequestEvent.cs,
+	Xsharp/Events/XClientMessageEvent.cs, Xsharp/Events/XColormapEvent.cs,
+	Xsharp/Events/XConfigureEvent.cs,
+	Xsharp/Events/XConfigureRequestEvent.cs,
+	Xsharp/Events/XCreateWindowEvent.cs, Xsharp/Events/XCrossingEvent.cs,
+	Xsharp/Events/XDestroyWindowEvent.cs, Xsharp/Events/XEvent.cs,
+	Xsharp/Events/XExposeEvent.cs, Xsharp/Events/XFocusChangeEvent.cs,
+	Xsharp/Events/XGraphicsExposeEvent.cs, Xsharp/Events/XGravityEvent.cs,
+	Xsharp/Events/XKeyEvent.cs, Xsharp/Events/XKeymapEvent.cs,
+	Xsharp/Events/XMapEvent.cs, Xsharp/Events/XMapRequestEvent.cs,
+	Xsharp/Events/XMappingEvent.cs, Xsharp/Events/XMotionEvent.cs,
+	Xsharp/Events/XNoExposeEvent.cs, Xsharp/Events/XPropertyEvent.cs,
+	Xsharp/Events/XReparentEvent.cs, Xsharp/Events/XResizeRequestEvent.cs,
+	Xsharp/Events/XSelectionClearEvent.cs, Xsharp/Events/XSelectionEvent.cs,
+	Xsharp/Events/XSelectionRequestEvent.cs, Xsharp/Events/XUnmapEvent.cs,
+	Xsharp/Events/XVisibilityEvent.cs: add "ToString()" methods to
+	the Xsharp event classes, to help with debugging.
+
+	* runtime/System/String.cs,
+	runtime/System/Globalization/CompareInfo.cs: pass all string
+	comparisons through the culture routines; remove the "InternalCompare"
+	internalcall and replace with a new one for the invariant culture.
+
+	* runtime/System/Globalization/TextInfo.cs: add internalcalls
+	for the ToLower/ToUpper methods in TextInfo.
+
+	* runtime/System/Globalization/CompareInfo.cs: implement the
+	"CompareInfo.GetSortKey" method for the invariant culture.
+
+	* I18N/CJK/*, I18N/Common/*, I18N/MidEast/*, I18N/Other/*,
+	I18N/West/*, I18N/tools/cvtcul.sh, I18N/tools/loc2cul.c:
+	add the TextInfo properties to the I18N culture classes.
+
+2003-08-28  Neil Cawse  <neilcawse@geotab.com>
+
+	* DotGNU.Images/Image.cs, System.Drawing/Bitmap.cs,
+	System.Drawing/Graphics.cs, System.Drawing/Image.cs,
+	System.Drawing/Size.cs, System.Drawing/Toolkit/IToolkit.cs,
+	System.Drawing/Toolkit/IToolkitGraphics.cs,
+	System.Drawing/Toolkit/IToolkitImage.cs,
+	System.Drawing/Toolkit/NullToolkit.cs,
+	System.Drawing/Toolkit/ToolkitGraphicsBase.cs,
+	System.Drawing.Postscript/PostscriptGraphics.cs,
+	System.Drawing.Win32/DrawingGraphics.cs,
+	System.Drawing.Win32/DrawingImage.cs,
+	System.Drawing.Win32/DrawingToolkit.cs,
+	System.Drawing.Xsharp/DrawingGraphics.cs,
+	System.Drawing.Xsharp/DrawingImage.cs,
+	System.Drawing.Xsharp/DrawingToolkit.cs,
+	Xsharp/Graphics.cs, Xsharp/Image.cs, samples/FormsTest.cs, 
+	samples/test.bmp: more infrastructure for images.
+
+2003-08-28  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Net/AuthenticationManager.cs, System/Net/Authorization.cs,
+	System/Net/Cookie.cs, System/Net/HttpContinueDelegate.cs,
+	System/Net/HttpStatusCode.cs, System/Net/IAuthenticationModule.cs,
+	System/Net/ICertificatePolicy.cs, System/Net/ICredentials.cs,
+	System/Net/IWebProxy.cs, System/Net/IWebRequestCreate.cs,
+	System/Net/NetworkAccess.cs, System/Net/SecurityPrototypeType.cs,
+	System/Net/TransportType.cs, System/Net/WebExceptionStatus.cs,
+	resources/en_US/System/Invalid.txt: clean up various classes in
+	"System.Net" and add some missing ones.
+
+	* System/Uri.cs, System/Net/CredentialCache.cs,
+	System/Net/GlobalProxySelection.cs, System/Net/NetworkCredential.cs,
+	System/Net/ServicePoint.cs, System/Net/WebProxy.cs,
+	resources/en_US/System/Arg.txt: missing functionality in "System.Net".
+
+2003-08-27  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Collections/Specialized/NameObjectCollectionBase.cs,
+	System/Collections/Specialized/NameValueCollection.cs:
+	serialization support for classes in "System.Collections.Specialized".
+
+2003-08-27  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* System.Windows.Forms/ScrollBar.cs: apply patch #1826,
+	"Updates to System.Windows.Forms/ScrollBar.cs", from Jeff Post, after
+	some cleanup and fixes.
+
+2003-08-26  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* System.Windows.Forms/Control.cs, System.Windows.Forms/ScrollBar.cs:
+	apply patch #1805, "Control.ContextMenu shold be virtual. Fix
+	ScrollBar.OnScroll", from Cecilio Pardo.
+
+	* System.Windows.Forms/Themes/DefaultThemePainter.cs,
+	System.Windows.Forms/Themes/IThemePainter.cs: add and implement group
+	box drawing code.
+
+	* System.Windows.Forms/GroupBox.cs: apply patch #1797, "SWF.GroupBox
+	class", from Cecilio Pardo, after cleaning it up a bit.
+
+	* samples/radiobuttons.cs: add group box examples and refactor existing
+	example code.
+
+2003-08-25  Neil Cawse  <neilcawse@geotab.com>
+
+	* System.Windows.Forms/MenuItem.cs, System.Windows.Forms/Menu.cs,
+	System.Windows.Forms/MainMenu.cs, System.Windows.Forms/ContextMenu.cs:
+	implement basic functionality for Menus.
+
+	* samples/FormsTest.cs: add menu and context menu tests.
+
+	* System.Windows.Forms/TextBox.cs: update textbox to use the new
+	client handling.
+
+	* PopupControl.cs: PopDown event and default size.
+
+	* System.Drawing/Font.cs: cache font pixel height to improve
+	GetHeight(Graphics).
+
+	* System.Windows.Forms/ImageList.cs: small csc compile bug.
+
+	* System.Windows.Forms/Form.cs: new client area and menu support.
+
+	* System.Windows.Forms/Control.cs: new client area support,
+	PointToScreen() and ScreenToPoint(), Context Menu fix.
+
+	* System.Drawing.Xsharp/DrawingPopupWindow.cs,
+	System.Drawing.Xsharp/DrawingToolkit.cs,
+	System.Drawing.Xsharp/DrawingTopLevelWindow.cs,
+	System.Drawing.Xsharp/DrawingWindow.cs: add event sink to constructors
+	of windows. Implement GetWindowAdjust using approximate values for
+	getting Form bounds. Fix Popup Window paint.
+
+	* System.Drawing.Win32/DrawingControlWindow.cs,
+	System.Drawing.Win32/DrawingRootTopLevelWindow.cs,
+	System.Drawing.Win32/DrawingToolkit.cs,
+	System.Drawing.Win32/DrawingTopLevelWindow.cs,
+	System.Drawing.Win32/DrawingWindow.cs,
+	System.Drawing.Win32/Win32.cs :
+	IToolkitWindow.Capture functionality. Window dimensions to match Xsharp
+	System.Debug.WriteLine bug changed to Console.WriteLine. Subtle bug in 
+	Windows - changed to one WinProc for all window classes. Popup windows
+	implemented. Sink passed in constructor. ToolkitExternalMove and
+	ToolkitExternalResize fired when creating a window to be compatible
+	with System.Drawing.Xsharp.
+	
+	* System.Drawing/Toolkit/IToolkit.cs
+	System.Drawing/Toolkit/IToolkitWindow.cs
+	System.Drawing/Toolkit/NullToolkit.cs : pass sink in constructor.
+
+	* System.Drawing/Drawing2D/Matrix.cs : typo in identity Matrix.
+
+ 	* System.Drawing/Graphics.cs: New constructor and support for client
+	offset graphics.
+
+	* System.Windows.Forms/DrawItemEventArgs.cs: missing Font property.
+
+2003-08-24  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Security/PermissionSet.cs,
+	runtime/System/Security/SecurityManager.cs: missing TODO's in
+	the "System.Security" namespace.
+
+2003-08-23  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* csupport/Directory.cs: moved to dirent-glue.cs in pnetC.
+
+2003-08-23  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Serialize.txt,
+	runtime/System/Delegate.cs, runtime/System/MulticastDelegate.cs,
+	runtime/System/DelegateSerializationHolder.cs: serialization
+	support for delegates.
+
+	* runtime/System/Activator.cs, runtime/System/MarshalByRefObject.cs
+	runtime/System/Runtime/Remoting/Lifetime/LifetimeServices.cs:
+	minor TODO's in "Activator" and "MarshalByRefObject".
+
+	* runtime/System/Reflection/Assembly.cs: add missing internalcall's
+	to "System.Reflection.Assembly".
+
+	* resources/en_US/runtime/Invalid.txt, runtime/System/AppDomain.cs,
+	runtime/System/Runtime/Remoting/Contexts/Context.cs,
+	runtime/System/Runtime/Remoting/Contexts/ContextAttribute.cs,
+	runtime/System/Threading/Thread.cs: support code for remoting contexts.
+
+	* runtime/System/Threading/Thread.cs: add the remaining internalcalls
+	to the "Thread" class.
+
+2003-08-22  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* csupport/Directory.cs: add and implement the underlying C# object for
+	representing a pnetC directory stream.
+
+2003-08-22  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Runtime/Remoting/Messaging/ConstructionCall.cs,
+	runtime/System/Runtime/Remoting/Messaging/MethodCall.cs:
+	missing functionality in "System.Runtime.Remoting.Messaging".
+
+	* runtime/System/RuntimeFieldHandle.cs,
+	runtime/System/RuntimeMethodHandle.cs,
+	runtime/System/RuntimeTypeHandle.cs,
+	runtime/System/UnitySerializationHolder.cs,
+	runtime/System/Reflection/ClrConstructor.cs,
+	runtime/System/Reflection/ClrEvent.cs,
+	runtime/System/Reflection/ClrField.cs,
+	runtime/System/Reflection/ClrMethod.cs,
+	runtime/System/Reflection/ClrProperty.cs,
+	runtime/System/Reflection/ClrType.cs,
+	runtime/System/Reflection/MemberInfoSerializationHolder.cs,
+	runtime/System/Runtime/Serialization/FormatterServices.cs:
+	serialization support for reflection classes.
+
+	* runtime/System/UnitySerializationHolder.cs,
+	runtime/System/Reflection/Assembly.cs,
+	runtime/System/Reflection/Module.cs,
+	runtime/System/Runtime/Serialization/FormatterServices.cs:
+	serialization support for assemblies and modules.
+
+	* resources/en_US/runtime/Arg.txt,
+	runtime/System/Reflection/MemberInfoSerializationHolder.cs:
+	de-serialization support for member reflection classes.
+
+	* resources/en_US/runtime/Arg.txt,
+	runtime/System/Globalization/HijriCalendar.cs: implement the
+	missing HijriCalendar class.
+
+	* runtime/System/BitConverter.cs,
+	runtime/System/Resources/ResourceReader.cs: add support for
+	reading non-string resources.
+
+2003-08-21  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Arg.txt,
+	runtime/System/Security/Permissions/StrongNamePublicKeyBlob.cs,
+	runtime/System/Security/Policy/ApplicationDirectory.cs,
+	runtime/System/Security/Policy/ApplicationDirectoryMembershipCondition.cs,
+	runtime/System/Security/Policy/Hash.cs,
+	runtime/System/Security/Policy/HashMembershipCondition.cs,
+	runtime/System/Security/Policy/PermissionRequestEvidence.cs,
+	runtime/System/Security/Policy/PolicyStatement.cs,
+	runtime/System/Security/Policy/Publisher.cs,
+	runtime/System/Security/Policy/PublisherMembershipCondition.cs,
+	runtime/System/Security/Policy/Site.cs,
+	runtime/System/Security/Policy/SiteMembershipCondition.cs,
+	runtime/System/Security/Policy/StrongName.cs,
+	runtime/System/Security/Policy/StrongNameMembershipCondition.cs,
+	runtime/System/Security/Policy/Url.cs,
+	runtime/System/Security/Policy/UrlMembershipCondition.cs,
+	runtime/System/Security/Policy/UrlParser.cs,
+	runtime/System/Security/Policy/ZoneMembershipCondition.cs:
+	implement missing TODO's in "System.Security.Policy".
+
+	* resources/en_US/runtime/Arg.txt,
+	resources/en_US/runtime/Security.txt,
+	runtime/System/Security/Policy/CodeGroup.cs,
+	runtime/System/Security/Policy/FileCodeGroup.cs,
+	runtime/System/Security/Policy/FirstMatchCodeGroup.cs,
+	runtime/System/Security/Policy/HashMembershipCondition.cs,
+	runtime/System/Security/Policy/NetCodeGroup.cs,
+	runtime/System/Security/Policy/PolicyStatement.cs,
+	runtime/System/Security/Policy/PublisherMembershipCondition.cs,
+	runtime/System/Security/Policy/Site.cs,
+	runtime/System/Security/Policy/SiteMembershipCondition.cs,
+	runtime/System/Security/Policy/StrongName.cs,
+	runtime/System/Security/Policy/StrongNameMembershipCondition.cs,
+	runtime/System/Security/Policy/UnionCodeGroup.cs,
+	runtime/System/Security/Policy/Url.cs,
+	runtime/System/Security/Policy/UrlMembershipCondition.cs,
+	runtime/System/Security/Policy/UrlParser.cs,
+	runtime/System/Security/Policy/ZoneMembershipCondition.cs:
+	implement more missing TODO's in "System.Security.Policy".
+
+	* runtime/System/Security/Principal/WindowsIdentity.cs:
+	serialization support for "System.Security.Principal.WindowsIdentity".
+
+2003-08-20  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Arg.txt, runtime/System/DBNull.cs,
+	runtime/System/UnitySerializationHolder.cs,
+	runtime/System/Private/Empty.cs: serialization for DBNull and Empty.
+
+	* runtime/System/Environment.cs: clean up the implementation
+	of "Environment.GetFolderPath".
+
+	* runtime/System/Enum.cs: implement Enum.GetUnderlyingType for
+	profiles that don't have reflection.
+
+	* runtime/System/Collections/Hashtable.cs: implement serialization
+	for hash tables.
+
+	* runtime/System/Reflection/Assembly.cs,
+	runtime/System/Reflection/AssemblyName.cs: implement the
+	"AssemblyName" class; change the implementation of "Assembly.FullName"
+	to return the fully-qualified name including version, culture,
+	and public key token.
+
+	* runtime/System/Reflection/StrongNameKeyPair.cs: implement the
+	missing TODO's in StrongNameKeyPair.
+
+	* runtime/System/Collections/Hashtable.cs: clear the "info" field
+	after hashtable de-serialization is complete.
+
+2003-08-19  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/IO.txt, runtime/System/IO/MemoryStream.cs:
+	rewrite the "System.IO.MemoryStream" class.
+
+	* runtime/Platform/FileMethods.cs, runtime/System/IO/FileStream.cs:
+	add internalcalls to support "FileStream.Lock" and "FileStream.Unlock".
+
+	* runtime/System/IO/IsolatedStorage/IsolatedStorageFile.cs:
+	create the isolated storage area under "$HOME/.cli/isolated-storage".
+
+	* runtime/Platform/ISecurityManager.cs,
+	runtime/Platform/NullSecurityManager.cs,
+	runtime/Platform/RuntimeSecurityManager.cs,
+	runtime/Platform/Security.cs, runtime/System/IO/FileStream.cs:
+	remove the platform security manager classes because they don't
+	do anything and they will be superceded by the CAS mechanisms.
+
+2003-08-18  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/IO/Directory.cs, runtime/System/IO/Path.cs,
+	tests/runtime/Testruntime.cs, tests/runtime/System/IO/Makefile,
+	tests/runtime/System/IO/SuiteIO.cs,
+	tests/runtime/System/IO/TestPath.cs: rewrite the "System.IO.Path"
+	class and add a large number of test cases for it.
+
+	* runtime/System/IO/Directory.cs: return the combined path
+	for the results of "Directory.GetFiles" and "Directory.GetDirectories"
+	rather than just the relative path (bug #4644).
+
+2003-08-17  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* I18N/Rare/CP20261.cs: add the T.61 encoding to the I18N routines.
+
+	* I18N/Common/HandlerCollection.cs: increase handler count estimate.
+
+2003-08-16  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* I18N/MidEast/CP10004.cs, I18N/MidEast/CP10005.cs,
+	I18N/MidEast/CP10081.cs, I18N/MidEast/mac-10081.ucm,
+	I18N/Other/CP10007.cs, I18N/Other/CP10017.cs,
+	I18N/Other/CP10021.cs, I18N/Other/mac-10007.ucm,
+	I18N/West/CP10006.cs, I18N/West/CP10010.cs, I18N/West/CP10029.cs,
+	I18N/West/CP10079.cs, I18N/West/CP10082.cs, I18N/West/mac-10006.ucm,
+	I18N/West/mac-10029.ucm, I18N/West/mac-10079.ucm, I18N/West/mac-is.ucm,
+	I18N/tools/cvt.sh: update the Mac-related code pages with some
+	better UCM definition files.
+
+	* I18N/West/CP737.cs, I18N/West/CP775.cs, I18N/West/oem-737.ucm,
+	I18N/West/oem-775.ucm, I18N/tools/cvt.sh: add code pages for
+	OEM Greek and OEM Baltic.
+
+	* samples/codepage.cs: make the codepage sample a little more
+	robust against odd exception conditions.
+
+	* I18N/I18N.build, I18N/CJK/CP1361.cs, I18N/CJK/CP936.cs,
+	I18N/CJK/CP949.cs, I18N/CJK/CP950.cs, I18N/CJK/MultiByteEncoding.cs,
+	I18N/CJK/big5.table, I18N/CJK/gb.table, I18N/CJK/johab.table,
+	I18N/CJK/ksc.table, I18N/tools/cvt.sh, I18N/tools/mb2tab.c:
+	add conversion tables and code page handlers for KS C 5601,
+	GB2312, BIG5, and Johab.
+
+	* I18N/CJK/MultiByteEncoding.cs: map unknown Unicode characters
+	to the empty string, not NUL.
+
+	* samples/codepage.cs: add -u and -c options to codepage that
+	can dump code pages in UCM or reverse-UCM form.
+
+2003-08-15  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* I18N/CJK/CP51932.cs, I18N/CJK/CP932.cs: changes to the
+	"shift_jis" and "euc-jp" decoders to better match MS behaviour.
+
+	* I18N/MidEast/CP10004.cs, I18N/MidEast/CP10005.cs,
+	I18N/MidEast/CP10081.cs, I18N/MidEast/mac-10004.ucm,
+	I18N/MidEast/mac-10005.ucm, I18N/MidEast/mac-10081.ucm,
+	I18N/Other/CP10007.cs, I18N/Other/CP10017.cs, I18N/Other/CP10021.cs,
+	I18N/Other/mac-10007.ucm, I18N/Other/mac-10021.ucm,
+	I18N/West/CP10006.cs, I18N/West/CP10010.cs, I18N/West/CP10029.cs,
+	I18N/West/CP10082.cs, I18N/West/mac-10006.ucm, I18N/West/mac-10010.ucm,
+	I18N/West/mac-10029.ucm, I18N/West/mac-10082.ucm, I18N/tools/cvt.sh,
+	I18N/tools/ucm2cp.c: add some Mac-related code pages to I18N.
+
+	* I18N/Common/UCS4Encoding.cs: add the UCS-4 code pages to I18N.
+
+2003-08-14  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* I18N/Makefile.am: changes to the I18N Makefile.am file to
+	work around build problems on some systems.
+
+2003-08-13  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Text/ASCIIEncoding.cs,
+	runtime/System/Text/ByteEncoding.cs,
+	runtime/System/Text/DefaultEncoding.cs,
+	runtime/System/Text/Encoding.cs,
+	runtime/System/Text/UTF7Encoding.cs,
+	runtime/System/Text/UTF8Encoding.cs,
+	runtime/System/Text/UnicodeEncoding.cs: hide some Encoding properties
+	that are needed, but shouldn't be part of the public API.
+
+	* JScript/Jsc/Instanceof.cs, System/Net/WebProxy.cs,
+	System.Configuration.Install/AssemblyInstaller.cs,
+	System.Configuration.Install/IManagedInstaller.cs,
+	System.Configuration.Install/InstallContext.cs,
+	System.Configuration.Install/InstallEventArgs.cs,
+	System.Configuration.Install/InstallEventHandler.cs,
+	System.Configuration.Install/InstallException.cs,
+	System.Configuration.Install/InstallUtil.cs,
+	System.Configuration.Install/Installer.cs,
+	System.Configuration.Install/InstallerCollection.cs,
+	System.Configuration.Install/ManagedInstallerClass.cs,
+	System.Configuration.Install/TransactedInstaller.cs,
+	System.Configuration.Install/UninstallAction.cs,
+	System.Drawing.Win32/Debug.cs,
+	System.Drawing.Win32/DrawingWindow.cs,
+	System.Windows.Forms/BindingManagerBase.cs,
+	System.Windows.Forms/BindingMemberInfo.cs,
+	System.Windows.Forms/BindingsCollection.cs,
+	System.Windows.Forms/CancelEventHandler.cs,
+	System.Windows.Forms/Clipboard.cs,
+	System.Windows.Forms/CommonDialog.cs,
+	System.Windows.Forms/CurrencyManager.cs,
+	System.Windows.Forms/ImageList.cs,
+	System.Windows.Forms/ImageListStreamer.cs,
+	System.Windows.Forms/StatusBar.cs,
+	System.Windows.Forms/StatusBarPanel.cs,
+	System.Windows.Forms/SystemInformation.cs,
+	samples/Emit.cs, samples/samples.build,
+	tests/runtime/System/Threading/TestThread.cs: changes for ECMA
+	compatibility.
+
+	* I18N/I18N.build, I18N/CJK/CP932.cs, I18N/CJK/CodeTable.cs,
+	I18N/CJK/JISConvert.cs: remove the "__PNET__" symbol from the
+	I18N code, because it is obsolete.
+
+	* I18N/CJK/CP51932.cs, I18N/CJK/CP932.cs: add code page 51932 (euc-jp)
+	to the I18N routines.
+
+	* I18N/.cvsignore, I18N/I18N.build, I18N/Makefile.am,
+	I18N/README, I18N/Common/HandlerCollection.cs, I18N/Common/Manager.cs:
+	convert the I18N directory into a two-phase build so that
+	"I18N-handlers.def" can be bound to I18N.dll as a resource.
+
+2003-08-09  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* Makefile.am, configure.in, System.Configuration.Install/.cvsignore,
+	System.Configuration.Install/AssemblyInstaller.cs,
+	System.Configuration.Install/ComponentInstaller.cs,
+	System.Configuration.Install/EventLogInstaller.cs,
+	System.Configuration.Install/IManagedInstaller.cs,
+	System.Configuration.Install/InstallContext.cs,
+	System.Configuration.Install/InstallEventArgs.cs,
+	System.Configuration.Install/InstallEventHandler.cs,
+	System.Configuration.Install/InstallException.cs,
+	System.Configuration.Install/InstallUtil.cs,
+	System.Configuration.Install/Installer.cs,
+	System.Configuration.Install/InstallerCollection.cs,
+	System.Configuration.Install/Makefile.am,
+	System.Configuration.Install/ManagedInstallerClass.cs,
+	System.Configuration.Install/PerformanceCounterInstaller.cs,
+	System.Configuration.Install/S.cs,
+	System.Configuration.Install/System.Configuration.Install.build,
+	System.Configuration.Install/TransactedInstaller.cs,
+	System.Configuration.Install/UninstallAction.cs,
+	System.Configuration.Install/ilinstall-run.sh: check in the
+	"System.Configuration.Install" implementation.
+
+	* configure.in, resources/en_US/Makefile.am,
+	System.Configuration.Install/AssemblyInstaller.cs,
+	System.Configuration.Install/S.cs,
+	System.Configuration.Install/System.Configuration.Install.build,
+	resources/en_US/System.Configuration.Install/.cvsignore,
+	resources/en_US/System.Configuration.Install/Installer.txt,
+	resources/en_US/System.Configuration.Install/Makefile.am:
+	add the string resources for "System.Configuration.Install".
+
+	* System.Configuration.Install/AssemblyInstaller.cs,
+	System.Configuration.Install/InstallContext.cs,
+	System.Configuration.Install/ManagedInstallerClass.cs:
+	implement the command-line handling for the "ilinstall" program.
+
+2003-08-08  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/ComponentModel/BaseNumberConverter.cs,
+	System/ComponentModel/CharConverter.cs,
+	System/ComponentModel/CollectionConverter.cs,
+	System/ComponentModel/CultureInfoConverter.cs,
+	System/ComponentModel/DateTimeConverter.cs,
+	System/ComponentModel/EnumConverter.cs,
+	System/ComponentModel/GuidConverter.cs,
+	System/ComponentModel/ReferenceConverter.cs,
+	System/ComponentModel/SyntaxCheck.cs,
+	System/ComponentModel/TimeSpanConverter.cs,
+	System/ComponentModel/TypeConverter.cs,
+	System/ComponentModel/TypeListConverter.cs,
+	System/ComponentModel/Design/IReferenceService.cs: more
+	converter classes for System.ComponentModel.
+
+	* System/ComponentModel/AmbientValueAttribute.cs,
+	System/ComponentModel/AttributeCollection.cs,
+	System/ComponentModel/Component.cs,
+	System/ComponentModel/DefaultValueAttribute.cs,
+	System/ComponentModel/DescriptionAttribute.cs,
+	System/ComponentModel/DesignOnlyAttribute.cs,
+	System/ComponentModel/DesignTimeVisibleAttribute.cs,
+	System/ComponentModel/DesignerAttribute.cs,
+	System/ComponentModel/DesignerCategoryAttribute.cs,
+	System/ComponentModel/DesignerSerializationVisibilityAttribute.cs,
+	System/ComponentModel/EditorAttribute.cs,
+	System/ComponentModel/EventHandlerList.cs,
+	System/ComponentModel/IComNativeDescriptorHandler.cs,
+	System/ComponentModel/IComponent.cs,
+	System/ComponentModel/ITypeDescriptorContext.cs,
+	System/ComponentModel/ImmutableObjectAttribute.cs,
+	System/ComponentModel/InvalidEnumArgumentException.cs,
+	System/ComponentModel/ListBindableAttribute.cs,
+	System/ComponentModel/LocalizableAttribute.cs,
+	System/ComponentModel/MarshalByValueComponent.cs,
+	System/ComponentModel/MergablePropertyAttribute.cs,
+	System/ComponentModel/ParenthesizePropertyNameAttribute.cs,
+	System/ComponentModel/RefreshPropertiesAttribute.cs,
+	System/ComponentModel/RunInstallerAttribute.cs,
+	System/ComponentModel/TypeConverterAttribute.cs,
+	System/ComponentModel/TypeListConverter.cs: improve signature
+	compatibility of the System.ComponentModel classes.
+
+	* runtime/System/Type.cs, runtime/System/Reflection/ClrType.cs,
+	runtime/System/Reflection/TypeDelegator.cs,
+	runtime/System/Reflection/Emit/SignatureHelper.cs,
+	runtime/System/Reflection/Emit/TypeBuilder.cs: update the
+	internalcalls for type generics to match Gyro 1.0.
+
+	* resources/en_US/runtime/Arg.txt,
+	runtime/System/Reflection/ClrMethod.cs,
+	runtime/System/Reflection/MethodInfo.cs: add internalcalls
+	for method generics.
+
+2003-08-07  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* System.Xml/Serialization/*.cs: stub out the xml serialization classes.
+
+	* System.Xml/Serialization/IXmlSerializable.cs: fix for ECMA_COMPAT.
+
+	* System.Xml/Schema/XmlSchemaForm.cs: correct None value.
+
+	* System.Xml/Serialization/*Attribute.cs: implement all the xml
+	serialization attribute classes.
+
+	* runtime/System/AppDomain.cs: change GetAssemblies to an internal call.
+
+	* runtime/System/Reflection/Assembly.cs: implement Location property and
+	add supporting internal call.
+
+2003-08-07  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* JScript/Jsc/BitwiseBinary.cs, JScript/Jsc/Instanceof.cs,
+	JScript/Jsc/Plus.cs, JScript/Jsc/Relational.cs,
+	JScript/Nodes/JExpr.tc: implement some easy TODO's in JScript.
+
+	* System/ComponentModel/BaseNumberConverter.cs,
+	System/ComponentModel/BooleanConverter.cs,
+	System/ComponentModel/ByteConverter.cs,
+	System/ComponentModel/DecimalConverter.cs,
+	System/ComponentModel/DoubleConverter.cs,
+	System/ComponentModel/Int16Converter.cs,
+	System/ComponentModel/Int32Converter.cs,
+	System/ComponentModel/Int64Converter.cs,
+	System/ComponentModel/RunInstallerAttribute.cs,
+	System/ComponentModel/SByteConverter.cs,
+	System/ComponentModel/SingleConverter.cs,
+	System/ComponentModel/StringConverter.cs,
+	System/ComponentModel/UInt16Converter.cs,
+	System/ComponentModel/UInt32Converter.cs,
+	System/ComponentModel/UInt64Converter.cs: implement number
+	conversion routines in "System.ComponentModel".
+
+2003-08-04  Neil Cawse   <neilcawse@geotab.com>
+
+	* System.Drawing/Graphics.cs: small changes to MeasureCharacterRanges.
+	
+	* System.Drawing.Win32/DrawingWindow.cs: add in modifiers on keydown
+	and keyup. Support for double clicking added.
+
+	* System.Windows.Forms/Control.cs: support for double clicking added.
+
+	* System.Windows.Forms/TextBox.cs, System.Windows.Forms/TextBoxBase.cs:
+	insert / overwrite mode, left, right, up, down, page down up, begin, end,
+	Lines[] property, keyboard selection, for Mohan Embar
+	<gnustuff@thisiscool.com>. Speed improvements and optimization.
+
+	* samples/TextBoxTest.cs: add a test for Lines property of TextBox.
+	
+2003-08-06  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Runtime/Serialization/Formatters/Binary/BinaryFormatter.cs,
+	runtime/System/Runtime/Serialization/Formatters/Binary/BinaryValueReader.cs,
+	runtime/System/Runtime/Serialization/Formatters/Binary/BinaryValueWriter.cs:
+	begin adding the infrastructure for binary serialization readers.
+
+	* runtime/System/Runtime/Remoting/InternalRemotingServices.cs,
+	runtime/System/Runtime/Remoting/RemotingException.cs,
+	runtime/System/Runtime/Remoting/Metadata/SoapAttribute.cs,
+	runtime/System/Runtime/Remoting/Metadata/SoapFieldAttribute.cs,
+	runtime/System/Runtime/Remoting/Metadata/SoapMethodAttribute.cs,
+	runtime/System/Runtime/Remoting/Metadata/SoapOption.cs,
+	runtime/System/Runtime/Remoting/Metadata/SoapParameterAttribute.cs,
+	runtime/System/Runtime/Remoting/Metadata/SoapTypeAttribute.cs,
+	runtime/System/Runtime/Remoting/Metadata/XmlFieldOrderOption.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/ISoapXsd.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapAnyUri.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapBase64Binary.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapDate.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapDateTime.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapDay.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapDuration.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapEntities.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapEntity.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapHexBinary.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapId.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapIdref.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapIdrefs.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapInteger.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapLanguage.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapMonth.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapMonthDay.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapName.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapNcName.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapNegativeInteger.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapNmtoken.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapNmtokens.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapNonNegativeInteger.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapNonPositiveInteger.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapNormalizedString.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapNotation.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapPositiveInteger.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapQName.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapTime.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapToken.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapYear.cs,
+	runtime/System/Runtime/Remoting/Metadata/W3cXsd2001/SoapYearMonth.cs:
+	outstanding TODO's with the SOAP-related routines in runtime.
+
+	* runtime/System/Runtime/Remoting/ObjRef.cs,
+	runtime/System/Runtime/Remoting/ObjectHandle.cs,
+	runtime/System/Runtime/Remoting/Channels/BaseChannelWithProperties.cs,
+	runtime/System/Runtime/Remoting/Channels/ChannelServices.cs,
+	runtime/System/Runtime/Remoting/Channels/ClientChannelSinkStack.cs,
+	runtime/System/Runtime/Remoting/Channels/CombinedDictionary.cs,
+	runtime/System/Runtime/Remoting/Channels/ServerChannelSinkStack.cs:
+	outstanding TODO's in remoting functionality.
+
+	* tests/runtime/System/TestDecimal.cs,
+	tests/runtime/System/TestDouble.cs,
+	tests/runtime/System/TestString.cs,
+	tests/runtime/System/Text/TestStringBuilder.cs: remove tests that
+	are stubbed with TODO and nothing else, because it gives a false
+	impression as to what is working and what isn't.
+
+	* runtime/System/IO/Directory.cs: handle recursive directory creation.
+
+2003-08-05  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* runtime/System/IO/Path.cs: fix to GetFullPath for handling ".".
+
+	* runtime/System/Reflection/Emit/AssemblyBuilder.cs: fixes to Save and
+	constructor for handling the save directory.
+
+	* runtime/System/Reflection/Emit/ILGenerator.cs: fix to DefineLabel
+	for labels array resizing, and fix to Emit(OpCode, Label) for converting
+	long form branches to short form branches.
+
+2003-08-05  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Runtime/Remoting/Messaging/Header.cs,
+	runtime/System/Runtime/Remoting/Messaging/HeaderHandler.cs,
+	runtime/System/Runtime/Remoting/Messaging/IMessage.cs,
+	runtime/System/Runtime/Remoting/Messaging/IMethodCallMessage.cs,
+	runtime/System/Runtime/Remoting/Messaging/IMethodMessage.cs,
+	runtime/System/Runtime/Remoting/Messaging/IMethodReturnMessage.cs,
+	runtime/System/Runtime/Remoting/Messaging/IRemotingFormatter.cs,
+	runtime/System/Runtime/Remoting/Messaging/ISerializationRootObject.cs,
+	runtime/System/Runtime/Remoting/Messaging/LogicalCallContext.cs,
+	runtime/System/Runtime/Serialization/Formatters/FormatterAssemblyStyle.cs,
+	runtime/System/Runtime/Serialization/Formatters/FormatterTypeStyle.cs,
+	runtime/System/Runtime/Serialization/Formatters/IFieldInfo.cs,
+	runtime/System/Runtime/Serialization/Formatters/ISoapMessage.cs,
+	runtime/System/Runtime/Serialization/Formatters/TypeFilterLevel.cs,
+	runtime/System/Runtime/Serialization/Formatters/Binary/BinaryElementType.cs,
+	runtime/System/Runtime/Serialization/Formatters/Binary/BinaryFormatter.cs,
+	runtime/System/Runtime/Serialization/Formatters/Binary/BinaryPrimitiveTypeCode.cs,
+	runtime/System/Runtime/Serialization/Formatters/Binary/BinaryTypeTag.cs,
+	runtime/System/Runtime/Serialization/Formatters/Binary/BinaryValueWriter.cs:
+	shift some classes from CONFIG_REMOTING to CONFIG_SERIALIZATION
+	so that we can build profiles with object serialization support,
+	but not remoting support.
+
+	* samples/samples.build: add a link dependency for "DotGNU.Images".
+
+2003-08-04  Neil Cawse   <neilcawse@geotab.com>
+
+	* System.Drawing/Graphics.cs: small changes to match ms behaviour.
+	
+	* System.Drawing.Win32/DrawingGraphics.cs: changes to match ms behaviour.
+	
+	* System.Windows.Forms/TextBox.cs: remove flashing caret. Optimization to
+	minimize X round trips. Implemented more functionality and checked against MS.
+	
+	* System.Windows.Forms/Control.cs: default size of font wrong- part of fonts fix,
+	"Enabled" fix, key filter for keychar moved.
+	
+	* System.Windows.Forms/Label.cs: small fixes to get appearance matched to MS.
+	
+	* System.Drawing/Font.cs, System.Drawing/Toolkit/IToolkit.cs,
+	System.Drawing/Toolkit/NullTooklit.cs, System.Drawing.Xsharp/DrawingFont.cs,
+	System.Drawing.Xsharp/DrawingToolkit.cs : When creating Font, dpi is passed
+	through and used.
+	
+	* System.Windows.Forms/RadioButton.cs, System.Windows.Forms/StatusBar.cs:
+	small bug in calculate state - for compiling on csc.
+	
+	* System.Drawing.Xsharp/DrawingWindow.cs: ignore ASCII DEL 0x7F
+
+	* System.Drawing.Xsharp/DrawingGraphics.cs, System.Drawing.Win32/DrawingFont.cs,
+	System.Drawing.Win32/DrawingToolkit.cs: Drawline includes last point - ms
+	behaviour, Restrict all location and sizes to the bounds allowed under X.
+	
+	* samples/FormsTest.cs: add in drawing primitives tests
+
+	* System.Drawing.Postscript/PostscriptGraphics.cs: small csc compile change
+
+
+2003-08-04  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Runtime/Serialization/Formatters/Binary/BinaryFormatter.cs,
+	runtime/System/Runtime/Serialization/Formatters/Binary/BinaryPrimitiveTypeCode.cs,
+	runtime/System/Runtime/Serialization/Formatters/Binary/BinaryValueWriter.cs:
+	rearrange the outgoing side of binary formatting, to make it more
+	flexible to handle special types.
+
+	* System.Drawing.Postscript/PostscriptToolkit.cs: small compile bug,
+	due to recent changes in IToolkit.
+
+	* runtime/System/Runtime/Serialization/ObjectIDGenerator.cs.
+	runtime/System/Runtime/Serialization/Formatters/Binary/BinaryFormatter.cs.
+	runtime/System/Runtime/Serialization/Formatters/Binary/BinaryValueWriter.cs:
+	continue the implementation of binary formatting.
+
+	* runtime/System/Resources/ResourceManager.cs: use the "current"
+	variable when checking for the invariant culture, not "culture".
+
+	* System.Drawing/Pen.cs: get and set brush properties on pens.
+
+	* System.Drawing/Graphics.cs, System.Drawing/Pen.cs,
+	System.Drawing/Toolkit/IToolkitPen.cs,
+	System.Drawing.Postscript/PostscriptPen.cs,
+	System.Drawing.Win32/DrawingPen.cs,
+	System.Drawing.Xsharp/DrawingPen.cs: pass the brush properties
+	for a pen down to the toolkit layer; pen brush selection for Xsharp.
+
+2003-08-03  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* System.Windows.Forms/ButtonBase.cs: some improvements for inheritors,
+	and some fixes for compact forms.
+
+	* System.Windows.Forms/ControlPaint.cs: update calls to the theme
+	painter for changes there.
+
+	* System.Windows.Forms/RadioButton.cs,
+	samples/samples.build, samples/radiobuttons.cs,
+	System.Windows.Forms/Themes/DefaultThemePainter.cs: apply patch #1785,
+	"RadioButton Implementation", from Mario Luca Bernardi, after cleaning
+	it up a bit.
+
+	* System.Windows.Forms/RadioButton.cs: refactor layout and drawing code
+	to depend more on the theme painter.
+
+	* System.Windows.Forms/Themes/DefaultThemePainter.cs: improvements and
+	fixes to radio button drawing code.
+
+	* System.Windows.Forms/Themes/IThemePainter.cs: modified DrawRadioButton
+	signature.
+
+	* samples/samples.build, samples/radiobuttons.cs: add radio buttons
+	example program.
+
+2003-08-03  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Security.txt,
+	runtime/System/Runtime/Serialization/Formatter.cs,
+	runtime/System/Runtime/Serialization/FormatterServices.cs,
+	runtime/System/Runtime/Serialization/SerializationInfo.cs,
+	runtime/System/Runtime/Serialization/SurrogateSelector.cs,
+	runtime/System/Runtime/Serialization/Formatters/SoapFault.cs:
+	implement some TODO's in "System.Runtime.Serialization".
+
+	* runtime/System/Runtime/Serialization/ObjectIDGenerator.cs,
+	runtime/System/Runtime/Serialization/Formatters/Binary/BinaryElementType.cs,
+	runtime/System/Runtime/Serialization/Formatters/Binary/BinaryFormatter.cs,
+	runtime/System/Runtime/Serialization/Formatters/Binary/BinaryMethodFlags.cs,
+	runtime/System/Runtime/Serialization/Formatters/Binary/BinaryPrimitiveTypeCode.cs,
+	runtime/System/Runtime/Serialization/Formatters/Binary/BinaryReturnTypeTag.cs,
+	runtime/System/Runtime/Serialization/Formatters/Binary/BinaryTypeTag.cs:
+	begin implementing the outgoing side of the binary formatter.
+
+2003-08-01  Simon Guindon  <simon@nureality.ca>
+
+	* System.Windows.Forms/StatusBar.cs: Cleaned it up along with 
+	finishing some of the events.
+
+2003-08-01  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* runtime/System/Environment.cs, runtime/Platform/InfoMethods.cs: apply
+	patch #1760, "Win32 implementation of System.Environment.GetFolderPath",
+	from Yannis Bres.
+
+	* System.Windows.Forms/StatusBar.cs: apply patch #1771, "[Winforms]
+	cleans up and finishes events for StatusBar", from Simon Guindon.
+
+	* System.Windows.Forms/Clipboard.cs, System.Windows.Forms/DataObject.cs,
+	System.Windows.Forms/DataFormats.cs: apply patch #1783, "Initial implem.
+	of Clipboard", from Cecilio Pardo.
+
+2003-08-01  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Drawing/Toolkit/IToolkitWindow.cs,
+	System.Drawing.Win32/DrawingWindow.cs,
+	System.Drawing.Xsharp/DrawingPopupWindow.cs,
+	System.Drawing.Xsharp/DrawingTopLevelWindow.cs,
+	System.Drawing.Xsharp/DrawingWindow.cs,
+	System.Windows.Forms/Control.cs: add toolkit support for "Capture",
+	which is needed for Win32, but ignored under Xsharp since X already
+	does implicit captures between a mouse down and a mouse up.
+
+2003-07-31  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/Reflection/ClrType.cs: Fix bug in TrimMembers and 
+	optimise it a bit. (fix Bug #4507)
+
+2003-07-30  Neil Cawse   <neilcawse@geotab.com>
+
+	* System.Drawing/Graphics.cs: DrawString alignment calc 1 out.
+	MeasureCharacterRanges, dont continue if nowrap
+	
+	* System.Drawing.Win32/DrawingGraphics.cs: MeasureString out by 1 on y
+	
+	* System.Windows.Forms/TextBox.cs, System.Windows.Forms/TextBoxBase.cs:
+	implemented text bigger than the textbox, scrolling and
+	implemented more properties
+	
+	* System.Windows.Forms/Control.cs: ClientSize not calling ClientToBounds
+	correctly. Implemented PointToClient. Update fix.
+	
+	* System.Windows.Forms/Label.cs: fix default alignment on label.
+	
+	* System.Windows.Forms/TabControl.cs: decrease text y offset.
+	
+	* System.Windows.Forms/RadioButton.cs: stubbed out
+	
+	* samples/samples.build: removed TextBoxTest.cs, TabTest.cs, RegionTest.cs
+	and added FormsTest.cs
+	
+	* samples/TextBoxTest.cs, samples/TabTest.cs, samples/RegionTest.cs : 
+	removed
+	
+	* samples/FormsTest.cs: new test cases for Labels, RadioButtons, TextBoxes,
+	TabControls and Regions.
+
+2003-07-29  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Drawing.Xsharp/DrawingTopLevelWindow.cs,
+	System.Drawing.Xsharp/DrawingWindow.cs: map alphabetic and digit
+	keys in "DrawingWindow.MapKey"; always deliver KeyDown/KeyUp
+	events even if the key could not be successfully mapped.
+
+2003-07-28  Neil Cawse   <neilcawse@geotab.com>
+
+	* System.Drawing/Graphics.cs: fixes and lineAlignment to
+	MeasureCharacterRanges
+	
+	* System.Drawing.Win32/Win32.cs, System.Drawing.Win32/DrawingWindow:
+	Fix Focused() and clipping for onpaint
+	
+	* System.Drawing.Win32/DrawingGraphics.cs: MeasureString out by 1 on y
+	implement toolkit SetClipRects
+	
+	* System.Drawing.Xsharp/DrawingGraphics.cs,
+	System.Drawing.Xsharp/DrawingPopupWindow.cs,
+	System.Drawing.Xsharp/DrawingTopLevelWindow.cs,
+	System.Drawing.Xsharp/DrawingWindow: improvements to clipping and implement
+	Update code
+	
+	* System.Windows.Forms/TextBox.cs: resize correctly for non multiline,
+	select all when not setting focus by mouse, autosize implemented, hide caret
+	and selection depending on focus. support BorderStyle = none, fixed all bugs
+	found in laying out text and caret, word wrapping, space swallowing
+	
+	* System.Windows.Forms/Control.cs: small fixes to CreateParams, CanFocus()
+	and implement UpdateStyles(). Filter out delete in ToolkitKeyChar to be
+	MS compliant
+
+	* samples/TextBoxTest.cs : more cases for TextBox test.
+
+2003-07-28  Simon Guindon  <simon@nureality.ca>
+
+	* System.Windows.Forms/StatusBar.cs: fixed StatusBarPanelCollection,
+	it wasn't implemented as a nested class, this has been corrected and
+	StatusBarPanelCollection.cs removed.
+
+2003-07-28  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* samples/samples.build, samples/Emit.cs: add an example program for
+	System.Reflection.Emit.
+
+	* runtime/System/Reflection/Emit/ILGenerator.cs: fix some stack height and
+	long opcode bugs.
+
+2003-07-28  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* Xsharp/Display.cs, runtime/System/DllNotFoundException.cs:
+	adjustments to pnetlib to use DllNotFoundException and
+	EntryPointNotFoundException instead of MissingMethodException.
+
+	* System.Drawing.Xsharp/DrawingWindow.cs: modify "MapKey" to
+	add the modifier masks.
+
+2003-07-26  Mohan Embar  <gnustuff@thisiscool.com>
+
+	* System.Windows.Forms/TextBox.cs: corrected issues with right
+	and left arrow keys past lines containing only a linefeed and
+	single-clicking at the end of such lines. Replaced
+	LayoutInfo.Item.visible with an enum and gave linefeed characters
+	valid bounds and a special status within LayoutInfo (Neil)
+
+2003-07-26  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* configure.in, NEWS: update version and news for the 0.5.10 release.
+
+	* configure.in: update working version to "0.5.11".
+
+2003-07-26  Thong Nguyen  <tum@veridicus.com>
+
+	* System/Net/Sockets/TcpListener.cs: Small fix for TcpListener.Start.
+	
+2003-07-26  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* runtime/System/Reflection/Module.cs,
+	runtime/System/Reflection/Emit/ModuleBuilder.cs: fix Module.Assembly.
+
+	* runtime/System/Reflection/Emit/ConstructorBuilder.cs: fix constructor
+	attributes.
+
+2003-07-26  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Drawing.Xsharp/DrawingTopLevelWindow.cs,
+	System.Drawing.Xsharp/DrawingWindow.cs: copy the OnPaint clip logic
+	to "DrawingTopLevelWindow"; make the coding styles consistent.
+
+	* System.Xml/Serialization/IXmlSerializable.cs: add a missing interface
+	that is used by Mono's "System.Data".
+
+	* runtime/System/Private/DateTimeFormat/DateTimeFormatter.cs,
+	runtime/System/DateTime.cs: swap the order of some parameters to
+	avoid ambiguities in compiler lookups.
+
+2003-07-25  Neil Cawse   <neilcawse@geotab.com>
+
+	* System.Drawing/Graphics.cs: implement UpdateClip to support clipping
+	* System.Drawing/Region.cs: implement MakeInfinite
+	* System.Drawing.Win32/Win32.cs, System.Drawing.Win32/DrawingGraphics.cs:
+	implement toolkit SetClipRects
+	* System.Drawing.Xsharp/DrawingGraphics.cs: implement toolkit SetClipRects
+	and SetClipRect
+	* System.Drawing.Xsharp/DrawingWindow.cs: clip the OnPaint Graphic
+	* System.Windows.Forms/TabControl.cs: painting can now clip so the tabs draw
+	properly. Fixed error when selecting an area outside a tab.
+
+2003-07-25  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* runtime/System/Reflection/Emit/AssemblyBuilder.cs: modify method body
+	output methods to get method body output working.
+
+	* runtime/System/Reflection/Emit/ILGenerator.cs: get method body output
+	working.
+
+	* runtime/System/Reflection/Emit/SignatureHelper.cs: add methods to create,
+	and get the token of, a stand alone signature made from a signature.
+
+2003-07-25  Gopal.V  <gopalv82@symonds.net>
+	
+	* System.Xml/XmlTextWriter.cs: Generate newlines only if in Indented
+	output mode.
+
+	* runtime/System/Reflection/ClrType.cs: Trim member lists to avoid the
+	overriden members from appearing in the lists. (fixes Bug #2688)
+
+2003-07-25  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Drawing.Xsharp/DrawingWindow.cs: map X11 key codes to
+	System.Drawing key codes.
+
+	* System.Windows.Forms/TextBox.cs: make sure that the graphics
+	objects returned by "CreateGraphics" are properly disposed of,
+	because letting the finalizer do it causes dead-locks under Xsharp.
+
+	* Xsharp/Display.cs: release the display lock while waiting for
+	an event in "XNextEvent", so that other threads can issue X
+	requests in the interim.
+
+	* System/CodeDom/Compiler/CSharpCodeCompiler.cs,
+	System/CodeDom/Compiler/CodeGenerator.cs: implement some of the
+	missing C# code generation TODO's in CodeDom.
+
+2003-07-24  Gopal.V  <gopalv82@symonds.net>
+	
+	* System.Xml/XmlTextWriter.cs: Fix indentation problem with textwriter
+
+2003-07-24  Neil Cawse   <neilcawse@geotab.com>
+
+	* System.Drawing/Bitmap.cs: small change allowing compiling using MS csc
+
+	* System.Drawing/Graphics.cs: DrawRectangle & FillRectangle being transformed
+	twice, Implemented FillRegion, MeasureCharacterRanges
+
+	* System.Drawing/Region.cs:  implemented Regions. Transforms and Regions from
+	Graphics Paths not yet done
+
+	* System.Drawing/StringFormat.cs:  accessibility fix.
+
+	* System.Drawing.Win32/DrawingControlWindow.cs,
+	System.Drawing.Win32/DrawingFont.cs,
+	System.Drawing.Win32/DrawingControlWindow.cs,
+	System.Drawing.Win32/DrawingFont.cs,
+	System.Drawing.Win32/DrawingGraphics.cs,
+	System.Drawing.Win32/DrawingRootTopLevelWindow.cs,
+	System.Drawing.Win32/DrawingToolkit.cs,
+	System.Drawing.Win32/DrawingTopLevelWindow.cs
+	System.Drawing.Win32/DrawingWindow.cs
+	System.Drawing.Win32/Win32.cs: implement focus code, fix timers,
+	FillPolygon outer edge now complies with Toolkit, GetLineSpacing added,
+	Clipping now passed through on Paint.
+
+	* System.Drawing.Xsharp/DrawingGraphics.cs: FillPolygon now filling up
+	to edge. MeasureString 1 too big on y.
+	
+	* System.Drawing.Xsharp/DrawingPopupWindow.cs,
+	System.Drawing.Xsharp/DrawingTopLevelWindow.cs : implemented Focus &
+	invalidating a rectangle.
+
+	* System.Drawing.Xsharp/DrawingWindow.cs : also Focus and invalidation,
+	changed OnPointerMotion to return the current state of the mouse button.
+
+	* System.Windows.Forms/Control.cs:  implemented Focus, Invalidate(Region)
+	and Update()
+	
+	* System.Windows.Forms/TextBox.cs, System.Windows.Forms.TextBoxBase:
+	initial implementation of TextBox.
+
+	* System.Windows.Forms/Themes/DefaultThemePainter.cs: DrawBorder3D
+	eliminated outer background edge to match MS. CSC compile changes
+
+	* samples/samples.build: added in RegionTest.exe and TextBoxTest.exe
+
+	* samples/RegionTest.cs, samples/TextBoxTest.cs: new samples
+
+	* System.Drawing/Toolkit/IToolkitWindow.cs: new Focus() method
+
+2003-07-24  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* Xsharp/Graphics.cs, Xsharp/InputOutputWidget.cs: add the
+	"ExposeRegion" property to the "Xsharp.Graphics" class so that
+	higher layers can query the expose region during an "OnPaint" event.
+
+	* Xsharp/Region.cs, Xsharp/Xlib.cs.in, Xsharp/XsharpSupport.c:
+	add a "GetRectangles()" method to "Xsharp.Region" to allow callers
+	to query the list of rectangles that make up the region.
+
+	* runtime/Microsoft/Win32/FileKeyProvider.cs,
+	runtime/Microsoft/Win32/Registry.cs,
+	runtime/System/Security/SecurityElement.cs: implement a file-based
+	registry provider for non-Win32 systems; the data is stored under
+	the "$HOME/.cli/registry" directory.
+
+	* runtime/System/DateTime.cs,
+	runtime/System/Private/DateTimeFormat/DateTimeFormatter.cs:
+	implement the remaining TODO methods in "System.DateTime".
+
+	* runtime/System/LocalDataStoreSlot.cs,
+	runtime/System/Threading/Thread.cs: implement local data store
+	slots for threads, based around a "[ThreadStatic]" variable.
+
+	* System/Diagnostics/Process.cs: create the "StartInfo" object
+	if one doesn't exist yet.
+
+2003-07-23  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/Reflection/Emit/ILGenerator.cs: Fix minor array size
+	bug in EmitWriteLine()
+	
+2003-07-23  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* runtime/System/Reflection/Emit/AssemblyBuilder.cs,
+	runtime/System/Reflection/Emit/ILGenerator.cs: implement method body
+	output for dynamic assemblies.
+
+2003-07-23  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Security/SecurityElement.cs,
+	tests/runtime/Testruntime.cs,
+	tests/runtime/System/Security/Makefile,
+	tests/runtime/System/Security/SuiteSecurity.cs,
+	tests/runtime/System/Security/TestSecurityElement.cs,
+	tests/runtime/System/Security/TestSecurityExceptions.cs,
+	tests/runtime/System/Security/code-review.txt: some test cases
+	and bug fixes for "System.Security".
+
+2003-07-23  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/Reflection/Emit/ModuleBuilder.cs: Use System.Object
+	as the default parent type.
+
+2002-07-22  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* runtime/System/Reflection/Emit/AssemblyBuilder.cs: update Save.
+
+	* runtime/System/Reflection/Emit/SignatureHelper.cs: correct
+	GetSignature behavior.
+
+2003-07-22  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* Xsharp/Display.cs, Xsharp/Timer.cs: release the display lock
+	when events are dispatched.
+
+	* Xsharp/XSharpSupport.c: implement more of the code necessary
+	to convert DIB's into XImage structures.
+
+2003-07-21  Gopal.V  <gopalv82@symonds.net>
+	
+	* System.Xml/XPath/XmlSortOrder.cs: Fix visibility based on
+	profile.
+
+	* runtime/System/Int32.cs, runtime/System/UInt32.cs, 
+	runtime/System/Int64.cs, runtime/System/UInt64.cs: Effectively
+	double the hash space by removing the "& 0x7FFFFFFF". Halve the 
+	collisions so that now all integers below 32 bits have unique 
+	hashes and all 64 bit integers have only 1 collision in hash space.
+
+	* runtime/System/Enum.cs: Fix CompareTo to match spec , Allow various
+	IConvertible interfaces to convert even when casting is impossible,
+	make GetName less strict.
+
+2003-07-21  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Diagnostics/Process.cs: modify GetMainWindowHandle to
+	take the process ID instead of the process handle.
+
+	* runtime/Platform/DirMethods.cs: remove "DirMethods.Copy",
+	which is no longer used.
+
+	* System/CodeDom/Compiler/CodeGenerator.cs,
+	System/CodeDom/Compiler/Validator.cs: implement identifier validation
+	for the System.CodeDom routines.
+
+2003-07-20  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/Double.cs: Make ECMA compatible by adding some 
+	hacks for supporting NaN conditions.
+
+	* runtime/System/Private/NumberFormat/HexadecimalFormatter.cs: Fix
+	formatting of negative numbers. (bug #3050).
+
+	* runtime/System/Enum.cs: Fix hexadecimal formatting of enums to
+	generate zero padded output.
+
+	* runtime/System/Enum.cs: Fix GetTypeCode() and allow the IsDefined
+	function to use Enum field names as well.
+
+2003-07-20  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* runtime/System/Reflection/Emit/AssemblyBuilder.cs: change how
+	SetEntryPoint is handled and add some argument checks to Save.
+
+2003-07-20  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Drawing/Toolkit/NullToolkit.cs,
+	System.Drawing.Postscript/PostscriptGraphics.cs,
+	System.Drawing.Postscript/PostscriptPen.cs,
+	System.Drawing.Postscript/PostscriptPrintSession.cs,
+	System.Drawing.Postscript/PostscriptToolkit.cs: implement simple
+	line drawing primitives in the Postscript driver.
+
+	* samples/ilrun.sh.in: add "System.Drawing.Postscript" to the
+	list of directories to run samples from the tree.
+
+2003-07-19  Gopal.V  <gopalv82@symonds.net>
+ 
+	* runtime/System/Private/NumberFormat/Formatter.cs:
+	Modify the overflow checking code to detect MinValue negation.
+
+2003-07-19  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Drawing.Postscript/PostscriptGraphics.cs,
+	System.Drawing.Postscript/PostscriptPrintSession.cs: put some
+	basic infrastructure in place to output page headers and
+	footers to "output.ps".
+
+	* System.Drawing/Toolkit/ToolkitManager.cs,
+	System.Drawing/Toolkit/UnixPrintingSystem.cs: create the correct
+	printing system for Unix systems; use the default printer if the
+	printer name is "null".
+
+2003-07-18  Gopal.V  <gopalv82@symonds.net>
+
+	* runtime/System/Private/NumberFormat/Formatter.cs,
+	runtime/System/Private/NumberFormat/DecimalFormatter.cs:
+	Add a special case for Int64.MinValue as it cannot be negated
+	to any positive value.
+
+	* System/Net/HttpWebRequest.cs, System/Net/HttpWebResponse.cs:
+	Fix HttpStream to use the ContentLength to read data.
+
+2003-07-18  Simon Guindon <simon@nureality.ca>
+	
+	* System.Windows.Forms/Control.cs: Fixes updating Parent controls 
+	that a child control has resized and PerformLayout. 
+	(Patch #1744, Gopal).
+
+2003-07-18  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Drawing/Printing/PreviewPrintController.cs,
+	System.Drawing/Printing/PrintController.cs,
+	System.Drawing/Printing/PrintDocument.cs,
+	System.Drawing/Printing/PrintPageEventArgs.cs,
+	System.Drawing/Printing/StandardPrintController.cs,
+	System.Drawing/Toolkit/IToolkitPrintSession.cs: implement the
+	core loop for sending pages to the printer.
+
+	* System.Drawing/Toolkit/UnixPrinter.cs: load the Postscript
+	driver to handle Unix print requests.
+
+	* Makefile.am, configure.in, System.Drawing/Toolkit/NullToolkit.cs,
+	System.Drawing/Toolkit/ToolkitManager.cs,
+	System.Drawing.Postscript/.cvsignore,
+	System.Drawing.Postscript/Makefile.am,
+	System.Drawing.Postscript/PostscriptDriver.cs,
+	System.Drawing.Postscript/PostscriptGraphics.cs,
+	System.Drawing.Postscript/PostscriptPrintSession.cs,
+	System.Drawing.Postscript/PostscriptToolkit.cs,
+	System.Drawing.Postscript/System.Drawing.Postscript.build:
+	add the skeleton of the postscript printer driver to the tree.
+
+	* Generics/*: change the licenses on the Generics library to
+	match the rest of pnetlib.
+
+2003-07-17  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/String.cs: Fix minor bug in format parsing 
+	of multiple digit specifiers.
+
+	* tests/runtime/System/TestString.cs: Add an additional test case for 
+	the above bug.
+	
+2003-07-16  Thong Nguuyen <tum@veridicus.com>
+
+	* tests/System/Threading/TestWaitHandle.cs: Make TestWaitAll check
+	for the right return value when exitContext isn't true.
+	
+2003-07-15  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* System.Windows.Forms/ScrollBar.cs,
+	System.Windows.Forms/Themes/DefaultThemePainter.cs,
+	System.Windows.Forms/Themes/IThemePainter.cs: fix several problems with
+	the drawing of scrollbars, implement DrawGrid, and fix the problems with
+	DrawScrollButton.
+
+2003-07-13  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Windows.Forms/CheckBox.cs, System.Windows.Forms/ComboBox.cs:
+	missing "override" declarations.
+
+2003-07-12  Neil Cawse  <neilc@geotab.ca>
+
+	* System.Windows.Forms/TabControl.cs, TabPage : 
+	New tab control.
+	Other small changes to allow compiling with csc.
+	Added new sample TabTest.cs and updated build file.
+
+2003-07-11  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* sample/FormsHello.cs: Re-insert the explicit Dock settings for
+	the scrollbar examples, and add a second toolbar (not shown by default)
+	which reveals some layout bugs.
+
+2003-07-11  Gopal.V  <gopalv82@symonds.net>
+	
+	* samples/FormsHello.cs: Add a checkbox example.
+	
+2003-07-10  Simon Guindon <simon@nureality.ca>
+
+	* System.Windows.Forms/CheckBox.cs, 
+	System.Windows.Forms/Themes/DefaultThemePainter.cs:
+	added implementation for CheckBox as well as the DrawCheckBox 
+	implementation to draw the control in DefaultThemePainter.
+	(Gopal)
+
+2003-07-10  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* System.Windows.Forms/ScrollBar.cs,
+	System.Windows.Forms/HScrollBar.cs, System.Windows.Forms/VScrollBar.cs,
+	System.Windows.Forms/ScrollEventArgs.cs, samples/FormsHello.cs:
+	add and implement scrollbars, and add a sample HScrollBar and a sample
+	VScrollBar to FormsHello.
+
+	* System.Windows.Forms/ScrollBar.cs: add support for key events, and
+	fix some broken mouse events.
+
+	* System.Windows.Forms/HScrollBar.cs,
+	System.Windows.Forms/VScrollBar.cs, samples/FormsHello.cs: fix default
+	docking behavior.
+
+2003-07-10  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/Microsoft/Win32/Win32KeyProvider.cs: detect Win32 in
+	a way that doesn't produce the side-effect of printing a low-level
+	debug message on non-Win32 platforms.
+
+	* DotGNU.Images/BmpWriter.cs, DotGNU.Images/Frame.cs,
+	DotGNU.Images/IconReader.cs, DotGNU.Images/IconWriter.cs,
+	DotGNU.Images/Image.cs: add Windows icon and cursor support
+	to the "DotGNU.Images" library.
+
+	* DotGNU.Images/Image.cs, System.Drawing/Bitmap.cs,
+	System.Drawing/Image.cs, System.Drawing/System.Drawing.build,
+	System.Drawing.Win32/System.Drawing.Win32.build,
+	System.Drawing.Xsharp/System.Drawing.Xsharp.build,
+	System.Windows.Forms/Forms.build, samples/ilrun.sh.in,
+	samples/samples.build: begin integrating "DotGNU.Images" into
+	the "System.Drawing" library.
+
+2003-07-09  Gopal.V  <gopalv82@symonds.net>
+	
+	* System/Net/WebHeaderCollection.cs, resources/en_US/System/Arg.txt:
+	Internationalize the exceptions in WebHeaderCollection.
+
+	* tools/run_test.sh.in: Fix bug #4222 by adding DotGNU.SSL to the
+	path of the tests.
+
+2003-07-09  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Windows.Forms/ButtonBase.cs: make "Draw" "internal virtual"
+	so that it can be overridden in subclasses.
+
+	* System.Drawing/Toolkit/IToolkit.cs,
+	System.Drawing.Win32/DrawingToolkit.cs,
+	System.Drawing.Xsharp/DrawingToolkit.cs,
+	System.Windows.Forms/Application.cs: put some infrastructure in
+	place to support multi-threaded Forms applications - sending
+	requests to another thread's message loop for execution.
+
+2003-07-07  Gopal.V  <gopalv82@symonds.net>
+
+	* System.Windows.Forms/Themes/DefaultThemePainter.cs: Clear up the
+	drawing code for ScrollButtons with an integers only version.
+
+2003-07-08  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* System.Windows.Forms/ButtonBase.cs,
+	System.Windows.Forms/ControlPaint.cs,
+	System.Windows.Forms/ProgressBar.cs, System.Windows.Forms/ToolBar.cs,
+	System.Windows.Forms/Themes/DefaultThemePainter.cs,
+	System.Windows.Forms/Themes/IThemePainter.cs: Move internal methods in
+	ControlPaint to DefaultThemePainter, and add drawing code for scrollbars
+	and scrollbuttons.
+
+	* System.Windows.Forms/EventId.cs: Add event ids for Scrollbar events.
+
+2003-07-08  Thong Nguyen  <tum@veridicus.com>
+
+	* tests/runtime/System/Threading/TestMonitor.cs: Fix some tests
+	not checking for threading support.
+
+2003-07-08  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* Xsharp/Color.cs, Xsharp/Font.cs, Xsharp/Graphics.cs,
+	Xsharp/Xlib.cs.in, Xsharp/XsharpSupport.c: add preliminary support
+	for the Xft extension - currently commented out because it doesn't
+	work yet.
+
+	* Xsharp/XsharpSupport.c: don't destroy the "matched" pattern
+	after creating the font, or it will cause a segv when the font
+	is destroyed.
+
+	* configure.in, Xsharp/Makefile.am, Xsharp/XsharpSupport.c:
+	add the "--enable-xft" option to configure, to explicitly enable
+	Xft support - we can't auto-detect because some versions of
+	libXft are broken.
+
+	* Xsharp/XsharpSupport.c: begin adding code for converting DIB images
+	into XImage structures.
+
+2003-07-07  Gopal.V  <gopalv82@symonds.net>
+ 	
+	* System/Text/RegularExpressions/category.cs,
+	System/Text/RegularExpressions/ChangeLog: Synchronize with the 
+	original copies.
+
+	* System.Xml/XmlDocument.cs: Replace ReadNode(XmlTextReader) with
+	ReadNode(XmlReader) to match spec.
+
+2003-07-07  Thong Nguyen <tum@veridicus.com>
+
+	tests/runtime/System/Threading/TestThread.cs: Put spin-locks
+	around non-atomic increments in TestStartJoin.
+	
+2003-07-07  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* Makefile.am, configure.in, DotGNU.Images/.cvsignore,
+	DotGNU.Images/BmpReader.cs, DotGNU.Images/BmpWriter.cs,
+	DotGNU.Images/DotGNU.Images.build, DotGNU.Images/Frame.cs,
+	DotGNU.Images/Image.cs, DotGNU.Images/Makefile.am,
+	DotGNU.Images/PixelFormat.cs, DotGNU.Images/RotateFlipType.cs,
+	DotGNU.Images/Utils.cs: add the DotGNU.Images support library.
+
+	* DotGNU.Images/BmpReader.cs, DotGNU.Images/Image.cs,
+	DotGNU.Images/Utils.cs: move the "bit count to pixel format"
+	conversion into "Utils" so that other format loaders can share it.
+
+	* System.Windows.Forms/ControlPaint.cs,
+	System.Windows.Forms/Themes/DefaultThemePainter.cs,
+	System.Windows.Forms/Themes/IThemePainter.cs,
+	System.Windows.Forms/Themes/Makefile,
+	System.Windows.Forms/Themes/ThemeManager.cs: shift the theme
+	handling into the "System.Windows.Forms.Themes" namespace.
+
+2003-07-06  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* System.Windows.Forms/ListControl.cs: Stub some missing methods.
+
+2003-07-06  Gopal.V  <gopalv82@symonds.net>
+	
+	* System.Drawing/Drawing2D/PathGradientBrush.cs: Fix compile error.
+
+2003-07-05  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* System/Net/WebProxy.cs, System.Drawing/ColorBlend.cs,
+	System.Drawing/Drawing2D/Blend.cs,
+	System.Drawing/Drawing2D/PathGradientBrush.cs,
+	System.Windows.Forms/ComboBox.cs, System.Windows.Forms/CommonDialog.cs,
+	System.Windows.Forms/FileDialog.cs,
+	System.Windows.Forms/OpenFileDialog.cs,
+	System.Windows.Forms/PictureBox.cs: Add stubs.
+
+	* System.Drawing/Graphics.cs, System.Drawing/Imaging/Metafile.cs,
+	System.Drawing/Toolkit/IToolkitGraphics.cs,
+	System.Drawing/Toolkit/ToolkitGraphicsBase.cs,
+	System.Drawing.Win32/DrawingGraphics.cs,
+	System.Drawing.Xsharp/DrawingGraphics.cs: Fix some typos in method
+	signatures.
+
+	* System.Drawing/Drawing2D/LinearGradientBrush.cs,
+	System.Drawing/Imaging/ImageAttributes.cs: Stub some missing methods.
+
+2003-07-03  Gopal.V  <gopalv82@symonds.net>
+	
+	* System/Uri.cs: Allow simple file paths to be used as Uris
+
+2003-07-05  Adam Ballai  <minddog@cannibutter.com>
+        
+	* System.Xml/XmlTextReader.cs:  Fix for bug #4194. Incorrect 
+	NodeType state for ReadAttributeValue.
+	* tests/System.Xml/TestXmlTextReader.cs: Add test for 
+	ReadAttributeValue
+	
+2003-07-02  Cecilio Pardo  <cpardo@imayhem.com>
+	
+	* System.Windows.Forms/ListBox.cs: Stub out this class
+	(Patch #1691, Gopal)
+
+2003-07-05  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* System.Windows.Forms/ToolBar.cs: Add support for drop down menus.
+
+2003-07-05  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Xml/Schema/XmlSchemaObjectCollection.cs,
+	runtime/System/Private/StdStream.cs: "override" methods without
+	corresponding "virtual"'s.
+
+	* System/UriFormatException.cs,
+	System/ComponentModel/InvalidEnumArgumentException.cs,
+	System/ComponentModel/WarningException.cs,
+	System/ComponentModel/Win32Exception.cs,
+	System/Configuration/ConfigurationException.cs,
+	System/Net/WebException.cs, System.Xml/XmlException.cs,
+	System.Xml/Schema/XmlSchemaException.cs: add explicit "unchecked"
+	contexts around constants that need it.
+
+2003-07-05  Thong Nguyen  <tum@veridicus.com>
+
+	* runtime/System/IO/StreamReader.cs: Changes to make the reader
+	only detect the byte encoding on the first call to read to
+	prevent unnecessary blocking in the constructor. Also, byte encoding
+	detection is cancelled as soon as an unrecognised marker byte is
+	encountered.
+	
+2003-07-03  Gopal.V  <gopalv82@symonds.net>
+	
+	* System.Windows.Forms/MessageBox.cs: Stub out this control .
+
+2003-07-04  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* System.Windows.Forms/ToolBar.cs: Layout and button drawing fixes.
+	
+	* System.Windows.Forms/ToolBarButton.cs: Fix Contains method.
+
+2003-07-04  Richard Baumann  <biochem333@nyc.rr.com>
+	
+	* System.Windows.Forms/ToolBar.cs: Added and mostly implemented.
+	
+	* System.Windows.Forms/ToolBarButton.cs: Fully implemented.
+	
+	* System.Windows.Forms/ImageList.cs: Fixes to properly deal with the
+	sealed/virtual compile problems in csc. Add support for the
+	RecreateHandle event.
+	
+	* System.Windows.Forms/EventId.cs: Add IDs for ToolBar events.
+	
+	* samples/FormsHello.cs: Add ToolBar example.
+
+2003-07-03  Neil Cawse  <neilc@geotab.ca>
+
+	* System.Windows.Forms/AccessibleObject.cs, 
+	System.Windows.Forms/LinkLabel.cs :	Changes to allow compiling with csc.
+	
+	* System.Windows.Forms/Control.cs :	CreateControl only creates the 
+	toolkit window if it doesnt exist.
+	
+	* System.Drawing/Rectangle.cs : fixed Contains.
+	
+	* System.Drawing.Win32/DrawingWindow.cs, 
+	System.Drawing.Win32/DrawingTopLevelWindow.cs,
+	System.Drawing.Win32/DrawingToolkit.cs, 
+	System.Drawing.Win32/DrawingTextureBrush.cs, 
+	System.Drawing.Win32/DrawingSolidBrush.cs,
+	System.Drawing.Win32/DrawingPen.cs, 
+	System.Drawing.Win32/DrawingHatchBrush, 
+	System.Drawing.Win32/DrawingGraphics.cs, 
+	System.Drawing.Win32/DrawingFont.cs,
+	System.Drawing.Win32/DrawingControlWindow.cs, 
+	System.Drawing.Win32/DrawingBrush.cs, 
+	System.Drawing.Win32/Win32.cs :	More error checking, changed 
+	reparent to be consistent with Drawing.Xsharp.
+
+2003-07-03  Gopal.V  <gopalv82@symonds.net>
+	
+	* System/Net/Sockets/Socket.cs: Implement the SupportsIPv6 property.
+
+2003-07-02  Gopal.V  <gopalv82@symonds.net>
+	
+	* System.Windows.Forms/Screen.cs: Stub out the GetBounds() static
+	methods.
+
+2003-07-02  Cecilio Pardo  <cpardo@imayhem.com>
+
+	* System.Windows.Forms/Binding.cs, 
+	System.Windows.Forms/BindingManagerBase.cs,	
+	System.Windows.Forms/BindingsCollection.cs
+	System.Windows.Forms/CurrencyManager.cs
+	System.Windows.Forms/ListControl.cs: Stub Binding, BindingManagerBase, 
+	BindingCollection, CurrencyManager and ListControl classes of the 
+	System.Windows.Forms namespace.
+	(PAtch #1657, Gopal)
+
+2003-07-02  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* configure.in, Xsharp/Makefile.am: remove "-lX11" from the link
+	line for "libXsharpSupport.so" if X is disabled or not present.
+
+2003-06-28  Thong Nguyen  <tum@veridicus.com>
+
+	* runtime/System/Console.cs: Make default writers synchronized.
+	
+2003-06-28  Neil Cawse  <neilc@geotab.ca>
+
+	* System.Drawing.Win32/DrawingWindow.cs : Mouse events now passing
+	mouse button
+
+2003-06-28  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* csupport/Crt0.cs: add the "SetWideString" helper method.
+
+2003-06-27  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/ComponentModel/MarshalByValueComponent.cs,
+	System.Xml/Xsl/XslTransform.cs: fix a couple of incorrect
+	"Finalize" declarations.
+
+2003-06-26  Thong Nguyen  <tum@veridicus.com>
+	
+	* runtime/System/Threading/Thread.cs: Internal calls and Support for 
+	threading in Pnetlib.(Patch #1654, Gopal)
+
+	* resources/en_US/runtime/Exception.txt: String resources for 
+	Threading functions. (Patch #1660, Gopal)
+
+2003-06-25  Neil Cawse  <neilc@geotab.ca>
+
+	* System.Drawing.Win32/Win32.cs, System.Drawing.Win32/DrawingWindow.cs,
+	System.Drawing.Win32/DrawingToolkit.cs : Implemented RegisterTimer
+	UnRegisterTimer, ScreenToClient and ClientToScreen.
+
+2003-06-25  Neil Cawse  <neilc@geotab.ca>
+
+	* System.Windows.Forms/ControlPaint.cs, System.Windows.Forms/ImageList,
+	System.Windows.Forms/ImageListStreamer, Xsharp/GrabWindow.cs : Small
+	changes to allow compiling with csc.
+
+2003-06-25  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Windows.Forms/TextBox.cs, System.Windows.Forms/TextBoxBase.cs:
+	stub out the "TextBox" control.
+
+2003-06-25  Ian Fung  <if26@cornell.edu>
+	
+	* System.Windows.Forms/LinkLabel.cs: Stubs for the LinkLabel
+	control. (Gopal)
+
+2003-06-24  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Windows.Forms/ContextMenu.cs, System.Windows.Forms/Control.cs,
+	System.Windows.Forms/Form.cs, System.Windows.Forms/MainMenu.cs,
+	System.Windows.Forms/Menu.cs, System.Windows.Forms/MenuItem.cs:
+	stub out the menu-related classes in Forms.
+
+	* Xsharp/GrabWindow.cs, Xsharp/ModifierMask.cs,
+	Xsharp/OverrideWindow.cs, Xsharp/PopupWindow.cs, Xsharp/Screen.cs,
+	Xsharp/Xlib.cs.in: add popup window support to Xsharp, to
+	support menu functionality.
+
+	* System.Drawing.Win32/System.Drawing.Win32.build: the "Win32"
+	backend should not depend upon "Xsharp.dll".
+
+	* System.Drawing.Win32/Win32.cs: work around pnet's lack of
+	structure marshaling.
+
+	* System.Drawing/Toolkit/IToolkit.cs,
+	System.Drawing.Win32/DrawingToolkit.cs,
+	System.Drawing.Xsharp/DrawingPopupWindow.cs,
+	System.Drawing.Xsharp/DrawingToolkit.cs,
+	System.Windows.Forms/PopupControl.cs,
+	Xsharp/GrabWindow.cs, Xsharp/Widget.cs: add the internal
+	"PopupControl" class to Forms, to support popup menus and
+	combox box drop-down lists.
+
+	* System.Drawing/Toolkit/IToolkit.cs,
+	System.Drawing.Win32/DrawingToolkit.cs,
+	System.Drawing.Xsharp/DrawingToolkit.cs,
+	Xsharp/Widget.cs: add some support code for converting between
+	screen and client co-ordinates.
+
+2003-06-23  Gopal.V  <gopalv82@symonds.net>
+	
+	* System.Windows.Forms/Panel.cs: Stub out the Panel control
+
+	* System.Windows.Forms/ControlPaint.cs: Implement the DrawBorder3D
+	method in ControlPaint.
+	
+	* Xsharp/XsharpSupport.c: Fix minor segfault when X fonts are missing
+	families.
+
+2003-06-23  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Drawing/Toolkit/IToolkitEventSink.cs,
+	System.Drawing.Xsharp/DrawingTopLevelWindow.cs,
+	System.Drawing.Xsharp/DrawingWindow.cs,
+	System.Windows.Forms/Control.cs, System.Windows.Forms/Form.cs,
+	System.Windows.Forms/Message.cs,
+	System.Windows.Forms/Win32Constants.cs,
+	Xsharp/InputOnlyWidget.cs, Xsharp/TopLevelWindow.cs:
+	implement key event dispatching.
+
+	* System.Drawing/Toolkit/IToolkit.cs,
+	System.Drawing.Win32/DrawingToolkit.cs,
+	System.Drawing.Xsharp/DrawingToolkit.cs,
+	System.Windows.Forms/Timer.cs, Xsharp/Timer.cs: implement Forms timers.
+
+	* System.Drawing/Toolkit/IToolkitEventSink.cs,
+	System.Drawing.Xsharp/DrawingTopLevelWindow.cs,
+	System.Windows.Forms/Control.cs, System.Windows.Forms/Form.cs,
+	Xsharp/TopLevelWindow.cs: detect when top-level forms are activated
+	or deactivated and dispatch the appropriate events.
+
+	* System.Windows.Forms/ControlPaint.cs: implement some more of
+	the "ControlPaint" utility class.
+
+2003-06-22  Rich Baumann  <biochem333@nyc.rr.com>
+
+	* System.Windows.Forms/ImageList.cs: fix a couple of minor mistakes
+	with handling transparency, and implement the Draw methods.
+
+2003-06-22  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Drawing/Toolkit/ToolkitManager.cs: avoid using the
+	PlatformID.Unix symbol directly in the code so that it will
+	compile under csc.
+
+	* System.Windows.Forms/Application.cs (Application.Exit):
+	work around single-threaded runtime engines that return
+	"null" from "Thread.CurrentThread".
+
+	* System.Drawing/Toolkit/IToolkitEventSink.cs,
+	System.Drawing.Xsharp/DrawingTopLevelWindow.cs,
+	System.Windows.Forms/Application.cs, System.Windows.Forms/Control.cs,
+	System.Windows.Forms/Form.cs, Xsharp/TopLevelWindow.cs: correct
+	"Close" handling for top-level forms; implement "DestroyHandle"
+	and "Dispose".
+
+	* System.Windows.Forms/NativeWindow.cs: stub out "NativeWindow"
+	for the public API, although we don't intend to make use of it.
+
+	* System.Drawing/Toolkit/IToolkit.cs,
+	System.Drawing/Toolkit/IToolkitWindow.cs,
+	System.Drawing.Win32/DrawingToolkit.cs,
+	System.Drawing.Win32/DrawingWindow.cs,
+	System.Drawing.Xsharp/DrawingToolkit.cs,
+	System.Drawing.Xsharp/DrawingTopLevelWindow.cs,
+	System.Drawing.Xsharp/DrawingWindow.cs,
+	System.Windows.Forms/Control.cs, System.Windows.Forms/Form.cs:
+	change the way that client area adjustments are performed.
+
+2003-06-22  Rich Baumann  <biochem333@nyc.rr.com>
+
+	* System.Windows.Forms/ImageList.cs: Implemented as much as I could.
+
+	* System.Windows.Forms/ImageListStreamer.cs: Add stub.
+
+2003-06-22  Gopal.V  <gopalv82@symonds.net>
+	
+	* System/System.build, System.Xml/Xml.build, compat/compat.build
+	csunit/csunit.build, csupport/csupport.build, runtime/runtime.build
+	samples/samples.build, JScript/JScript.build, Basic/Basic.build,
+	System.Net.IrDA/IrDA.build, DotGNU.SSL/SSL.build, 
+	System.Drawing/System.Drawing.build, 
+	System.Drawing.Xsharp/System.Drawing.Xsharp.build,
+	System.Windows.Forms/Forms.build,
+	System.Drawing.Win32/System.Drawing.Win32.build: Add the 
+	"-flatin1-charset" parameter to speed up compilation of ASCII encoded
+	source files.
+
+	* System.Windows.Forms/ControlPaint.cs, 
+	System.Windows.Forms/ProgressBar.cs: Fix minor bug in ProgressBar 
+	rendering.
+
+	* samples/CustomControl.cs : Add a bit more eye candy into the example
+	using MouseMove detection.
+	
+
+2003-06-21  Neil Cawse  <neilc@geotab.ca>
+
+	* System.Drawing.Win32/DrawingBrush.cs,
+	System.Drawing.Win32/DrawingFont.cs,
+	System.Drawing.Win32/DrawingGraphics.cs,
+	System.Drawing.Win32/DrawingPen.cs,
+	System.Drawing.Win32/Win32.cs:
+	Implemented fonts, changed DrawingGraphics to select pens,
+	brushes & fonts to prevent gdi leak on 95/98
+
+2003-06-21  Neil Cawse  <neilc@geotab.ca>
+
+	* Makefile.am, configure.in, System.Drawing.Win32/.cvsignore,
+	System.Drawing.Win32/DrawingBrush.cs,
+	System.Drawing.Win32/DrawingControlWindow.cs,
+	System.Drawing.Win32/DrawingFont.cs,
+	System.Drawing.Win32/DrawingGraphics.cs,
+	System.Drawing.Win32/DrawingHatchBrush.cs,
+	System.Drawing.Win32/DrawingPen.cs,
+	System.Drawing.Win32/DrawingRootTopLevelWindow.cs,
+	System.Drawing.Win32/DrawingSolidBrush.cs,
+	System.Drawing.Win32/DrawingTextureBrush.cs,
+	System.Drawing.Win32/DrawingToolkit.cs,
+	System.Drawing.Win32/DrawingTopLevelWindow.cs,
+	System.Drawing.Win32/DrawingWindow.cs,
+	System.Drawing.Win32/Makefile.am,
+	System.Drawing.Win32/System.Drawing.Win32.build,
+	System.Drawing.Win32/Win32.cs: add the "System.Drawing.Win32"
+	assembly, which provides drawing functionality using the
+	raw Win32 API.
+
+2003-06-21  Simon Guindon  <simon@nureality.ca>
+
+	* System.Windows.Forms/StatusBar.cs,
+	System.Windows.Forms/StatusBarPanel.cs,
+	System.Windows.Forms/StatusBarPanelCollection.cs:
+	begin the implementation of the StatusBar class.
+
+2003-06-21  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Drawing.Xsharp/DrawingPen.cs, Xsharp/Graphics.cs,
+	Xsharp/Xlib.cs.in: implement some of the support code for
+	dashed pens in Xsharp.
+
+	* System.Drawing.Xsharp/DrawingPen.cs, samples/FormsHello.cs:
+	dashed pens only work in X with a line width of 0, not 1.
+
+	* runtime/Platform/InfoMethods.cs, runtime/System/Environment.cs:
+	add the "InfoMethods.GetPlatformID" internalcall to better detect
+	Win32 vs Unix platform differences.
+
+	* System.Drawing/Toolkit/ToolkitManager.cs: better detection
+	code for Win32 systems.
+
+	* System.Windows.Forms/Control.cs, System.Windows.Forms/EventId.cs,
+	System.Windows.Forms/TextBoxBase.cs: stub out the "TextBoxBase"
+	class.
+
+	* System/Diagnostics/ProcessStartInfo.cs: fix bug #4055, where
+	the command-line count wasn't increasing (thanks to Yannis Bres).
+
+	* System.Windows.Forms/ControlPaint.cs: implement the
+	"ControlPaint.DrawBorder" method; compute "darker" and "lighter"
+	versions of colors.
+
+	* System.Drawing.Xsharp/DrawingToolkit.cs, Xsharp/Application.cs,
+	Xsharp/Display.cs, Xsharp/Timer.cs: split the event loop into
+	"ProcessPendingEvents()" and "WaitForEvent()" so that it is
+	possible to return back to the application between events.
+
+	* System.Drawing/Toolkit/IToolkit.cs,
+	System.Drawing.Win32/DrawingToolkit.cs,
+	System.Drawing.Xsharp/DrawingToolkit.cs: remove all references to
+	"IToolkit.Run" because it isn't needed any more.
+
+2003-06-21  Gopal.V  <gopalv82@symonds.net>
+	
+	* System.Windows.Forms/ProgressBar.cs, 
+	System.Windows.Forms/ControlPaint.cs : Split out the entire progressbar
+	drawing code into ControlPaint.
+
+2003-06-20  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Windows.Forms/AccessibleObject.cs, compat/Accessibility.cs:
+	change an indexer that uses an "out" parameter (which is legal
+	in Managed C++ but not C#) into a method instead.
+
+2003-06-19  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Drawing/Toolkit/ToolkitManager.cs: detect Win32 systems
+	and load "System.Drawing.Win32" instead of "System.Drawing.Xsharp".
+
+2003-06-18  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Windows.Forms/ButtonBase.cs,
+	System.Windows.Forms/ContainerControl.cs,
+	System.Windows.Forms/Control.cs, System.Windows.Forms/Form.cs,
+	System.Windows.Forms/HACKING, System.Windows.Forms/Label.cs,
+	System.Windows.Forms/ScrollableControl.cs,
+	System.Windows.Forms/UserControl.cs: "WndProc" should be "protected",
+	not "public".
+
+	* System.Windows.Forms/DateRangeEventArgs.cs,
+	System.Windows.Forms/DateRangeEventHandler.cs,
+	System.Windows.Forms/DrawItemEventArgs.cs,
+	System.Windows.Forms/DrawItemEventHandler.cs,
+	System.Windows.Forms/GridItem.cs,
+	System.Windows.Forms/ItemDragEventArgs.cs,
+	System.Windows.Forms/ItemDragEventHandler.cs,
+	System.Windows.Forms/LabelEditEventArgs.cs,
+	System.Windows.Forms/LabelEditEventHandler.cs,
+	System.Windows.Forms/LinkClickedEventArgs.cs,
+	System.Windows.Forms/LinkClickedEventHandler.cs,
+	System.Windows.Forms/LinkLabel.cs,
+	System.Windows.Forms/LinkLabelLinkClickedEventArgs.cs,
+	System.Windows.Forms/LinkLabelLinkClickedEventHandler.cs,
+	System.Windows.Forms/MeasureItemEventArgs.cs,
+	System.Windows.Forms/MeasureItemEventHandler.cs,
+	System.Windows.Forms/MethodInvoker.cs,
+	System.Windows.Forms/NavigateEventArgs.cs,
+	System.Windows.Forms/NavigateEventHandler.cs,
+	System.Windows.Forms/NodeLabelEditEventArgs.cs,
+	System.Windows.Forms/NodeLabelEditEventHandler.cs,
+	System.Windows.Forms/PropertyTab.cs,
+	System.Windows.Forms/PropertyTabChangedEventArgs.cs,
+	System.Windows.Forms/PropertyTabChangedEventHandler.cs,
+	System.Windows.Forms/PropertyValueChangedEventArgs.cs,
+	System.Windows.Forms/PropertyValueChangedEventHandler.cs,
+	System.Windows.Forms/ScrollEventArgs.cs,
+	System.Windows.Forms/ScrollEventHandler.cs,
+	System.Windows.Forms/SelectedGridItemChangedEventArgs.cs,
+	System.Windows.Forms/SelectedGridItemChangedEventHandler.cs,
+	System.Windows.Forms/SplitterEventArgs.cs,
+	System.Windows.Forms/SplitterEventHandler.cs,
+	System.Windows.Forms/StatusBarDrawItemEventArgs.cs,
+	System.Windows.Forms/StatusBarDrawItemEventHandler.cs,
+	System.Windows.Forms/StatusBarPanel.cs,
+	System.Windows.Forms/StatusBarPanelClickEventArgs.cs,
+	System.Windows.Forms/StatusBarPanelClickEventHandler.cs:
+	missing "*EventArgs" and "*EventHandler" classes for Forms.
+
+2003-06-17  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Windows.Forms/Control.cs, samples/FormsHello.cs:
+	implement docking and anchoring in the "Control" class.
+
+	* System.Windows.Forms/Control.cs, samples/FormsHello.cs:
+	if not anchored on either side, center within the parent's edges.
+
+	* System.Windows.Forms/HACKING: new section on traps to look
+	out for when stubbing classes.
+
+	* configure.in, NEWS: update version and news for the 0.5.8 release.
+
+	* configure.in: update working version to "0.5.9".
+
+	* System.Windows.Forms/CancelEventArgs.cs,
+	System.Windows.Forms/CancelEventHandler.cs,
+	System.Windows.Forms/Control.cs, System.Windows.Forms/EventId.cs,
+	System.Windows.Forms/Form.cs,
+	System.Windows.Forms/InputLanguageChangedEventArgs.cs,
+	System.Windows.Forms/InputLanguageChangedEventHandler.cs,
+	System.Windows.Forms/InputLanguageChangingEventArgs.cs,
+	System.Windows.Forms/InputLanguageChangingEventHandler.cs,
+	System.Windows.Forms/TreeViewCancelEventArgs.cs: stub the rest
+	of the "Form" class, including its event handler dependencies;
+	copy "CancelEvent*" into the forms library to replace the missing
+	component model classes when CONFIG_COMPONENT_MODEL is not defined.
+
+2003-06-16  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* samples/FormsHello.cs: use the client rectangle to paint,
+	not the form bounds.
+
+	* Basic/Basic.build, JScript/JScript.build, System/System.build,
+	System.Drawing/System.Drawing.build, System.Windows.Forms/Forms.build,
+	System.Xml/Xml.build, compat/compat.build, runtime/runtime.build:
+	add assembly version and public key information so that Microsoft's
+	runtime engine doesn't complain about version mismatches.
+
+2003-06-14  Gopal.V  <gopalv82@symonds.net>
+	
+	* samples/samples.build: Add Accessibility.dll to the forms apps
+
+2003-06-14  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Drawing/ColorTranslator.cs, System.Drawing/Font.cs,
+	System.Drawing/Graphics.cs, System.Drawing/Drawing2D/Matrix.cs,
+	System.Drawing/Imaging/WmfPlaceableFileHeader.cs,
+	System.Drawing.Xsharp/DrawingGraphics.cs,
+	System.Windows.Forms/Button.cs, System.Windows.Forms/CheckBox.cs,
+	System.Windows.Forms/Control.cs, System.Windows.Forms/UserControl.cs,
+	Xsharp/InputOnlyWidget.cs: fix some compilation issues for csc
+	(Neil Cawse <neilc@geotab.ca>).
+
+	* System.Windows.Forms/AccessibleObject.cs,
+	System.Windows.Forms/Button.cs, System.Windows.Forms/Control.cs,
+	System.Windows.Forms/Forms.build: provide a default accessibility
+	implementation for the "Control" class.
+
+	* System.Drawing/Color.cs: remove "StructLayout" because it
+	confuses "csc".
+
+	* Xsharp/RootWindow.cs, Xsharp/Xlib.cs.in, Xsharp/XsharpSupport.c:
+	adding some simple support for reading the RESOURCE_MANAGER property.
+
+	* System.Drawing.Xsharp/DrawingToolkit.cs: add some of the
+	infrastructure for RESOURCE_MANAGER - currently disabled.
+
+2003-06-13  Gopal.V  <gopalv82@symonds.net>
+	
+	* System.Windows.Forms/ProgressBar.cs , 
+	System.Windows.Forms/ControlPaint.cs,
+	samples/FormsHello.cs : Implement the ProgressBar control.
+
+2003-06-13  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Windows.Forms/ButtonBase.cs, System.Windows.Forms/Control.cs,
+	System.Windows.Forms/EventId.cs, System.Windows.Forms/Label.cs:
+	implement the "Label" widget.
+
+	* System.Windows.Forms/Label.cs (OnPaint): adjust the text
+	position to account for the border; fill with the background
+	color if "RenderTransparent" is not set.
+
+	* System.Windows.Forms/Form.cs: the "FormStartPosition" property
+	should be called "StartPosition".
+
+	* System.Drawing/Toolkit/IToolkit.cs,
+	System.Drawing.Xsharp/DrawingToolkit.cs,
+	System.Windows.Forms/Control.cs, System.Windows.Forms/Form.cs,
+	Xsharp/TopLevelWindow.cs, Xsharp/Widget.cs, Xsharp/Xlib.cs.in,
+	Xsharp/Types/SizeHintsMask.cs, Xsharp/Types/XSizeHints.cs:
+	implement form centering, in response to "StartPosition".
+
+	* System.Windows.Forms/*: add simple struct, enum, and interface
+	classes to the Forms API.
+
+	* System.Windows.Forms/UserControl.cs: implement the
+	UserControl widget.
+
+	* System.Drawing/Toolkit/IToolkit.cs,
+	System.Drawing.Xsharp/DrawingToolkit.cs,
+	System.Windows.Forms/AmbientProperties.cs,
+	System.Windows.Forms/Application.cs,
+	System.Windows.Forms/ApplicationContext.cs,
+	System.Windows.Forms/BaseCollection.cs,
+	System.Windows.Forms/FeatureSupport.cs,
+	System.Windows.Forms/IFeatureSupport.cs,
+	System.Windows.Forms/OSFeature.cs,
+	System.Windows.Forms/Screen.cs: implement some housekeeping
+	classes within the Forms API.
+
+	* System.Windows.Forms/ArrangeDirection.cs,
+	System.Windows.Forms/ArrangeStartingPosition.cs,
+	System.Windows.Forms/BootMode.cs,
+	System.Windows.Forms/SystemInformation.cs: implement the
+	"SystemInformation" class.
+
+2003-06-12  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Drawing/Graphics.cs,
+	System.Drawing/StringFormat.cs,
+	System.Drawing/Toolkit/IToolkitGraphics.cs,
+	System.Drawing/Toolkit/ToolkitGraphicsBase.cs,
+	System.Drawing.Xsharp/DrawingGraphics.cs,
+	System.Drawing.Xsharp/DrawingPen.cs,
+	System.Windows.Forms/Border3DSide.cs,
+	System.Windows.Forms/Border3DStyle.cs,
+	System.Windows.Forms/Button.cs,
+	System.Windows.Forms/ButtonBase.cs,
+	System.Windows.Forms/ButtonBorderStyle.cs,
+	System.Windows.Forms/ButtonState.cs,
+	System.Windows.Forms/CaptionButton.cs,
+	System.Windows.Forms/Control.cs,
+	System.Windows.Forms/ControlPaint.cs,
+	System.Windows.Forms/FlatStyle.cs,
+	System.Windows.Forms/FrameStyle.cs,
+	System.Windows.Forms/IButtonControl.cs,
+	System.Windows.Forms/ImageList.cs,
+	System.Windows.Forms/MenuGlyph.cs,
+	System.Windows.Forms/ScrollButton.cs,
+	samples/FormsHello.cs: implement the "ButtonBase" and "Button"
+	classes, to provide simple control functionality.
+
+	* System.Drawing/Toolkit/IToolkitWindow.cs,
+	System.Drawing/Toolkit/ToolkitDecorations.cs,
+	System.Drawing/Toolkit/ToolkitEventHandlers.cs,
+	System.Drawing/Toolkit/ToolkitFunctions.cs,
+	System.Drawing/Toolkit/ToolkitWindowFlags.cs,
+	System.Drawing.Xsharp/DrawingTopLevelWindow.cs,
+	System.Drawing.Xsharp/DrawingWindow.cs,
+	System.Windows.Forms/Application.cs,
+	System.Windows.Forms/ContainerControl.cs,
+	System.Windows.Forms/Form.cs,
+	System.Windows.Forms/FormStartPosition.cs,
+	System.Windows.Forms/IContainerControl.cs,
+	System.Windows.Forms/MainMenu.cs,
+	System.Windows.Forms/ScrollableControl.cs,
+	System.Windows.Forms/SizeGripStyle.cs: implement more of the
+	"Form" class.
+
+	* System.Windows.Forms/Control.cs: add the "CreateBackgroundBrush()"
+	helper method.
+
+	* System.Windows.Forms/HACKING: add the "HACKING" file for the
+	Forms implementation.
+
+	* System.Windows.Forms/ButtonBase.cs, System.Windows.Forms/Control.cs,
+	System.Windows.Forms/Form.cs, System.Windows.Forms/HACKING,
+	samples/FormsHello.cs: child controls like "Button" are visible
+	by default, while "Form" controls are hidden by default.
+
+	* System.Windows.Forms/Form.cs: track the "OnTextChanged" event
+	in "Form" to update the window title properly.
+
+2003-06-12  Gopal.V  <gopalv82@symonds.net>
+	
+	* System.Windows.Forms/Control.cs: Fix minor bug with Bounds 
+	property.
+
+	* System.Drawing/Toolkit/ToolkitGraphicsBase.cs: Implement a 
+	cubic bezier algorithm.
+
+	* samples/CustomControl.c: Implement a simple graph custom control
+	with mouse over actions.
+
+2003-06-11  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Windows.Forms/*, Makefile.am, configure.in,
+	System.Drawing/Toolkit/IToolkit.cs,
+	System.Drawing/Toolkit/IToolkitEventSink.cs,
+	System.Drawing/Toolkit/IToolkitWindow.cs,
+	System.Drawing/Toolkit/README,
+	System.Drawing/Toolkit/ToolkitEventHandlers.cs,
+	System.Drawing/Toolkit/ToolkitKeys.cs,
+	System.Drawing/Toolkit/ToolkitMouseButtons.cs,
+	System.Drawing.Xsharp/DrawingToolkit.cs,
+	System.Drawing.Xsharp/DrawingTopLevelWindow.cs,
+	System.Drawing.Xsharp/DrawingWindow.cs, Xsharp/TopLevelWindow.cs,
+	samples/FormsHello.cs, samples/XHello.cs, samples/dummy.cs,
+	samples/ilrun.sh.in, samples/samples.build: initial check-in
+	of a "System.Windows.Forms" implementation (only "Control"
+	works right now); changes to Xsharp and System.Drawing to
+	support Forms; new "FormsHello" sample.
+
+	* System.Drawing/Toolkit/IToolkitEventSink.cs,
+	System.Drawing/Toolkit/IToolkitWindow.cs,
+	System.Drawing.Xsharp/DrawingTopLevelWindow.cs,
+	System.Drawing.Xsharp/DrawingWindow.cs,
+	System.Windows.Forms/BoundsSpecified.cs,
+	System.Windows.Forms/Control.cs, System.Windows.Forms/Form.cs,
+	Xsharp/InputOutputWidget.cs, samples/FormsHello.cs: process
+	user-initiated move and resize events from the window manager;
+	implement "SetBoundsCore" and window invalidation.
+
+2003-06-10  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/IO/MemoryStream.cs: Fix a minor bug in SetLength
+	exception cases.
+	
+	* System/Configuration/DictionarySectionHandler.cs,
+	System/Configuration/IgnoreSectionHandler.cs,
+	System/Configuration/NameValueFileSectionHandler.cs,
+	System/Configuration/NameValueSectionHandler.cs,
+	System/Configuration/SingleTagSectionHandler.cs	: Add a missing
+	"public" modifier to the 'Create' method. 
+
+	* System/ComponentModel/PropertyDescriptor.cs: Stub out some of
+	the functionality for compatibility.
+	
+2003-06-10  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Drawing/*, System.Xml/Xsl/XsltCompileException.cs,
+	System.Xml/Xsl/XsltException.cs, Xsharp/Graphics.cs,
+	runtime/System/Runtime/InteropServices/Marshal.cs,
+	tests/runtime/System/Runtime/InteropServices/TestMarshal.cs:
+	various fixes to compile in non-full profiles.
+
+2003-06-09  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Drawing/Brush.cs, System.Drawing/Brushes.cs,
+	System.Drawing/ColorConverter.cs, System.Drawing/Font.cs,
+	System.Drawing/FontFamily.cs, System.Drawing/Graphics.cs,
+	System.Drawing/Pens.cs, System.Drawing/PointConverter.cs,
+	System.Drawing/RectangleConverter.cs, System.Drawing/SizeConverter.cs,
+	System.Drawing/StringFormat.cs, System.Drawing/SystemBrushes.cs,
+	System.Drawing/SystemPens.cs, System.Drawing/TextureBrush.cs,
+	System.Drawing/ToolboxBitmapAttribute.cs,
+	System.Drawing/Drawing2D/Matrix.cs,
+	System.Drawing/Printing/PrinterUnitConvert.cs,
+	System.Drawing/Toolkit/IToolkit.cs,
+	System.Drawing/Toolkit/IToolkitFont.cs,
+	System.Drawing/Toolkit/IToolkitGraphics.cs,
+	System.Drawing/Toolkit/ToolkitGraphicsBase.cs,
+	System.Drawing.Xsharp/DrawingFont.cs,
+	System.Drawing.Xsharp/DrawingGraphics.cs,
+	System.Drawing.Xsharp/DrawingTextureBrush.cs,
+	System.Drawing.Xsharp/DrawingToolkit.cs,
+	Xsharp/FontStyle.cs, Xsharp/XsharpSupport.c: font management;
+	texture brushes; some type converters; system brushes and pens.
+
+2003-06-08  Gopal.V  <gopalv82@symonds.net>
+	
+	* System.Xml/Xsl/IXsltContextFunction.cs, System.Xml/Xsl/XslTransform.cs,
+	System.Xml/Xsl/IXsltContextVariable.cs, System.Xml/Xsl/XsltException.cs,
+	System.Xml/Xsl/XsltArgumentList.cs, System.Xml/Xsl/XsltContext.cs,
+	System.Xml/Xsl/XsltCompileException.cs: Stub out the System.Xml.Xsl
+	namespace.
+
+2003-06-08  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* Makefile.am, configure.in, System.Drawing/*, System.Drawing.Xsharp/*:
+	add the "System.Drawing" and "System.Drawing.Xsharp" assemblies.
+
+	* Xsharp/Bitmap.cs, resources/en_US/Xsharp/Xsharp.txt: add new
+	constructors to "Xsharp.Bitmap" which allow bitmaps to be built
+	from xbm data in a "byte[]" buffer.
+
+	* System.Drawing.Xsharp/DrawingHatchBrush.cs: implement hatch brushes.
+
+	* auto_gen.sh, libtool.m4: add some m4 support code for libtool.
+
+	* tests/runtime/System/TestArgIterator.cs: disable the ArgIterator
+	tests because they are creating some strange problems under Cygwin.
+
+	* auto_gen.sh: back out previous change to auto_gen.sh as it causes
+	other problems.
+
+2003-06-07  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* Xsharp/PlaceholderWindow.cs, Xsharp/RootWindow.cs,
+	Xsharp/Screen.cs, Xsharp/TopLevelWindow.cs, Xsharp/Widget.cs,
+	Xsharp/Xlib.cs.in, resources/en_US/Xsharp/Xsharp.txt:
+	implement "parent-less" widgets using a placeholder window;
+	add support for widget reparenting.
+
+	* .cvsignore, config.guess, config.sub, configure.in, libtool.m4,
+	ltcf-c.sh, ltconfig, ltmain.sh, Xsharp/.cvsignore, Xsharp/Makefile.am,
+	Xsharp/Makefile.in, Xsharp/XsharpSupport.c: add the shared library
+	"libXsharpSupport.so" to provide C support routines to Xsharp
+	which cannot be easily implemented in C#.
+
+	* Xsharp/Makefile.in: remove a file from the CVS server which
+	should not be there.
+
+	* Xsharp/Display.cs, Xsharp/Timer.cs, Xsharp/TimerCallback.cs,
+	Xsharp/Xlib.cs.in, resources/en_US/Xsharp/Xsharp.txt: add
+	timeout support to Xsharp.
+
+	* Xsharp/Bitmap.cs, Xsharp/Display.cs, Xsharp/Graphics.cs,
+	Xsharp/Image.cs, Xsharp/Pixmap.cs, Xsharp/Xlib.cs.in,
+	resources/en_US/Xsharp/Xsharp.txt, samples/XHello.cs,
+	samples/dotgnu-logo.jpg: add image loading and drawing facilities,
+	using Imlib to do the loading; update XHello to display the DotGNU
+	logo instead of crossed lines.
+
+	* Xsharp/Display.cs, Xsharp/Font.cs, Xsharp/FontExtents.cs,
+	Xsharp/Graphics.cs, Xsharp/Xlib.cs.in, Xsharp/XsharpSupport.c:
+	add font handling code to Xsharp.
+
+	* Xsharp/FontExtents.cs, Xsharp/Graphics.cs, Xsharp/XsharpSupport.c:
+	use the logical extents for text drawing/measuring, not the
+	ink extents.
+
+	* .cvsignore, auto_gen.sh, libtool.m4, ltcf-c.sh, ltconfig,
+	ltmain.sh: remove the libtool files and replace with a call
+	to libtoolize in auto_gen.sh instead; hopefully this will
+	pick up the right versions from the user's system.
+
+2003-06-06  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* Xsharp/Application.cs, Xsharp/Graphics.cs, Xsharp/Xlib.cs.in:
+	add some more drawing primitives to Xsharp.Graphics; use the
+	correct parameters for "LastIndexOf" in the "Appliction" constructor.
+
+	* Xsharp/EventHandlers.cs, Xsharp/InputOnlyWidget.cs,
+	Xsharp/InputOutputWidget.cs, Xsharp/TopLevelWindow.cs,
+	Xsharp/Widget.cs, samples/XHello.cs, samples/ilrun.sh.in:
+	change event handlers into protected virtual methods in Xsharp,
+	to make it easier to use as the base of larger widget frameworks
+	(the framework can map the virtuals to events if necessary).
+
+	* resources/en_US/Xsharp/Xsharp.txt: add a missing string resource.
+
+	* Xsharp/Display.cs, Xsharp/MotifDecorations.cs,
+	Xsharp/MotifFunctions.cs, Xsharp/MotifInputType.cs,
+	Xsharp/TopLevelWindow.cs, Xsharp/Widget.cs, Xsharp/Xlib.cs.in:
+	implement "Raise", "Lower", and Motif window manager hints.
+
+2003-06-05  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Runtime/Serialization/ObjectManager.cs,
+	tests/runtime/Testruntime.cs,
+	tests/runtime/System/Runtime/Serialization/Makefile,
+	tests/runtime/System/Runtime/Serialization/SuiteSerialization.cs,
+	tests/runtime/System/Runtime/Serialization/TestObjectIDGenerator.cs,
+	tests/runtime/System/Runtime/Serialization/TestObjectManager.cs,
+	tests/runtime/System/Runtime/Serialization/TestSerializationException.cs,
+	tests/runtime/System/Runtime/Serialization/code-review.txt:
+	make fixups more efficient in "ObjectManager"; add some test cases
+	for "System.Runtime.Serialization".
+
+	* runtime/System/Char.cs: fix "Char.GetNumericValue" so that it
+	returns the correct value for decimal digits.
+
+2003-06-04  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Arg.txt,
+	resources/en_US/runtime/Reflection.txt,
+	runtime/System/Runtime/InteropServices/Marshal.cs,
+	tests/runtime/System/Runtime/InteropServices/SuiteInteropServices.cs,
+	tests/runtime/System/Runtime/InteropServices/TestMarshal.cs:
+	test cases and bug fixes for System.Runtime.InteropServices.Marshal.
+
+	* tests/runtime/Testruntime.cs,
+	tests/runtime/System/Runtime/CompilerServices/Makefile,
+	tests/runtime/System/Runtime/CompilerServices/SuiteCompilerServices.cs,
+	tests/runtime/System/Runtime/CompilerServices/TestCompilerServices.cs,
+	tests/runtime/System/Runtime/CompilerServices/code-review.txt:
+	test cases for System.Runtime.CompilerServices.
+
+	* runtime/System/Runtime/Serialization/Formatters/Binary/BinaryFormatter.cs:
+	minor fix - call the correct version of "Serialize".
+
+	* runtime/System/Runtime/Serialization/ObjectIDGenerator.cs:
+	use a modified hash table for the object ID generator that
+	compares keys using object identity, not "Equals".
+
+2003-06-03  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/IO/BufferedStream.cs: Fix a number of potential
+	issues in buffering and flushing operations.
+
+2003-06-03  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Format.txt, runtime/System/DateTime.cs,
+	runtime/System/String.cs, runtime/System/Globalization/CultureInfo.cs,
+	runtime/System/Globalization/DateTimeFormatInfo.cs,
+	runtime/System/Private/DateTimeFormat/DateTimeFormatTemplate.cs,
+	runtime/System/Private/DateTimeFormat/DateTimeParser.cs,
+	runtime/System/Private/DateTimeFormat/ParsedDateTime.cs:
+	rewrite DateTimeParser to be culture-sensitive and more efficient.
+
+	* I18N/*: make the DateTime patterns accessible to ECMA builds.
+
+	* maintain.xml: remove maintain.xml because it is hopelessly
+	out of date and no longer actively used.
+
+	* runtime/System/Private/DateTimeFormat/DateTimeFormatter.cs:
+	ECMA-compatibility fixes in the date/time formatting routines.
+
+	* tests/runtime/Testruntime.cs,
+	tests/runtime/System/ExceptionTester.cs,
+	tests/runtime/System/Runtime/InteropServices/Makefile,
+	tests/runtime/System/Runtime/InteropServices/SuiteInteropServices.cs,
+	tests/runtime/System/Runtime/InteropServices/TestGCHandle.cs,
+	tests/runtime/System/Runtime/InteropServices/TestInteropServices.cs,
+	tests/runtime/System/Runtime/InteropServices/code-review.txt:
+	test cases for most of the System.Runtime.InteropServices classes.
+
+2003-06-02  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Xml/XmlConvert.cs: implement "ToGuid" and "ToString(Guid)"
+	(thanks to Dennis Hayes <denisraytek@yahoo.com>).
+
+	* runtime/System/Globalization/HebrewCalendar.cs: implement the
+	missing functionality in HebrewCalendar.
+
+	* I18N/*: add support for DisplayName, EnglishName, and
+	NativeName, based on the information in the locale files;
+	move the English locales into "I18N.dll" to support EnglishName.
+
+	* I18N/*: remove the final dependencies on CultureNameTable
+	by moving the name information into the culture handlers.
+
+	* tests/runtime/System/TestString.cs: remove some currency and
+	number formatting tests because cultures make them unpredictable.
+
+	* I18N/Common/Manager.cs, I18N/Common/RegionData.cs,
+	I18N/Common/RegionName.cs, I18N/Common/RegionNameTable.cs:
+	remove redundant information from RegionNameTable.
+
+	* I18N/*, I18N/Common/RegionName.cs, I18N/Common/RegionNameTable.cs,
+	I18N/Common/RootCulture.cs, I18N/tools/loc2cul.c: fetch currency
+	symbol and digit information from the region name table because
+	the ICU locale information is unreliable.
+
+2003-06-01  Gopal.V  <gopalv82@symonds.net>
+	
+	* System/Uri.cs: Remove multiple static constructors in the code.
+
+	* System/ComponentModel/TypeConvertor.cs: Fix a small compatibilty
+	issue.
+
+2003-06-01  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* I18N/CJK/*, I18N/Common/CultureName.cs,
+	I18N/Common/CultureNameTable.cs, I18N/Common/RootCulture.cs,
+	I18N/Common/root.txt, I18N/MidEast/*, I18N/Other/*,
+	I18N/West/*.cs, I18N/tools/.cvsignore, I18N/tools/cvtcul.sh,
+	I18N/tools/loc2cul.c: add culture handling for DateTimeFormatInfo
+	and NumberFormatInfo data.
+
+	* I18N/Common/Manager.cs, runtime/System/Globalization/CompareInfo.cs,
+	runtime/System/Globalization/CultureInfo.cs,
+	runtime/System/Private/CultureName.cs,
+	runtime/System/Private/CultureNameTable.cs,
+	runtime/System/Resources/ResourceManager.cs: remove the culture
+	name table from "mscorlib" because it is now in "I18N".
+
+	* runtime/System/DateTime.cs,
+	runtime/System/Private/DateTimeFormat/DateTimeFormatter.cs,
+	runtime/System/Private/DateTimeFormat/DateTimeParser.cs:
+	rewrite the DateTimeFormatter to be culture-sensitive and
+	more efficient.
+
+	* runtime/System/Globalization/Calendar.cs: implement "GetWeekOfYear".
+
+2003-05-31  Gopal.V  <gopalv82@symonds.net>
+	
+	* System/Net/WebRequest.cs, System/Net/HttpWebRequest.cs,
+	System/System.build: Enable SSL support for HttpWebRequest.
+
+	* System/Net/HttpWebRequest.cs: Allow the use of IPv6 addresses 
+	to connect via HttpWebRequest.
+
+	* System/Net/HttpWebRequest.cs: Re-adjust SSL negotiation procedures 
+	to dispose a session immediately after connection.
+
+	* System/Net/HttpWebRequest.cs, profiles/compact, profiles/compact-fp, 
+	profiles/ecma, profiles/full, profiles/kernel, profiles/kernel-fp, 
+	profiles/mscompact, profiles/tiny, profiles/tiny-fp,: Make SSL support 
+	conditional to the CONFIG_SSL profile option.
+	
+	* System/Net/HttpWebRequest.cs: Re-adjust SSL negotiation procedures.
+	
+	* resources/en_US/System/NotSupp.txt: Add the exception string for
+	NotSupp_SSL. 
+
+2003-05-31  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* I18N/Common/Manager.cs, I18N/Common/RegionData.cs,
+	I18N/Common/RegionName.cs, I18N/Common/RegionNameTable.cs,
+	runtime/System/Globalization/RegionInfo.cs,
+	runtime/System/Private/RegionName.cs,
+	runtime/System/Private/RegionNameTable.cs: move the region
+	name table into the I18N assembly.
+
+	* JScript/jsrun.cs, JScript/Execute/EngineInstance.cs,
+	JScript/Vsa/ScriptStream.cs, JScript/Vsa/VsaEngine.cs,
+	System/Diagnostics/DefaultTraceListener.cs,
+	csunit/TestMain.cs, csupport/Crt0.cs, profiles/compact,
+	profiles/compact-fp, profiles/ecma, profiles/full,
+	profiles/kernel, profiles/kernel-fp, profiles/mscompact,
+	profiles/tiny, profiles/tiny-fp, runtime/System/Console.cs,
+	runtime/System/Private/StdReader.cs,
+	runtime/System/Private/StdStream.cs,
+	samples/sslfetch.cs: add the CONFIG_SMALL_CONSOLE profile
+	option, which strips System.Console down to a smaller size.
+
+	* I18N/Common/Manager.cs, runtime/System/Globalization/CompareInfo.cs,
+	runtime/System/Globalization/CultureInfo.cs,
+	runtime/System/Globalization/_I18NCultureHandler.cs: remove
+	"_I18NCultureHandler" and inherit handlers from "CultureInfo" instead.
+
+	* Basic/Basic.build, JScript/JScript.build, System/System.build,
+	System.Net.IrDA/IrDA.build, System.Xml/Xml.build,
+	compat/compat.build, samples/samples.build,
+	tests/JScript/TestJScript.build, tests/System/TestSystem.build,
+	tests/System.Xml/TestXml.build, tests/runtime/Testruntime.build:
+	fix *.build files to include the correct path for DotGNU.SSL.
+
+2003-05-30  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/ComponentModel/ListChangedEventHandler.cs: correct a
+	mistake in the declaration of the second parameter.
+
+2003-05-29  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* all/*: add new profile options - CONFIG_COM_INTEROP, CONFIG_CODEDOM,
+	CONFIG_CRYPTO, CONFIG_X509_CERTIFICATES.
+
+	* runtime/System/Security/Cryptography/ASN1Parser.cs,
+	runtime/System/Security/Cryptography/ASN1Type.cs,
+	runtime/System/Security/Cryptography/CryptographicException.cs,
+	runtime/System/Security/Cryptography/X509Certificates/X509Certificate.cs:
+	fixes to CONFIG_X509_CERTIFICATES mode when CONFIG_CRYPTO is
+	not present.
+
+	* all/*: add new profile options - CONFIG_PERMISSIONS and
+	CONFIG_POLICY_OBJECTS.
+
+	* all/*: add new profile options - CONFIG_EXTENDED_DIAGNOSTICS,
+	CONFIG_COMPONENT_MODEL, CONFIG_COMPONENT_MODEL_DESIGN,
+	CONFIG_ISOLATED_STORAGE.
+
+	* profiles/mscompact: add a new profile that roughly corresponds
+	to the MS Compact .NET Framework.
+
+	* Basic/*: modifications to build the VB library in ECMA_COMPAT modes.
+
+2003-05-28  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Net/SocketAddress.cs, System/Net/Sockets/Socket.cs,
+	System/Platform/SocketMethods.cs: modify the internalcall interface
+	for sockets so that IPv4, IPv6, and IrDA socket addresses will work.
+
+	* System/Net/Sockets/Socket.cs: keep ProtocolType.Unspecified if
+	creating an IrDA socket.
+
+	* Makefile.am, configure.in, Xsharp/*: add the Xsharp library
+	to pnetlib.
+
+	* samples/XHello.cs, samples/samples.build: add an Xsharp example.
+
+	* configure.in, Xsharp/Xsharp.build, resources/en_US/Makefile.am,
+	resources/en_US/Xsharp/.cvsignore, resources/en_US/Xsharp/Makefile.am,
+	resources/en_US/Xsharp/Xsharp.txt: add the Xsharp resources.
+
+	* System/Uri.cs, System.Xml/XPath/XPathException.cs, Xsharp/S.cs,
+	runtime/System/IO/MemoryStream.cs, samples/XHello.cs,
+	samples/samples.build: minor fixes to build in non-full profiles.
+
+2003-05-27  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Net/EndPoint.cs, System/Net/IPAddress.cs,
+	System/Net/IPEndPoint.cs, System/Net/SocketAddress.cs,
+	resources/en_US/System/Arg.txt: implement socket address serialization
+	properly; add IPv6 support to IPEndPoint and IPAddress.
+
+	* Makefile.am, configure.in, DotGNU.SSL/README, DotGNU.SSL/.cvsignore,
+	DotGNU.SSL/ISecureSession.cs, DotGNU.SSL/ISecureSessionProvider.cs,
+	DotGNU.SSL/Makefile.am, DotGNU.SSL/OpenSSL.cs, DotGNU.SSL/Protocol.cs,
+	DotGNU.SSL/SSL.build, DotGNU.SSL/SessionProviderFactory.cs,
+	DotGNU.SSL/Utils.cs, samples/ilrun.sh.in, samples/samples.build,
+	samples/sslfetch.cs: add the "DotGNU.SSL" library, wrapped around
+	OpenSSL, for use in "System.Net" to implement https; add the
+	"sslfetch" sample to demonstrate how to use it.
+
+2003-05-27  Gopal.V  <gopalv82@symonds.net>
+	
+	* System/ComponentModel/PropertyDescriptor.cs: Stub out a bit more
+	for compatibility.
+
+	* System/ComponentModel/MarshalByValueComponent.cs: Remove the exception
+	in constructor.
+
+	* System/Net/IPv6Address.cs: Remove IPv6Address and incorporate 
+	the functionality into IPAddress class.
+
+	* System/Net/IPAddress.cs , System/Uri.cs: Implement IPv6 Parse and
+	ToString for IPAddress classes.
+
+	* runtime/System/Type.cs : Implement GetTypeCode()
+	
+	* runtime/System/Collections/ArrayList.cs: Remove error when IndexOf()
+	is called with an empty list.
+
+2003-05-26  Gopal.V  <gopalv82@symonds.net>
+	
+	* System/Net/WebClient.cs: Implement MIME based file uploads using
+	multipart/form-data and boundaries.
+	
+	* System.Xml/XPath/XmlCaseOrder.cs,
+	System.Xml/XPath/XmlDataType.cs,
+	System.Xml/XPath/XmlSortOrder.cs,
+	System.Xml/XPath/XPathDocument.cs,
+	System.Xml/XPath/XPathException.cs,
+	System.Xml/XPath/XPathExpression.cs,
+	System.Xml/XPath/XPathNamespaceScope.cs,
+	System.Xml/XPath/XPathNodeIterator.cs,
+	System.Xml/XPath/XPathNodeType.cs,
+	System.Xml/XPath/XPathNavigator.cs,
+	System.Xml/XPath/XPathResultType.cs : Add some non-ecma classes and 
+	enums to the System.Xml.XPath namespace and stub out unimplemented
+	methods and properties
+
+	* System/ComponentModel/PropertyDescriptorCollection.cs,
+	System.Xml/XmlConvert.cs: A few non-Ecma additions for compatibility
+	with external libraries.
+
+2003-05-26  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Diagnostics/BooleanSwitch.cs,
+	System/Diagnostics/CounterCreationData.cs,
+	System/Diagnostics/CounterSample.cs,
+	System/Diagnostics/EventLog.cs,
+	System/Diagnostics/EventLogEntry.cs,
+	System/Diagnostics/EventLogEntryCollection.cs,
+	System/Diagnostics/EventLogPermission.cs,
+	System/Diagnostics/EventLogPermissionAttribute.cs,
+	System/Diagnostics/EventLogPermissionEntryCollection.cs,
+	System/Diagnostics/EventLogTraceListener.cs,
+	System/Diagnostics/ICollectData.cs,
+	System/Diagnostics/PerformanceCounter.cs,
+	System/Diagnostics/PerformanceCounterCategory.cs,
+	System/Diagnostics/PerformanceCounterManager.cs,
+	System/Diagnostics/Process.cs,
+	System/Diagnostics/ProcessModule.cs,
+	System/Diagnostics/ProcessStartInfo.cs,
+	System/Diagnostics/ProcessThread.cs,
+	System/Diagnostics/ProcessThreadCollection.cs,
+	System/Diagnostics/TraceListenerCollection.cs: signature-compatibility
+	fixes for "System.Diagnostics".
+
+	* System/Configuration/SingleTagSectionHandler.cs: fix a
+	spelling mistake.
+
+	* System/IO/FileSystemWatcher.cs,
+	System/IO/InternalBufferOverflowException.cs: signature-compatibility
+	fixes for "System.IO".
+
+	* System/Security/Permissions/ResourcePermissionBase.cs: missing
+	fields.
+
+	* runtime/*, System/*, System.Xml/*, JScript/*, profiles/*:
+	add the CONFIG_SERIALIZATION option to the profiles.
+
+	* JScript/*, System/*, profiles/*, runtime/*: add the
+	CONFIG_REFLECTION_EMIT option to the profiles.
+
+	* Makefile.am, configure.in, System/Net/EndPoint.cs,
+	System.Net.IrDA/.cvsignore, System.Net.IrDA/IrDA.build,
+	System.Net.IrDA/IrDACharacterSet.cs, System.Net.IrDA/IrDAClient.cs,
+	System.Net.IrDA/IrDADeviceInfo.cs, System.Net.IrDA/IrDAEndPoint.cs,
+	System.Net.IrDA/IrDAHints.cs, System.Net.IrDA/IrDAListener.cs,
+	System.Net.IrDA/Makefile.am, System.Net.IrDA/S.cs,
+	resources/en_US/Makefile.am,
+	resources/en_US/System.Net.IrDA/.cvsignore,
+	resources/en_US/System.Net.IrDA/IrDA.txt,
+	resources/en_US/System.Net.IrDA/Makefile.am: implement the
+	"System.Net.IrDA" assembly, which is found in the .NET Compact
+	Framework.
+
+2003-05-25  Gopal.V  <gopalv82@symonds.net>
+	
+	* System/Net/WebClient.cs: Implement this non-ecma class partially for
+	web access abstraction.
+	
+	* System/Net/DnsPermission.cs, System/Net/GlobalProxySelection.cs,
+	System/Net/HttpVersion.cs: Fix up a couple of minor visibility 
+	non-ECMA differences.
+
+2003-05-25  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Configuration/AppSettingsReader.cs,
+	System/Configuration/ConfigurationSettings.cs,
+	System/Configuration/DictionarySectionHandler.cs,
+	System/Configuration/IgnoreSectionHandler.cs,
+	System/Configuration/Makefile,
+	System/Configuration/NameValueFileSectionHandler.cs,
+	System/Configuration/NameValueSectionHandler.cs,
+	System/Configuration/SingleTagSectionHandler.cs: missing classes
+	in the "System.Configuration" namespace.
+
+	* System/Configuration/EventLogInstaller.cs: remove a class that
+	isn't supposed to be in the "System" assembly.
+
+2003-05-24  Gopal.V  <gopalv82@symonds.net>
+	
+	* System/Uri.cs: Re-write Canonicalize() and finish normalization
+	of Uris .
+	
+	* System/Uri.cs: Implement MakeRelative() for Uris.
+
+	* System/Net/IPv6Address.cs, System/Uri.cs: Add a new IPv6Address
+	class and implement IPv6 identification in System.Uri.
+
+	* tests/System/TestUri.cs: Cleanup and uncomment some of the regression
+	tests & add some new tests.
+
+2003-05-24  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/ComponentModel/LicenseContext.cs,
+	System/ComponentModel/Design/ActiveDesignerEventArgs.cs,
+	System/ComponentModel/Design/ActiveDesignerEventHandler.cs,
+	System/ComponentModel/Design/CheckoutException.cs,
+	System/ComponentModel/Design/CommandID.cs,
+	System/ComponentModel/Design/ComponentChangedEventArgs.cs,
+	System/ComponentModel/Design/ComponentChangedEventHandler.cs,
+	System/ComponentModel/Design/ComponentChangingEventArgs.cs,
+	System/ComponentModel/Design/ComponentChangingEventHandler.cs,
+	System/ComponentModel/Design/ComponentEventArgs.cs,
+	System/ComponentModel/Design/ComponentEventHandler.cs,
+	System/ComponentModel/Design/ComponentRenameEventArgs.cs,
+	System/ComponentModel/Design/ComponentRenameEventHandler.cs,
+	System/ComponentModel/Design/DesignerCollection.cs,
+	System/ComponentModel/Design/DesignerEventArgs.cs,
+	System/ComponentModel/Design/DesignerEventHandler.cs,
+	System/ComponentModel/Design/DesignerTransaction.cs,
+	System/ComponentModel/Design/DesignerTransactionCloseEventArgs.cs,
+	System/ComponentModel/Design/DesignerTransactionCloseEventHandler.cs,
+	System/ComponentModel/Design/DesignerVerb.cs,
+	System/ComponentModel/Design/DesignerVerbCollection.cs,
+	System/ComponentModel/Design/DesigntimeLicenseContext.cs,
+	System/ComponentModel/Design/DesigntimeLicenseContextSerializer.cs,
+	System/ComponentModel/Design/HelpContextType.cs,
+	System/ComponentModel/Design/HelpKeywordType.cs,
+	System/ComponentModel/Design/IComponentChangeService.cs,
+	System/ComponentModel/Design/IDesigner.cs,
+	System/ComponentModel/Design/IDesignerEventService.cs,
+	System/ComponentModel/Design/IDesignerFilter.cs,
+	System/ComponentModel/Design/IDesignerHost.cs,
+	System/ComponentModel/Design/IDesignerOptionService.cs,
+	System/ComponentModel/Design/IDictionaryService.cs,
+	System/ComponentModel/Design/IEventBindingService.cs,
+	System/ComponentModel/Design/IExtendedListService.cs,
+	System/ComponentModel/Design/IExtenderProviderService.cs,
+	System/ComponentModel/Design/IHelpService.cs,
+	System/ComponentModel/Design/IMenuCommandService.cs,
+	System/ComponentModel/Design/IReferenceService.cs,
+	System/ComponentModel/Design/IResourceService.cs,
+	System/ComponentModel/Design/IRootDesigner.cs,
+	System/ComponentModel/Design/ISelectionService.cs,
+	System/ComponentModel/Design/IServiceContainer.cs,
+	System/ComponentModel/Design/ITypeDescriptorFilterService.cs,
+	System/ComponentModel/Design/ITypeResolutionService.cs,
+	System/ComponentModel/Design/Makefile,
+	System/ComponentModel/Design/MenuCommand.cs,
+	System/ComponentModel/Design/SelectionTypes.cs,
+	System/ComponentModel/Design/ServiceContainer.cs,
+	System/ComponentModel/Design/ServiceCreatorCallback.cs,
+	System/ComponentModel/Design/StandardCommands.cs,
+	System/ComponentModel/Design/StandardToolWindows.cs,
+	System/ComponentModel/Design/ViewTechnology.cs,
+	System/ComponentModel/Design/Serialization/ContextStack.cs,
+	System/ComponentModel/Design/Serialization/DesignerLoader.cs,
+	System/ComponentModel/Design/Serialization/DesignerSerializerAttribute.cs,
+	System/ComponentModel/Design/Serialization/IDesignerLoaderHost.cs,
+	System/ComponentModel/Design/Serialization/IDesignerLoaderService.cs,
+	System/ComponentModel/Design/Serialization/IDesignerSerializationManager.cs,
+	System/ComponentModel/Design/Serialization/IDesignerSerializationProvider.cs,
+	System/ComponentModel/Design/Serialization/IDesignerSerializationService.cs,
+	System/ComponentModel/Design/Serialization/INameCreationService.cs,
+	System/ComponentModel/Design/Serialization/InstanceDescriptor.cs,
+	System/ComponentModel/Design/Serialization/Makefile,
+	System/ComponentModel/Design/Serialization/ResolveNameEventArgs.cs,
+	System/ComponentModel/Design/Serialization/ResolveNameEventHandler.cs,
+	System/ComponentModel/Design/Serialization/RootDesignerSerializerAttribute.cs,
+	resources/en_US/System/Exception.txt: implement missing classes in
+	the "System.ComponentModel.Design" namespace.
+
+	* System/Security/Cryptography/X509Certificates/X509CertificateCollection.cs:
+	implement the missing "X509CertificateCollection" class.
+
+	* System/IO/ErrorEventArgs.cs,
+	System/IO/ErrorEventHandler.cs,
+	System/IO/FileSystemEventArgs.cs,
+	System/IO/FileSystemEventHandler.cs,
+	System/IO/FileSystemWatcher.cs,
+	System/IO/IODescriptionAttribute.cs,
+	System/IO/InternalBufferOverflowException.cs,
+	System/IO/NotifyFilters.cs,
+	System/IO/RenamedEventArgs.cs,
+	System/IO/RenamedEventHandler.cs,
+	System/IO/WaitForChangedResult.cs,
+	System/IO/WatcherChangeTypes.cs,
+	resources/en_US/System/Exception.txt: implement missing classes from
+	the "System.IO" namespace in the "System" assembly.
+
+	* System/Timers/ElapsedEventArgs.cs,
+	System/Timers/ElapsedEventHandler.cs,
+	System/Timers/Makefile,
+	System/Timers/Timer.cs,
+	System/Timers/TimersDescriptionAttribute.cs,
+	System/Web/AspNetHostingPermission.cs,
+	System/Web/AspNetHostingPermissionAttribute.cs,
+	System/Web/AspNetHostingPermissionLevel.cs,
+	System/Web/Makefile: implement missing classes from the
+	"System.Timers" and "System.Web" namespaces in the "System" assembly.
+
+	* System/Timers/Timer.cs, System/Web/AspNetHostingPermission.cs,
+	System/Web/AspNetHostingPermissionAttribute.cs:
+	signature-compatibility fixes.
+
+	* ChangeLog, doc/ChangeLog-3: trim ChangeLog and move the
+	tail into "doc/ChangeLog-3".
+
+	* System/ComponentModel/InheritanceAttribute.cs,
+	System/ComponentModel/Design/IInheritanceService.cs,
+	System/ComponentModel/Design/Serialization/DesignerSerializerAttribute.cs,
+	System/ComponentModel/Design/Serialization/IDesignerLoaderService.cs,
+	System/ComponentModel/Design/Serialization/RootDesignerSerializerAttribute.cs:
+	missing classes and more signature-compatibility.
+
+	* compat/Accessibility.cs, compat/Makefile.am, compat/compat.build:
+	implement the minor "Accessibility" assembly, for compatibility.
+
+2003-05-23  Gopal.V  <gopalv82@symonds.net>
+	
+	* System/Platform/RegexpMethods.cs, System/Private/Regex.cs
+	System/Private/RegexMatch.cs, System/Private/RegexMatchOptions.cs
+	System/Private/RegexSyntax.cs : Regular expression support for
+	the System assembly.
+ 
+	* System/Uri.cs, System/UriBuilder.cs: Start a total rewrite of
+	the Uri class and related parts of UriBuilder.
+
+2003-05-23  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* Basic/File.cs, Basic/FileSystem.cs,
+	Basic/CompilerServices/ObjectType.cs,
+	Basic/CompilerServices/ProjectData.cs,
+	runtime/System/IO/DirectoryInfo.cs: implement some of the
+	VB file system routines.
+
+	* System/CodeDom/CodeGotoStatement.cs,
+	System/CodeDom/CodeLinePragma.cs,
+	System/CodeDom/CodeNamespaceImportCollection.cs,
+	System/CodeDom/CodeStatementCollection.cs,
+	System/CodeDom/CodeTypeDeclaration.cs,
+	System/CodeDom/CodeTypeReferenceCollection.cs,
+	System/CodeDom/Makefile, System/CodeDom/RuleOutput.cs,
+	System/CodeDom/rules.txt,
+	System/CodeDom/Compiler/CodeDomProvider.cs,
+	System/CodeDom/Compiler/CodeGenerator.cs,
+	System/CodeDom/Compiler/CompilerParameters.cs,
+	System/CodeDom/Compiler/CompilerResults.cs,
+	System/CodeDom/Compiler/Executor.cs,
+	System/CodeDom/Compiler/GeneratorSupport.cs,
+	System/CodeDom/Compiler/IndentedTextWriter.cs,
+	System/CodeDom/Compiler/Makefile,
+	System/CodeDom/Compiler/TempFileCollection.cs: improve
+	signature-compatibility of the System.CodeDom namespace.
+
+	* System/CodeDom/Compiler/CSharpCodeCompiler.cs,
+	System/CodeDom/Compiler/CSharpCodeProvider.cs,
+	System/CodeDom/Compiler/VBCodeCompiler.cs,
+	System/CodeDom/Compiler/VBCodeProvider.cs: stub out the CodeDom
+	code generator for the VB language.
+
+	* System/Win32/Makefile,
+	System/Win32/PowerModeChangedEventArgs.cs,
+	System/Win32/PowerModeChangedEventHandler.cs,
+	System/Win32/PowerModes.cs,
+	System/Win32/SessionEndReasons.cs,
+	System/Win32/SessionEndedEventArgs.cs,
+	System/Win32/SessionEndedEventHandler.cs,
+	System/Win32/SessionEndingEventArgs.cs,
+	System/Win32/SessionEndingEventHandler.cs,
+	System/Win32/SystemEvents.cs,
+	System/Win32/TimerElapsedEventArgs.cs,
+	System/Win32/TimerElapsedEventHandler.cs,
+	System/Win32/UserPreferenceCategory.cs,
+	System/Win32/UserPreferenceChangedEventArgs.cs,
+	System/Win32/UserPreferenceChangedEventHandler.cs,
+	System/Win32/UserPreferenceChangingEventArgs.cs,
+	System/Win32/UserPreferenceChangingEventHandler.cs: add a missing
+	namespace and its implementation.
+
+2003-05-22  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* Basic/ErrObject.cs, Basic/Information.cs,
+	Basic/CompilerServices/BooleanType.cs,
+	Basic/CompilerServices/ByteType.cs,
+	Basic/CompilerServices/CharArrayType.cs,
+	Basic/CompilerServices/CharType.cs,
+	Basic/CompilerServices/DateType.cs,
+	Basic/CompilerServices/DecimalType.cs,
+	Basic/CompilerServices/DoubleType.cs,
+	Basic/CompilerServices/IVbHost.cs,
+	Basic/CompilerServices/IntegerType.cs,
+	Basic/CompilerServices/LongType.cs,
+	Basic/CompilerServices/ShortType.cs,
+	Basic/CompilerServices/SingleType.cs,
+	Basic/CompilerServices/StringType.cs,
+	Basic/CompilerServices/Utils.cs: implement missing TODO's in the
+	VB support library, primarily in the CompilerServices namespace.
+
+	* Basic/DefaultValueAttribute.cs, Basic/ErrObject.cs,
+	Basic/CompilerServices/ByteType.cs,
+	Basic/CompilerServices/DecimalType.cs,
+	Basic/CompilerServices/DoubleType.cs,
+	Basic/CompilerServices/FlowControl.cs,
+	Basic/CompilerServices/IntegerType.cs,
+	Basic/CompilerServices/LongType.cs,
+	Basic/CompilerServices/ObjectType.cs,
+	Basic/CompilerServices/ProjectData.cs,
+	Basic/CompilerServices/ShortType.cs,
+	Basic/CompilerServices/SingleType.cs: continue implementing the
+	VB support library's compiler services.
+
+2003-05-18  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/Private/Regex.cs: Fix wildcard searches to match
+	extensions correctly.
+
+2003-05-16  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* Makefile.am, configure.in, Basic/.cvsignore, Basic/AppWinStyle.cs,
+	Basic/Basic.build, Basic/CallType.cs, Basic/Collection.cs,
+	Basic/ComClassAttribute.cs, Basic/CompareMethod.cs, Basic/Constants.cs,
+	Basic/ControlChars.cs, Basic/Conversion.cs, Basic/DateAndTime.cs,
+	Basic/DateFormat.cs, Basic/DateInterval.cs, Basic/DueDate.cs,
+	Basic/ErrObject.cs, Basic/FileAttribute.cs, Basic/FileSystem.cs,
+	Basic/Financial.cs, Basic/FirstDayOfWeek.cs, Basic/FirstWeekOfYear.cs,
+	Basic/Globals.cs, Basic/Information.cs, Basic/Interaction.cs,
+	Basic/Makefile.am, Basic/MsgBoxResult.cs, Basic/MsgBoxStyle.cs,
+	Basic/OpenAccess.cs, Basic/OpenMode.cs, Basic/OpenShare.cs,
+	Basic/S.cs, Basic/SpcInfo.cs, Basic/Strings.cs, Basic/TODOAttribute.cs,
+	Basic/TabInfo.cs, Basic/TriState.cs, Basic/VBFixedArrayAttribute.cs,
+	Basic/VBFixedStringAttribute.cs, Basic/VBMath.cs, Basic/VariantType.cs,
+	Basic/VbStrConv.cs, Basic/CompilerServices/BooleanType.cs,
+	Basic/CompilerServices/ByteType.cs,
+	Basic/CompilerServices/CharArrayType.cs,
+	Basic/CompilerServices/CharType.cs,
+	Basic/CompilerServices/DateType.cs,
+	Basic/CompilerServices/DecimalType.cs,
+	Basic/CompilerServices/DoubleType.cs,
+	Basic/CompilerServices/ExceptionUtils.cs,
+	Basic/CompilerServices/FlowControl.cs,
+	Basic/CompilerServices/HostServices.cs,
+	Basic/CompilerServices/IVbHost.cs,
+	Basic/CompilerServices/IncompleteInitialization.cs,
+	Basic/CompilerServices/IntegerType.cs,
+	Basic/CompilerServices/LateBinding.cs,
+	Basic/CompilerServices/LongType.cs,
+	Basic/CompilerServices/ObjectType.cs,
+	Basic/CompilerServices/OptionCompareAttribute.cs,
+	Basic/CompilerServices/OptionTextAttribute.cs,
+	Basic/CompilerServices/ProjectData.cs,
+	Basic/CompilerServices/ShortType.cs,
+	Basic/CompilerServices/SingleType.cs,
+	Basic/CompilerServices/StandardModuleAttribute.cs,
+	Basic/CompilerServices/StaticLocalInitFlag.cs,
+	Basic/CompilerServices/StringType.cs,
+	Basic/CompilerServices/Utils.cs, profiles/full: stub out the
+	standard library for VB.Net.
+
+2003-05-16  Gopal.V  <gopalv82@symonds.net>
+	
+	* System/Net/Sockets/Socket.cs: Check for waitHandle state before 
+	setting it.
+
+2003-05-14  Gopal.V  <gopalv82@symonds.net>
+	
+	* System/Net/WebClient.cs: Add this non-ECMA class , implemented
+	partially for downstream access.
+
+2003-05-14  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Net/Dns.cs: add "using Platform" to fix an ECMA_COMPAT bug.
+
+2003-05-12  Thong Nguyen  <tum@veridicus.com>
+
+	* runtime/System/IO/MemoryStream.cs:  Fixed bug that prevented
+	streams from growing larger than the default capacity of 16.
+	Changed the default capacity to 0 to remain compatible. The 
+	capacity jumps to 1024 on first write.
+
+2003-05-12  Gopal.V  <gopalv82@symonds.net>
+	
+	* System/Net/Dns.cs: Faked asynchronous operations for DNS class.
+
+2003-05-10  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/IO/BinaryReader.cs, runtime/System/IO/BinaryWriter.cs:
+	Remove automatic stream closing when the wrapping writer is finalized.
+
+	* runtime/System/IO/StreamReader.cs, runtime/System/IO/StreamWriter.cs:
+	Close the underlying stream only if it is locally constructed and not
+	pased out via BaseStream property.
+
+	* System.Xml/XmlTextReader.cs: Accept "?" and "!" in text (ie non-struct)
+	conditions (fixes Bug #3528).
+
+	* System.Xml/XmlTextReader.cs: Refactor the previous patch into smaller
+	code size.
+
+2003-05-09  Gopal.V  <gopalv82@symonds.net>
+
+	* System/Net/WebRequest.cs : Move the static initialization code
+	into a static constructor.
+
+	* System/Net/HttpWebResponse: Correct the format identifiers for
+	LastModified header parsing.
+
+	* runtime/System/Private/DateTimeFormat/DateTimeParser.cs,
+	runtime/System/Private/DateTimeFormat/DateTimeFormatTemplate.cs: Fix
+	some bugs in datetime parsing routines.
+
+	* runtime/System/Private/DateTimeFormat/ParsedDateTime.cs: Cleanup a 
+	bit and refactor various conditions.
+
+2003-05-08  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* HACKING: replace the reference to the "Tech Support Manager" with
+	a reference to the "Bug Tracking" system.
+
+2003-05-07  David Corking  <dcorking@yahoo.fr>
+	
+	* runtime/System/Private/NumberFormat/Formatter.cs: One liner
+	to fix part of bug #3847 . (Gopal)
+
+2003-05-06  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Runtime/InteropServices/DllImportAttribute.cs:
+	allow "DllImportAttribute" to also be used on fields, to support
+	PInvoke importing of global variables from shared objects.
+
+2003-05-03  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* configure.in, NEWS: update version and news for the 0.5.6 release.
+
+	* configure.in: update working version to "0.5.7".

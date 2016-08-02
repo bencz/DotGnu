@@ -1,0 +1,45 @@
+
+This directory contains the JScript implementation for Portable.NET.
+It is designed to be compatible with the "Microsoft.JScript" assembly
+from the .NET Framework SDK.
+
+See the file "doc/JScript-embed.txt" for information on how to embed the
+engine in your own application.
+
+For backwards compatibility, these classes are placed in the namespace
+"Microsoft.JScript".  We have split them over a number of sub-directories
+to make it easier to navigate the source:
+
+Nodes
+	JScript language nodes and their evaluation logic.
+Parser
+	JScript language parser and support classes.
+Execute
+	Support definitions for program execution.
+Builtins
+	Builtin JScript objects and classes.
+Vsa
+	Front-end interface to the engine.
+Jsc
+	Support routines for JScript programs that have been compiled to IL.
+CodeDom
+	Glue logic for interfacing with System.CodeDom.
+doc
+	Documentation files for the JScript implementation.
+
+Where possible, we follow the ECMAScript specifications fairly closely,
+as JScript is based on ECMAScript.  The specifications can be obtained
+from "http://www.ecma.ch/".
+
+Information on the public API's was divined from the Rotor sources, as
+Microsoft's documentation only specifies the CodeDom interface.  The CodeDom
+interface is not the core part of the API, and so that documentation is
+relatively useless for building an interoperable implementation.
+
+The implementation here is completely "in our own words" - no Rotor code
+was used in its production.
+
+The "JScript.Test" assembly is used by the pnetlib test suite to test the
+internal workings of the JScript implementation.  It breaks encapsulation
+by inserting extra definitions to assist with unit testing.  It should not
+be used by application programs: use "Microsoft.JScript" instead.

@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+
+<project name="PEAPI" default="all">
+	<target name="all">
+		<compile target="library"
+				 output="PEAPI.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="true"
+				 installasdefault="true">
+
+			<sources basedir="${mono.sources}/class/PEAPI">
+				<includes name="**/*.cs"/> 
+				<includes name="../../build/common/Consts.cs"/>
+				<excludes name="Test/**"/>
+			</sources>
+
+		</compile>
+	</target>
+</project>

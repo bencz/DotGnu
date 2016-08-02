@@ -1,0 +1,169 @@
+#
+# Arg.txt - Resources for argument errors.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Arg_MustBeBoolean=L'objecte ha de ser de tipus booleà
+Arg_MustBeByte=L'objecte ha de ser de tipus Byte
+Arg_MustBeSByte=L'objecte ha de ser de tipus SByte
+Arg_MustBeChar=L'objecte ha de ser de tipus Char
+Arg_MustBeInt16=L'objecte ha de ser de tipus Int16
+Arg_MustBeUInt16=L'objecte ha de ser de tipus UInt16
+Arg_MustBeInt32=L'objecte ha de ser de tipus Int32
+Arg_MustBeUInt32=L'objecte ha de ser de tipus UInt32
+Arg_MustBeInt64=L'objecte ha de ser de tipus Int64
+Arg_MustBeUInt64=L'objecte ha de ser de tipus UInt64
+Arg_MustBeDecimal=L'objecte ha de ser de tipus Decimal
+Arg_MustBeSingle=L'objecte ha de ser de tipus Single
+Arg_MustBeDouble=L'objecte ha de ser de tipus Double
+Arg_MustBeDateTime=L'objecte ha de ser de tipus DateTime
+Arg_MustBeTimeSpan=L'objecte ha de ser de tipus TimeSpan
+Arg_MustBeString=L'objecte ha de ser de tipus String
+Arg_MustBeSameEnum=Els objectes enumerats han de ser del mateix tipus
+Arg_MustBeEnum=Ha de ser de tipus enumerat
+Arg_InvalidEnumValue=Tipus d'enumeració invàlid per aquest tipus
+Arg_InvalidEnumName=Cadena enumerada invàlida per aquest tipus
+Arg_MustBeResourceSet=L'objecte ha de ser del tipus ResourceSet
+Arg_MustBeVersion=L'objecte ha de ser del tipus Version
+Arg_MustBeGuid=L'objecte ha de ser del tipus Guid
+Arg_InvalidBase=La base ha de ser 2, 8, 10 ó 16
+Arg_UnknownTypeCode=Codi no reconegut
+Arg_InvalidHexStyle=Estil de nombre hexadecimal incorrecte
+  Arg_DecBitCtor=Invalid bit array supplied to Decimal constructor
+Arg_NotNull=L'argument no pot ser nul
+Arg_OutOfRange=L'argument està fora de rang
+Arg_OutOfRangeValue=Valor de l'argument: {0}
+Arg_DateTimeRange=DateTime està fora de rang
+Arg_SearchCompare=Els valors no son comparables per realitzar una busqueda
+Arg_RankMustBe1=El nombre de files ha de ser 1
+Arg_RankMustBe2=El nombre de files ha de ser 2
+Arg_RankMustBe3=El nombre de files ha de ser 3
+Arg_InvalidArrayRange=El rang de l'array és incorrecte
+Arg_MustBeType=Ha de ser d'un tipus correcte de runtime
+Arg_MustHaveOneElement=L'array ha de contindre com a mínim 1 element
+Arg_MustBeSameSize=Ambdues arrays han de ser de la mateixa mida
+Arg_MustBeSameRank=Ambdues arrays han de tenir el mateix nombre de dimensions
+Arg_InvalidArrayIndex=L'índex a l'array és incorrecte
+Arg_LowBoundsMustMatch=Els límits més baixos de dos arrays han de coincidir
+Arg_ShortItemsArray=Els continguts de l'array és més petit que les claus de l'array
+Arg_ABMustBeComparable=a i b han d'implementar IComparable
+Arg_CannotReduceCapacity=No es pot reduïr la capacitat d'un llista d'arrays després de la seva capacitat
+Arg_NotANumber=L'argument de punt flotant no és un nombre
+Arg_InsufficientSpace=La opreació demanada no té espai suficient a l'array
+Arg_EndsWithResources=El nom base especificat no pot acabar en ".resources"
+Arg_VersionFields=La versió especificada en el contador de camps és invàlida
+Arg_GuidArray8=El buffer del byte Guid ha de tenir 8 items
+Arg_GuidArray16=El buffer del byte Guid ha de tenir 16 items
+Arg_NonPrimitiveArray=L'array proveït no conté elemnts primitus
+Arg_DelegateMethod=Métode perdut per crear la delegació
+Arg_DelegateMismatch=Les delegacions especificades no són del mateix tipus
+Arg_NotDelegate=El tipus especificat no és un tipus delegat
+Arg_DelegateSignature=La delegació i el mètode no tenen la mateixa signatura
+Arg_DelegateAccess=La crida no té permís per accedir al mètode delegat
+Arg_MakeTypedRef=Una llista de camps que no siguin zero és necessària per a fer una referència de tipus 
+Arg_MakeTypedRefFields=El camps per una referència de tipus han de ser runtime
+Arg_InvalidEra=El valor de l'era és invàlida segons el mètode del calendari
+Arg_NoEraYear=No existeix l'era de l'any proveïda pels paràmetres
+Arg_ExistingEntry=Ja existeix una entrada amb la clau especificada
+Arg_BitArrayLengths=La longitud dels dos bits d'arrays no és la mateixa
+Arg_NotFound=El valor especificat no s'ha trobat
+Arg_Value0To99=Els valors especificats han de ser entre 0 i 99, ambdós inclosos
+Arg_Value0To3=Els valors especificats han de ser entre 0 i 3, ambdós inclosos
+Arg_Value0To15=Els valors especificats han de ser entre 0 i 15, ambdós inclosos
+Arg_Value0To4=Els valors especificats han de ser entre 0 i 4, ambdós inclosos
+Arg_Value0To2=Els valors especificats han de ser entre 0 i 2, ambdós inclosos
+Arg_Value0To9=Els valors especificats han de ser entre 0 i 9, ambdós inclosos
+Arg_Value1To9=Els valors especificats han de ser entre 1 i 9, ambdós inclosos
+Arg_Array7Elems=L'array especificat ha de tenir 7 elements
+Arg_Array13Elems=L'array especificat ha de tenir 13 elements
+Arg_InvalidCalendar=Calendari invàlid per la cultura actual
+Arg_CalendarWeekRule=Setmana invàlida segons la regla de valors
+Arg_DayOfWeek=Valor del dia de la setmana invàlid
+Arg_InvalidXMLTag=Nom de l'element XML invàlid
+Arg_InvalidXMLText=Text de l'element XML invàlid
+Arg_InvalidXMLAttrName=Atribut de l'element XML invàlid
+Arg_InvalidXMLAttrValue=Valor de l'atribut XML invàlid
+Arg_DuplicateXMLAttr=Ja existeix un atribut XML amb el nom especificat
+Arg_PermissionState=Valor de l'estat dels permisos invàlid
+Arg_PermissionVersion=Versió incorrecta dels permisos de l'objecte
+Arg_InvalidUTF8=Seqüència invàlida del byte UTF8
+Arg_WeakRefCollected=La referència Weak ha recollit escombraria
+Arg_MustBeCoreLib=L'assembler especificat ha de ser en el nucli de la llibreria
+Arg_InvalidRegion=Nom de la regió o l'identificador invàlid
+Arg_DateTimeFormatChar=El format del caràcter DateTime és invàlid
+Arg_PermissionMismatch=No coincideixen els permisos dels objectes
+Arg_EnvironmentAccess=Permís del valor d'accés de l'entorn invàlid
+Arg_FileIOAccess=Permís del valor d'accés del fitxer I/O invàlid
+Arg_SecurityFlag=El valor del flag de la seguretat de permisos és invàlid
+Arg_ReflectionFlag=El Valor del flag de reflexió de permisos és invàlid
+Arg_FileDialogAccess=El valor d'accés del fitxer de diàleg de permisos és invàlid
+Arg_InvalidSite=Permisos invàlids del valor del site
+Arg_WindowFlag=Permisos invàlids del valor del flag de la finestra
+Arg_ClipboardFlag=Permisos invàlids del valor del flag del porta papers
+Arg_PublicKeyBlob=Clau pública invàlida pel valor de blob
+Arg_RegistryAccess=Permisos invàlids del registre pel valor d'accés
+Arg_PermissionsExecution=Autoritza el programa amb permís d'execució
+Arg_PermissionsFullTrust=Autoritza tots els permisos
+Arg_PermissionsInternet=Autoritza l'accés a internet
+Arg_PermissionsLocalIntranet=Autoritza l'accés local a la intranet
+Arg_PermissionsNothing=Denega tots els permisos
+Arg_PermissionsSkipVerification=Autoritza el programa per passar per alt la verificació
+Arg_InvalidAsync=Objecte invàlid proveït per la operació asíncrona de llegir/escriure
+Arg_InvalidHive=Registre hive invàlid
+Arg_SynchronizationFlag=Valor del flag de sincronització invàlid
+Arg_PointerType=L'argument proveït no és un tipus de punter
+Arg_PointerValue=L'argument proveït no és un valor de punter
+Arg_InvalidSoapValue=La cadena proveïda no és un valor SOAP vàlid
+Arg_SecurityZone=El valor de la zona de seguretat proveïda és invàlid
+Arg_CannotMarshalStruct=El tipus d'estructura proveïda no pot ser ordenada
+Arg_NotGenericMethod=El mètode especificat no és genèric
+Arg_GenericParameterCount=El nombre de paràmetres genèrics no coincideix
+Arg_InvalidUnityObject=Unitat de l'objecte invàlida durant la deserialització
+Ar_InvalidMemberObject=Trobat un objecte membre invàlid durant la deserialització
+Arg_InvalidUrl=URL invàlida
+Arg_InvalidMembershipCondition=Grup de codi invàlid membre de la condició
+Arg_InvalidRegex=Expressió regular invàlida
+Arg_ResourceAlreadyPresent=El recurs especificat ja és present
+ArgRange_DecimalScale=La escala del factor decimal ha de ser entre 0 i 28, ambdós inclosos
+ArgRange_YMD=La especificació d'any, mes, dia està fora del rang
+ArgRange_HMS=La especificació d'hora, minuts, segons està fora del rang
+ArgRange_DateTimeTicks=El valor Ticks pel valor de DateTime està fora del rang
+ArgRange_TimeSpan=El valor de TimeSpan està fora del rang
+ArgRange_Array=La posició de l'array o la seva longitud estan fora de rang
+ArgRange_NonNegative=El valor no pot ser negatiu
+ArgRange_NonNegOrNegOne=El valor ha de ser positiu, 0, o -1
+ArgRange_PositiveNonZero=El valor ha de ser positiu o diferent de zero
+ArgRange_NegativeOrZero=El valor ha de ser negatiu o zero
+ArgRange_Negative=El valor ha de ser negatiu
+ArgRange_StringIndex=L'índex de la cadena està fora del rang
+ArgRange_StringRange=El rang de la cadena està fora del rang
+ArgRange_RoundDigits=Arrodoniment del dígit ha de ser entre 0 i 15, ambdós inclosos
+ArgRange_MinValueGtMaxValue=minValue és més gran que maxValue
+ArgRange_StringNonEmpty=String value must not be empty
+ArgRange_MaxStrCapacity=La capacitat màxima de la cadena ha de ser 1 o més gran
+ArgRange_StrCapacity=Capacitat de la cadena invàlida
+ArgRange_StrBuilderLength=Construcció de cadena invàlida per la longitud
+ArgRange_Year=El valor Year està fora del rang
+ArgRange_Month=El valor Month està fora del rang
+ArgRange_Day=El valor Day està fora del rang
+ArgRange_HashLoadFactor=Taula hash invàlida carregant el factor
+ArgRange_QueueGrowFactor=Creixement invàlid del factor per les cues
+ArgRange_GCGeneration=La generació GC està fora del rang
+ArgRange_HijriAdjustment=Els ajustaments del valor Hijri han de ser entre -2 i 2
+ArgRange_HijriDate=El valor Date està fora del rang pel calendari Hijri
+ArgRange_BufferSize=El valor del Buffer està fora del rang
+ArgRange_DateTimeRange=El valor del DateTime està fora del rang

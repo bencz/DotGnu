@@ -1,0 +1,27 @@
+Developers.exe is a demonstration program for Portable.Net Monitors,
+Windows Forms and Threading.
+
+Developers implements the Dining Philosophers problem that
+was used by Dijkstra to demonstrate problems with synchronization
+in concurrent applications.
+See: http://en.wikipedia.org/wiki/Dining_philosophers_problem
+
+Developers allows you to visually see the dining philosophers problem
+as it is running.  Philosophers have been replaced with "Developers"
+and the knives/forks/chopsticks have been replaced with keyboards/mice.
+Many DotGNU & Portable.Net developers have been kind enough to
+donate their mugshots so you can actually attach faces to the names
+of the developers of DotGNU and Portable.Net :D.
+
+Use the "--help" command line option to view startup configurable
+options.
+
+i.e.
+
+ilrun Developers.exe --help
+
+
+
+Author: Thong Nguyen (tum@veridicus.com)
+
+END-OF-FILE

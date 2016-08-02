@@ -1,0 +1,50 @@
+<!-- 
+DTD for the cvm.xml
+for pnet/doc/cvmdoc/cvm.dtd
+
+Contributed by James Michael DuPont -- mdupont777@yahoo.com
+-->
+<!ELEMENT  srcdoc  (opcode)+                                         >
+
+<!ELEMENT  opcode  (operation|
+                    format|
+                    form|
+                    dformat|
+                    before|
+                    after|
+                    description|
+                    exceptions|
+                    notes)*
+>
+
+<!ATTLIST  opcode
+             name       CDATA                              #IMPLIED  >
+<!ATTLIST  opcode
+             group       CDATA                              #IMPLIED  >
+
+
+<!ELEMENT  operation     (#PCDATA|code|i|p|ul)*                                          >
+<!ELEMENT  after         (#PCDATA)                                          >
+<!ELEMENT  before        (#PCDATA)                                          >
+<!ELEMENT  code          (#PCDATA)                                          >
+<!ELEMENT  description   (#PCDATA|p|i|code|ul)*                                          >
+<!ELEMENT  exceptions     (exception)*                                         >
+<!ELEMENT  exception     (#PCDATA|p|i|code)*                                          >
+<!ATTLIST  exception
+               name       CDATA                              #IMPLIED       >
+
+
+<!ELEMENT  form          (#PCDATA)                                          >
+<!ATTLIST  form
+             name       CDATA                              #IMPLIED  >
+<!ATTLIST  form
+             code       CDATA                              #IMPLIED  >
+<!ELEMENT  dformat       (#PCDATA|fsep)*                                          >
+<!ELEMENT  format        (#PCDATA|fsep)*                                           >
+<!ELEMENT  fsep          (#PCDATA)                                          >
+<!ELEMENT  i             (#PCDATA)                                          >
+
+<!ELEMENT  notes         (#PCDATA|code|p|ul|i)*                                          >
+<!ELEMENT  p             (#PCDATA)                                          >
+<!ELEMENT  ul            (li)*                                          >
+<!ELEMENT  li            (#PCDATA|code|p|i)*                                          >

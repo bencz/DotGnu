@@ -1,0 +1,294 @@
+%output "pm_nodes.c"
+
+%{
+/*
+ * pm_nodes.tc - Common definitions for Parrot node types and operations.
+ *
+ * Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <codegen/cg_nodes.h>
+%}
+
+%decls %end %{
+#include <codegen/pm_output.h>
+%}
+
+/*
+ * Declare the Parrot code generation functions.
+ */
+%operation %virtual void ParrotGenDiscard(ILNode *node, ILGenInfo *info)
+%operation %virtual PMRegister ParrotGenValue(ILNode *node, ILGenInfo *info)
+%operation %virtual void ParrotGenThen(ILNode *node, ILGenInfo *info,
+									   ILLabel *label)
+%operation %virtual void ParrotGenElse(ILNode *node, ILGenInfo *info,
+									   ILLabel *label)
+%operation %virtual PMRegister ParrotPrepare
+				(ILNode_LValue *node, ILGenInfo *info,
+				 void **data1, void **data2)
+%operation %virtual PMRegister ParrotGetAndPrepare
+				(ILNode_LValue *node, ILGenInfo *info, int leave,
+				 void **data1, void **data2)
+%operation %virtual void ParrotStore
+				(ILNode_LValue *node, ILGenInfo *info, int leave,
+				 void *data1, void *data2)
+
+/*
+ * Test a value in a register and jump if true.
+ */
+%operation %inline void ParrotJumpIfThen(ILGenInfo *info, ILLabel *label,
+							  		     PMRegister reg, [ILMachineType type])
+ParrotJumpIfThen(ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ParrotJumpIfThen(ILMachineType_Boolean),
+ParrotJumpIfThen(ILMachineType_Int8),
+ParrotJumpIfThen(ILMachineType_UInt8),
+ParrotJumpIfThen(ILMachineType_Int16),
+ParrotJumpIfThen(ILMachineType_UInt16),
+ParrotJumpIfThen(ILMachineType_Char),
+ParrotJumpIfThen(ILMachineType_Int32),
+ParrotJumpIfThen(ILMachineType_UInt32),
+ParrotJumpIfThen(ILMachineType_NativeInt),
+ParrotJumpIfThen(ILMachineType_NativeUInt),
+ParrotJumpIfThen(ILMachineType_Float32),
+ParrotJumpIfThen(ILMachineType_Float64),
+ParrotJumpIfThen(ILMachineType_NativeFloat),
+ParrotJumpIfThen(ILMachineType_UnmanagedPtr)
+{
+	PMGenBranchTrue(info, reg, label)
+}
+ParrotJumpIfThen(ILMachineType_Int64),
+ParrotJumpIfThen(ILMachineType_UInt64)
+{
+	/* TODO */
+}
+ParrotJumpIfThen(ILMachineType_Decimal)
+{
+	/* TODO */
+}
+ParrotJumpIfThen(ILMachineType_String),
+ParrotJumpIfThen(ILMachineType_ObjectRef),
+ParrotJumpIfThen(ILMachineType_ManagedPtr),
+ParrotJumpIfThen(ILMachineType_TransientPtr),
+ParrotJumpIfThen(ILMachineType_ManagedValue)
+{
+	PMRegister null = PMGenNull(info);
+	PMGenBranch(info, PM_IF_NE, null, reg, label);
+}
+
+/*
+ * Test a value in a register and jump if false.
+ */
+%operation %inline void ParrotJumpIfElse(ILGenInfo *info, ILLabel *label,
+							  		     PMRegister reg, [ILMachineType type])
+ParrotJumpIfElse(ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ParrotJumpIfElse(ILMachineType_Boolean),
+ParrotJumpIfElse(ILMachineType_Int8),
+ParrotJumpIfElse(ILMachineType_UInt8),
+ParrotJumpIfElse(ILMachineType_Int16),
+ParrotJumpIfElse(ILMachineType_UInt16),
+ParrotJumpIfElse(ILMachineType_Char),
+ParrotJumpIfElse(ILMachineType_Int32),
+ParrotJumpIfElse(ILMachineType_UInt32),
+ParrotJumpIfElse(ILMachineType_NativeInt),
+ParrotJumpIfElse(ILMachineType_NativeUInt),
+ParrotJumpIfElse(ILMachineType_Float32),
+ParrotJumpIfElse(ILMachineType_Float64),
+ParrotJumpIfElse(ILMachineType_NativeFloat),
+ParrotJumpIfElse(ILMachineType_UnmanagedPtr)
+{
+	PMGenBranchFalse(info, reg, label)
+}
+ParrotJumpIfElse(ILMachineType_Int64),
+ParrotJumpIfElse(ILMachineType_UInt64)
+{
+	/* TODO */
+}
+ParrotJumpIfElse(ILMachineType_Decimal)
+{
+	/* TODO */
+}
+ParrotJumpIfElse(ILMachineType_String),
+ParrotJumpIfElse(ILMachineType_ObjectRef),
+ParrotJumpIfElse(ILMachineType_ManagedPtr),
+ParrotJumpIfElse(ILMachineType_TransientPtr),
+ParrotJumpIfElse(ILMachineType_ManagedValue)
+{
+	PMRegister null = PMGenNull(info);
+	PMGenBranch(info, PM_IF_EQ, null, reg, label);
+}
+
+/*
+ * Clamp a value in a register to a particular range.
+ */
+%operation %inline void ParrotClamp(ILGenInfo *info, PMRegister reg,
+									[ILMachineType type])
+ParrotClamp(ILMachineType_Boolean)
+{
+	/* TODO */
+}
+ParrotClamp(ILMachineType_Int8)
+{
+	/* TODO */
+}
+ParrotClamp(ILMachineType_UInt8)
+{
+	/* TODO */
+}
+ParrotClamp(ILMachineType_Int16)
+{
+	/* TODO */
+}
+ParrotClamp(ILMachineType_UInt16)
+{
+	/* TODO */
+}
+ParrotClamp(ILMachineType_Char)
+{
+	/* TODO */
+}
+ParrotClamp(ILMachineType_Int32)
+{
+	/* TODO */
+}
+ParrotClamp(ILMachineType_UInt32)
+{
+	/* TODO */
+}
+ParrotClamp(ILMachineType_Float32)
+{
+	/* TODO */
+}
+ParrotClamp(ILMachineType_Float64)
+{
+	/* TODO */
+}
+ParrotClamp(ILMachineType_Void),
+ParrotClamp(ILMachineType_NativeInt),
+ParrotClamp(ILMachineType_NativeUInt),
+ParrotClamp(ILMachineType_UnmanagedPtr),
+ParrotClamp(ILMachineType_NativeFloat),
+ParrotClamp(ILMachineType_Int64),
+ParrotClamp(ILMachineType_UInt64),
+ParrotClamp(ILMachineType_Decimal),
+ParrotClamp(ILMachineType_String),
+ParrotClamp(ILMachineType_ObjectRef),
+ParrotClamp(ILMachineType_ManagedPtr),
+ParrotClamp(ILMachineType_TransientPtr),
+ParrotClamp(ILMachineType_ManagedValue)
+{
+	/* Nothing to do here: value is already the right size */
+}
+
+/*
+ * Default implementation of "ParrotGenDiscard" for expressions.
+ */
+ParrotGenDiscard(ILNode_Expression)
+{
+	ParrotGenValue(node, info);
+}
+
+/*
+ * Default implementation of "ParrotGenThen" for expressions.
+ */
+ParrotGenThen(ILNode_Expression)
+{
+	PMRegister reg = ParrotGenValue(node, info);
+	ParrotJumpIfThen(info, label, reg, type);
+}
+
+/*
+ * Default implementation of "ParrotGenElse" for expressions.
+ */
+ParrotGenElse(ILNode_Expression)
+{
+	PMRegister reg = ParrotGenValue(node, info);
+	ParrotJumpIfElse(info, label, reg, type);
+}
+
+/*
+ * Statements only need "ParrotGenDiscard".
+ */
+ParrotGenValue(ILNode_Statement)
+{
+	fprintf(stderr, "ParrotGenDiscard is not implemented for node type `%s'",
+			yykindname(node));
+	exit(1);
+}
+ParrotGenThen(ILNode_Statement)
+{
+	fprintf(stderr, "ParrotGenThen is not implemented for node type `%s'",
+			yykindname(node));
+	exit(1);
+}
+ParrotGenElse(ILNode_Statement)
+{
+	fprintf(stderr, "ParrotGenElse is not implemented for node type `%s'",
+			yykindname(node));
+	exit(1);
+}
+
+/*
+ * Dummy nodes don't need anything.
+ */
+ParrotGenDiscard(ILNode_Dummy)
+{
+	fprintf(stderr, "ParrotGenDiscard is not implemented for node type `%s'",
+			yykindname(node));
+	exit(1);
+}
+ParrotGenValue(ILNode_Dummy)
+{
+	fprintf(stderr, "ParrotGenValue is not implemented for node type `%s'",
+			yykindname(node));
+	exit(1);
+}
+ParrotGenThen(ILNode_Dummy)
+{
+	fprintf(stderr, "ParrotGenThen is not implemented for node type `%s'",
+			yykindname(node));
+	exit(1);
+}
+ParrotGenElse(ILNode_Dummy)
+{
+	fprintf(stderr, "ParrotGenElse is not implemented for node type `%s'",
+			yykindname(node));
+	exit(1);
+}
+
+/*
+ * EmptyExpr's for casting in stack vars
+ */
+ParrotGenValue(ILNode_EmptyExpr)
+{
+	/* TODO: this is going to be hard!  Changes to sem analysis are required */
+	return 0;
+}
+
+/*
+ * Code generation functions for "DummyUnary" and "DummyBinary".
+ */
+ParrotGenValue(ILNode_DummyUnaryExpr),
+ParrotGenValue(ILNode_DummyBinaryExpr)
+{
+	return 0;
+}

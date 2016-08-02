@@ -1,0 +1,6 @@
+Makefile
+Makefile.in
+.deps
+cstest.dll
+csunit.exe
+TestVersion.cs

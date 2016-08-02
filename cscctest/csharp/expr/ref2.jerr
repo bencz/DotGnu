@@ -1,0 +1,6 @@
+./ref2.cs:23: `out' parameters not permitted when compiling to Java bytecode
+./ref2.cs:29: `ref' parameters not permitted when compiling to Java bytecode
+./ref2.cs:34: `out' parameters not permitted when compiling to Java bytecode
+./ref2.cs:36: `ref' arguments not permitted when compiling to Java bytecode
+./ref2.cs:41: no matching method for call to `m1(int)'
+./ref2.cs:42: no matching method for call to `m2(int)'

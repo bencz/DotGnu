@@ -1,0 +1,140 @@
+
+Code review for System.Runtime.InteropServices
+==============================================
+
+Last updated: 3 June 2003
+
+Classes that need tests
+-----------------------
+
+COMException (done)
+CurrencyWrapper (done)
+ErrorWrapper (done)
+ExternalException (done)
+GCHandle (done)
+InvalidComObjectException (done)
+InvalidOleVariantTypeException (done)
+Marshal
+MarshalDirectiveException (done)
+SEHException (done)
+SafeArrayRankMismatchException (done)
+SafeArrayTypeMismatchException (done)
+
+Classes that were validated using manual inspection and csdocvalil
+------------------------------------------------------------------
+
+ArrayWithOffset
+AssemblyRegistrationFlags
+AutomationProxyAttribute
+BINDPTR
+BIND_OPTS
+BestFitMappingAttribute
+CALLCONV
+CONNECTDATA
+CallingConvention
+CharSet
+ClassInterfaceAttribute
+ClassInterfaceType
+CoClassAttribute
+ComAliasNameAttribute
+ComCompatibleVersionAttribute
+ComConversionLossAttribute
+ComEventInterfaceAttribute
+ComImportAttribute
+ComInterfaceType
+ComMemberType
+ComRegisterFunctionAttribute
+ComSourcesInterfacesAttribute
+ComUnregisterFunctionAttribute
+ComVisibleAttribute
+DESCKIND
+DISPPARAMS
+DispIdAttribute
+DispatchWrapper
+DllImportAttribute
+ELEMDESC
+EXCEPINFO
+ExporterEventKind
+FILETIME
+FUNCDESC
+FUNCFLAGS
+FUNCKIND
+FieldOffsetAttribute
+GCHandleType
+GuidAttribute
+HandleRef
+ICustomAdapter
+ICustomFactory
+ICustomMarshaler
+IDLDESC
+IDLFLAG
+IDispatchImplAttribute
+IDispatchImplType
+IMPLTYPEFLAGS
+INVOKEKIND
+IRegistrationServices
+ITypeLibConverter
+ITypeLibExporterNameProvider
+ITypeLibExporterNotifySink
+ITypeLibImporterNotifySink
+ImportedFromTypeLibAttribute
+ImporterEventKind
+InAttribute
+InterfaceTypeAttribute
+LCIDConversionAttribute
+LIBFLAGS
+LayoutKind
+MarshalAsAttribute
+ObjectCreationDelegate
+OptionalAttribute
+OutAttribute
+PARAMDESC
+PARAMFLAG
+PreserveSigAttribute
+PrimaryInteropAssemblyAttribute
+ProgIdAttribute
+STATSTG
+SYSKIND
+StructLayoutAttribute
+TYPEATTR
+TYPEDESC
+TYPEFLAGS
+TYPEKIND
+TYPELIBATTR
+TypeLibExporterFlags
+TypeLibFuncAttribute
+TypeLibFuncFlags
+TypeLibImporterFlags
+TypeLibTypeAttribute
+TypeLibTypeFlags
+TypeLibVarAttribute
+TypeLibVarFlags
+TypeLibVersionAttribute
+UCOMIBindCtx
+UCOMIConnectionPoint
+UCOMIConnectionPointContainer
+UCOMIEnumConnectionPoints
+UCOMIEnumConnections
+UCOMIEnumMoniker
+UCOMIEnumString
+UCOMIEnumVARIANT
+UCOMIMoniker
+UCOMIPersistFile
+UCOMIRunningObjectTable
+UCOMIStream
+UCOMITypeComp
+UCOMITypeInfo
+UCOMITypeLib
+UnknownWrapper
+UnmanagedType
+VARDESC
+VARFLAGS
+VarEnum
+
+Classes that are deliberately not implemented and don't need testing
+--------------------------------------------------------------------
+
+ExtensibleClassFactory
+RegistrationServices
+RuntimeEnvironment
+TypeLibConverter

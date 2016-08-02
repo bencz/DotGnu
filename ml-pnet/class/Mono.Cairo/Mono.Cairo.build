@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+
+<project name="Mono.Cairo" default="all">
+	<target name="all">
+		<compile target="library"
+				 output="Mono.Cairo.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="true"
+				 installasdefault="true">
+
+			<sources basedir="${mono.sources}/class/Mono.Cairo">
+				<includes name="**/*.cs"/> 
+				<includes name="../../build/common/Consts.cs"/>
+				<excludes name="Test/**"/>
+				<excludes name="Samples/**"/>
+			</sources>
+
+			<references>
+				<file name="System.Drawing.dll"/>
+			</references>
+
+		</compile>
+	</target>
+</project>

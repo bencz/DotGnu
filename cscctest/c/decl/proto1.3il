@@ -1,0 +1,12 @@
+.assembly '<Assembly>'
+{
+	.ver 0:0:0:0
+}
+.module '<Module>'
+.custom instance void OpenSystem.C.MemoryModelAttribute::.ctor(int32) = (01 00 20 00 00 00 00 00)
+.method public static unsigned int32 'f1'(void * 'a', unsigned int32 'b') cil managed 
+{
+	ldc.i4.0
+	ret
+	.maxstack 1
+} // method f1

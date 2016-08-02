@@ -1,0 +1,60 @@
+#
+# Xsharp.txt - Default English resources for the Xsharp.dll library.
+#
+# Copyright (C) 2002, 2003  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+X_Exception=Eine unbekannte X Ausnahme ist aufgetreten
+X_LibraryNotPresent=X/Windows Bibliothek ist nicht vorhanden, oder konnte im library Suchpfad nicht gefunden werden.
+X_CannotOpenTo=Kann das Display nicht oeffnen: {0}
+X_CannotOpen=Kann das Display nicht oeffnen
+X_ConnectionLost=Verbindung zum X Server wurde verloren
+X_WidgetDestroyed=Das Widget wurde zerstoert
+X_PixmapDestroyed=Die Pixmap wurde zerstoert
+X_BitmapDestroyed=Die Bitmap wurde zerstoert
+X_GraphicsDestroyed=Das Graphics Objekt wurde zerstoert
+X_InvalidOperation=Eine ungueltige  X Operation ist aufgetreten
+X_BellPercent=X Server Glocken Prozentsatz muss zwischen -100 und 100 liegen
+X_PointCoordRange=Punkt Koordinaten sind ausserhalb des zulaessigen Bereichsare out of range
+X_RectCoordRange=Rechteck Koordinaten sind ausserhalb des zulaessigen Bereichs
+X_PolygonNeeds3Pts=Polygone benoetigen die Angabe von mindestens drei Punkten
+X_InvalidPosition=Ungueltige Widget Position angegeben
+X_InvalidSize=Ungueltige Widget Groesse angegeben
+X_FillRule=Ungueltiger Wert fuer die Fuellregel: {0}
+X_Function=Ungueltiger Funktionswert: {0}
+X_LineWidth=Ungueltiger Wert fuer die Linienbreite: {0}
+X_LineStyle=Ungueltiger Wert fuer den Linienstil: {0}
+X_CapStyle=Ungueltiger Wert fuer den Linienende Stil: {0}
+X_JoinStyle=Ungueltiger Wert fuer den Linierverbindungs Stil: {0}
+X_ArcMode=Ungueltiger Wert fuer den Bogenmodus: {0}
+X_GraphicsIsOutputOnly=Graphics Objekte koennen nur fuer Ein-/Ausgabe Widgets erstellt werden
+X_NonRootParent=Das Parent Fenster darf nicht das Root Fenster sein
+X_NonRootOperation=Die angeforderte Operation kann nicht auf das Root Fenster angewendet werden
+X_NonTopLevelOperation=Die angeforderte Operation kann nicht aufWidgets an oberster Ebene angewendet werden
+X_NonPlaceholderOperation=Die angeforderte Operation kann nicht auf Platzhalter Widgets angewendet werden
+X_BadEnumeratorPosition=Der Enumerator ist auf keinem Element platziert
+X_InvalidPixmapSize=Ungueltige Pixmap Groesse angegeben
+X_InvalidBitmapSize=Ungueltige Bitmap Groesse angegeben
+X_InvalidBitmapBits=Ungueltige Anzahl an Bitmap Bits angegeben
+X_Need2Points=Benoetige mindestens zwei Punkte im angegebene Array
+X_Need1Point=Benoetige mindestens einen Punkt im angegebene Array
+X_MaxReqSizeExceeded=Das angegebene Array ueberschreitet die Anforderungsgroesse des X Servers
+X_Need1Rect=Benoetige mindestens ein Rechteck im angegebene Array
+X_InvalidIcon=Ungueltiges Format fuer eine Icon Ressource
+X_InvalidFocusChild=Child Widget kann nicht als der Fokus fuer dieses oberste Fenster gesetzt werden
+X_InvalidReparent=Neuzuordnung zu diesm Parent Widget wuerde eine Kreisbeziehung im Widget Baum erzeugen
+X_NonNegative=Negative Werte sind in diesem Zusammenhang nicht erlaubt
+X_InvalidImageFile=Konnte die angegebene Imagedatei nicht laden

@@ -1,0 +1,62 @@
+#
+# Arg.txt - Resources for argument errors.
+#
+# Copyright (C) 2001, 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Exception_UriFormat=The supplied URI did not have the correct format
+Arg_UriPartial=That is not a valid UriPartial value
+Arg_HexDigit=That is not a valid hexadecimal digit
+Arg_UriScheme=The scheme supplied with the URI was not valid
+Arg_UriPort=The port specified with the URI was nonexistent
+Arg_UriPathAbs=The relative path specified with the URI could not be converted to an absolute path
+Arg_UriHostName=URI host names must be specified in DNS or IPv4 format
+Arg_InvalidIdentifier=Invalid identifier specified
+Arg_InvalidCodeDom=Invalid CodeDom node in this context
+Arg_MaskDone=CreateMask has created all masks
+Arg_AccessAlreadySet=Access value is already set
+Arg_TransportAlreadySet=Transport value is already set
+Arg_HostAlreadySet=Host value is already set
+Arg_PortAlreadySet=Port value is already set
+Arg_SocketPermission=Incomplete socket permission values
+Arg_SocketOption=Invalid socket option
+Arg_SocketOptionValue=Invalid socket option value
+Arg_NotSocket=The supplied value was not an open socket
+Arg_TraceLevel=Invalid trace level value
+Arg_AssertFailed=Assertion failed: {0}
+Arg_CounterCategory=Invalid performance counter category name
+Arg_NoSuchProcess=No such process
+Arg_NotEnumType=The specified type is not an enumeration
+Arg_EmptyArray=The specified array was empty
+Arg_InvalidSockAddr=Invalid socket address
+Arg_InvalidIPv6Address=Invalid IPv6 address
+Arg_InvalidIPv6Scope=Invalid IPv6 scope
+ArgRange_NonNegative=Value must not be negative
+ArgRange_Port=Port number is out of range
+ArgRange_SwitchValue={0} is out of range for the switch "{1}"
+Arg_InvalidHeader=The specified header is Invalid
+Arg_RestrictedHeader=The specified header is Restricted
+Arg_DuplicateCredentials=Duplicate credentials added to credential cache
+Arg_DuplicateTempFilename=Duplicate filename in temporary file collection
+ArgRange_InterfaceIndex=IPv6 interface index out of range
+Arg_ArraysSameSize=The two arrays must be the same size
+Arg_InvalidElement=Invalid element for this type of collection
+Arg_InvalidCultureName=Invalid culture name
+Arg_CookieCapacity=Cookie container capacity is out of range
+Arg_WebAcceptAlreadySet=Accept web permissions are already set
+Arg_WebConnectAlreadySet=Accept connect permissions are already set
+Arg_DuplicateComponent=There is already a component with the specified name in the container
+Arg_NotCollMember=The specified item is not a member of the collection

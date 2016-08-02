@@ -1,0 +1,13 @@
+./error3.cs:22: parse error, expecting an identifier, at or near `using'
+./error3.cs:23: parse error, expecting `.' or `;', at or near `using'
+./error3.cs:25: parse error, expecting `.' or `;', at or near `='
+./error3.cs:27: parse error, expecting `.' or `;', at or near `Y'
+./error3.cs:28: parse error, expecting an identifier, at or near `='
+./error3.cs:35: parse error, expecting an identifier, at or near `using'
+./error3.cs:36: parse error, expecting `.' or `;', at or near `using'
+./error3.cs:38: parse error, expecting `.' or `;', at or near `='
+./error3.cs:39: `W' is already declared
+./error3.cs:40: parse error, expecting `.' or `;', at or near `Y'
+./error3.cs:41: parse error, expecting an identifier, at or near `='
+./error3.cs:30: `C' cannot be declared as a type
+./error3.cs:30: because it is already declared as namespace

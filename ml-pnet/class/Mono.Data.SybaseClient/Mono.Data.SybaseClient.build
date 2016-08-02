@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+
+<project name="Mono.Data.SybaseClient" default="all">
+	<target name="all">
+		<compile target="library"
+				 output="Mono.Data.SybaseClient.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="true"
+				 installasdefault="true">
+
+			<sources basedir="${mono.sources}/class/Mono.Data.SybaseClient/">
+				<includes name="**/*.cs"/> 
+				<includes name="../../build/common/Consts.cs"/>
+				<includes name="../../build/common/Locale.cs"/>
+				<includes name="../../build/common/MonoTODOAttribute.cs"/> 
+				<excludes name="Test/**"/>
+			</sources>
+
+			<references>
+				<file name="System.dll"/>
+				<file name="System.Xml.dll"/>
+				<file name="../Mono.Security/Mono.Security.dll"/>
+				<file name="../System.Data/System.Data.dll"/>
+				<file name="../Mono.Data.Tds/Mono.Data.Tds.dll"/>
+				<file name="System.EnterpriseServices.dll"/>
+			</references>
+
+		</compile>
+	</target>
+</project>

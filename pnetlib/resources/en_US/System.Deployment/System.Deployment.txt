@@ -1,0 +1,44 @@
+#
+# System.Deployment.txt - Resources for System.Deployment.dll.
+#
+# Copyright (C) 2004  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+SD_Activation=An error occurred while activating a deployed application
+SD_ComponentStore=There was a problem storing the component state
+SD_DependentPlatformMissing=Dependent platform is missing
+SD_Deployment=An error occurred during application deployment
+SD_Download=An error occurred during the the download of a deployed application
+SD_DownloadCancelled=The download of a deployed application was cancelled
+SD_InstallInProgress=Installation is already in progress
+SD_InvalidDeployment=Invalid deployment parameters
+SD_InvalidIdentity=Invalid identity or authentication credentials
+SD_InvalidManifest=Invalid manifest description for deployed application
+SD_InvalidShortcut=Invalid specification for application shortcut
+SD_LockTimeoutException=Lock timed out
+SD_Manifest=There was a problem with the manifest
+SD_ManifestLoad=There was a problem loading the manifest
+SD_ManifestParse=There was a problem parsing the manifest
+SD_ManifestSemanticValidation=There was a problem validating the manifest
+SD_PlatformNotSupported=The current platform is not supported
+SD_Subscription=There was a problem with the subscription
+SD_SubscriptionSemanticValidation=There was a problem validating the subscription
+SD_SubscriptionState=There was a problem with the subscription state
+SD_SubscriptionStore=There was a problem storing the subscription state
+SD_TrustNotGranted=Could not grant the required level of trust
+SD_UriSchemeNotSupported=The specified URI scheme is not supported
+SD_ValidationFailed=Could not validate the deployed application
+SD_Zone=There is something wrong with the security zone

@@ -1,0 +1,236 @@
+<?xml version="1.0"?>
+<project name="simple samples" default="all">
+	<target name="all">
+
+		<!-- Build the codepage.exe program -->
+		<compile output="codepage.exe"
+				 target="exe"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="true">
+
+			<sources>
+				<file name="codepage.cs"/>
+			</sources>
+
+			<references>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the except.exe program -->
+		<compile output="except.exe"
+				 target="exe"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="true">
+
+			<sources>
+				<file name="except.cs"/>
+			</sources>
+
+			<references>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the fib.exe program -->
+		<compile output="fib.exe"
+				 target="exe"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="true">
+
+			<sources>
+				<file name="fib.cs"/>
+			</sources>
+
+			<references>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the getenv.exe program -->
+		<compile output="getenv.exe"
+				 target="exe"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="true">
+
+			<sources>
+				<file name="getenv.cs"/>
+			</sources>
+
+			<references>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the hello.exe program -->
+		<compile output="hello.exe"
+				 target="exe"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="true">
+
+			<sources>
+				<file name="hello.cs"/>
+			</sources>
+
+			<references>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the httpsrv.exe program -->
+		<compile output="httpsrv.exe"
+				 target="exe"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="true">
+
+			<sources>
+				<file name="httpsrv.cs"/>
+			</sources>
+
+			<references>
+				<file name="../../System/first/System.dll"/>
+				<file name="../../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<file name="../../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the sslfetch.exe program -->
+		<compile output="sslfetch.exe"
+				 target="exe"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="true">
+
+			<sources>
+				<file name="sslfetch.cs"/>
+			</sources>
+
+			<references>
+				<file name="../../System/first/System.dll"/>
+				<file name="../../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<file name="../../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<compile output="Emit.exe"
+				 target="exe"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="true">
+
+			<sources>
+				<file name="Emit.cs"/>
+			</sources>
+
+			<references>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the snake.exe program -->
+		<compile output="snake.exe"
+				 target="exe"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="true">
+
+			<sources>
+				<file name="snake.cs"/>
+			</sources>
+
+			<references>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+	</target>
+</project>

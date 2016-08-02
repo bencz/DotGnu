@@ -1,0 +1,2710 @@
+/*
+ * c_lvalue.tc - L-value node handling for C.
+ *
+ * Copyright (C) 2002, 2004, 2008  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/*
+ * Perform semantic analysis for a simple identifier.
+ */
+ILNode_CSemAnalysis(ILNode_Identifier)
+{
+	/* Nothing to do here: the grammar should have replaced this
+	   node with something more appropriate by now */
+	return CSemValueError;
+}
+
+/*
+ * Perform semantic analysis for a generic qualified identifier.
+ */
+ILNode_CSemAnalysis(ILNode_GenericQualIdent)
+{
+	/* This is not used in C */
+	return CSemValueError;
+}
+
+/*
+ * Perform semantic analysis for generic parameters.
+ */
+ILNode_CSemAnalysis(ILNode_GenericTypeParameter),
+ILNode_CSemAnalysis(ILNode_GenericTypeParameters)
+{
+	/* This is not used in C */
+	return CSemValueError;
+}
+
+%{
+
+/*
+ * Convert a C# member reference.
+ */
+static CSemValue ConvertCSharpMember(ILGenInfo *info, ILNode *expr,
+									 ILNode **parent, CSemValue value)
+{
+	ILField *field;
+	ILProperty *property;
+	ILType *type;
+
+	if(CSemIsField(value))
+	{
+		/* We've resolved a member field */
+		field = CSemGetField(value);
+		type = ILField_Type(field);
+		if(CTypeIsArray(type))
+		{
+			/* Arrays decay immediately into r-values */
+			CSemSetDecayedRValue(value, CTypeDecay(info, type), type);
+		}
+		else if(ILField_IsInitOnly(field))
+		{
+			/* Read-only fields cannot be l-values */
+			CSemSetRValue(value, type);
+		}
+		else
+		{
+			/* Everything else must be an l-value field */
+			CSemSetLValue(value, type);
+		}
+		*parent = ILNode_MemberField_create(expr, field);
+		CGenCloneLine(*parent, (ILNode *)expr);
+	}
+	else if(CSemIsProperty(value))
+	{
+		/* We've resolved a member property */
+		property = CSemGetProperty(value);
+		type = ILTypeGetReturn(ILProperty_Signature(property));
+		if(ILProperty_Getter(property))
+		{
+			if(ILProperty_Setter(property))
+			{
+				/* Read-write properties are l-values */
+				CSemSetLValueNoRef(value, type);
+			}
+			else
+			{
+				/* Read-only properties are r-values */
+				CSemSetRValue(value, type);
+			}
+		}
+		else
+		{
+			/* Write-only properties are s-values */
+			CSemSetSValue(value, type);
+		}
+		*parent = ILNode_MemberProperty_create(expr, property);
+		CGenCloneLine(*parent, (ILNode *)expr);
+	}
+	else if(CSemIsMethodGroup(value))
+	{
+		/* We've resolved a method group.  We mark it with an "as-is"
+		   node so that "c_invoke.tc" can detect the difference between
+		   static and instance method calls */
+		*parent = ILNode_AsIs_create(expr);
+		CGenCloneLine(*parent, (ILNode *)expr);
+	}
+
+	/* Return the modified semantic value */
+	return value;
+}
+
+%}
+
+/*
+ * Perform semantic analysis for a member access node.
+ */
+ILNode_CSemAnalysis(ILNode_CMemberField)
+{
+	CSemValue value;
+	ILType *type;
+	ILType *fieldType;
+	ILField *field;
+	ILUInt32 bitFieldStart;
+	ILUInt32 bitFieldSize;
+
+	/* Perform semantic analysis on the primary expression */
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	if(!CSemIsRValue(value))
+	{
+		if(!CSemIsError(value))
+		{
+			goto typeError;
+		}
+		return CSemValueError;
+	}
+
+	/* Make sure that the expression is a structure or union */
+	type = CSemGetType(value);
+	if(!CTypeIsStruct(type) && !CTypeIsUnion(type))
+	{
+		if(CTypeIsReference(type))
+		{
+			/* Try to resolve the member using C# semantics */
+			value = ResolveMember
+				(info, ILTypeStripPrefixes(type), node->name, 0);
+			if(!CSemIsError(value))
+			{
+				return ConvertCSharpMember(info, node->expr, parent, value);
+			}
+		}
+		goto typeError;
+	}
+
+	/* Search for the field within the type */
+	field = CTypeLookupField(info, type, node->name,
+							 &bitFieldStart, &bitFieldSize);
+	if(!field)
+	{
+		if(CTypeIsStruct(type))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  			  _("structure has no member named `%s'"),
+			  			  node->name);
+		}
+		else
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  			  _("union has no member named `%s'"),
+			  			  node->name);
+		}
+		return CSemValueError;
+	}
+
+	/* Save the owner type and the field for the code generator */
+	node->ownerType = type;
+	node->field = field;
+
+	/* Determine if the result is an l-value or an r-value */
+	fieldType = ILMember_Signature(field);
+	if(CTypeIsConst(type))
+	{
+		/* Add back the "const" modifier from the struct type */
+		fieldType = CTypeAddConst(info, fieldType);
+	}
+	if(CTypeIsVolatile(type))
+	{
+		/* Add back the "volatile" modifier from the struct type */
+		fieldType = CTypeAddVolatile(info, fieldType);
+	}
+	if(bitFieldSize != 0)
+	{
+		/* Replace this node with a bit field access node */
+		if(CSemIsLValue(value))
+		{
+			*parent = ILNode_CBitField_create(node->expr, field,
+											  ILTypeToMachineType(fieldType),
+											  bitFieldStart, bitFieldSize, 1);
+			CSemSetLValueNoRef(value, fieldType);
+		}
+		else
+		{
+			*parent = ILNode_CBitField_create(node->expr, field,
+											  ILTypeToMachineType(fieldType),
+											  bitFieldStart, bitFieldSize, 0);
+			CSemSetRValue(value, fieldType);
+		}
+		CGenCloneLine(*parent, (ILNode *)node);
+	}
+	else if(CTypeIsArray(fieldType))
+	{
+		if(!CSemIsLValue(value))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  			  _("invalid use of non-lvalue array"));
+		}
+		CSemSetDecayedRValue(value, CTypeDecay(info, fieldType), fieldType);
+	}
+	else
+	{
+		if(CSemIsLValue(value))
+		{
+			CSemSetLValue(value, fieldType);
+		}
+		else
+		{
+			CSemSetRValue(value, fieldType);
+		}
+	}
+	return value;
+
+	/* Report that the type is not consistent with the operation */
+typeError:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+		  _("request for member `%s' in something not a structure or union"),
+		  node->name);
+	return CSemValueError;
+}
+
+/*
+ * Get the type of a member access or dereference node.
+ */
+ILNode_GetType(ILNode_CMemberField),
+ILNode_GetType(ILNode_CDerefField)
+{
+	ILType *type = ILField_Type(node->field);
+	if(CTypeIsArray(type))
+	{
+		/* Arrays decay to r-value pointers when accessed */
+		return ILMachineType_UnmanagedPtr;
+	}
+	else if(CTypeIsComplex(type))
+	{
+		/* Complex types are passed on the stack as a pointer */
+		return ILMachineType_UnmanagedPtr;
+	}
+	else
+	{
+		return ILTypeToMachineType(type);
+	}
+}
+
+/*
+ * Generate discard code for a member access or dereference node.
+ */
+ILNode_GenDiscard(ILNode_CMemberField),
+ILNode_GenDiscard(ILNode_CDerefField)
+{
+	ILNode_GenDiscard(node->expr, info);
+}
+
+%output "c_nodes.c"
+
+%{
+
+/*
+ * Load a value from a pointer.  If the type is complex or an array,
+ * then leave the pointer as-is.  Returns a modified type representing
+ * the actual value pushed onto the stack.
+ */
+static ILType *LoadValueFromPointer(ILGenInfo *info, ILType *type)
+{
+	if(CTypeIsComplex(type) || CTypeIsArray(type))
+	{
+		return CTypeCreateVoidPtr(info);
+	}
+	else
+	{
+		type = ILTypeStripPrefixes(type);
+		ILGenLoadManaged(info, ILTypeToMachineType(type), type);
+		return type;
+	}
+}
+
+/*
+ * Store a value into a pointer.  If the type is complex,
+ * then the value is expected to be a pointer to a complex
+ * value, which is then copied into its final location.
+ * If "field" is non-NULL, then it indicates that the pointer
+ * is a base for a structure, not the location itself.
+ * If "leave" is non-zero, then the value should be left
+ * on the stack after the store has finished.
+ */
+static void StoreValueToPointer(ILGenInfo *info, ILType *type,
+								ILField *field, int leave)
+{
+	ILType *tempType;
+	unsigned tempVar = ~((unsigned)0);
+	if(CTypeIsComplex(type))
+	{
+		/* Complex values are passed on the stack as pointers */
+		tempType = CTypeCreateVoidPtr(info);
+	}
+	else
+	{
+		tempType = ILTypeStripPrefixes(type);
+	}
+	if(leave)
+	{
+		/* Make a copy of the final value before storing it */
+		tempVar = ILGenTempTypedVar(info, tempType);
+		ILGenSimple(info, IL_OP_DUP);
+		ILGenAdjust(info, 1);
+		ILGenStoreLocal(info, tempVar);
+		ILGenAdjust(info, -1);
+	}
+	if(CTypeIsComplex(type))
+	{
+		/* Copy a complex value into its destination */
+		CGenSizeOf(info, type);
+		ILGenByteInsn(info, IL_OP_PREFIX + IL_PREFIX_OP_UNALIGNED, 1);
+		ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CPBLK);
+		ILGenAdjust(info, -3);
+	}
+	else if(field)
+	{
+		/* Store into a structure field */
+		ILGenFieldRef(info, IL_OP_STFLD, field);
+		ILGenAdjust(info, -2);
+	}
+	else
+	{
+		/* Store directly into a pointer */
+		ILGenStoreManaged(info, ILTypeToMachineType(tempType), tempType);
+		ILGenAdjust(info, -2);
+	}
+	if(leave)
+	{
+		ILGenLoadLocal(info, tempVar);
+		ILGenReleaseTempVar(info, tempVar);
+		ILGenAdjust(info, 1);
+	}
+}
+
+%}
+
+%output "c_semantics.c"
+
+%{
+
+/*
+ * Add a complex field offset value to a pointer on the stack.
+ */
+void CAddComplexFieldOffset(ILGenInfo *info, ILType *type, ILField *field)
+{
+	if(CTypeIsStruct(type) && CTypeNextField(type, 0) != field)
+	{
+		if(info->asmOutput)
+		{
+			fputs("\tldsfld\tunsigned int32 ", info->asmOutput);
+			ILDumpClassName
+				(info->asmOutput, info->image,
+				 ILTypeToClass(info, ILTypeStripPrefixes(type)),
+				 IL_DUMP_QUOTE_NAMES);
+			fputs("::'", info->asmOutput);
+			fputs(ILField_Name(field), info->asmOutput);
+			fputs(".offset'\n", info->asmOutput);
+		}
+		ILGenAdjust(info, 1);
+		ILGenSimple(info, IL_OP_CONV_U);
+		ILGenSimple(info, IL_OP_ADD);
+		ILGenAdjust(info, -1);
+	}
+}
+
+%}
+
+/*
+ * Generate value code for a member access or dereference node.
+ */
+ILNode_GenValue(ILNode_CMemberField),
+ILNode_GenValue(ILNode_CDerefField)
+{
+	ILType *type = ILField_Type(node->field);
+	if(CTypeIsComplex(node->ownerType))
+	{
+		/* Fetch a field from a complex owner type */
+		CGenAddress(info, (ILNode *)node);
+		return ILTypeToMachineType(LoadValueFromPointer(info, type));
+	}
+	if(yyisa(node, ILNode_CMemberField) && yyisa(node->expr, ILNode_LValue))
+	{
+		CGenAddress(info, node->expr);
+	}
+	else
+	{
+		ILNode_GenValue(node->expr, info);
+	}
+	if(CTypeIsArray(type))
+	{
+		/* Arrays decay to r-value pointers when accessed */
+		ILGenFieldRef(info, IL_OP_LDFLDA, node->field);
+		return ILMachineType_UnmanagedPtr;
+	}
+	else
+	{
+		ILGenFieldRef(info, IL_OP_LDFLD, node->field);
+		return ILTypeToMachineType(type);
+	}
+}
+JavaGenValue(ILNode_CMemberField),
+JavaGenValue(ILNode_CDerefField)
+{
+	/* Nothing to do here: will never be called */
+	return ILMachineType_Void;
+}
+
+/*
+ * Prepare to store to a member access or dereference node.
+ */
+ILNode_Prepare(ILNode_CMemberField),
+ILNode_Prepare(ILNode_CDerefField)
+{
+	ILType *type = ILField_Type(node->field);
+	if(CTypeIsComplex(type) || CTypeIsComplex(node->ownerType))
+	{
+		CGenAddress(info, (ILNode *)node);
+		return ILTypeToMachineType(type);
+	}
+	else if(yyisa(node, ILNode_CMemberField))
+	{
+		CGenAddress(info, node->expr);
+		return ILTypeToMachineType(type);
+	}
+	else
+	{
+		ILNode_GenValue(node->expr, info);
+		return ILTypeToMachineType(type);
+	}
+}
+JavaPrepare(ILNode_CMemberField),
+JavaPrepare(ILNode_CDerefField)
+{
+	/* Nothing to do here: will never be called */
+	return ILMachineType_Void;
+}
+
+/*
+ * Get and prepare to store to a member access or dereference node.
+ */
+ILNode_GetAndPrepare(ILNode_CMemberField),
+ILNode_GetAndPrepare(ILNode_CDerefField)
+{
+	ILType *type = ILField_Type(node->field);
+	ILType *tempType = type;
+	if(CTypeIsComplex(node->ownerType) || CTypeIsComplex(type))
+	{
+		/* Fetch a field from a complex owner type or a complex field */
+		CGenAddress(info, (ILNode *)node);
+		ILGenSimple(info, IL_OP_DUP);
+		ILGenAdjust(info, 1);
+		tempType = LoadValueFromPointer(info, type);
+	}
+	else if(yyisa(node, ILNode_CMemberField))
+	{
+		/* Fetch a field from a non-complex owner type (member form) */
+		CGenAddress(info, node->expr);
+		ILGenSimple(info, IL_OP_DUP);
+		ILGenAdjust(info, 1);
+		ILGenFieldRef(info, IL_OP_LDFLD, node->field);
+	}
+	else
+	{
+		/* Fetch a field from a non-complex owner type (deref form) */
+		ILNode_GenValue(node->expr, info);
+		ILGenSimple(info, IL_OP_DUP);
+		ILGenAdjust(info, 1);
+		ILGenFieldRef(info, IL_OP_LDFLD, node->field);
+	}
+	if(leave)
+	{
+		/* Rearrange the stack to leave the value in the correct position */
+		unsigned tempVar1 = ILGenTempTypedVar(info, tempType);
+		unsigned tempVar2 = ILGenTempTypedVar(info, ILType_Int);
+		ILGenStoreLocal(info, tempVar1);
+		ILGenStoreLocal(info, tempVar2);
+		ILGenLoadLocal(info, tempVar1);
+		ILGenLoadLocal(info, tempVar2);
+		ILGenLoadLocal(info, tempVar1);
+		ILGenAdjust(info, 1);
+		ILGenReleaseTempVar(info, tempVar1);
+		ILGenReleaseTempVar(info, tempVar2);
+	}
+	return ILTypeToMachineType(tempType);
+}
+JavaGetAndPrepare(ILNode_CMemberField),
+JavaGetAndPrepare(ILNode_CDerefField)
+{
+	/* Nothing to do here: will never be called */
+	return ILMachineType_Void;
+}
+
+/*
+ * Store to a member access or dereference node.
+ */
+ILNode_Store(ILNode_CMemberField),
+ILNode_Store(ILNode_CDerefField)
+{
+	ILType *type = ILField_Type(node->field);
+	if(CTypeIsComplex(node->ownerType) || CTypeIsComplex(type))
+	{
+		StoreValueToPointer(info, type, 0, leave);
+	}
+	else
+	{
+		StoreValueToPointer(info, type, node->field, leave);
+	}
+}
+JavaStore(ILNode_CMemberField),
+JavaStore(ILNode_CDerefField)
+{
+	/* Nothing to do here: will never be called */
+}
+
+/*
+ * Generate a reference for a member access or dereference node.
+ */
+ILNode_GenRef(ILNode_CMemberField),
+ILNode_GenRef(ILNode_CDerefField)
+{
+	CGenAddress(info, (ILNode *)node);
+}
+
+/*
+ * Generate the address of a member access or dereference node.
+ */
+ILNode_CGenAddress(ILNode_CMemberField),
+ILNode_CGenAddress(ILNode_CDerefField)
+{
+	CAddress addr;
+	if(CTypeIsComplex(node->ownerType))
+	{
+		/* Complex types need special adjustment for their fields */
+		if(yyisa(node, ILNode_CMemberField))
+		{
+			CGenAddress(info, node->expr);
+		}
+		else
+		{
+			ILNode_GenValue(node->expr, info);
+		}
+		CAddComplexFieldOffset(info, node->ownerType, node->field);
+		addr.ptrOnStack = 1;
+		addr.offset = 0;
+	}
+	else
+	{
+		/* We need to use "ldflda" to find the field's dynamic address */
+		if(yyisa(node, ILNode_CMemberField))
+		{
+			CGenAddress(info, node->expr);
+		}
+		else
+		{
+			ILNode_GenValue(node->expr, info);
+		}
+		ILGenFieldRef(info, IL_OP_LDFLDA, node->field);
+		addr.ptrOnStack = 1;
+		addr.offset = 0;
+	}
+	return addr;
+}
+
+%{
+
+/*
+ * Resolve a member within a C#-style type.
+ */
+static CSemValue ResolveMember(ILGenInfo *info, ILType *type,
+							   const char *name, int isStatic)
+{
+	CSemValue value;
+	ILClass *classInfo;
+	ILClass *callScope;
+	ILClass *tempClass;
+	ILClass *child;
+	ILNestedInfo *nested;
+	ILMember *member;
+	ILImplements *impl;
+
+	/* Convert the type into its class form */
+	classInfo = ILClassResolve(ILTypeToClass(info, type));
+
+	/* Get the scope that we will be calling from, for access checks */
+	callScope = ILClassLookup(ILClassGlobalScope(info->image), "<Module>", 0);
+
+	/* Check for nested types first if we are looking for static members */
+	if(isStatic)
+	{
+		tempClass = classInfo;
+		while(tempClass != 0)
+		{
+			nested = 0;
+			while((nested = ILClassNextNested(tempClass, nested)) != 0)
+			{
+				child = ILClassResolve(ILNestedInfoGetChild(nested));
+				if(!strcmp(ILClass_Name(child), name))
+				{
+					if(ILClassAccessible(child, callScope))
+					{
+						CSemSetType(value, ILClassToType(child));
+						return value;
+					}
+				}
+			}
+			tempClass = ILClass_ParentClass(tempClass);
+		}
+	}
+
+	/* Scan the class, its parents, and interfaces, for matches */
+	tempClass = classInfo;
+	while(tempClass != 0)
+	{
+		member = ILClassNextMemberMatch(tempClass, 0, 0, name, 0);
+		if(member && ILMemberAccessible(member, callScope))
+		{
+			if(ILMember_IsField(member))
+			{
+				if((isStatic && ILField_IsStatic((ILField *)member)) ||
+				   (!isStatic && !ILField_IsStatic((ILField *)member)))
+				{
+					CSemSetField(value, (ILField *)member);
+					return value;
+				}
+			}
+			else if(ILMember_IsMethod(member))
+			{
+				if((isStatic && ILMethod_IsStatic((ILMethod *)member)) ||
+				   (!isStatic && !ILMethod_IsStatic((ILMethod *)member)))
+				{
+					CSemSetMethodGroup(value, type, name);
+					return value;
+				}
+			}
+			else if(ILMember_IsProperty(member))
+			{
+				ILMethod *accessor = ILProperty_Getter((ILProperty *)member);
+				if(!accessor)
+				{
+					accessor = ILProperty_Setter((ILProperty *)member);
+				}
+				if(accessor)
+				{
+					if((isStatic && ILMethod_IsStatic((ILMethod *)accessor)) ||
+					   (!isStatic && !ILMethod_IsStatic((ILMethod *)accessor)))
+					{
+						CSemSetProperty(value, (ILProperty *)member);
+						return value;
+					}
+				}
+			}
+		}
+		if(!isStatic)
+		{
+			/* Scan the interfaces if we are looking for an instance member */
+			impl = 0;
+			while((impl = ILClassNextImplements(tempClass, impl)) != 0)
+			{
+				value = ResolveMember
+					(info, ILProgramItemToType(ILImplements_Interface(impl)),
+					 name, isStatic);
+				if(!CSemIsError(value))
+				{
+					if(CSemIsMethodGroup(value))
+					{
+						/* Replace the interface type with the real type */
+						CSemSetMethodGroup(value, type, name);
+					}
+					return value;
+				}
+			}
+		}
+		tempClass = ILClass_ParentClass(tempClass);
+	}
+
+	/* If we get here, then we were unable to find anything */
+	return CSemValueError;
+}
+
+%}
+
+/*
+ * Perform semantic analysis for a static field access node.
+ */
+ILNode_CSemAnalysis(ILNode_CStaticField)
+{
+	CSemValue value;
+	CSemValue typeValue;
+	ILType *type;
+	ILProperty *property;
+
+	/* Perform semantic analysis on the primary expression */
+	typeValue = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	if(!CSemIsType(typeValue))
+	{
+		if(!CSemIsError(typeValue))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("type expected on left side of `::'"));
+		}
+		return CSemValueError;
+	}
+
+	/* Resolve the static member */
+	value = ResolveMember(info, CSemGetType(typeValue), node->name, 1);
+	if(CSemIsError(value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("`%s' has no static member named `%s'"),
+					  CTypeToName(info, CSemGetType(typeValue)), node->name);
+		return value;
+	}
+
+	/* Determine what to do based on the returned information */
+	if(CSemIsType(value))
+	{
+		/* We've resolved a nested type */
+		*parent = ILNode_CTypeExpression_create(CSemGetType(value));
+		CGenCloneLine(*parent, (ILNode *)node);
+	}
+	else if(CSemIsField(value))
+	{
+		/* We've resolved a static field */
+		node->field = CSemGetField(value);
+		type = ILField_Type(node->field);
+		if(CTypeIsArray(type))
+		{
+			/* Arrays decay immediately into r-values */
+			CSemSetDecayedRValue(value, CTypeDecay(info, type), type);
+		}
+		else if(ILField_IsInitOnly(node->field))
+		{
+			/* Read-only fields cannot be l-values */
+			CSemSetRValue(value, type);
+		}
+		else
+		{
+			/* Everything else must be an l-value field */
+			CSemSetLValue(value, type);
+		}
+	}
+	else if(CSemIsProperty(value))
+	{
+		/* We've resolved a static property */
+		property = CSemGetProperty(value);
+		type = ILTypeGetReturn(ILProperty_Signature(property));
+		*parent = ILNode_StaticProperty_create(property);
+		CGenCloneLine(*parent, (ILNode *)node);
+		if(ILProperty_Getter(property))
+		{
+			if(ILProperty_Setter(property))
+			{
+				/* Read-write properties are l-values */
+				CSemSetLValueNoRef(value, type);
+			}
+			else
+			{
+				/* Read-only properties are r-values */
+				CSemSetRValue(value, type);
+			}
+		}
+		else
+		{
+			/* Write-only properties are s-values */
+			CSemSetSValue(value, type);
+		}
+	}
+
+	/* Return the modified value to the caller */
+	return value;
+}
+
+/*
+ * Get the type of a static field access node.
+ */
+ILNode_GetType(ILNode_CStaticField)
+{
+	ILType *type = ILField_Type(node->field);
+	if(CTypeIsArray(type))
+	{
+		/* Arrays decay to r-value pointers when accessed */
+		return ILMachineType_UnmanagedPtr;
+	}
+	else
+	{
+		return ILTypeToMachineType(type);
+	}
+}
+
+/*
+ * Generate discard code for a static field access node.
+ */
+ILNode_GenDiscard(ILNode_CStaticField)
+{
+	/* Nothing to do here */
+}
+
+/*
+ * Generate value code for a static field access node.
+ */
+ILNode_GenValue(ILNode_CStaticField)
+{
+	ILType *type = ILField_Type(node->field);
+	if(CTypeIsArray(type))
+	{
+		/* Arrays decay to r-value pointers when accessed */
+		ILGenFieldRef(info, IL_OP_LDSFLDA, node->field);
+		return ILMachineType_UnmanagedPtr;
+	}
+	else
+	{
+		ILGenFieldRef(info, IL_OP_LDSFLD, node->field);
+		return ILTypeToMachineType(type);
+	}
+}
+JavaGenValue(ILNode_CStaticField)
+{
+	/* Nothing to do here: will never be called */
+	return ILMachineType_Void;
+}
+
+/*
+ * Prepare to store to a static field access node.
+ */
+ILNode_Prepare(ILNode_CStaticField)
+{
+	return ILTypeToMachineType(ILField_Type(node->field));
+}
+JavaPrepare(ILNode_CStaticField)
+{
+	/* Nothing to do here: will never be called */
+	return ILMachineType_Void;
+}
+
+/*
+ * Get and prepare to store to a static field access node.
+ */
+ILNode_GetAndPrepare(ILNode_CStaticField)
+{
+	ILGenFieldRef(info, IL_OP_LDSFLD, node->field);
+	if(leave)
+	{
+		/* Duplicate the stack top to create the left value */
+		ILGenSimple(info, IL_OP_DUP);
+		ILGenAdjust(info, 1);
+	}
+	return ILTypeToMachineType(ILField_Type(node->field));
+}
+JavaGetAndPrepare(ILNode_CStaticField)
+{
+	/* Nothing to do here: will never be called */
+	return ILMachineType_Void;
+}
+
+/*
+ * Store to a static field access node.
+ */
+ILNode_Store(ILNode_CStaticField)
+{
+	if(leave)
+	{
+		ILGenSimple(info, IL_OP_DUP);
+		ILGenAdjust(info, 1);
+	}
+	ILGenFieldRef(info, IL_OP_STSFLD, node->field);
+	ILGenAdjust(info, -1);
+}
+JavaStore(ILNode_CStaticField)
+{
+	/* Nothing to do here: will never be called */
+}
+
+/*
+ * Generate a reference for a static field access node.
+ */
+ILNode_GenRef(ILNode_CStaticField)
+{
+	CGenAddress(info, (ILNode *)node);
+}
+
+/*
+ * Generate the address of a static field access node.
+ */
+ILNode_CGenAddress(ILNode_CStaticField)
+{
+	CAddress addr;
+	ILGenFieldRef(info, IL_OP_LDSFLDA, node->field);
+	addr.ptrOnStack = 1;
+	addr.offset = 0;
+	return addr;
+}
+
+/*
+ * Perform semantic analysis for a field dereference node.
+ */
+ILNode_CSemAnalysis(ILNode_CDerefField)
+{
+	CSemValue value;
+	CSemValue value2;
+	ILType *type;
+	ILType *structType;
+	ILType *fieldType;
+	ILField *field;
+	ILUInt32 bitFieldStart;
+	ILUInt32 bitFieldSize;
+
+	/* Perform semantic analysis on the primary expression */
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	if(!CSemIsRValue(value))
+	{
+		if(!CSemIsError(value))
+		{
+			goto typeError;
+		}
+		return CSemValueError;
+	}
+
+	/* Make sure that the expression is a pointer to a structure or union */
+	type = CSemGetType(value);
+	if(CTypeIsReference(type))
+	{
+		/* Try to resolve the member using C# semantics */
+		value2 = ResolveMember(info, ILTypeStripPrefixes(type), node->name, 0);
+		if(!CSemIsError(value2))
+		{
+			return ConvertCSharpMember(info, node->expr, parent, value2);
+		}
+	}
+	if(!CTypeIsPointer(type))
+	{
+		goto typeError;
+	}
+	structType = CTypeGetPtrRef(type);
+	if(!CTypeIsStruct(structType) && !CTypeIsUnion(structType))
+	{
+		goto typeError;
+	}
+
+	/* Search for the field within the dereferenced struct type */
+	field = CTypeLookupField(info, structType, node->name,
+							 &bitFieldStart, &bitFieldSize);
+	if(!field)
+	{
+		if(CTypeIsStruct(structType))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  			  _("structure has no member named `%s'"),
+			  			  node->name);
+		}
+		else
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  			  _("union has no member named `%s'"),
+			  			  node->name);
+		}
+		return CSemValueError;
+	}
+
+	/* Save the field for the code generator */
+	node->field = field;
+	node->ownerType = structType;
+
+	/* Determine if the result is an l-value or an r-value */
+	fieldType = ILMember_Signature(field);
+	if(CTypeIsConst(structType))
+	{
+		/* Add back the "const" modifier from the struct type */
+		fieldType = CTypeAddConst(info, fieldType);
+	}
+	if(CTypeIsVolatile(structType))
+	{
+		/* Add back the "volatile" modifier from the struct type */
+		fieldType = CTypeAddVolatile(info, fieldType);
+	}
+	if(bitFieldSize != 0)
+	{
+		/* Replace this node with a bit field access node */
+		*parent = ILNode_CBitField_create(node->expr, field,
+										  ILTypeToMachineType(fieldType),
+										  bitFieldStart, bitFieldSize, 0);
+		CGenCloneLine(*parent, (ILNode *)node);
+		CSemSetLValueNoRef(value, fieldType);
+	}
+	else if(CTypeIsArray(fieldType))
+	{
+		CSemSetDecayedRValue(value, CTypeDecay(info, fieldType), fieldType);
+	}
+	else
+	{
+		CSemSetLValue(value, fieldType);
+	}
+	return value;
+
+	/* Report that the type is not consistent with the operation */
+typeError:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+		  _("request for member `%s' in something not a structure or union"),
+		  node->name);
+	return CSemValueError;
+}
+
+/*
+ * Perform semantic analysis for a local variable reference.
+ */
+ILNode_CSemAnalysis(ILNode_LocalVar),
+ILNode_CSemAnalysis(ILNode_ArgumentVar)
+{
+	/* These node types aren't used by the grammar */
+	return CSemValueError;
+}
+
+/*
+ * Generate the address of a local variable reference.
+ */
+ILNode_CGenAddress(ILNode_LocalVar),
+ILNode_CGenAddress(ILNode_ArgumentVar)
+{
+	/* These node types aren't used by the grammar */
+	return CAddressDefault;
+}
+
+/*
+ * Perform semantic analysis for a C local variable reference.
+ */
+ILNode_CSemAnalysis(ILNode_CLocalVar)
+{
+	CSemValue value;
+	if(node->type != node->decayedType)
+	{
+		/* This is an array that decays to an r-value pointer */
+		CSemSetDecayedRValue(value, node->decayedType, node->type);
+	}
+	else
+	{
+		/* This type doesn't decay, so it is an l-value */
+		CSemSetLValue(value, node->type);
+	}
+	return value;
+}
+
+/*
+ * Get the type for a C local variable reference.
+ */
+ILNode_GetType(ILNode_CLocalVar)
+{
+	if(node->type == node->decayedType && !CTypeIsComplex(node->type))
+	{
+		return node->machineType;
+	}
+	else
+	{
+		return ILMachineType_UnmanagedPtr;
+	}
+}
+
+/*
+ * Generate value code for a C local variable reference.
+ * This overrides the standard code in "codegen" so that
+ * we can handle arrays that decay into pointers.
+ */
+ILNode_GenValue(ILNode_CLocalVar)
+{
+	if(node->type == node->decayedType)
+	{
+		/* This is an ordinary local variable */
+		if(!CTypeIsComplex(node->type))
+		{
+			ILGenLoadLocal(info, node->index);
+			ILGenAdjust(info, 1);
+			return node->machineType;
+		}
+		else
+		{
+			ILGenLoadLocal(info, node->index);
+			ILGenAdjust(info, 1);
+			return ILMachineType_UnmanagedPtr;
+		}
+	}
+	else
+	{
+		/* This local variable decays immediately into a pointer */
+		if(!CTypeIsComplex(node->type))
+		{
+			ILGenLoadLocalAddr(info, node->index);
+			ILGenAdjust(info, 1);
+		}
+		else
+		{
+			ILGenLoadLocal(info, node->index);
+			ILGenAdjust(info, 1);
+		}
+		return ILMachineType_UnmanagedPtr;
+	}
+}
+JavaGenValue(ILNode_CLocalVar)
+{
+	/* Nothing to do here */
+	return ILMachineType_Void;
+}
+
+/*
+ * Generate the address of a local variable reference.
+ */
+ILNode_CGenAddress(ILNode_CLocalVar)
+{
+	CAddress addr;
+	if(!CTypeIsComplex(node->type))
+	{
+		ILGenLoadLocalAddr(info, node->index);
+	}
+	else
+	{
+		ILGenLoadLocal(info, node->index);
+	}
+	ILGenAdjust(info, 1);
+	addr.ptrOnStack = 1;
+	addr.offset = 0;
+	return addr;
+}
+
+/*
+ * Prepare for a store into a local variable.
+ */
+ILNode_Prepare(ILNode_CLocalVar)
+{
+	if(CTypeIsComplex(node->type))
+	{
+		ILGenLoadLocal(info, node->index);
+		ILGenAdjust(info, 1);
+		return ILMachineType_UnmanagedPtr;
+	}
+	else
+	{
+		return node->machineType;
+	}
+}
+JavaPrepare(ILNode_CLocalVar)
+{
+	/* Nothing to do here */
+	return ILMachineType_Void;
+}
+
+/*
+ * Generate reference code for a local variable.
+ */
+ILNode_GenRef(ILNode_CLocalVar)
+{
+	CGenAddress(info, (ILNode *)node);
+}
+
+/*
+ * Get and prepare for a store into a local variable.
+ * We assume that this will never be called for complex types
+ * because it isn't possible to do "++", "+=", etc on such types.
+ * Semantic analysis should weed out such cases before we get here.
+ */
+ILNode_GetAndPrepare(ILNode_CLocalVar)
+{
+	ILGenLoadLocal(info, node->index);
+	ILGenAdjust(info, 1);
+	if(leave)
+	{
+		ILGenSimple(info, IL_OP_DUP);
+		ILGenAdjust(info, 1);
+	}
+	return node->machineType;
+}
+JavaGetAndPrepare(ILNode_CLocalVar)
+{
+	/* Nothing to do here */
+	return ILMachineType_Void;
+}
+
+/*
+ * Store into a local variable.
+ */
+ILNode_Store(ILNode_CLocalVar)
+{
+	if(!CTypeIsComplex(node->type))
+	{
+		/* Perform a store for a non-complex local variable type */
+		if(leave)
+		{
+			ILGenSimple(info, IL_OP_DUP);
+			ILGenAdjust(info, 1);
+		}
+		ILGenStoreLocal(info, node->index);
+		ILGenAdjust(info, -1);
+	}
+	else
+	{
+		/* Copy the contents of the complex type into the local variable */
+		CGenSizeOf(info, node->type);
+		ILGenByteInsn(info, IL_OP_PREFIX + IL_PREFIX_OP_UNALIGNED, 1);
+		ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CPBLK);
+		ILGenAdjust(info, -3);
+
+		/* If we should leave the value, then reload the local variable */
+		if(leave)
+		{
+			ILGenLoadLocal(info, node->index);
+			ILGenAdjust(info, 1);
+		}
+	}
+}
+JavaStore(ILNode_CLocalVar)
+{
+	/* Nothing to do here */
+}
+
+/*
+ * Perform semantic analysis for a C argument variable reference.
+ */
+ILNode_CSemAnalysis(ILNode_CArgumentVar)
+{
+	CSemValue value;
+	CSemSetLValue(value, node->type);
+	return value;
+}
+
+/*
+ * Get type information for an argument reference.
+ */
+ILNode_GetType(ILNode_CArgumentVar)
+{
+	if(CTypeIsComplex(node->type))
+	{
+		return ILMachineType_UnmanagedPtr;
+	}
+	else
+	{
+		return node->machineType;
+	}
+}
+
+/*
+ * Generate discard code for an argument reference.
+ */
+ILNode_GenDiscard(ILNode_CArgumentVar)
+{
+	/* Nothing to do here */
+}
+
+/*
+ * Generate value code for an argument reference.
+ */
+ILNode_GenValue(ILNode_CArgumentVar)
+{
+	if(!CTypeIsComplex(node->type))
+	{
+		/* Ordinary values are pushed by value */
+		ILGenLoadArg(info, node->index);
+		ILGenAdjust(info, 1);
+		return node->machineType;
+	}
+	else
+	{
+		/* Complex values are pushed by reference */
+		ILGenLoadArg(info, node->index);
+		ILGenAdjust(info, 1);
+		return ILMachineType_UnmanagedPtr;
+	}
+}
+JavaGenValue(ILNode_CArgumentVar)
+{
+	/* Nothing to do here */
+	return ILMachineType_Void;
+}
+
+/*
+ * Prepare for a store into an argument variable.
+ */
+ILNode_Prepare(ILNode_CArgumentVar)
+{
+	if(CTypeIsComplex(node->type))
+	{
+		ILGenLoadArg(info, node->index);
+		ILGenAdjust(info, 1);
+		return ILMachineType_UnmanagedPtr;
+	}
+	else
+	{
+		return node->machineType;
+	}
+}
+JavaPrepare(ILNode_CArgumentVar)
+{
+	/* Nothing to do here */
+	return ILMachineType_Void;
+}
+
+/*
+ * Generate reference code for an argument variable.
+ */
+ILNode_GenRef(ILNode_CArgumentVar)
+{
+	CGenAddress(info, (ILNode *)node);
+}
+
+/*
+ * Get and prepare for a store into an argument variable.
+ * We assume that this will never be called for complex types
+ * because it isn't possible to do "++", "+=", etc on such types.
+ * Semantic analysis should weed out such cases before we get here.
+ */
+ILNode_GetAndPrepare(ILNode_CArgumentVar)
+{
+	ILGenLoadArg(info, node->index);
+	ILGenAdjust(info, 1);
+	if(leave)
+	{
+		ILGenSimple(info, IL_OP_DUP);
+		ILGenAdjust(info, 1);
+	}
+	return node->machineType;
+}
+JavaGetAndPrepare(ILNode_CArgumentVar)
+{
+	/* Nothing to do here */
+	return ILMachineType_Void;
+}
+
+/*
+ * Store into an argument variable.
+ */
+ILNode_Store(ILNode_CArgumentVar)
+{
+	if(!CTypeIsComplex(node->type))
+	{
+		/* Perform a store for a non-complex argument type */
+		if(leave)
+		{
+			ILGenSimple(info, IL_OP_DUP);
+			ILGenAdjust(info, 1);
+		}
+		ILGenStoreArg(info, node->index);
+		ILGenAdjust(info, -1);
+	}
+	else
+	{
+		/* Copy the contents of the complex type into the argument variable */
+		CGenSizeOf(info, node->type);
+		ILGenByteInsn(info, IL_OP_PREFIX + IL_PREFIX_OP_UNALIGNED, 1);
+		ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CPBLK);
+		ILGenAdjust(info, -3);
+
+		/* If we should leave the value, then reload the argument pointer */
+		if(leave)
+		{
+			ILGenLoadArg(info, node->index);
+			ILGenAdjust(info, 1);
+		}
+	}
+}
+JavaStore(ILNode_CArgumentVar)
+{
+	/* Nothing to do here */
+}
+
+/*
+ * Generate the address of an argument reference.
+ */
+ILNode_CGenAddress(ILNode_CArgumentVar)
+{
+	CAddress addr;
+	if(!CTypeIsComplex(node->type))
+	{
+		/* Ordinary types are passed by value, so take the arg address */
+		ILGenLoadArgAddr(info, node->index);
+	}
+	else
+	{
+		/* The argument is passed by reference, so push it directly */
+		ILGenLoadArg(info, node->index);
+	}
+	ILGenAdjust(info, 1);
+	addr.ptrOnStack = 1;
+	addr.offset = 0;
+	return addr;
+}
+
+/*
+ * Perform semantic analysis for a C by-ref argument variable reference.
+ */
+ILNode_CSemAnalysis(ILNode_RefArgumentVar)
+{
+	CSemValue value;
+	if(CTypeIsConst(node->type))
+	{
+		/* The reference points to a "const" value, which makes it read-only */
+		CSemSetRValue(value, node->type);
+	}
+	else
+	{
+		CSemSetLValue(value, node->type);
+	}
+	return value;
+}
+
+/*
+ * Generate the address of a by-ref argument reference.
+ */
+ILNode_CGenAddress(ILNode_RefArgumentVar)
+{
+	CAddress addr;
+	ILGenLoadArg(info, node->index);
+	ILGenAdjust(info, 1);
+	addr.ptrOnStack = 1;
+	addr.offset = 0;
+	return addr;
+}
+
+/*
+ * Perform semantic analysis for a C global variable reference.
+ */
+ILNode_CSemAnalysis(ILNode_CGlobalVar)
+{
+	CSemValue value;
+	if(node->type != node->decayedType)
+	{
+		/* This is an array that decays to an r-value pointer */
+		CSemSetDecayedRValue(value, node->decayedType, node->type);
+	}
+	else
+	{
+		/* This type doesn't decay, so it is an l-value */
+		CSemSetLValue(value, node->type);
+	}
+	return value;
+}
+
+/*
+ * Get the type of a C global variable reference.
+ */
+ILNode_GetType(ILNode_CGlobalVar)
+{
+	if(!CTypeIsComplex(node->type))
+	{
+		return ILTypeToMachineType(node->decayedType);
+	}
+	else
+	{
+		return ILMachineType_UnmanagedPtr;
+	}
+}
+
+/*
+ * Generate discard code for a C global variable reference.
+ */
+ILNode_GenDiscard(ILNode_CGlobalVar)
+{
+	/* Nothing to do here */
+}
+
+/*
+ * Generate value code for a C global variable reference.
+ */
+ILNode_GenValue(ILNode_CGlobalVar)
+{
+	if(info->asmOutput)
+	{
+		if(node->type == node->decayedType || CTypeIsComplex(node->type))
+		{
+			fputs("\tldsfld\t", info->asmOutput);
+		}
+		else
+		{
+			fputs("\tldsflda\t", info->asmOutput);
+		}
+		ILDumpType(info->asmOutput, info->image, node->type,
+				   IL_DUMP_QUOTE_NAMES);
+		putc(' ', info->asmOutput);
+		if(CTypeIsComplex(node->type))
+		{
+			fputs("* ", info->asmOutput);
+		}
+		ILDumpIdentifier(info->asmOutput, node->name, 0,
+						 IL_DUMP_QUOTE_NAMES);
+		putc('\n', info->asmOutput);
+	}
+	ILGenAdjust(info, 1);
+	if(!CTypeIsComplex(node->type))
+	{
+		return ILTypeToMachineType(node->decayedType);
+	}
+	else
+	{
+		return ILMachineType_UnmanagedPtr;
+	}
+}
+
+/*
+ * Prepare a C global variable reference to be stored in.
+ */
+ILNode_Prepare(ILNode_CGlobalVar)
+{
+	if(CTypeIsComplex(node->type))
+	{
+		return ILNode_GenValue((ILNode *)node, info);
+	}
+	else
+	{
+		return ILTypeToMachineType(node->decayedType);
+	}
+}
+
+/*
+ * Get and prepare a C global variable reference.
+ * We assume that this will never be called for complex types
+ * because it isn't possible to do "++", "+=", etc on such types.
+ * Semantic analysis should weed out such cases before we get here.
+ */
+ILNode_GetAndPrepare(ILNode_CGlobalVar)
+{
+	if(info->asmOutput)
+	{
+		fputs("\tldsfld\t", info->asmOutput);
+		ILDumpType(info->asmOutput, info->image, node->type,
+				   IL_DUMP_QUOTE_NAMES);
+		putc(' ', info->asmOutput);
+		ILDumpIdentifier(info->asmOutput, node->name, 0,
+						 IL_DUMP_QUOTE_NAMES);
+		putc('\n', info->asmOutput);
+	}
+	ILGenAdjust(info, 1);
+	if(leave)
+	{
+		ILGenSimple(info, IL_OP_DUP);
+		ILGenAdjust(info, 1);
+	}
+	return ILTypeToMachineType(node->decayedType);
+}
+
+/*
+ * Store into a C global variable reference.
+ */
+ILNode_Store(ILNode_CGlobalVar)
+{
+	if(!CTypeIsComplex(node->type))
+	{
+		/* Handle a non-complex type */
+		if(leave)
+		{
+			ILGenSimple(info, IL_OP_DUP);
+			ILGenAdjust(info, 1);
+		}
+		fputs("\tstsfld\t", info->asmOutput);
+		ILDumpType(info->asmOutput, info->image, node->type,
+				   IL_DUMP_QUOTE_NAMES);
+		putc(' ', info->asmOutput);
+		ILDumpIdentifier(info->asmOutput, node->name, 0,
+						 IL_DUMP_QUOTE_NAMES);
+		putc('\n', info->asmOutput);
+		ILGenAdjust(info, -1);
+	}
+	else
+	{
+		/* Copy the complex value into the pointer on the stack */
+		CGenSizeOf(info, node->type);
+		ILGenByteInsn(info, IL_OP_PREFIX + IL_PREFIX_OP_UNALIGNED, 1);
+		ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CPBLK);
+		ILGenAdjust(info, -3);
+
+		/* Push the address of the global variable in leave mode */
+		if(leave)
+		{
+			ILNode_GenValue((ILNode *)node, info);
+		}
+	}
+}
+
+/*
+ * Generate an address for a C global variable reference.
+ */
+ILNode_GenRef(ILNode_CGlobalVar)
+{
+	if(info->asmOutput)
+	{
+		if(CTypeIsComplex(node->type))
+		{
+			fputs("\tldsfld\t", info->asmOutput);
+		}
+		else
+		{
+			fputs("\tldsflda\t", info->asmOutput);
+		}
+		ILDumpType(info->asmOutput, info->image, node->type,
+				   IL_DUMP_QUOTE_NAMES);
+		putc(' ', info->asmOutput);
+		if(CTypeIsComplex(node->type))
+		{
+			fputs("* ", info->asmOutput);
+		}
+		ILDumpIdentifier(info->asmOutput, node->name, 0,
+						 IL_DUMP_QUOTE_NAMES);
+		putc('\n', info->asmOutput);
+	}
+	ILGenAdjust(info, 1);
+}
+
+/*
+ * Generate the address of a global variable reference.
+ */
+ILNode_CGenAddress(ILNode_CGlobalVar)
+{
+	CAddress addr;
+	ILNode_GenRef((ILNode_LValue *)node, info);
+	addr.ptrOnStack = 1;
+	addr.offset = 0;
+	return addr;
+}
+
+/*
+ * Stub out unnecessary Java code generation functions.
+ */
+JavaGenValue(ILNode_CGlobalVar),
+JavaPrepare(ILNode_CGlobalVar),
+JavaGetAndPrepare(ILNode_CGlobalVar)
+{
+	/* Never called: nothing to do here */
+	return ILTypeToMachineType(node->decayedType);
+}
+JavaStore(ILNode_CGlobalVar)
+{
+	/* Never called: nothing to do here */
+}
+
+/*
+ * Perform semantic analysis for an array access node.
+ */
+ILNode_CSemAnalysis(ILNode_CArrayAccess)
+{
+	CSemValue value1;
+	CSemValue value2;
+	CSemValue tempValue;
+	ILNode *tempNode;
+	ILType *rawElemType;
+	ILType *elemType;
+
+	/* Perform semantic analysis on the two values.  We deliberately
+	   turn off "stmtLevel" processing, because we don't know if we
+	   may need to swap the values below.  This only affects "setjmp"
+	   and "alloca", which probably won't be present here anyway */
+	value1 = ILNode_CSemAnalysis(node->array, info, &(node->array), 0);
+	value2 = ILNode_CSemAnalysis(node->indices, info, &(node->indices), 0);
+
+	/* Swap the values if the second is the pointer.  We need to do
+	   this to support code of the form "3[p]", which is legal ANSI C,
+	   but not necessarily a very smart coding convention */
+	if(CSemIsRValue(value1) && CSemIsRValue(value2) &&
+	   !CTypeIsPointer(CSemGetType(value1)) &&
+	   CTypeIsPointer(CSemGetType(value2)))
+	{
+		tempValue = value1;
+		value1 = value2;
+		value2 = tempValue;
+		tempNode = node->array;
+		node->array = node->indices;
+		node->indices = tempNode;
+	}
+
+	/* Validate the arguments to the array access operator */
+	
+	/* Handle managed arrays first off */
+	if(CSemIsRValue(value1) && ILType_IsSimpleArray(CSemGetType(value1))
+		&& CSemIsRValue(value2) && CTypeIsInteger(CSemGetType(value2)))
+	{
+		elemType = ILType_ElemType(CSemGetType(value1));
+		*parent = ILNode_ArrayAccess_create(node->array, node->indices); 
+		((ILNode_ArrayAccess*)(*parent))->arrayType = CSemGetType(value1);
+		((ILNode_ArrayAccess*)(*parent))->elemType = elemType;
+		
+		if(CSemIsLValue(value1))
+		{
+			CSemSetLValue(value1, elemType);
+		}
+		else
+		{
+			// could have been a read only array
+			CSemSetRValue(value1, elemType);
+		}
+		return value1;
+	}
+	
+	if(!CSemIsRValue(value1) || !CTypeIsPointer(CSemGetType(value1)))
+	{
+		if(!CSemIsError(value1))
+		{
+			CCErrorOnLine(yygetfilename(node->array),
+						  yygetlinenum(node->array),
+						  _("subscripted value is neither array nor pointer"));
+		}
+		elemType = 0;
+		rawElemType = 0;
+	}
+	else
+	{
+		rawElemType = CTypeGetPtrRef(CSemGetType(value1));
+		elemType = CTypeDecay(info, rawElemType);
+		if(ILTypeStripPrefixes(elemType) == ILType_Void)
+		{
+			CCErrorOnLine(yygetfilename(node->array),
+						  yygetlinenum(node->array),
+						  _("dereferencing `void *' pointer"));
+		}
+	}
+	if(!CSemIsRValue(value2) || !CTypeIsInteger(CSemGetType(value2)))
+	{
+		if(!CSemIsError(value2))
+		{
+			CCErrorOnLine(yygetfilename(node->indices),
+						  yygetlinenum(node->indices),
+						  _("array subscript is not an integer"));
+		}
+	}
+
+	/* Set the type values in the node, for use by the code generators */
+	node->arrayType = CSemGetType(value1);
+	node->elemType = elemType;
+
+	/* Determine the final semantic value to return */
+	if(elemType)
+	{
+		if(elemType == rawElemType)
+		{
+			/* Non-array element type, which is an l-value */
+			CSemSetLValue(value1, elemType);
+		}
+		else
+		{
+			/* The array element decays into a pointer, which is an r-value */
+			CSemSetDecayedRValue(value1, elemType, rawElemType);
+		}
+		return value1;
+	}
+	else
+	{
+		return CSemValueError;
+	}
+}
+
+/*
+ * Get the type for an array access node.
+ */
+ILNode_GetType(ILNode_CArrayAccess)
+{
+	if(CTypeIsComplex(node->elemType))
+	{
+		return ILMachineType_UnmanagedPtr;
+	}
+	else
+	{
+		return ILTypeToMachineType(node->elemType);
+	}
+}
+
+/*
+ * Generate value code for an array access node.
+ */
+ILNode_GenValue(ILNode_CArrayAccess)
+{
+	ILType *type = node->elemType;
+
+	/* Push the address of the array element onto the stack */
+	CGenAddress(info, (ILNode *)node);
+
+	/* Load the value from the pointer if not a sub-array */
+	if(node->elemType == CTypeGetPtrRef(node->arrayType))
+	{
+		type = LoadValueFromPointer(info, type);
+	}
+
+	/* Return the machine type for the element */
+	return ILTypeToMachineType(type);
+}
+
+/*
+ * Prepare to store to an array access node.
+ */
+ILNode_Prepare(ILNode_CArrayAccess)
+{
+	/* Push the address of the array element onto the stack */
+	CGenAddress(info, (ILNode *)node);
+
+	/* Return the machine type for the element */
+	return ILTypeToMachineType(node->elemType);
+}
+
+/*
+ * Get and prepare to store to an array access node.
+ */
+ILNode_GetAndPrepare(ILNode_CArrayAccess)
+{
+	ILType *tempType;
+	unsigned tempVar1;
+	unsigned tempVar2;
+
+	/* Push the address of the array element onto the stack */
+	CGenAddress(info, (ILNode *)node);
+
+	/* Duplicate the pointer on the stack for the store */
+	ILGenSimple(info, IL_OP_DUP);
+	ILGenAdjust(info, 1);
+
+	/* Load the current value from the pointer */
+	tempType = LoadValueFromPointer(info, node->elemType);
+
+	/* Rearrange the contents of the stack if "leave" is set */
+	if(leave)
+	{
+		tempVar1 = ILGenTempTypedVar(info, ILType_Int);
+		tempVar2 = ILGenTempTypedVar(info, tempType);
+		ILGenStoreLocal(info, tempVar2);
+		ILGenStoreLocal(info, tempVar1);
+		ILGenLoadLocal(info, tempVar2);
+		ILGenLoadLocal(info, tempVar1);
+		ILGenLoadLocal(info, tempVar2);
+		ILGenAdjust(info, 1);
+		ILGenReleaseTempVar(info, tempVar1);
+		ILGenReleaseTempVar(info, tempVar2);
+	}
+
+	/* Return the machine type for the element */
+	return ILTypeToMachineType(tempType);
+}
+
+/*
+ * Store to an array access node.
+ */
+ILNode_Store(ILNode_CArrayAccess)
+{
+	StoreValueToPointer(info, node->elemType, 0, leave);
+}
+
+/*
+ * Generate reference code for an array access node.
+ */
+ILNode_GenRef(ILNode_CArrayAccess)
+{
+	/* Generate the address of this node, and force its
+	   conversion into a pointer value on the stack */
+	CGenAddress(info, (ILNode *)node);
+}
+
+/*
+ * Generate the address of an array access node.
+ */
+ILNode_CGenAddress(ILNode_CArrayAccess)
+{
+	CAddress addr;
+	ILEvalValue value;
+	ILInt64 temp;
+	CTypeLayoutInfo layout;
+
+	/* Get the address of the array start */
+	if(ILNode_EvalConst(node->array, info, &value) &&
+	   value.valueType == ILMachineType_UnmanagedPtr)
+	{
+		addr.ptrOnStack = 0;
+		addr.offset = value.un.i4Value;
+	}
+	else
+	{
+		ILNode_GenValue(node->array, info);
+		addr.ptrOnStack = 1;
+		addr.offset = 0;
+	}
+
+	/* Adjust the pointer by the array index */
+	CTypeGetLayoutInfo(node->elemType, &layout);
+	if(layout.category == C_TYPECAT_FIXED &&
+	   ILNode_EvalConst(node->indices, info, &value))
+	{
+		/* Adjust the address offset by a constant index */
+		temp = (ILInt64)(layout.size);
+		switch(value.valueType)
+		{
+			case ILMachineType_Int8:
+			case ILMachineType_UInt8:
+			case ILMachineType_Int16:
+			case ILMachineType_UInt16:
+			case ILMachineType_Char:
+			case ILMachineType_Int32:
+			{
+				temp *= (ILInt64)(value.un.i4Value);
+			}
+			break;
+
+			case ILMachineType_UInt32:
+			{
+				temp *= (ILInt64)(ILUInt32)(value.un.i4Value);
+			}
+			break;
+
+			case ILMachineType_Int64:
+			{
+				if(value.un.i8Value >= (ILInt64)IL_MIN_INT32 &&
+				   value.un.i8Value <= (ILInt64)IL_MAX_INT32)
+				{
+					temp *= value.un.i8Value;
+				}
+				else
+				{
+					goto force;
+				}
+			}
+			break;
+
+			case ILMachineType_UInt64:
+			{
+				if(value.un.i8Value >= 0 &&
+				   value.un.i8Value <= (ILInt64)IL_MAX_INT32)
+				{
+					temp *= value.un.i8Value;
+				}
+				else
+				{
+					goto force;
+				}
+			}
+			break;
+
+			default: goto force;
+		}
+		temp += (ILInt64)(addr.offset);
+		if(temp < (ILInt64)IL_MIN_INT32 || temp > (ILInt64)IL_MAX_INT32)
+		{
+			goto force;
+		}
+		addr.offset = (ILInt32)temp;
+	}
+	else
+	{
+	force:
+		/* Force the pointer onto the stack */
+		if(!(addr.ptrOnStack) && addr.offset != 0)
+		{
+			ILGenUIntNative(info, addr.offset);
+			ILGenAdjust(info, 1);
+			addr.ptrOnStack = 1;
+			addr.offset = 0;
+		}
+
+		/* Push the array index value onto the stack */
+		ILGenCast(info, ILNode_GenValue(node->indices, info),
+				  ILMachineType_NativeInt);
+		ILGenAdjust(info, 1);
+
+		/* Multiply the array index by the element size */
+		if(layout.category == C_TYPECAT_FIXED)
+		{
+			switch(layout.size)
+			{
+				case 1:		break;
+
+				case 2:
+				{
+					ILGenSimple(info, IL_OP_LDC_I4_1);
+					ILGenSimple(info, IL_OP_SHL);
+					ILGenExtend(info, 1);
+				}
+				break;
+
+				case 4:
+				{
+					ILGenSimple(info, IL_OP_LDC_I4_2);
+					ILGenSimple(info, IL_OP_SHL);
+					ILGenExtend(info, 1);
+				}
+				break;
+
+				case 8:
+				{
+					ILGenSimple(info, IL_OP_LDC_I4_3);
+					ILGenSimple(info, IL_OP_SHL);
+					ILGenExtend(info, 1);
+				}
+				break;
+
+				default:
+				{
+					ILGenIntNative(info, (ILInt32)(layout.size));
+					ILGenSimple(info, IL_OP_MUL);
+					ILGenExtend(info, 1);
+				}
+				break;
+			}
+		}
+		else
+		{
+			CGenSizeOf(info, node->elemType);
+			ILGenSimple(info, IL_OP_CONV_U);
+			ILGenSimple(info, IL_OP_MUL);
+			ILGenAdjust(info, -1);
+		}
+
+		/* Add the computed offset to the pointer */
+		if(addr.ptrOnStack)
+		{
+			ILGenSimple(info, IL_OP_ADD);
+			ILGenAdjust(info, -1);
+		}
+		else
+		{
+			/* The original pointer was NULL, so there is no need to add */
+			addr.ptrOnStack = 1;
+		}
+	}
+
+	/* Return the final address to the caller */
+	return addr;
+}
+
+/*
+ * Evaluate the constant value of an array access node.
+ */
+ILNode_EvalConst(ILNode_CArrayAccess)
+{
+	ILEvalValue arrayValue;
+	ILEvalValue indexValue;
+	CTypeLayoutInfo layout;
+	ILUInt32 size;
+	ILInt64 ptr;
+
+	/* Evaluate the two arguments */
+	if(!ILNode_EvalConst(node->array, info, &arrayValue) ||
+	   arrayValue.valueType != ILMachineType_UnmanagedPtr ||
+	   !ILNode_EvalConst(node->indices, info, &indexValue))
+	{
+		return 0;
+	}
+
+	/* Get the size of the array element type */
+	CTypeGetLayoutInfo(node->elemType, &layout);
+	if(layout.category != C_TYPECAT_FIXED)
+	{
+		return 0;
+	}
+	size = layout.size;
+
+	/* Compute the new constant pointer value */
+	ptr = (ILInt64)(arrayValue.un.i4Value);
+	switch(indexValue.valueType)
+	{
+		case ILMachineType_Int8:
+		case ILMachineType_UInt8:
+		case ILMachineType_Int16:
+		case ILMachineType_UInt16:
+		case ILMachineType_Char:
+		case ILMachineType_Int32:
+		{
+			ptr += ((ILInt64)(indexValue.un.i4Value)) * ((ILInt64)size);
+		}
+		break;
+
+		case ILMachineType_UInt32:
+		{
+			ptr += ((ILInt64)(ILUInt32)(indexValue.un.i4Value))
+						* ((ILInt64)size);
+		}
+		break;
+
+		case ILMachineType_Int64:
+		{
+			if(indexValue.un.i8Value >= (ILInt64)IL_MIN_INT32 &&
+			   indexValue.un.i8Value <= (ILInt64)IL_MAX_INT32)
+			{
+				ptr += indexValue.un.i8Value * ((ILInt64)size);
+			}
+			else
+			{
+				return 0;
+			}
+		}
+		break;
+
+		case ILMachineType_UInt64:
+		{
+			if(indexValue.un.i8Value >= 0 &&
+			   indexValue.un.i8Value <= (ILInt64)IL_MAX_INT32)
+			{
+				ptr += indexValue.un.i8Value * ((ILInt64)size);
+			}
+			else
+			{
+				return 0;
+			}
+		}
+		break;
+
+		default: return 0;
+	}
+
+	/* Bail out if the constant pointer is outside the 32-bit range */
+	if(ptr < (ILInt64)IL_MIN_INT32 || ptr > (ILInt64)IL_MAX_INT32)
+	{
+		return 0;
+	}
+
+	/* Create the new constant pointer value and return it */
+	arrayValue.valueType = ILMachineType_UnmanagedPtr;
+	arrayValue.un.i4Value = (ILInt32)ptr;
+	return 1;
+}
+
+/*
+ * Perform semantic analysis for a pointer dereference node.
+ */
+ILNode_CSemAnalysis(ILNode_CDeref)
+{
+	CSemValue value;
+	ILType *type;
+	ILType *decayed;
+
+	/* Perform semantic analysis on the pointer value */
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	if(CSemIsRValue(value) && CTypeIsFunctionPtr(CSemGetType(value)))
+	{
+		/* Remove the dereference from a function pointer expression */
+		*parent = node->expr;
+		return value;
+	}
+	if(!CSemIsRValue(value) || !CTypeIsPointer(CSemGetType(value)))
+	{
+		if(!CSemIsError(value))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("invalid argument to unary `*'"));
+		}
+		return CSemValueError;
+	}
+
+	/* Get the type of the pointed-to value, decaying array types if needed */
+	type = CTypeGetPtrRef(CSemGetType(value));
+	if(CTypeIsArray(type))
+	{
+		decayed = CTypeDecay(info, type);
+		CSemSetDecayedRValue(value, decayed, type);
+		type = decayed;
+	}
+	else
+	{
+		CSemSetLValue(value, type);
+	}
+	node->type = type;
+	node->machineType = ILTypeToMachineType(type);
+	return value;
+}
+
+/*
+ * Get the type of a pointer dereference node.
+ */
+ILNode_GetType(ILNode_CDeref)
+{
+	if(CTypeIsComplex(node->type))
+	{
+		return ILMachineType_UnmanagedPtr;
+	}
+	else
+	{
+		return node->machineType;
+	}
+}
+
+/*
+ * Generate discard code for a pointer dereference node.
+ */
+ILNode_GenDiscard(ILNode_CDeref)
+{
+	ILNode_GenDiscard(node->expr, info);
+}
+
+/*
+ * Generate value code for a pointer dereference node.
+ */
+ILNode_GenValue(ILNode_CDeref)
+{
+	ILNode_GenValue(node->expr, info);
+	return ILTypeToMachineType(LoadValueFromPointer(info, node->type));
+}
+JavaGenValue(ILNode_CDeref)
+{
+	/* Never called: nothing to do here */
+	return node->machineType;
+}
+
+/*
+ * Prepare to store to a pointer dereference node.
+ */
+ILNode_Prepare(ILNode_CDeref)
+{
+	ILNode_GenValue(node->expr, info);
+	return ILNode_GetType((ILNode *)node, info);
+}
+JavaPrepare(ILNode_CDeref)
+{
+	/* Never called: nothing to do here */
+	return node->machineType;
+}
+
+/*
+ * Get and prepare to store to a pointer dereference node.
+ */
+ILNode_GetAndPrepare(ILNode_CDeref)
+{
+	ILType *tempType = ILTypeStripPrefixes(node->type);
+	ILNode_GenValue(node->expr, info);
+	ILGenSimple(info, IL_OP_DUP);
+	ILGenAdjust(info, 1);
+	tempType = LoadValueFromPointer(info, tempType);
+	if(leave)
+	{
+		/* Rearrange the stack to leave the value in the correct position */
+		unsigned tempVar1 = ILGenTempTypedVar(info, tempType);
+		unsigned tempVar2 = ILGenTempTypedVar(info, ILType_Int);
+		ILGenStoreLocal(info, tempVar1);
+		ILGenStoreLocal(info, tempVar2);
+		ILGenLoadLocal(info, tempVar1);
+		ILGenLoadLocal(info, tempVar2);
+		ILGenLoadLocal(info, tempVar1);
+		ILGenAdjust(info, 1);
+		ILGenReleaseTempVar(info, tempVar1);
+		ILGenReleaseTempVar(info, tempVar2);
+	}
+	return ILTypeToMachineType(tempType);
+}
+JavaGetAndPrepare(ILNode_CDeref)
+{
+	/* Never called: nothing to do here */
+	return node->machineType;
+}
+
+/*
+ * Store to a pointer dereference node.
+ */
+ILNode_Store(ILNode_CDeref)
+{
+	StoreValueToPointer(info, node->type, 0, leave);
+}
+JavaStore(ILNode_CDeref)
+{
+	/* Never called: nothing to do here */
+}
+
+/*
+ * Generate reference code for a pointer dereference node.
+ */
+ILNode_GenRef(ILNode_CDeref)
+{
+	CGenAddress(info, (ILNode *)node);
+}
+
+/*
+ * Generate an address for a pointer dereference node.
+ */
+ILNode_CGenAddress(ILNode_CDeref)
+{
+	CAddress addr;
+	ILNode_GenValue(node->expr, info);
+	addr.ptrOnStack = 1;
+	addr.offset = 0;
+	return addr;
+}
+
+/*
+ * Get the machine type for a bit field access node.
+ */
+ILNode_GetType(ILNode_CBitField)
+{
+	return node->machineType;
+}
+
+%output "c_nodes.c"
+
+%{
+
+/*
+ * Convert a raw storage value into a bit field value.
+ */
+static void RawToBitField(ILGenInfo *info, ILMachineType type,
+						  ILUInt32 start, ILUInt32 size)
+{
+	switch(type)
+	{
+		case ILMachineType_Int8:
+		case ILMachineType_Int16:
+		case ILMachineType_Int32:
+		{
+			/* Handle signed fields of 32 bits or less in size */
+			if(size == 8)
+			{
+				if(start == (32 - 8))
+				{
+					ILGenUIntNative(info, start);
+					ILGenSimple(info, IL_OP_SHR);
+					ILGenExtend(info, 1);
+				}
+				else if(start != 0)
+				{
+					ILGenUIntNative(info, start);
+					ILGenSimple(info, IL_OP_SHR);
+					ILGenSimple(info, IL_OP_CONV_I1);
+					ILGenExtend(info, 1);
+				}
+				else
+				{
+					ILGenSimple(info, IL_OP_CONV_I1);
+				}
+			}
+			else if(size == 16)
+			{
+				if(start == (32 - 16))
+				{
+					ILGenUIntNative(info, start);
+					ILGenSimple(info, IL_OP_SHR);
+					ILGenExtend(info, 1);
+				}
+				else if(start != 0)
+				{
+					ILGenUIntNative(info, start);
+					ILGenSimple(info, IL_OP_SHR);
+					ILGenSimple(info, IL_OP_CONV_I2);
+					ILGenExtend(info, 1);
+				}
+				else
+				{
+					ILGenSimple(info, IL_OP_CONV_I2);
+				}
+			}
+			else
+			{
+				if((start + size) < 32)
+				{
+					ILGenUIntNative(info, 32 - (start + size));
+					ILGenSimple(info, IL_OP_SHL);
+					ILGenExtend(info, 1);
+				}
+				ILGenUIntNative(info, 32 - size);
+				ILGenSimple(info, IL_OP_SHR);
+				ILGenExtend(info, 1);
+			}
+		}
+		break;
+
+		case ILMachineType_UInt8:
+		case ILMachineType_UInt16:
+		case ILMachineType_Char:
+		case ILMachineType_UInt32:
+		{
+			/* Handle unsigned fields of 32 bits or less in size */
+			if(start != 0)
+			{
+				ILGenUIntNative(info, start);
+				ILGenSimple(info, IL_OP_SHR_UN);
+				ILGenExtend(info, 1);
+			}
+			if(size == 8)
+			{
+				ILGenSimple(info, IL_OP_CONV_U1);
+			}
+			else if(size == 16)
+			{
+				ILGenSimple(info, IL_OP_CONV_U2);
+			}
+			else
+			{
+				ILGenUInt32(info, (((ILUInt32)1) << size) - 1);
+				ILGenSimple(info, IL_OP_AND);
+				ILGenExtend(info, 1);
+			}
+		}
+		break;
+
+		case ILMachineType_Int64:
+		{
+			/* Handle 64-bit signed fields */
+			if((start + size) < 64)
+			{
+				ILGenUIntNative(info, 64 - (start + size));
+				ILGenSimple(info, IL_OP_SHL);
+				ILGenExtend(info, 1);
+			}
+			ILGenUIntNative(info, 64 - size);
+			ILGenSimple(info, IL_OP_SHR);
+			ILGenExtend(info, 1);
+		}
+		break;
+
+		case ILMachineType_UInt64:
+		{
+			/* Handle 64-bit unsigned fields */
+			if(start != 0)
+			{
+				ILGenUIntNative(info, start);
+				ILGenSimple(info, IL_OP_SHR_UN);
+				ILGenExtend(info, 1);
+			}
+			ILGenUInt64(info, (((ILUInt64)1) << size) - 1);
+			ILGenSimple(info, IL_OP_AND);
+			ILGenExtend(info, 1);
+		}
+		break;
+
+		default: break;
+	}
+}
+
+/*
+ * Convert a bit field value into a raw storage value, ready to
+ * be OR'ed with the original masked value.
+ */
+static void BitFieldToRaw(ILGenInfo *info, ILMachineType type,
+						  ILUInt32 start, ILUInt32 size)
+{
+	switch(type)
+	{
+		case ILMachineType_Int8:
+		case ILMachineType_UInt8:
+		case ILMachineType_Int16:
+		case ILMachineType_UInt16:
+		case ILMachineType_Char:
+		case ILMachineType_Int32:
+		case ILMachineType_UInt32:
+		{
+			ILGenUInt32(info, (((ILUInt32)1) << size) - 1);
+			ILGenSimple(info, IL_OP_AND);
+			ILGenExtend(info, 1);
+			if(start != 0)
+			{
+				ILGenUIntNative(info, start);
+				ILGenSimple(info, IL_OP_SHL);
+				ILGenExtend(info, 1);
+			}
+		}
+		break;
+
+		case ILMachineType_Int64:
+		case ILMachineType_UInt64:
+		{
+			ILGenUInt64(info, (((ILUInt64)1) << size) - 1);
+			ILGenSimple(info, IL_OP_AND);
+			ILGenExtend(info, 1);
+			if(start != 0)
+			{
+				ILGenUIntNative(info, start);
+				ILGenSimple(info, IL_OP_SHL);
+				ILGenExtend(info, 1);
+			}
+		}
+		break;
+
+		default: break;
+	}
+}
+
+%}
+
+%output "c_semantics.c"
+
+/*
+ * Generate value code for a bit field access node.
+ */
+ILNode_GenValue(ILNode_CBitField)
+{
+	ILType *ownerType;
+
+	/* Push the address or value onto the stack */
+	if(node->genExprAsAddr)
+	{
+		ILNode_GenRef((ILNode_LValue *)(node->expr), info);
+	}
+	else
+	{
+		ILNode_GenValue(node->expr, info);
+	}
+
+	/* Load the contents of the storage field */
+	ownerType = ILClassToType(ILField_Owner(node->field));
+	if(CTypeIsComplex(ownerType))
+	{
+		CAddComplexFieldOffset(info, ownerType, node->field);
+		LoadValueFromPointer(info, ILField_Type(node->field));
+	}
+	else
+	{
+		ILGenFieldRef(info, IL_OP_LDFLD, node->field);
+	}
+
+	/* Mask off unnecessary bits, shift down, and sign-extend */
+	RawToBitField(info, node->machineType, node->bitFieldStart,
+				  node->bitFieldSize);
+
+	/* Done */
+	return node->machineType;
+}
+JavaGenValue(ILNode_CBitField)
+{
+	/* Never called: nothing to do here */
+	return node->machineType;
+}
+
+/*
+ * Prepare to store into a bit field access node.
+ */
+ILNode_Prepare(ILNode_CBitField)
+{
+	ILType *ownerType = ILClassToType(ILField_Owner(node->field));
+
+	/* Push the address of the structure onto the stack */
+	if(node->genExprAsAddr)
+	{
+		ILNode_GenRef((ILNode_LValue *)(node->expr), info);
+	}
+	else
+	{
+		ILNode_GenValue(node->expr, info);
+	}
+	if(CTypeIsComplex(ownerType))
+	{
+		CAddComplexFieldOffset(info, ownerType, node->field);
+	}
+
+	/* Save a copy of the pointer so that we can fetch the other bits later */
+	node->tempPtrVar = ILGenTempVar(info, ILMachineType_NativeInt);
+	ILGenSimple(info, IL_OP_DUP);
+	ILGenStoreLocal(info, node->tempPtrVar);
+	ILGenExtend(info, 1);
+
+	/* The bit field is prepared */
+	return node->machineType;
+}
+JavaPrepare(ILNode_CBitField)
+{
+	/* Never called: nothing to do here */
+	return node->machineType;
+}
+
+/*
+ * Get and prepare to store into a bit field access node.
+ */
+ILNode_GetAndPrepare(ILNode_CBitField)
+{
+	ILType *ownerType = ILClassToType(ILField_Owner(node->field));
+
+	/* Push the address of the structure onto the stack */
+	if(node->genExprAsAddr)
+	{
+		ILNode_GenRef((ILNode_LValue *)(node->expr), info);
+	}
+	else
+	{
+		ILNode_GenValue(node->expr, info);
+	}
+	if(CTypeIsComplex(ownerType))
+	{
+		CAddComplexFieldOffset(info, ownerType, node->field);
+	}
+
+	/* Save a copy of the pointer so that we can fetch the other bits later */
+	node->tempPtrVar = ILGenTempVar(info, ILMachineType_NativeInt);
+	ILGenSimple(info, IL_OP_DUP);
+	ILGenStoreLocal(info, node->tempPtrVar);
+	ILGenExtend(info, 1);
+
+	/* Fetch the current value of the storage field */
+	if(CTypeIsComplex(ownerType))
+	{
+		LoadValueFromPointer(info, ILField_Type(node->field));
+	}
+	else
+	{
+		ILGenFieldRef(info, IL_OP_LDFLD, node->field);
+	}
+
+	/* Extract the bit field value */
+	RawToBitField(info, node->machineType, node->bitFieldStart,
+				  node->bitFieldSize);
+
+	/* Save a copy of the value if we need to leave it on the stack */
+	if(leave)
+	{
+		node->tempVar = ILGenTempVar(info, node->machineType);
+		ILGenSimple(info, IL_OP_DUP);
+		ILGenStoreLocal(info, node->tempVar);
+		ILGenExtend(info, 1);
+	}
+
+	/* The bit field is prepared */
+	return node->machineType;
+}
+JavaGetAndPrepare(ILNode_CBitField)
+{
+	/* Never called: nothing to do here */
+	return node->machineType;
+}
+
+/*
+ * Store into a bit field access node.
+ */
+ILNode_Store(ILNode_CBitField)
+{
+	ILType *ownerType = ILClassToType(ILField_Owner(node->field));
+	unsigned tempVar = ~((unsigned)0);
+
+	/* Save the value in a temporary variable if we need to leave it */
+	if(leave)
+	{
+		tempVar = ILGenTempVar(info, node->machineType);
+		ILGenSimple(info, IL_OP_DUP);
+		ILGenStoreLocal(info, tempVar);
+		ILGenExtend(info, 1);
+	}
+
+	/* Shift the bit field into its final position */
+	BitFieldToRaw(info, node->machineType, node->bitFieldStart,
+				  node->bitFieldSize);
+
+	/* Load the other bits and combine them with the new value */
+	ILGenLoadLocal(info, node->tempPtrVar);
+	ILGenAdjust(info, 1);
+	if(CTypeIsComplex(ownerType))
+	{
+		LoadValueFromPointer(info, ILField_Type(node->field));
+	}
+	else
+	{
+		ILGenFieldRef(info, IL_OP_LDFLD, node->field);
+	}
+	if(node->machineType == ILMachineType_Int64 ||
+	   node->machineType == ILMachineType_UInt64)
+	{
+		ILGenUInt64(info, ~(((((ILUInt64)1) << node->bitFieldSize) - 1)
+								<< node->bitFieldStart));
+		ILGenSimple(info, IL_OP_AND);
+		ILGenExtend(info, 1);
+	}
+	else
+	{
+		ILGenUInt32(info, ~(((((ILUInt32)1) << node->bitFieldSize) - 1)
+								<< node->bitFieldStart));
+		ILGenSimple(info, IL_OP_AND);
+		ILGenExtend(info, 1);
+	}
+	ILGenSimple(info, IL_OP_OR);
+	ILGenAdjust(info, -1);
+	ILGenReleaseTempVar(info, node->tempPtrVar);
+
+	/* Store the combined value back into the storage field */
+	if(CTypeIsComplex(ownerType))
+	{
+		StoreValueToPointer(info, ILField_Type(node->field), 0, 0);
+	}
+	else
+	{
+		ILGenFieldRef(info, IL_OP_STFLD, node->field);
+		ILGenAdjust(info, -2);
+	}
+
+	/* Reload the value onto the stack if necessary */
+	if(leave)
+	{
+		ILGenLoadLocal(info, tempVar);
+		ILGenAdjust(info, 1);
+		ILGenReleaseTempVar(info, tempVar);
+	}
+
+	/* Did we have a "left" value from the "GetAndPrepare" call? */
+	if(node->tempVar != ~((unsigned)0))
+	{
+		ILGenLoadLocal(info, node->tempVar);
+		ILGenAdjust(info, 1);
+		ILGenReleaseTempVar(info, node->tempVar);
+		node->tempVar = ~((unsigned)0);
+	}
+}
+JavaStore(ILNode_CBitField)
+{
+	/* Never called: nothing to do here */
+}

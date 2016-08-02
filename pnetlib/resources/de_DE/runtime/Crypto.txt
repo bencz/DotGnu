@@ -1,0 +1,55 @@
+#
+# Crypto.txt - Resources for crypto-related errors and exceptions.
+#
+# Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Crypto_Exception=Cryptographische Ausnahme aufgetreten
+Crypto_UnexpectedOperation=Eine unerwarteter cryptographische Operation ist aufgetreten
+Crypto_InvalidKeySize=Ungueltige cryptographische Schluessel Groesse: {0}
+Crypto_HashNotComputed=Hash Wert ist noch nicht gerechnet
+Crypto_InvalidBlockSize=Ungueltige cryptographische Block Groesse: {0}
+Crypto_InvalidFeedbackSize=Ungueltiger cryptographische Rueckgabe groesse: {0}
+Crypto_InvalidIVSize=Ungueltige Initialisierungsvector Groesse: {0}
+Crypto_InvalidCipherMode=Ungueltiger cipher Modus
+Crypto_InvalidPaddingMode=Ungueltiger padding Modus
+Crypto_InvalidStreamMode=Ungueltiger cryptographischer stream Modus
+Crypto_NoProvider=Das System bietet keine Unterstuetzung fuer {0}
+Crypto_WeakKey=DES Schluessel ist schwach oder semi-schwach
+Crypto_InvalidOID=Ungueltiger Objekt identifier String: {0}
+Crypto_HashInProgress=Kann den Schluessel nicht aendern, solange hashing aktiv ist
+Crypto_DSANeedsSHA1=Der hash Algorithmus fuer DSA muss SHA-1 sein
+Crypto_DSAParamsNotSet=Die DSA Parameter wurden noch nicht gesetzt
+Crypto_InvalidDSAParams=Ungueltige DSA Parameter
+Crypto_CannotSignWithPublic=Kann Werte nicht mit oeffentlichem Schluessel signieren
+Crypto_UnknownKey=Unbekannter key Name: {0}
+Crypto_NoKeyAccess=Keine Erlaubnis auf key zuzugreifen: {0}
+Crypto_NeedsDSA=DSA algorithm Instanz erforderlich
+Crypto_MissingKey=Es ist kein Schluessel verfuegbar um diese Operation auszufuehren
+Crypto_NeedsHash=Eine Hash Algorithmus Instanz wird benoetigt
+Crypto_InvalidASN1=Ungueltige ASN.1 Daten in der angegebenen Information
+Crypto_RSAParamsNotSet=Die RSA Parameter wurden noch nicht gesetzt
+Crypto_InvalidRSAParams=Ungueltige RSA Parameter
+Crypto_PKCS1Hash=Der hash Algorithmus muss MD5, SHA1, SHA256, SHA384, oder SHA512 sein
+Crypto_NeedsRSA=RSA Algorithmus Instanz erforderlich
+Crypto_HashAlreadySet=Der hash Algorithmus wurde bereits gesetzt
+Crypto_CountAlreadySet=Der Iterationszaehler wurde bereits gesetzt
+Crypto_SaltAlreadySet=Die salt bytes wurden bereits gesetzt
+Crypto_RSAMessageTooLong=Die zu verschluesselnde Nachricht ist zu lange fuer den key
+Crypto_RSAKeyTooShort=Der RSA key ist zu kurz fuer entschluesselungs Operationen
+Crypto_RSAInvalidCiphertext=Ungueltiges ciphertext Format fuer RSA Entschluesselung
+Crypto_InvalidHashSize=Ungueltige hash Groesse fuer digitale Signatur Operation
+Crypto_CertNotSupp=Handle-basierte Zertifikatserzeugung wird nicht unterstuetzt

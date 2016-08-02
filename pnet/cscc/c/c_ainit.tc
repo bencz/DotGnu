@@ -1,0 +1,847 @@
+/*
+ * c_ainit.tc - Array initializer handling for C.
+ *
+ * Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+%output "c_semantics.c"
+
+%{
+
+/*
+ * Look ahead to the next item in a list iteration.
+ */
+static ILNode *IterLookAhead(ILNode_ListIter *iter)
+{
+	ILNode_ListIter copy = *iter;
+	return ILNode_ListIter_Next(&copy);
+}
+
+/*
+ * Forward declaration.
+ */
+static int SkipInitializer(ILNode_ListIter *iter, ILType *type);
+
+/*
+ * Skip the initializer for an array type.  Returns zero if
+ * the initializer does not have sufficient elements.
+ */
+static int SkipArrayInitializer(ILNode_ListIter *iter, ILType *type)
+{
+	ILNode *node;
+	ILUInt32 numElems;
+	ILType *elemType;
+
+	/* Look ahead to see if we are at the end or a nested initializer */
+	node = IterLookAhead(iter);
+	if(!node)
+	{
+		return 0;
+	}
+	else if(yyisa(node, ILNode_CArrayInit))
+	{
+		/* Assume that the entire array is within the nested initializer */
+		ILNode_ListIter_Next(iter);
+		return 1;
+	}
+
+	/* Get the number of elements and the element type */
+	numElems = CTypeGetNumElems(type);
+	elemType = CTypeGetElemType(type);
+
+	/* Recognize the elements, inline within the current array */
+	while(numElems > 0)
+	{
+		if(!SkipInitializer(iter, elemType))
+		{
+			return 0;
+		}
+		--numElems;
+	}
+	return 1;
+}
+
+/*
+ * Skip the initializer for a struct type.  Returns zero if
+ * the initializer does not have sufficient elements.
+ */
+static int SkipStructInitializer(ILNode_ListIter *iter, ILType *type)
+{
+	ILClass *classInfo = ILType_ToValueType(ILTypeStripPrefixes(type));
+	ILField *field;
+	ILNode *node;
+
+	/* If the next element is an array initializer, then assume that
+	   it contains the entire structure in a nested scope */
+	node = IterLookAhead(iter);
+	if(node && yyisa(node, ILNode_CArrayInit))
+	{
+		ILNode_ListIter_Next(iter);
+		return 1;
+	}
+
+	/* Skip the struct elements, which are inline within the parent array */
+	field = 0;
+	while((field = (ILField *)ILClassNextMemberByKind
+				(classInfo, (ILMember *)field, IL_META_MEMBERKIND_FIELD)) != 0)
+	{
+		if(!ILField_IsStatic(field))
+		{
+			if(!SkipInitializer(iter, ILFieldGetTypeWithPrefixes(field)))
+			{
+				return 0;
+			}
+		}
+	}
+	return 1;
+}
+
+/*
+ * Skip the initializer for a particular type.
+ */
+static int SkipInitializer(ILNode_ListIter *iter, ILType *type)
+{
+	if(CTypeIsStruct(type) || CTypeIsUnion(type))
+	{
+		return SkipStructInitializer(iter, type);
+	}
+	else if(CTypeIsArray(type))
+	{
+		return SkipArrayInitializer(iter, type);
+	}
+	else
+	{
+		return (ILNode_ListIter_Next(iter) != 0);
+	}
+}
+
+ILUInt32 CArrayInitializerSize(ILType *type, ILNode *init)
+{
+	ILType *elemType = CTypeGetElemType(type);
+	ILNode *list = ((ILNode_CArrayInit *)init)->expr;
+	ILNode_ListIter iter;
+	ILUInt32 len = 0;
+
+	/* Scan the list, skipping over elements as we find them.
+	   Type checking of the elements is performed later */
+	ILNode_ListIter_Init(&iter, list);
+	while(IterLookAhead(&iter) != 0)
+	{
+		if(!SkipInitializer(&iter, elemType))
+		{
+			CCErrorOnLine(yygetfilename(init), yygetlinenum(init),
+						  _("invalid array initializer"));
+			return 1;
+		}
+		++len;
+	}
+
+	/* Return the final length to the caller */
+	return len;
+}
+
+/*
+ * Perform semantic analysis on an initializer, defined by an iterator.
+ */
+static void InitializerSemAnalysis(ILGenInfo *info, ILType *type,
+								   ILNode *init, ILNode_ListIter *iter)
+{
+	ILNode *node = IterLookAhead(iter);
+	CSemValue value;
+	ILUInt32 size;
+	ILUInt32 numElems;
+	ILType *elemType;
+	ILNode_ListIter inner;
+	ILClass *classInfo;
+	ILField *field;
+
+	if(CTypeIsArray(type))
+	{
+		/* Assign to the elements of an array */
+		numElems = CTypeGetNumElems(type);
+		elemType = CTypeGetElemType(type);
+		if(node && yyisa(node, ILNode_CString) &&
+		   (ILTypeIdentical(elemType, ILType_Int8) ||
+		    ILTypeIdentical(elemType, ILType_UInt8)))
+		{
+			/* Assign a string to a "char" array */
+			node = ILNode_ListIter_Next(iter);
+			size = ((ILNode_CString *)node)->len;
+			if(size > numElems)
+			{
+				CCWarningOnLine(yygetfilename(node), yygetlinenum(node),
+			  	    _("initializer-string for array of chars is too long"));
+			}
+		}
+		else if(node && yyisa(node, ILNode_CWString) &&
+		        (ILTypeIdentical(elemType, ILType_Int16) ||
+		         ILTypeIdentical(elemType, ILType_UInt16) ||
+		         ILTypeIdentical(elemType, ILType_Char)))
+		{
+			/* Assign a string to a "wchar" array */
+			node = ILNode_ListIter_Next(iter);
+			size = CGenWStringLength
+					 (((ILNode_CWString *)node)->str,
+					  ((ILNode_CWString *)node)->len);
+			if(size > numElems)
+			{
+				CCWarningOnLine(yygetfilename(node), yygetlinenum(node),
+		  	      _("initializer-string for array of wide chars is too long"));
+			}
+		}
+		else
+		{
+			/* Assign to an ordinary array */
+			while(numElems > 0 && node != 0)
+			{
+				if(yyisa(node, ILNode_CArrayInit))
+				{
+					/* The element is specified as a nested array init scope */
+					ILNode_ListIter_Init
+						(&inner, ((ILNode_CArrayInit *)node)->expr);
+					InitializerSemAnalysis
+						(info, elemType,
+						 ((ILNode_CArrayInit *)node)->expr, &inner);
+					if(ILNode_ListIter_Next(&inner) != 0)
+					{
+						CCWarningOnLine
+							(yygetfilename(init), yygetlinenum(init),
+							 _("excess elements in array initializer"));
+					}
+					ILNode_ListIter_Next(iter);
+				}
+				else
+				{
+					/* The element is specified inline within the parent */
+					InitializerSemAnalysis(info, elemType, init, iter);
+				}
+				node = IterLookAhead(iter);
+				--numElems;
+			}
+		}
+	}
+	else if(CTypeIsStruct(type) || CTypeIsUnion(type))
+	{
+		/* Assign to the fields of a structure or union */
+		classInfo = ILType_ToValueType(ILTypeStripPrefixes(type));
+		field = 0;
+		while((field = (ILField *)ILClassNextMemberByKind
+				(classInfo, (ILMember *)field, IL_META_MEMBERKIND_FIELD)) != 0)
+		{
+			if(!node)
+			{
+				break;
+			}
+			if(!ILField_IsStatic(field))
+			{
+				elemType = ILFieldGetTypeWithPrefixes(field);
+				if(yyisa(node, ILNode_CArrayInit) &&
+				   (CTypeIsStruct(elemType) || CTypeIsUnion(elemType) ||
+				    CTypeIsArray(elemType)))
+				{
+					/* The initializer is specified as a nested scope */
+					ILNode_ListIter_Init
+						(&inner, ((ILNode_CArrayInit *)node)->expr);
+					InitializerSemAnalysis
+						(info, elemType,
+						 ((ILNode_CArrayInit *)node)->expr, &inner);
+					if(ILNode_ListIter_Next(&inner) != 0)
+					{
+						CCWarningOnLine
+							(yygetfilename(init), yygetlinenum(init),
+							 _("excess elements in structure initializer"));
+					}
+					ILNode_ListIter_Next(iter);
+				}
+				else
+				{
+					InitializerSemAnalysis(info, elemType, init, iter);
+				}
+			}
+			node = IterLookAhead(iter);
+		}
+	}
+	else
+	{
+		/* Assign a scalar value */
+		if(!node)
+		{
+			CCErrorOnLine(yygetfilename(init), yygetlinenum(init),
+						  _("missing scalar initializer value"));
+			return;
+		}
+
+		/* Perform semantic analysis on the scalar value */
+		node = ILNode_ListIter_Next(iter);
+		value = ILNode_CSemAnalysis(node, info, iter->last, 0);
+		node = *(iter->last);
+
+		/* Check that the scalar value is an r-value */
+		if(!CSemIsRValue(value))
+		{
+			if(!CSemIsError(value))
+			{
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  	  "invalid rvalue in assignment");
+			}
+			return;
+		}
+
+		/* Check that we can coerce from "value" to "type" */
+		if(ILTypeStripPrefixes(type) == ILType_Boolean &&
+		   (CSemIsBoolean(value) ||
+		    ILTypeStripPrefixes(CSemGetType(value)) == ILType_Boolean))
+		{
+			/* Assigning a value to a "_Bool" variable */
+			return;
+		}
+		else
+		{
+			if(!CCanCoerceValue(value, type))
+			{
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+							  "incompatible types in assignment");
+				return;
+			}
+
+			/* Insert coercion nodes to convert the rvalue appropriately */
+			CCoerceNode(info, node, iter->last, value, type);
+		}
+	}
+}
+
+%}
+
+/*
+ * Perform semantic analysis for an array initialization expression.
+ *
+ * This is only called when used in a statement like "int x = {y};"
+ * which is semantically equivalent to "int x = y;".  It is never
+ * called for regular arrays and structures.
+ */
+ILNode_CSemAnalysis(ILNode_CArrayInit)
+{
+	ILNode_ListIter iter;
+	ILNode *expr;
+
+	/* Replace the array initializer with its first element */
+	ILNode_ListIter_Init(&iter, node->expr);
+	expr = ILNode_ListIter_Next(&iter);
+	if(ILNode_ListIter_Next(&iter) != 0)
+	{
+		CCWarningOnLine(yygetfilename(node), yygetlinenum(node),
+						_("excess elements in scalar initializer"));
+	}
+	*parent = expr;
+
+	/* Perform semantic analysis on the first element */
+	return ILNode_CSemAnalysis(expr, info, parent, stmtLevel);
+}
+
+/*
+ * Stub out code generation for array initializers.
+ */
+ILNode_GetType(ILNode_CArrayInit),
+ILNode_GenValue(ILNode_CArrayInit),
+JavaGenValue(ILNode_CArrayInit)
+{
+	return ILMachineType_Void;
+}
+
+/*
+ * Perform semantic analysis for the array assignment statement.
+ */
+ILNode_CSemAnalysis(ILNode_CAssignArray)
+{
+	CSemValue value1;
+	ILType *elemType;
+	ILUInt32 arraySize;
+	ILUInt32 initSize;
+	ILNode *init;
+	ILNode_ListIter iter;
+
+	/* Perform semantic analysis on the destination expression.
+	   We expect it to be either an l-value or a decayed r-value */
+	value1 = ILNode_CSemAnalysis(node->expr1, info, &(node->expr1), 0);
+	if(CSemIsDecayed(value1))
+	{
+		/* Un-decay the array type */
+		CSemSetLValue(value1, CSemGetDecayedType(value1));
+	}
+	else if(!CSemIsLValue(value1))
+	{
+		if(!CSemIsError(value1))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("invalid lvalue in assignment"));
+		}
+		return CSemValueError;
+	}
+	node->type = CSemGetType(value1);
+
+	/* Determine the type of assignment based on the r-value */
+	if(yyisa(node->expr2, ILNode_CString))
+	{
+		/* Assign the contents of a string */
+		elemType = CTypeWithoutQuals(CTypeGetElemType(CSemGetType(value1)));
+		if(elemType != ILType_Int8 && elemType != ILType_UInt8)
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  	  _("invalid initializer"));
+			return CSemValueError;
+		}
+		arraySize = CTypeGetNumElems(CSemGetType(value1));
+		initSize = (ILUInt32)(((ILNode_CString *)(node->expr2))->len);
+		if(initSize > arraySize)
+		{
+			CCWarningOnLine(yygetfilename(node), yygetlinenum(node),
+			  	    _("initializer-string for array of chars is too long"));
+		}
+	}
+	else if(yyisa(node->expr2, ILNode_CWString))
+	{
+		/* Assign the contents of a wide string */
+		elemType = CTypeWithoutQuals(CTypeGetElemType(CSemGetType(value1)));
+		if(elemType != ILType_Int16 && elemType != ILType_UInt16 &&
+		   elemType != ILType_Char)
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  	  _("invalid initializer"));
+			return CSemValueError;
+		}
+		arraySize = CTypeGetNumElems(CSemGetType(value1));
+		initSize = CGenWStringLength
+					 (((ILNode_CWString *)(node->expr2))->str,
+					  ((ILNode_CWString *)(node->expr2))->len);
+		if(initSize > arraySize)
+		{
+			CCWarningOnLine(yygetfilename(node), yygetlinenum(node),
+		  	    _("initializer-string for array of wide chars is too long"));
+		}
+	}
+	else if(yyisa(node->expr2, ILNode_CArrayInit))
+	{
+		/* Assign the contents of an array initializer to an array */
+		init = ((ILNode_CArrayInit *)(node->expr2))->expr;
+		ILNode_ListIter_Init(&iter, init);
+		if(CTypeGetNumElems(CSemGetType(value1)) != IL_MAX_UINT32)
+		{
+			InitializerSemAnalysis(info, node->type, init, &iter);
+			if(ILNode_ListIter_Next(&iter) != 0)
+			{
+				CCWarningOnLine(yygetfilename(node), yygetlinenum(node),
+								_("excess elements in array initializer"));
+			}
+		}
+		else
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("array size is unknown at compile time"));
+		}
+	}
+	else
+	{
+		/* The grammar already reported an error for this case */
+		return CSemValueError;
+	}
+
+	/* Array assignment is used at the statement level of a function */
+	return CSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the struct assignment statement.
+ */
+ILNode_CSemAnalysis(ILNode_CAssignStruct)
+{
+	CSemValue value1;
+	ILNode *init;
+	ILNode_ListIter iter;
+
+	/* Perform semantic analysis on the destination expression.
+	   We expect it to be an l-value */
+	value1 = ILNode_CSemAnalysis(node->expr1, info, &(node->expr1), 0);
+	if(!CSemIsLValue(value1))
+	{
+		if(!CSemIsError(value1))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("invalid lvalue in assignment"));
+		}
+		return CSemValueError;
+	}
+	node->type = CSemGetType(value1);
+
+	/* We must have a structure or union type at this point */
+	if(!CTypeIsStruct(node->type) && !CTypeIsUnion(node->type))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("lvalue is not a structure"));
+		return CSemValueError;
+	}
+
+	/* Perform semantic analysis on the structure value */
+	init = ((ILNode_CArrayInit *)(node->expr2))->expr;
+	ILNode_ListIter_Init(&iter, init);
+	InitializerSemAnalysis(info, node->type, init, &iter);
+	if(ILNode_ListIter_Next(&iter) != 0)
+	{
+		CCWarningOnLine(yygetfilename(node), yygetlinenum(node),
+						_("excess elements in structure initializer"));
+	}
+
+	/* Structure assignment is used at the statement level of a function */
+	return CSemValueDefault;
+}
+
+%output "c_nodes.c"
+
+%{
+
+/*
+ * Look ahead to the next item in a list iteration.
+ */
+static ILNode *IterLookAhead(ILNode_ListIter *iter)
+{
+	ILNode_ListIter copy = *iter;
+	return ILNode_ListIter_Next(&copy);
+}
+
+/*
+ * Write an initializer into memory at a specific pointer location,
+ * where the pointer is on the stack.  If "field" is non-NULL, then
+ * it indicates a field within a higher-level structure.
+ */
+static void WriteInitializer(ILGenInfo *info, ILType *type,
+							 ILNode_ListIter *iter, ILField *field)
+{
+	ILNode *node = IterLookAhead(iter);
+	ILUInt32 size;
+	ILUInt32 numElems;
+	ILUInt32 index;
+	ILUInt32 wsize;
+	ILType *elemType;
+	ILClass *classInfo;
+	ILField *nextField;
+	ILNode_ListIter inner;
+	int popped;
+	CTypeLayoutInfo layout;
+
+	if(CTypeIsArray(type))
+	{
+		/* Write the members of an array */
+		numElems = CTypeGetNumElems(type);
+		elemType = CTypeGetElemType(type);
+		if(node && yyisa(node, ILNode_CString) &&
+		   (ILTypeIdentical(elemType, ILType_Int8) ||
+		    ILTypeIdentical(elemType, ILType_UInt8)))
+		{
+			/* Populate a "char" array by copying a string into it */
+			if(field)
+			{
+				ILGenFieldRef(info, IL_OP_LDFLDA, field);
+			}
+			node = ILNode_ListIter_Next(iter);
+			ILNode_GenValue(node, info);
+			size = CTypeGetNumElems(type);
+			if(size > (((ILNode_CString *)node)->len + 1))
+			{
+				size = ((ILNode_CString *)node)->len + 1;
+			}
+			ILGenUInt32(info, size);
+			ILGenAdjust(info, 1);
+			ILGenByteInsn(info, IL_OP_PREFIX + IL_PREFIX_OP_UNALIGNED, 1);
+			ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CPBLK);
+			ILGenAdjust(info, -3);
+		}
+		else if(node && yyisa(node, ILNode_CWString) &&
+		        (ILTypeIdentical(elemType, ILType_Int16) ||
+		         ILTypeIdentical(elemType, ILType_UInt16) ||
+		         ILTypeIdentical(elemType, ILType_Char)))
+		{
+			/* Populate a "wchar" array by copying a wide string into it */
+			if(field)
+			{
+				ILGenFieldRef(info, IL_OP_LDFLDA, field);
+			}
+			node = ILNode_ListIter_Next(iter);
+			ILNode_GenValue(node, info);
+			size = CTypeGetNumElems(type);
+			wsize = CGenWStringLength
+					 (((ILNode_CWString *)node)->str,
+					  ((ILNode_CWString *)node)->len);
+			if(size > (wsize + 1))
+			{
+				size = wsize + 1;
+			}
+			ILGenUInt32(info, size * 2);
+			ILGenAdjust(info, 1);
+			ILGenByteInsn(info, IL_OP_PREFIX + IL_PREFIX_OP_UNALIGNED, 2);
+			ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CPBLK);
+			ILGenAdjust(info, -3);
+		}
+		else
+		{
+			/* Write ordinary members to the array */
+			if(field)
+			{
+				ILGenFieldRef(info, IL_OP_LDFLDA, field);
+			}
+			popped = 0;
+			index = 0;
+			CTypeGetLayoutInfo(elemType, &layout);
+			while(numElems > 0 && node != 0)
+			{
+				if(numElems > 1)
+				{
+					ILGenSimple(info, IL_OP_DUP);
+					ILGenAdjust(info, 1);
+				}
+				else
+				{
+					popped = 1;
+				}
+				if(index != 0)
+				{
+					/* Adjust the pointer to account for the array index */
+					if(layout.category == C_TYPECAT_FIXED)
+					{
+						ILGenUIntNative(info, index * layout.size);
+						ILGenSimple(info, IL_OP_ADD);
+						ILGenExtend(info, 1);
+					}
+					else if(index == 1)
+					{
+						CGenSizeOf(info, elemType);
+						ILGenSimple(info, IL_OP_CONV_U);
+						ILGenSimple(info, IL_OP_ADD);
+						ILGenAdjust(info, -1);
+					}
+					else
+					{
+						ILGenUInt32(info, index);
+						ILGenAdjust(info, 1);
+						CGenSizeOf(info, elemType);
+						ILGenSimple(info, IL_OP_MUL);
+						ILGenSimple(info, IL_OP_CONV_U);
+						ILGenSimple(info, IL_OP_ADD);
+						ILGenAdjust(info, -2);
+					}
+				}
+				if(yyisa(node, ILNode_CArrayInit))
+				{
+					/* The element is specified as a nested array init scope */
+					ILNode_ListIter_Init
+						(&inner, ((ILNode_CArrayInit *)node)->expr);
+					WriteInitializer(info, elemType, &inner, 0);
+					ILNode_ListIter_Next(iter);
+				}
+				else
+				{
+					/* The element is specified inline within the parent */
+					WriteInitializer(info, elemType, iter, 0);
+				}
+				node = IterLookAhead(iter);
+				--numElems;
+				++index;
+			}
+			if(!popped)
+			{
+				ILGenSimple(info, IL_OP_POP);
+				ILGenAdjust(info, -1);
+			}
+		}
+	}
+	else if(CTypeIsStruct(type) || CTypeIsUnion(type))
+	{
+		/* Write the elements of a structure */
+		if(field)
+		{
+			if(CTypeIsComplex(ILClassToType(ILField_Owner(field))))
+			{
+				CAddComplexFieldOffset
+					(info, ILClassToType(ILField_Owner(field)), field);
+			}
+			else
+			{
+				ILGenFieldRef(info, IL_OP_LDFLDA, field);
+			}
+		}
+		classInfo = ILType_ToValueType(ILTypeStripPrefixes(type));
+		field = 0;
+		popped = 0;
+		while((field = (ILField *)ILClassNextMemberByKind
+				(classInfo, (ILMember *)field, IL_META_MEMBERKIND_FIELD)) != 0)
+		{
+			if(!node)
+			{
+				break;
+			}
+			if(ILField_IsStatic(field))
+			{
+				continue;
+			}
+			nextField = field;
+			while((nextField = (ILField *)ILClassNextMemberByKind
+						(classInfo, (ILMember *)nextField,
+						 IL_META_MEMBERKIND_FIELD)) != 0 &&
+				  ILField_IsStatic(nextField))
+			{
+				/* Look for the next non-static field */
+			}
+			if(nextField)
+			{
+				/* Duplicate the pointer, because we'll need it again */
+				ILGenSimple(info, IL_OP_DUP);
+				ILGenAdjust(info, 1);
+			}
+			else
+			{
+				/* We are on the last field, so don't dup the pointer */
+				popped = 1;
+			}
+			elemType = ILFieldGetTypeWithPrefixes(field);
+			if(yyisa(node, ILNode_CArrayInit) &&
+			   (CTypeIsStruct(elemType) || CTypeIsUnion(elemType) ||
+			    CTypeIsArray(elemType)))
+			{
+				/* The element is specified as a nested array init scope */
+				ILNode_ListIter_Init
+					(&inner, ((ILNode_CArrayInit *)node)->expr);
+				WriteInitializer(info, elemType, &inner, field);
+				ILNode_ListIter_Next(iter);
+			}
+			else
+			{
+				/* The element is specified inline within the parent */
+				WriteInitializer(info, elemType, iter, field);
+			}
+			node = IterLookAhead(iter);
+		}
+		if(!popped)
+		{
+			ILGenSimple(info, IL_OP_POP);
+			ILGenAdjust(info, -1);
+		}
+	}
+	else
+	{
+		/* Write an ordinary initializer value */
+		node = ILNode_ListIter_Next(iter);
+		if(field)
+		{
+			if(CTypeIsComplex(ILClassToType(ILField_Owner(field))))
+			{
+				CAddComplexFieldOffset
+					(info, ILClassToType(ILField_Owner(field)), field);
+				ILNode_GenValue(node, info);
+				ILGenStoreManaged(info, ILTypeToMachineType(type),
+							  	  ILTypeStripPrefixes(type));
+			}
+			else
+			{
+				ILNode_GenValue(node, info);
+				ILGenFieldRef(info, IL_OP_STFLD, field);
+			}
+		}
+		else
+		{
+			ILNode_GenValue(node, info);
+			ILGenStoreManaged(info, ILTypeToMachineType(type),
+							  ILTypeStripPrefixes(type));
+		}
+		ILGenAdjust(info, -2);
+	}
+}
+
+%}
+
+/*
+ * Generate discard code for an array assignment statement.
+ */
+ILNode_GenDiscard(ILNode_CAssignArray)
+{
+	ILNode_ListIter iter;
+	ILUInt32 size;
+	ILUInt32 wsize;
+
+	/* Get the address of the array */
+	CGenAddress(info, node->expr1);
+
+	/* Write the initializer value into the array */
+	if(yyisa(node->expr2, ILNode_CString))
+	{
+		ILNode_GenValue(node->expr2, info);
+		size = CTypeGetNumElems(node->type);
+		if(size > (((ILNode_CString *)(node->expr2))->len + 1))
+		{
+			size = ((ILNode_CString *)(node->expr2))->len + 1;
+		}
+		ILGenUInt32(info, size);
+		ILGenAdjust(info, 1);
+		ILGenByteInsn(info, IL_OP_PREFIX + IL_PREFIX_OP_UNALIGNED, 1);
+		ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CPBLK);
+		ILGenAdjust(info, -3);
+	}
+	else if(yyisa(node->expr2, ILNode_CWString))
+	{
+		ILNode_GenValue(node->expr2, info);
+		size = CTypeGetNumElems(node->type);
+		wsize = CGenWStringLength
+				 (((ILNode_CWString *)(node->expr2))->str,
+				  ((ILNode_CWString *)(node->expr2))->len);
+		if(size > (wsize + 1))
+		{
+			size = wsize + 1;
+		}
+		ILGenUInt32(info, size * 2);
+		ILGenAdjust(info, 1);
+		ILGenByteInsn(info, IL_OP_PREFIX + IL_PREFIX_OP_UNALIGNED, 2);
+		ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CPBLK);
+		ILGenAdjust(info, -3);
+	}
+	else
+	{
+		ILNode_ListIter_Init
+			(&iter, ((ILNode_CArrayInit *)(node->expr2))->expr);
+		WriteInitializer(info, node->type, &iter, 0);
+	}
+}
+JavaGenDiscard(ILNode_CAssignArray)
+{
+	/* Nothing to do here */
+}
+
+/*
+ * Generate discard code for the struct assignment statement.
+ */
+ILNode_GenDiscard(ILNode_CAssignStruct)
+{
+	ILNode_ListIter iter;
+
+	/* Get the address of the structure */
+	CGenAddress(info, node->expr1);
+
+	/* Write the initializer value into the structure */
+	ILNode_ListIter_Init
+		(&iter, ((ILNode_CArrayInit *)(node->expr2))->expr);
+	WriteInitializer(info, node->type, &iter, 0);
+}
+JavaGenDiscard(ILNode_CAssignStruct)
+{
+	/* Nothing to do here */
+}

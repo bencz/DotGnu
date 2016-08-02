@@ -1,0 +1,2 @@
+./enum2.cs:24: declaration of `Red' conflicts with an existing member
+./enum2.cs:29: the identifier `value__' is reserved in enumerated types

@@ -1,0 +1,120 @@
+<!--
+
+status.dtd - DTD for the class status document type.
+
+Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+-->
+<!DOCTYPE class_status [
+	<!ELEMENT class_status (class | summary)*>
+
+	<!-- Status indicators -->
+
+	<!ENTITY % status
+			  "extra
+			 | todo
+			 | missing
+			 | msg">
+
+	<!-- Class member kinds -->
+
+	<!ENTITY % members
+			  "ctor
+			 | method
+			 | field
+			 | property
+			 | event
+			 | member">
+
+	<!-- Information about a specific class -->
+
+	<!ELEMENT class (%status; | %members; | attribute)*>
+	<!ATTLIST class
+	          name       CDATA #REQUIRED
+			  assembly   CDATA #IMPLIED>
+
+	<!-- Constructors -->
+
+	<!ELEMENT ctor (%status; | attribute)*>
+	<!ATTLIST ctor
+	          signature   CDATA #REQUIRED>
+
+	<!-- Methods -->
+
+	<!ELEMENT method (%status; | attribute)*>
+	<!ATTLIST method
+	          name        CDATA #REQUIRED
+	          signature   CDATA #REQUIRED>
+
+	<!-- Fields -->
+
+	<!ELEMENT field (%status; | attribute)*>
+	<!ATTLIST field
+	          name        CDATA #REQUIRED
+	          type        CDATA #REQUIRED>
+
+	<!-- Properties -->
+
+	<!ELEMENT property (%status; | attribute)*>
+	<!ATTLIST property
+	          name        CDATA #REQUIRED
+	          type        CDATA #REQUIRED>
+
+	<!-- Events -->
+
+	<!ELEMENT event (%status; | attribute)*>
+	<!ATTLIST event
+	          name        CDATA #REQUIRED>
+
+	<!-- Unknown member types -->
+
+	<!ELEMENT member (%status; | attribute)*>
+	<!ATTLIST member
+	          name        CDATA #REQUIRED>
+
+	<!-- "extra" indicates that the item is not in the specification -->
+
+	<!ELEMENT extra EMPTY>
+
+	<!-- "todo" indicates that the item is not yet completed
+	     or the implementation is partial -->
+
+	<!ELEMENT todo EMPTY>
+
+	<!-- "missing" indicates that the item is missing -->
+
+	<!ELEMENT missing EMPTY>
+
+	<!-- "msg" supplies human-readable error text for some other problem -->
+
+	<!ELEMENT msg (#PCDATA)*>
+
+	<!-- Custom attributes -->
+
+	<!ELEMENT attribute (%status;)*>
+	<!ATTLIST attribute
+	          name        CDATA #REQUIRED>
+
+	<!-- Summary information -->
+
+	<!ELEMENT summary EMPTY>
+	<!ATTLIST summary
+	          types       CDATA #IMPLIED
+	          validated   CDATA #IMPLIED
+	          extra       CDATA #IMPLIED>
+
+]>

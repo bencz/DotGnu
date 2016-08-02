@@ -1,0 +1,650 @@
+%output "cg_const.c"
+
+%{
+/*
+ * cg_const.tc - Constant value nodes.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <codegen/cg_nodes.h>
+%}
+
+/*
+ * GenDiscard implementation for constants.
+ */
+ILNode_GenDiscard(ILNode_Constant)
+{
+	/* Nothing to do here */
+}
+
+/*
+ * GenThen/Else clauses that always branch.
+ */
+ILNode_GenElse(ILNode_Null),
+ILNode_GenElse(ILNode_NullPtr),
+ILNode_GenThen(ILNode_True),
+ILNode_GenElse(ILNode_False),
+ILNode_GenThen(ILNode_String)
+{
+	ILGenJump(info, IL_OP_BR, label);
+}
+
+/*
+ * GenThen/Else clauses that never branch.
+ */
+ILNode_GenThen(ILNode_Null),
+ILNode_GenThen(ILNode_NullPtr),
+ILNode_GenElse(ILNode_True),
+ILNode_GenThen(ILNode_False),
+ILNode_GenElse(ILNode_String)
+{
+	/* Nothing to do here */
+}
+
+/*
+ * "null" constant.
+ */
+ILNode_GetType(ILNode_Null)
+{
+	return ILMachineType_ObjectRef;
+}
+ILNode_GenValue(ILNode_Null)
+{
+	ILGenSimple(info, IL_OP_LDNULL);
+	ILGenAdjust(info, 1);
+	return ILMachineType_ObjectRef;
+}
+ILNode_EvalConst(ILNode_Null)
+{
+	value->valueType = ILMachineType_ObjectRef;
+	value->un.oValue = 0;
+	return 1;
+}
+
+/*
+ * "null pointer" constant.
+ */
+ILNode_GetType(ILNode_NullPtr)
+{
+	return ILMachineType_UnmanagedPtr;
+}
+ILNode_GenValue(ILNode_NullPtr)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenSimple(info, IL_OP_CONV_I);
+	ILGenAdjust(info, 1);
+	return ILMachineType_UnmanagedPtr;
+}
+ILNode_EvalConst(ILNode_NullPtr)
+{
+	value->valueType = ILMachineType_UnmanagedPtr;
+	value->un.i4Value = 0;
+	return 1;
+}
+
+/*
+ * "true" constant.
+ */
+ILNode_GetType(ILNode_True)
+{
+	return ILMachineType_Boolean;
+}
+ILNode_GenValue(ILNode_True)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenAdjust(info, 1);
+	return ILMachineType_Boolean;
+}
+ILNode_EvalConst(ILNode_True)
+{
+	value->valueType = ILMachineType_Boolean;
+	value->un.i4Value = 1;
+	return 1;
+}
+
+/*
+ * "false" constant.
+ */
+ILNode_GetType(ILNode_False)
+{
+	return ILMachineType_Boolean;
+}
+ILNode_GenValue(ILNode_False)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenAdjust(info, 1);
+	return ILMachineType_Boolean;
+}
+ILNode_EvalConst(ILNode_False)
+{
+	value->valueType = ILMachineType_Boolean;
+	value->un.i4Value = 0;
+	return 1;
+}
+
+/*
+ * Get the type of integer constants.
+ */
+ILNode_GetType(ILNode_Int8)   { return ILMachineType_Int8; }
+ILNode_GetType(ILNode_UInt8)  { return ILMachineType_UInt8; }
+ILNode_GetType(ILNode_Int16)  { return ILMachineType_Int16; }
+ILNode_GetType(ILNode_UInt16) { return ILMachineType_UInt16; }
+ILNode_GetType(ILNode_Char)   { return ILMachineType_Char; }
+ILNode_GetType(ILNode_Int32)  { return ILMachineType_Int32; }
+ILNode_GetType(ILNode_UInt32) { return ILMachineType_UInt32; }
+ILNode_GetType(ILNode_Int64)  { return ILMachineType_Int64; }
+ILNode_GetType(ILNode_UInt64) { return ILMachineType_UInt64; }
+ILNode_GetType(ILNode_Int)
+{
+	if(node->isneg)
+	{
+		if(node->value <= (((ILUInt64)(ILUInt32)IL_MAX_INT32) + 1))
+		{
+			return ILMachineType_NativeInt;
+		}
+		else
+		{
+			/* The value is too big for systems with 32-bit native
+			   integers, so convert into a 64-bit integer instead */
+			return ILMachineType_Int64;
+		}
+	}
+	else
+	{
+		if(node->value <= (ILUInt64)(ILUInt32)IL_MAX_INT32)
+		{
+			return ILMachineType_NativeInt;
+		}
+		else
+		{
+			/* The value is too big for systems with 32-bit native
+			   integers, so convert into a 64-bit integer instead */
+			return ILMachineType_Int64;
+		}
+	}
+}
+ILNode_GetType(ILNode_UInt)
+{
+	if(node->value <= (ILUInt64)IL_MAX_UINT32)
+	{
+		return ILMachineType_NativeUInt;
+	}
+	else
+	{
+		/* The value is too big for systems with 32-bit native
+		   integers, so convert into a 64-bit integer instead */
+		return ILMachineType_UInt64;
+	}
+}
+
+/*
+ * Generate value code for integer constants.
+ */
+ILNode_GenValue(ILNode_Int8)
+{
+	if(node->isneg)
+	{
+		ILGenInt32(info, (ILInt32)(-((ILInt64)(node->value))));
+	}
+	else
+	{
+		ILGenInt32(info, (ILInt32)(node->value));
+	}
+	ILGenAdjust(info, 1);
+	return ILMachineType_Int8;
+}
+ILNode_GenValue(ILNode_UInt8)
+{
+	ILGenUInt32(info, (ILUInt32)(node->value));
+	ILGenAdjust(info, 1);
+	return ILMachineType_UInt8;
+}
+ILNode_GenValue(ILNode_Int16)
+{
+	if(node->isneg)
+	{
+		ILGenInt32(info, (ILInt32)(-((ILInt64)(node->value))));
+	}
+	else
+	{
+		ILGenInt32(info, (ILInt32)(node->value));
+	}
+	ILGenAdjust(info, 1);
+	return ILMachineType_Int16;
+}
+ILNode_GenValue(ILNode_UInt16),
+ILNode_GenValue(ILNode_Char)
+{
+	ILGenUInt32(info, (ILUInt32)(node->value));
+	ILGenAdjust(info, 1);
+	return ILMachineType_UInt16;
+}
+ILNode_GenValue(ILNode_Int32)
+{
+	if(node->isneg)
+	{
+		ILGenInt32(info, (ILInt32)(-((ILInt64)(node->value))));
+	}
+	else
+	{
+		ILGenInt32(info, (ILInt32)(node->value));
+	}
+	ILGenAdjust(info, 1);
+	return ILMachineType_Int32;
+}
+ILNode_GenValue(ILNode_UInt32)
+{
+	ILGenUInt32(info, (ILUInt32)(node->value));
+	ILGenAdjust(info, 1);
+	return ILMachineType_UInt32;
+}
+ILNode_GenValue(ILNode_Int64)
+{
+	if(node->isneg)
+	{
+		ILGenInt64(info, -((ILInt64)(node->value)));
+	}
+	else
+	{
+		ILGenInt64(info, (ILInt64)(node->value));
+	}
+	ILGenAdjust(info, 1);
+	return ILMachineType_Int64;
+}
+ILNode_GenValue(ILNode_UInt64)
+{
+	ILGenUInt64(info, node->value);
+	ILGenAdjust(info, 1);
+	return ILMachineType_UInt64;
+}
+ILNode_GenValue(ILNode_Int)
+{
+	if(node->isneg)
+	{
+		if(node->value <= (((ILUInt64)(ILUInt32)IL_MAX_INT32) + 1))
+		{
+			ILGenIntNative(info, (ILInt32)(-((ILInt64)(node->value))));
+			ILGenAdjust(info, 1);
+			return ILMachineType_NativeInt;
+		}
+		else
+		{
+			/* The value is too big for systems with 32-bit native
+			   integers, so convert into a 64-bit integer instead */
+			ILGenInt64(info, -((ILInt64)(node->value)));
+			ILGenAdjust(info, 1);
+			return ILMachineType_Int64;
+		}
+	}
+	else
+	{
+		if(node->value <= (ILUInt64)(ILUInt32)IL_MAX_INT32)
+		{
+			ILGenIntNative(info, (ILInt32)(node->value));
+			ILGenAdjust(info, 1);
+			return ILMachineType_NativeInt;
+		}
+		else
+		{
+			/* The value is too big for systems with 32-bit native
+			   integers, so convert into a 64-bit integer instead */
+			ILGenInt64(info, (ILInt64)(node->value));
+			ILGenAdjust(info, 1);
+			return ILMachineType_Int64;
+		}
+	}
+}
+ILNode_GenValue(ILNode_UInt)
+{
+	if(node->value <= (ILUInt64)IL_MAX_UINT32)
+	{
+		ILGenUIntNative(info, (ILUInt32)(node->value));
+		ILGenAdjust(info, 1);
+		return ILMachineType_NativeUInt;
+	}
+	else
+	{
+		/* The value is too big for systems with 32-bit native
+		   integers, so convert into a 64-bit integer instead */
+		ILGenUInt64(info, node->value);
+		ILGenAdjust(info, 1);
+		return ILMachineType_UInt64;
+	}
+}
+
+/*
+ * Generate "then" or "else" code for integer constants.
+ */
+ILNode_GenThen(ILNode_Integer)
+{
+	if(node->value != 0)
+	{
+		ILGenJump(info, IL_OP_BR, label);
+	}
+}
+ILNode_GenElse(ILNode_Integer)
+{
+	if(node->value == 0)
+	{
+		ILGenJump(info, IL_OP_BR, label);
+	}
+}
+
+/*
+ * Evaluate the constant value of integer nodes.
+ */
+ILNode_EvalConst(ILNode_Int8)
+{
+	value->valueType = ILMachineType_Int8;
+	if(node->isneg)
+	{
+		value->un.i4Value = (ILInt32)(-((ILInt64)(node->value)));
+	}
+	else
+	{
+		value->un.i4Value = (ILInt32)(node->value);
+	}
+	return 1;
+}
+ILNode_EvalConst(ILNode_UInt8)
+{
+	value->valueType = ILMachineType_UInt8;
+	value->un.i4Value = (ILInt32)(node->value);
+	return 1;
+}
+ILNode_EvalConst(ILNode_Int16)
+{
+	value->valueType = ILMachineType_Int16;
+	if(node->isneg)
+	{
+		value->un.i4Value = (ILInt32)(-((ILInt64)(node->value)));
+	}
+	else
+	{
+		value->un.i4Value = (ILInt32)(node->value);
+	}
+	return 1;
+}
+ILNode_EvalConst(ILNode_UInt16)
+{
+	value->valueType = ILMachineType_UInt16;
+	value->un.i4Value = (ILInt32)(node->value);
+	return 1;
+}
+ILNode_EvalConst(ILNode_Char)
+{
+	value->valueType = ILMachineType_Char;
+	value->un.i4Value = (ILInt32)(node->value);
+	return 1;
+}
+ILNode_EvalConst(ILNode_Int32)
+{
+	value->valueType = ILMachineType_Int32;
+	if(node->isneg)
+	{
+		value->un.i4Value = (ILInt32)(-((ILInt64)(node->value)));
+	}
+	else
+	{
+		value->un.i4Value = (ILInt32)(node->value);
+	}
+	return 1;
+}
+ILNode_EvalConst(ILNode_UInt32)
+{
+	value->valueType = ILMachineType_UInt32;
+	value->un.i4Value = (ILInt32)(ILUInt32)(node->value);
+	return 1;
+}
+ILNode_EvalConst(ILNode_Int64)
+{
+	value->valueType = ILMachineType_Int64;
+	if(node->isneg)
+	{
+		value->un.i8Value = -((ILInt64)(node->value));
+	}
+	else
+	{
+		value->un.i8Value = (ILInt64)(node->value);
+	}
+	return 1;
+}
+ILNode_EvalConst(ILNode_UInt64)
+{
+	value->valueType = ILMachineType_UInt64;
+	value->un.i8Value = node->value;
+	return 1;
+}
+ILNode_EvalConst(ILNode_Int)
+{
+	if(node->isneg)
+	{
+		if(node->value <= (((ILUInt64)(ILUInt32)IL_MAX_INT32) + 1))
+		{
+			value->valueType = ILMachineType_NativeInt;
+			value->un.i4Value = -((ILInt64)(node->value));
+		}
+		else
+		{
+			/* The value is too big for systems with 32-bit native
+			   integers, so convert into a 64-bit integer instead */
+			value->valueType = ILMachineType_Int64;
+			value->un.i8Value = -((ILInt64)(node->value));
+		}
+	}
+	else
+	{
+		if(node->value <= (ILUInt64)(ILUInt32)IL_MAX_INT32)
+		{
+			value->valueType = ILMachineType_NativeInt;
+			value->un.i4Value = (ILInt32)(node->value);
+		}
+		else
+		{
+			/* The value is too big for systems with 32-bit native
+			   integers, so convert into a 64-bit integer instead */
+			value->valueType = ILMachineType_Int64;
+			value->un.i8Value = (ILInt64)(node->value);
+		}
+	}
+	return 1;
+}
+ILNode_EvalConst(ILNode_UInt)
+{
+	if(node->value <= (ILUInt64)IL_MAX_UINT32)
+	{
+		value->valueType = ILMachineType_NativeUInt;
+		value->un.i4Value = (ILInt32)(ILUInt32)(node->value);
+	}
+	else
+	{
+		/* The value is too big for systems with 32-bit native
+		   integers, so convert into a 64-bit integer instead */
+		value->valueType = ILMachineType_UInt64;
+		value->un.i8Value = (ILInt64)(node->value);
+	}
+	return 1;
+}
+
+/*
+ * Get the type of floating point constants.
+ */
+ILNode_GetType(ILNode_Float32) { return ILMachineType_Float32; }
+ILNode_GetType(ILNode_Float64) { return ILMachineType_Float64; }
+ILNode_GetType(ILNode_Float)   { return ILMachineType_NativeFloat; }
+
+/*
+ * Generate value code for floating point constants.
+ */
+ILNode_GenValue(ILNode_Float32)
+{
+	ILGenLoadFloat32(info, (ILFloat)(node->value));
+	ILGenAdjust(info, 1);
+	return ILMachineType_Float32;
+}
+ILNode_GenValue(ILNode_Float64)
+{
+	ILGenLoadFloat64(info, node->value);
+	ILGenAdjust(info, 1);
+	return ILMachineType_Float64;
+}
+ILNode_GenValue(ILNode_Float)
+{
+	ILGenLoadFloat64(info, node->value);
+	ILGenAdjust(info, 1);
+	return ILMachineType_NativeFloat;
+}
+
+/*
+ * Generate "then" or "else" code for floating point constants.
+ */
+ILNode_GenThen(ILNode_Real)
+{
+	if(node->value != (ILDouble)0.0)
+	{
+		ILGenJump(info, IL_OP_BR, label);
+	}
+}
+ILNode_GenElse(ILNode_Real)
+{
+	if(node->value == (ILDouble)0.0)
+	{
+		ILGenJump(info, IL_OP_BR, label);
+	}
+}
+
+/*
+ * Evaluate the constant value of floating point nodes.
+ */
+ILNode_EvalConst(ILNode_Float32)
+{
+	value->valueType = ILMachineType_Float32;
+	value->un.r4Value = (ILFloat)(node->value);
+	return 1;
+}
+ILNode_EvalConst(ILNode_Float64)
+{
+	value->valueType = ILMachineType_Float64;
+	value->un.r8Value = node->value;
+	return 1;
+}
+ILNode_EvalConst(ILNode_Float)
+{
+	value->valueType = ILMachineType_NativeFloat;
+	value->un.r8Value = node->value;
+	return 1;
+}
+
+/*
+ * Node operations for decimal constants.
+ */
+ILNode_GetType(ILNode_Decimal)
+{
+	return ILMachineType_Decimal;
+}
+ILNode_GenValue(ILNode_Decimal)
+{
+	ILInt64 intValue;
+	if(ILDecimalToInt64(&(node->value), &intValue))
+	{
+		/* We can up-convert an integer to get a decimal value */
+		if(intValue >= (ILInt64)IL_MIN_INT32 &&
+		   intValue <= (ILInt64)IL_MAX_INT32)
+		{
+			ILGenInt32(info, (ILInt32)intValue);
+			ILGenAdjust(info, 1);
+			ILGenCallByName(info, "valuetype [.library]System.Decimal "
+									"[.library]System.Decimal::op_Implicit"
+											"(int32)");
+		}
+		else if(!(info->clsCompliant) && intValue >= 0 &&
+				intValue <= (ILInt64)(ILUInt64)IL_MAX_UINT32)
+		{
+			/* Cannot use this if CLS compliance is enabled */
+			ILGenUInt32(info, (ILUInt32)intValue);
+			ILGenAdjust(info, 1);
+			ILGenCallByName(info, "valuetype [.library]System.Decimal "
+										"[.library]System.Decimal::op_Implicit"
+											"(unsigned int32)");
+		}
+		else
+		{
+			ILGenInt64(info, intValue);
+			ILGenAdjust(info, 1);
+			ILGenCallByName(info, "valuetype [.library]System.Decimal "
+										"[.library]System.Decimal::op_Implicit"
+											"(int64)");
+		}
+	}
+	else
+	{
+		/* We need to call the "Decimal" constructor to get the value */
+		ILGenUInt32(info, node->value.low);
+		ILGenUInt32(info, node->value.middle);
+		ILGenUInt32(info, node->value.high);
+		ILGenUInt32(info,
+				((node->value.flags & (ILUInt32)0x80000000) != 0 ? 1 : 0));
+		ILGenUInt32(info, ((node->value.flags >> 16) & 0xFF));
+		ILGenAdjust(info, 5);
+		ILGenNewObj(info, "[.library]System.Decimal",
+		            "(int32, int32, int32, bool, unsigned int8)");
+		ILGenAdjust(info, -4);
+	}
+	return ILMachineType_Decimal;
+}
+ILNode_GenThen(ILNode_Decimal)
+{
+	if(!ILDecimalIsZero(&(node->value)))
+	{
+		ILGenJump(info, IL_OP_BR, label);
+	}
+}
+ILNode_GenElse(ILNode_Decimal)
+{
+	if(ILDecimalIsZero(&(node->value)))
+	{
+		ILGenJump(info, IL_OP_BR, label);
+	}
+}
+ILNode_EvalConst(ILNode_Decimal)
+{
+	value->valueType = ILMachineType_Decimal;
+	value->un.decValue = node->value;
+	return 1;
+}
+
+/*
+ * Node operations for string constants.
+ */
+ILNode_GetType(ILNode_String)
+{
+	return ILMachineType_String;
+}
+ILNode_GenValue(ILNode_String)
+{
+	ILGenLoadString(info, node->str, node->len);
+	ILGenAdjust(info, 1);
+	return ILMachineType_String;
+}
+ILNode_EvalConst(ILNode_String)
+{
+	value->valueType = ILMachineType_String;
+	value->un.strValue.str = node->str;
+	value->un.strValue.len = node->len;
+	return 1;
+}

@@ -1,0 +1,6 @@
+Makefile
+Makefile.in
+.deps
+*.exe
+*.dll
+ilrun.sh

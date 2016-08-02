@@ -1,0 +1,101 @@
+
+noinst_LIBRARIES = libCStdio.a
+
+libCStdio_a_SOURCES = \
+	asprintf.c \
+	clearerr.c \
+	defs.c \
+	dprintf.c \
+	__fbufsize.c \
+	fcloseall.c \
+	fclose.c \
+	feof.c \
+	ferror.c \
+	fflush.c \
+	fgetc.c \
+	fgetpos.c \
+	fgets.c \
+	fileno.c \
+	__flbf.c \
+	fmemopen.c \
+	fopen.c \
+	fopncook.c \
+	__fpending.c \
+	fprintf.c \
+	__fpurge.c \
+	fputc.c \
+	fputs.c \
+	__freadable.c \
+	fread.c \
+	__freading.c \
+	freopen.c \
+	fseek.c \
+	__fsetlocking.c \
+	fsetpos.c \
+	ftell.c \
+	__fwritable.c \
+	fwrite.c \
+	__fwriting.c \
+	getc.c \
+	getchar.c \
+	getdelim.c \
+	getline.c \
+	gets.c \
+	getw.c \
+	internals.c \
+	linewrap.c \
+	memstream.c \
+	newstream.c \
+	perror.c \
+	printf.c \
+	psignal.c \
+	putc.c \
+	putchar.c \
+	puts.c \
+	putw.c \
+	rewind.c \
+	setbuf.c \
+	setbuffer.c \
+	setlinebuf.c \
+	setvbuf.c \
+	snprintf.c \
+	sprintf.c \
+	stdio_init.c \
+	sysd-stdio.c \
+	ungetc.c \
+	vasprintf.c \
+	vdprintf.c \
+	vfprintf.c \
+	vprintf.c \
+	vsnprintf.c \
+	vsprintf.c \
+	_i18n_number.h \
+	_itoa.h \
+	_itowa.h \
+	linewrap.h \
+	printf.h \
+	printf-parse.h
+
+## Files are that are still TODO
+##		fscanf.c
+##		_itoa.c
+##		itoa-digits.c
+##		itoa-udigits.c
+##		_itowa.c
+##		itowa-digits.c
+##		printf_fp.c
+##		printf-prs.c
+##		printf_size.c
+##		scanf.c
+##		sscanf.c
+##		tempnam.c
+##		tmpfile64.c
+##		tmpnam.c
+##		tmpnam_r.c
+##		vfscanf.c
+##		vscanf.c
+##		vsscanf.c
+
+AM_CFLAGS = -I$(top_srcdir)/include \
+			-I$(top_srcdir)/libc \
+			-imacros $(top_srcdir)/include/libc-symbols.h

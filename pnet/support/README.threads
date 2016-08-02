@@ -1,0 +1,32 @@
+
+Currently, thread support is only enabled on a subset of the
+platforms.  To enable it on new platforms, you need to do the
+following:
+
+- Modify "configure.in" to recognise the platform and pass down
+  the correct "--enable-threads=XXX" option to "libgc".
+
+- Modify "support/thr_choose.h" to recognise the platform and
+  enable the thread implementation.
+
+There are two thread implementation types at present: pthreads
+and Win32.  The first is enabled by defining "IL_USE_PTHREADS"
+in "thr_choose.h", and the second is enabled by defining
+"IL_USE_WIN32_THREADS" in "thr_choose.h".  The "configure.in"
+file should recognise GNU/Linux and Cygwin automatically, so
+there usually is no need to do this manually on those systems.
+
+The thread implementation that you use will have to match that
+used by "libgc", as the garbage collector's choice of thread
+system dictates the way the rest of the system must operate.
+
+The pthreads implementation currently assumes a LinuxThreads-like
+implementation, based on one process per thread.  It may work on
+other systems but it is highly likely that modifications will be
+required.  This is why pthreads is turned off by default, except
+on systems that we know will work.
+
+The "test_thread" program in the "tests" directory can be used
+to perform regression tests on the thread implementation.  Make
+sure that you run the tests before you submit patches - getting
+threading right can be difficult.

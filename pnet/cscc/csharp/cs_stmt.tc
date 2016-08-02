@@ -1,0 +1,2400 @@
+/*
+ * cs_stmt.tc - Semantic analysis for C# statement node types.
+ *
+ * Copyright (C) 2001, 2002  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+%{
+
+/*
+ * Determine if a tree node corresponds to the empty statement.
+ */
+#define	IsEmpty(node) ((node) == 0 || yykind((node)) == yykindof(ILNode_Empty))
+
+/*
+ * determine if a type1 implements type2
+ */
+static int ILTypeImplements(ILGenInfo *info, ILType *type1, ILType *type2)
+{
+	ILClass *classInfo1 = ILTypeToClass(info, type1);
+	ILClass *classInfo2 = ILTypeToClass(info, type2);
+	if(classInfo1 && classInfo2)
+	{
+		return ILClassImplements(classInfo1, classInfo2);
+	}
+	else
+	{
+		return 0;
+	}
+}
+/*
+ * determine if a type1 inherits type2
+ */
+static int ILTypeInherits(ILGenInfo *info, ILType *type1, ILType *type2)
+{
+	ILClass *classInfo1 = ILTypeToClass(info, type1);
+	ILClass *classInfo2 = ILTypeToClass(info, type2);
+	if(classInfo1 && classInfo2)
+	{
+		return ILClassInheritsFrom(classInfo1, classInfo2);
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+/*
+ * Obtain the default scope of the class
+ */
+#define GetDefaultScope(info)	(((ILNode_ClassDefn*)(info->currentClass))->classInfo)
+
+/*
+ * Perform semantic analysis on a sub-statement.
+ */
+static void StmtSem(ILNode *node, ILGenInfo *info, ILNode **parent)
+{
+	CSSemValue value;
+	if(node)
+	{
+		value = ILNode_SemAnalysis(node, info, parent);
+		if(!CSSemIsVoid(value) && !CSSemIsValue(value))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "invalid statement");
+		}
+	}
+}
+
+/*
+ * Statement context flags.
+ */
+#define	CS_STMT_LOOP		1
+#define	CS_STMT_SWITCH		2
+#define	CS_STMT_TRY			4
+#define	CS_STMT_CATCH		8
+#define	CS_STMT_FINALLY		16
+
+/*
+ * Push a statement context.
+ */
+static void PushStmtContext(ILGenInfo *info, int context)
+{
+	if(info->contextStackSize >= info->contextStackMax)
+	{
+		/* Increase the size of the context stack */
+		int *newstack;
+		newstack = (int *)ILRealloc(info->contextStack,
+									sizeof(int) * (info->contextStackMax + 4));
+		if(!newstack)
+		{
+			ILGenOutOfMemory(info);
+		}
+		info->contextStack = newstack;
+		info->contextStackMax += 4;
+	}
+	info->contextStack[info->contextStackSize] = context;
+	++(info->contextStackSize);
+}
+
+/*
+ * Pop the top-most statement context.
+ */
+static void PopStmtContext(ILGenInfo *info)
+{
+	--(info->contextStackSize);
+}
+
+/*
+ * Determine if we are within a specific context, but not
+ * within a "stop" context.  e.g. "break" can be used
+ * within a loop, but not in the body of a "finally"
+ * within the loop.  "finally" is the "stop" context.
+ */
+static int StmtContextOK(ILGenInfo *info, int context, int stopContext)
+{
+	long posn = info->contextStackSize;
+	while(posn > 0)
+	{
+		--posn;
+		if((info->contextStack[posn] & stopContext) != 0)
+		{
+			return 0;
+		}
+		if((info->contextStack[posn] & context) != 0)
+		{
+			return 1;
+		}
+	}
+	if(!context)
+	{
+		/* We are checking a "return" statement */
+		return 1;
+	}
+	else
+	{
+		/* We are checking some other kind of statement */
+		return 0;
+	}
+}
+
+/*
+ * Add a local variable to a method.
+ * Returns the index of the new local variable in the local signature.
+ */
+static unsigned long AddLocalToMethod(ILGenInfo *info,
+									  ILNode_MethodDeclaration *method,
+									  ILType *type)
+{
+	/* Create the local variable signature for this method */
+	if(!(method->localVarSig))
+	{
+		method->localVarSig = ILTypeCreateLocalList(info->context);
+		if(!(method->localVarSig))
+		{
+			CCOutOfMemory();
+		}
+	}
+			
+	if(!ILTypeAddLocal(info->context, method->localVarSig, type))
+	{
+		CCOutOfMemory();
+	}
+
+	return ILTypeNumLocals(method->localVarSig) - 1;
+}
+
+static ILNode *HandleFixedExpr(ILGenInfo *info, ILNode *nameNode,
+							   ILNode *exprNode, ILNode **exprParent,
+							   int isFixAddress)
+{
+	CSSemValue value;
+	ILNode *expr;
+
+	/* Perform semantic analysis on the expression */
+	value = ILNode_SemAnalysis(exprNode, info, exprParent);
+
+	/* Assign the value to a pinned local. */
+	if(CSSemIsValue(value))
+	{
+		ILNode *pinnedVar;
+		unsigned long tempVar;
+		ILNode_MethodDeclaration *method;
+		ILType *pinnedType;
+		ILType *type = CSSemGetType(value);
+
+		/* Locate the method that this local is declared within */
+		method = (ILNode_MethodDeclaration *)(info->currentMethod);
+
+		expr = *exprParent;
+
+		if(isFixAddress && ILType_IsPointer(type))
+		{
+			type = ILTypeCreateRef(info->context, IL_TYPE_COMPLEX_BYREF,
+								   ILType_Ref(type));
+
+			if(!type)
+			{
+				CCOutOfMemory();
+			}
+			CSSemSetValueKind(value, CSSemGetKind(value), type);
+		}
+
+		pinnedType = ILTypeCreateRef(info->context, IL_TYPE_COMPLEX_PINNED,
+									 type);
+		if(!pinnedType)
+		{
+			ILGenOutOfMemory(info);
+		}
+
+		tempVar = AddLocalToMethod(info, method, pinnedType);
+		pinnedVar = ILNode_LocalVar_create(tempVar, ILTypeToMachineType(type));
+
+		/* Assign the value to the pinned variable */
+		expr = ILNode_Assign_create(pinnedVar, expr);
+		yysetfilename(expr, yygetfilename(exprNode));
+		yysetlinenum(expr, yygetlinenum(exprNode));
+
+		/* Wrap the expression to prevent double evaluation */
+		expr = ILNode_SemGuard_create(expr, value);
+		yysetfilename(expr, yygetfilename(expr));
+		yysetlinenum(expr, yygetlinenum(expr));
+	}
+	else
+	{
+		/* Wrap the expression to prevent double evaluation */
+		expr = ILNode_SemGuard_create(*exprParent, value);
+		yysetfilename(expr, yygetfilename(exprNode));
+		yysetlinenum(expr, yygetlinenum(exprNode));
+	}
+
+	/* Assign the value to the variable */
+	expr = ILNode_Assign_create(nameNode, expr);
+	yysetfilename(expr, yygetfilename(nameNode));
+	yysetlinenum(expr, yygetlinenum(nameNode));
+
+	return expr;
+}
+
+/*
+ * Check if a type implements the IDisposable interface
+ */
+static void CheckIfDisposable(ILGenInfo *info, ILNode *node, ILType *type)
+{
+	ILType *disposableType;
+
+	disposableType=ILFindSystemType(info,"IDisposable");
+	if(!ILTypeImplements(info, type, disposableType) &&
+	   !ILTypeInherits(info, type, disposableType))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  "`%s' does not implement 'IDisposable' interface ", 
+			  CSTypeToName(type));
+	}
+}
+
+/*
+ * Resolve the type for a local variable declaration.
+ * Returns the type on success and defaults to ILType_Int32 on error.
+ * If the type is 'var' and to be the result of the initialization statement
+ * then Null is returned.
+ */
+static ILType *FindLocalType(ILNode *node, ILGenInfo *info, ILNode **parent,
+							 int isUsing)
+{
+	ILType *type;
+
+#if IL_VERSION_MAJOR > 2
+	if(node && yykind(node) == yykindof(ILNode_Identifier))
+	{
+		const char *name;
+
+		name = ((ILNode_Identifier *)node)->name;
+		if(name && !strcmp(name, "var"))
+		{
+			CSSemValue value;
+			int save;
+
+			save = info->inSemType;
+			info->inSemType = info->typeGather;
+			value = ILNode_SemAnalysisType(node, info, parent);
+			info->inSemType = save;
+			if(!CSSemIsType(value))
+			{
+				/*
+				 * This is a declaration where the type results from the result
+				 * type of the initialization statement.
+				 * We simply replace thy type node here and leave the real work
+				 * for later.
+				 */
+				type = 0;
+			}
+			else
+			{
+				type = CSSemGetType(value);
+
+				if(type == ILType_Void)
+				{
+					CCErrorOnLine(yygetfilename(node),
+								  yygetlinenum(node),
+								"`void' type is not allowed in this context");
+					type = ILType_Int32;
+				}
+			}
+		}
+		else
+		{
+			/* Perform semantic analysis on the local variable type */
+			type = CSSemType(node, info, parent);
+		}
+	}
+	else
+#endif
+	{
+		/* Perform semantic analysis on the local variable type */
+		type = CSSemType(node, info, parent);
+	}
+
+	if(type && isUsing)
+	{
+		CheckIfDisposable(info, node, type);
+	}
+
+	return type;
+}
+
+/*
+ * If type is Null then the type results in the return type of the
+ * initialization expression.
+ * The resulting type of the local is returned.
+ */
+static ILType *HandleLocalDecl(ILNode *node, ILGenInfo *info, ILNode **parent,
+							   ILType *type, int isUsing)
+{
+	const char *name = 0;
+	ILNode *nameNode;
+	unsigned long varNum;
+	ILNode_MethodDeclaration *method;
+	ILType *resultType = type;
+
+	if(!node)
+	{
+		nameNode = 0;
+	}
+	if(yyisa(node, ILNode_VariableDeclarator))
+	{
+		nameNode = ((ILNode_VariableDeclarator *)node)->name;
+		parent = &(((ILNode_VariableDeclarator *)node)->name);
+	}
+	else
+	{
+		nameNode = node;
+	}
+	if(nameNode)
+	{
+		ILScopeData *data;
+
+		name = ILQualIdentName(nameNode, 0);
+		data = ILScopeLookup(info->currentScope, name, 0);
+		if(data)
+		{
+			ILNode *errorNode;
+
+			/* The name is already declared in this scope */
+			CCErrorOnLine(yygetfilename(nameNode), yygetlinenum(nameNode),
+						  "`%s' is already declared in this scope", name);
+			errorNode = ILScopeDataGetNode(data);
+			if(errorNode)
+			{
+				CCErrorOnLine(yygetfilename(errorNode),
+							  yygetlinenum(errorNode),
+							  "previous declaration here");
+			}
+			nameNode = 0;
+		}
+	}
+	if(!type)
+	{
+		if(node && yyisa(node, ILNode_VariableDeclarator))
+		{
+			CSSemValue value;
+			ILNode_VariableDeclarator *declNode;
+
+			declNode = (ILNode_VariableDeclarator *)node;
+			if(declNode->init)
+			{
+				value = ILNode_SemAnalysis(declNode->init,
+										   info, &(declNode->init));
+
+				if(!CSSemIsValue(value))
+				{
+					CCErrorOnLine(yygetfilename(node),
+								  yygetlinenum(node),
+								  "invalid lvalue in assignment");
+					if(!CSSemIsRValue(value))
+					{
+						CSSemSetRValue(value, ILType_Int32);
+					}
+				}
+				resultType = CSSemGetType(value);
+
+				/* Wrap the expression to prevent double evaluation */
+				declNode->init = ILNode_SemGuard_create(declNode->init,
+														value);
+			}
+			else
+			{
+				CCErrorOnLine(yygetfilename(node),
+							  yygetlinenum(node),
+					"`var' type is not allowed without an initializer");
+				resultType = ILType_Int32;
+			}
+		}
+		else
+		{
+			CCErrorOnLine(yygetfilename(node),
+						  yygetlinenum(node),
+					"`var' type is not allowed without an initializer");
+			resultType = ILType_Int32;
+		}
+	}
+
+	/* Locate the method that this local is declared within */
+	method = (ILNode_MethodDeclaration *)(info->currentMethod);
+
+	/* Add the type to the local variable signature for this method */
+	varNum = AddLocalToMethod(info, method, resultType);
+
+	if(nameNode)
+	{
+		/* Create a local variable entry in the current scope */
+		ILScopeDeclareLocal(info->currentScope, name, varNum, nameNode);
+	}
+
+	if(isUsing)
+	{
+		/* replace the name with the local variable */
+		*parent = ILNode_LocalVar_create(varNum,
+										 ILTypeToMachineType(resultType));
+	}
+
+	if(isUsing && node &&
+	   (!yyisa(node, ILNode_VariableDeclarator) ||
+		((ILNode_VariableDeclarator *)node)->init == 0))
+	{
+		CCErrorOnLine(yygetfilename(node),
+					  yygetlinenum(node),
+		"resource declaration in a using statement is not allowed without an initializer");
+	}
+
+	return resultType;
+}
+
+static void HandleForeachVarDecl(ILNode_Foreach *node, ILGenInfo *info, ILType *type)
+{
+	unsigned long varNum;
+	ILNode_MethodDeclaration *method;
+
+	/* Locate the method that this local is declared within */
+	method = (ILNode_MethodDeclaration *)(info->currentMethod);
+
+	varNum = AddLocalToMethod(info, method, type);
+
+	/* Create a local variable entry in the current scope */
+	/* TODO: the variable should be marked read-only */
+	ILScopeDeclareLocal(info->currentScope, node->varName, varNum,
+						node->varNameNode);
+
+	node->varIndex = varNum;
+	node->varType = ILTypeToMachineType(type);
+}
+
+%}
+
+/*
+ * Perform semantic analysis for the empty statement.
+ */
+ILNode_SemAnalysis(ILNode_Empty)
+{
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the compound statement.
+ */
+ILNode_SemAnalysis(ILNode_Compound),
+ILNode_SemAnalysis(ILNode_List)
+{
+	ILNode_ListIter iter;
+	ILNode *child;
+	ILNode *replace;
+	ILNode_ListIter_Init(&iter, node);
+	while((child = ILNode_ListIter_Next(&iter)) != 0)
+	{
+		replace = child;
+		StmtSem(child, info, &replace);
+		if(replace != child)
+		{
+			*(iter.last) = replace;
+		}
+	}
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "if" statement.
+ *
+ * Note: we assume that the condition has been wrapped in
+ * a "ToBool" node to take care of the semantic analysis
+ * for the boolean cast.
+ */
+ILNode_SemAnalysis(ILNode_If)
+{
+	ILEvalValue evalValue;
+	ILNode_SemAnalysis(node->expr, info, &(node->expr));
+	StmtSem(node->thenClause, info, &(node->thenClause));
+	StmtSem(node->elseClause, info, &(node->elseClause));
+	
+	/* the compiler does do the same optimisation lower down
+	   the codegenerator , but that is not used for return 
+	   value tracking */
+	if(ILNode_EvalConst(node->expr, info, &evalValue))
+	{
+		if(evalValue.un.i4Value)
+		{
+			*parent = node->thenClause;
+		}
+		else
+		{
+			*parent = node->elseClause;
+		}
+	}
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "while" statement.
+ *
+ * Note: we assume that the condition has been wrapped in
+ * a "ToBool" node to take care of the semantic analysis
+ * for the boolean cast.
+ */
+ILNode_SemAnalysis(ILNode_While)
+{
+	ILNode_SemAnalysis(node->cond, info, &(node->cond));
+	PushStmtContext(info, CS_STMT_LOOP);
+	StmtSem(node->stmt, info, &(node->stmt));
+	PopStmtContext(info);
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "do" statement.
+ *
+ * Note: we assume that the condition has been wrapped in
+ * a "ToBool" node to take care of the semantic analysis
+ * for the boolean cast.
+ */
+ILNode_SemAnalysis(ILNode_Do)
+{
+	PushStmtContext(info, CS_STMT_LOOP);
+	StmtSem(node->stmt, info, &(node->stmt));
+	PopStmtContext(info);
+	ILNode_SemAnalysis(node->cond, info, &(node->cond));
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "for" statement.
+ *
+ * Note: we assume that the condition has been wrapped in
+ * a "ToBool" node to take care of the semantic analysis
+ * for the boolean cast.
+ */
+ILNode_SemAnalysis(ILNode_For)
+{
+	StmtSem(node->init, info, &(node->init));
+	ILNode_SemAnalysis(node->cond, info, &(node->cond));
+	StmtSem(node->incr, info, &(node->incr));
+	PushStmtContext(info, CS_STMT_LOOP);
+	StmtSem(node->stmt, info, &(node->stmt));
+	PopStmtContext(info);
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "foreach" statement.
+ */
+ILNode_SemAnalysis(ILNode_Foreach)
+{
+	CSSemValue value;
+	ILScope *scope;
+	ILType *type;
+
+	/* Locate the scope and method for the iteration variable */
+	scope = info->currentScope;
+
+	/* Perform semantic analysis on the local variable type */
+	if(CSHasUnsafeType(node->type))
+	{
+		CCUnsafeTypeMessage(info, (ILNode *)node);
+	}
+	type = FindLocalType(node->type, info, &(node->type), 0);
+
+	/* Add the type to the local variable signature for this method */
+	if(type)
+	{
+		HandleForeachVarDecl(node, info, type);
+	}
+
+	/* Perform semantic analysis on the collection expression */
+	if(!CSSemExpectValue(node->expr, info, &(node->expr), &value))
+	{
+		CCErrorOnLine(yygetfilename(node->expr), yygetlinenum(node->expr),
+					  "invalid collection expression in `foreach' statement");
+		if(type)
+		{
+			node->arrayType = ILTypeCreateArray(info->context, 1, type);
+		}
+		else
+		{
+			type = ILType_Int32;
+			HandleForeachVarDecl(node, info, type);
+			node->arrayType = ILTypeCreateArray(info->context, 1, type);
+		}
+		if(!(node->arrayType))
+		{
+			CCOutOfMemory();
+		}
+	}
+	else
+	{
+		node->arrayType = CSSemGetType(value);
+	}
+
+	/* Is this a simple array-based or collection-based "foreach" statement? */
+	if(ILType_IsSimpleArray(node->arrayType))
+	{
+		/* 
+		 * If the collection is a simple array and the iteration variable
+		 * has the same type as the array elements.  We can optimise
+		 * this case in the code generator to scan the array efficiently.
+		 * Nothing has to be done here in this case.
+		 */
+		node->elemType = ILTypeGetElemType(node->arrayType);
+
+		if(!type)
+		{
+			type = node->elemType;
+			HandleForeachVarDecl(node, info, type);
+		}
+		else if(!ILTypeIdentical(node->elemType, type))
+		{
+			ILNode *castNode;
+
+			castNode = ILNode_EmptyExpr_create
+				(ILTypeToMachineType(node->elemType));
+			if(!ILCast(info, castNode, &(castNode), node->elemType, type, 1))
+			{
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					"Cannot cast '%s' to '%s'",CSTypeToName(node->elemType),
+					CSTypeToName(type));
+			}
+			node->doCast = castNode;
+		}
+	}
+	else if(ILTypeIsStringClass(node->arrayType) &&
+			(!type || ILTypeIdentical(type, ILType_Char)))
+	{
+		/* The collection is a string, which we can special-case */
+		if(!type)
+		{
+			type = ILType_Char;
+			HandleForeachVarDecl(node, info, type);
+		}
+		*parent = ILNode_ForeachString_create(node->expr,
+											  node->stmt,
+											  node->varIndex,
+											  node->varType);
+	}
+	else 
+	{
+		ILMethod *getEnumerator = NULL;
+		ILType *ienumerableType;
+		ILClass *arrayClass;
+
+		arrayClass = ILTypeToClass(info, node->arrayType);
+		ienumerableType = ILFindNonSystemType(info,
+											  "IEnumerable",
+											  "System.Collections");
+		if(arrayClass)
+		{
+			getEnumerator = ILResolveInstanceMethod(info, arrayClass,
+													GetDefaultScope(info),
+													"GetEnumerator",
+													NULL, 0);
+		}
+		if(getEnumerator == NULL &&
+		   ILTypeImplements(info, node->arrayType, ienumerableType))
+		{
+			ILClass * enumerable;
+
+			enumerable = ILTypeToClass(info, ienumerableType);
+			enumerable = ILClassResolve(enumerable);
+
+			getEnumerator = ILResolveInstanceMethod(info, enumerable,
+													GetDefaultScope(info),
+													"GetEnumerator",
+													NULL, 0);
+		}	
+		if(getEnumerator)
+		{
+			ILProperty *property = NULL;
+			ILMethod *getCurrent = NULL;
+			ILMethod *moveNext = NULL;
+			ILType *retType;
+			ILType *enumerator;
+
+			enumerator = ILTypeGetReturn(ILMethod_Signature(getEnumerator));
+			property = ILResolveProperty(info,
+										 ILType_ToClass(enumerator),
+										 GetDefaultScope(info),
+										 "Current");
+
+			getCurrent = (property ? ILProperty_Getter(property) : 0);
+
+			moveNext = ILResolveInstanceMethod(info,
+											   ILType_ToClass(enumerator),
+											   GetDefaultScope(info),
+											   "MoveNext", NULL, 0);
+
+			if(!property) 
+			{
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						"Could not locate 'Current' or 'IEnumerator.Current'"
+						"property in '%s'", CSTypeToName(enumerator));
+			}
+			else if(!getCurrent)
+			{
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+							  "'Current' property has no 'get' method in '%s'",
+							  CSTypeToName(enumerator));
+			}
+			if(!moveNext) 
+			{
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  "Cannot locate 'MoveNext()' or 'IEnumerator.MoveNext()' in '%s'",
+					  CSTypeToName(enumerator));
+			}
+			if(getCurrent && moveNext)
+			{
+				retType = ILTypeGetReturn(ILMethod_Signature(getCurrent));
+
+				if(!type)
+				{
+					type = retType;
+					HandleForeachVarDecl(node, info, type);
+					*parent = ILNode_ForeachCollection_create(
+								NULL,
+								node->expr,
+								node->stmt,
+								node->arrayType,
+								node->varIndex,
+								ILTypeToMachineType(type),
+								enumerator,
+								getEnumerator,
+								moveNext,
+								getCurrent);
+				}
+				else if(ILTypeIdentical(type, retType))	
+				{	
+					*parent = ILNode_ForeachCollection_create(
+								NULL,
+								node->expr,
+								node->stmt,
+								node->arrayType,
+								node->varIndex,
+								ILTypeToMachineType(type),
+								enumerator,
+								getEnumerator,
+								moveNext,
+								getCurrent);
+				}
+				else
+				{
+					ILNode *castNode;
+
+					castNode = ILNode_EmptyExpr_create(ILTypeToMachineType(retType));
+					if(!ILCast(info, castNode, &(castNode), retType, type, 1))
+					{
+						CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+							"Cannot cast '%s' to '%s'",CSTypeToName(retType),
+							CSTypeToName(type));
+					}
+					*parent = ILNode_ForeachCollection_create(
+								castNode,
+								node->expr,
+								node->stmt,
+								node->arrayType,
+								node->varIndex,
+								ILTypeToMachineType(type),
+								enumerator,
+								getEnumerator,
+								moveNext,
+								getCurrent);
+				}
+			}
+		}
+		else
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			 "Could not locate a 'GetEnumerator' or "
+			 "'IEnumerable.GetEnumerator' in '%s'",
+			 CSTypeToName(node->arrayType));
+		}
+	}
+
+	/* Perform semantic analysis on the body of the "foreach" statement */
+	PushStmtContext(info, CS_STMT_LOOP);
+	StmtSem(node->stmt, info, &(node->stmt));
+	PopStmtContext(info);
+
+	/* Done */
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "foreach string" and
+ * "foreach collection" statements.
+ */
+ILNode_SemAnalysis(ILNode_EmptyExpr),
+ILNode_SemAnalysis(ILNode_ForeachString),
+ILNode_SemAnalysis(ILNode_ForeachCollection)
+{
+	/* We don't need to do anything here, as this node type is
+	   synthesized by the "ILNode_Foreach" processing */
+	return CSSemValueDefault;
+}
+
+%{
+
+/*
+ * Count the number of case labels in the body of a "switch" statement,
+ * and find the default case.
+ */
+static unsigned long CountLabelsAndFindDefault(ILNode *sections,
+											   ILNode **defCase)
+{
+	ILNode_ListIter iter1;
+	ILNode_ListIter iter2;
+	ILNode *section;
+	ILNode *caseNode;
+	unsigned long count;
+	ILNode *prevDefLabel;
+
+	/* Initialize the return information */
+	count = 0;
+	*defCase = 0;
+	prevDefLabel = 0;
+
+	/* Iterate through the sections */
+	ILNode_ListIter_Init(&iter1, sections);
+	while((section = ILNode_ListIter_Next(&iter1)) != 0)
+	{
+		/* Iterate through the case list for each section */
+		ILNode_ListIter_Init
+			(&iter2, ((ILNode_SwitchSection *)section)->caseList);
+		while((caseNode = ILNode_ListIter_Next(&iter2)) != 0)
+		{
+			if(yyisa(caseNode, ILNode_DefaultLabel))
+			{
+				/* This is the switch's default label */
+				if(prevDefLabel)
+				{
+					CCErrorOnLine(yygetfilename(caseNode),
+						  yygetlinenum(caseNode),
+						  "multiple `default' labels in `switch' statement");
+					CCErrorOnLine(yygetfilename(prevDefLabel),
+						  yygetlinenum(prevDefLabel),
+						  "previous `default' label here");
+				}
+				else
+				{
+					*defCase = section;
+					prevDefLabel = caseNode;
+				}
+			}
+			else
+			{
+				/* This is a particular case label */
+				++count;
+			}
+		}
+	}
+
+	/* Return the count to the caller */
+	return count;
+}
+
+/*
+ * Compare two case label values within "ILSwitchValue" objects.
+ */
+static int CompareCaseLabels(const void *e1, const void *e2)
+{
+	const ILEvalValue *value1 = &(((const ILSwitchValue *)e1)->value);
+	const ILEvalValue *value2 = &(((const ILSwitchValue *)e2)->value);
+
+	switch(value1->valueType)
+	{
+		case ILMachineType_Int8:
+		case ILMachineType_UInt8:
+		case ILMachineType_Int16:
+		case ILMachineType_UInt16:
+		case ILMachineType_Char:
+		case ILMachineType_Int32:
+		{
+			if(value1->un.i4Value < value2->un.i4Value)
+			{
+				return -1;
+			}
+			else if(value1->un.i4Value > value2->un.i4Value)
+			{
+				return 1;
+			}
+		}
+		break;
+
+		case ILMachineType_UInt32:
+		{
+			if(((ILUInt32)(value1->un.i4Value)) <
+					((ILUInt32)(value2->un.i4Value)))
+			{
+				return -1;
+			}
+			else if(((ILUInt32)(value1->un.i4Value)) >
+					((ILUInt32)(value2->un.i4Value)))
+			{
+				return 1;
+			}
+		}
+		break;
+
+		case ILMachineType_Int64:
+		{
+			if(value1->un.i8Value < value2->un.i8Value)
+			{
+				return -1;
+			}
+			else if(value1->un.i8Value > value2->un.i8Value)
+			{
+				return 1;
+			}
+		}
+		break;
+
+		case ILMachineType_UInt64:
+		{
+			if(((ILUInt64)(value1->un.i8Value)) <
+					((ILUInt64)(value2->un.i8Value)))
+			{
+				return -1;
+			}
+			else if(((ILUInt64)(value1->un.i8Value)) >
+					((ILUInt64)(value2->un.i8Value)))
+			{
+				return 1;
+			}
+		}
+		break;
+
+		case ILMachineType_String:
+		{
+			const char *str1 = value1->un.strValue.str;
+			const char *str2 = value2->un.strValue.str;
+			int len1 = value1->un.strValue.len;
+			int len2 = value2->un.strValue.len;
+			unsigned char ch1;
+			unsigned char ch2;
+			if(!str1)
+			{
+				/* The first value is "null" */
+				return (str2 ? -1 : 0);
+			}
+			else if(!str2)
+			{
+				/* The second value is "null" */
+				return 1;
+			}
+			while(len1 > 0 && len2 > 0)
+			{
+				ch1 = (unsigned char)(*str1++);
+				ch2 = (unsigned char)(*str2++);
+				if(ch1 < ch2)
+				{
+					return -1;
+				}
+				else if(ch1 > ch2)
+				{
+					return 1;
+				}
+				--len1;
+				--len2;
+			}
+			if(len1 > 0)
+			{
+				return 1;
+			}
+			else if(len2 > 0)
+			{
+				return -1;
+			}
+		}
+		break;
+
+		default: break;
+	}
+	return 0;
+}
+
+/*
+ * Collect up all of the case labels for a "switch" statement,
+ * and sort them into ascending order.  This also performs
+ * semantic analysis on each of the sections.  Returns the new
+ * size of the case label list, after errors have been removed.
+ */
+static unsigned long CollectCaseLabels(ILGenInfo *info, ILNode *sections,
+							  		   ILType *switchType,
+									   ILSwitchValue *values)
+{
+	ILNode_ListIter iter1;
+	ILNode_ListIter iter2;
+	ILNode *section;
+	ILNode *caseNode;
+	ILNode_CaseLabel *caseLabel;
+	unsigned long size;
+	unsigned long posn;
+	CSSemValue value;
+	ILEvalValue evalValue;
+	ILMachineType switchMachineType;
+
+	/* Initialize */
+	size = 0;
+	switchMachineType = ILTypeToMachineType(switchType);
+
+	/* Iterate through the sections */
+	ILNode_ListIter_Init(&iter1, sections);
+	while((section = ILNode_ListIter_Next(&iter1)) != 0)
+	{
+		/* Iterate through the case list for each section */
+		ILNode_ListIter_Init
+			(&iter2, ((ILNode_SwitchSection *)section)->caseList);
+		while((caseNode = ILNode_ListIter_Next(&iter2)) != 0)
+		{
+			if(yyisa(caseNode, ILNode_CaseLabel))
+			{
+				/* Perform semantic analysis on the case expression */
+				caseLabel = (ILNode_CaseLabel *)caseNode;
+				if(!CSSemExpectValue(caseLabel->expr, info,
+									 &(caseLabel->expr), &value))
+				{
+					CCErrorOnLine(yygetfilename(caseLabel->expr),
+								  yygetlinenum(caseLabel->expr),
+								  "invalid case label expression");
+					continue;
+				}
+
+				/* Coerce the case expression to the governing type */
+				if(!ILCoerce(info, caseLabel->expr, &(caseLabel->expr),
+							 CSSemGetType(value), switchType,1))
+				{
+					CCErrorOnLine(yygetfilename(caseLabel->expr),
+								  yygetlinenum(caseLabel->expr),
+								  "no conversion from `%s' to `%s'",
+								  CSTypeToName(CSSemGetType(value)),
+								  CSTypeToName(switchType));
+					continue;
+				}
+
+				/* Evaluate the constant value for the case expression */
+				if(!ILNode_EvalConst(caseLabel->expr, info, &evalValue) ||
+				   !ILGenCastConst(info, &evalValue, evalValue.valueType,
+				   				   switchMachineType))
+				{
+					CCErrorOnLine(yygetfilename(caseLabel->expr),
+								  yygetlinenum(caseLabel->expr),
+								  "case expression is not constant");
+					continue;
+				}
+
+				/* Record the case node information for later */
+				values[size].value = evalValue;
+				values[size].caseLabel = caseNode;
+				values[size].section = section;
+				++size;
+			}
+		}
+
+	}
+	/* split into 2 passes to facilitate goto case 
+	 * So SemAnalysis is performed after all the CaseLabels are
+	 * collected.
+	 */
+	/* Iterate through the sections again */
+	ILNode_ListIter_Init(&iter1, sections);
+	while((section = ILNode_ListIter_Next(&iter1)) != 0)
+	{
+		((ILNode_SwitchSection*)section)->visited=ILVisitMode_Processing;
+		/* Perform semantic analysis on the section's body */
+		ILNode_SemAnalysis(((ILNode_SwitchSection *)section)->stmt, info,
+						   &(((ILNode_SwitchSection *)section)->stmt));
+		((ILNode_SwitchSection*)section)->visited=ILVisitMode_Done;
+		/* The body must end in some kind of return or jump statement */
+		if(!ILNodeEndsInFlowChange(((ILNode_SwitchSection *)section)->stmt
+									,info))
+		{
+			CCErrorOnLine(yygetfilename(section), yygetlinenum(section),
+						  "`switch' section falls through");
+		}
+	}
+
+
+	/* Sort the case label list into ascending order */
+	if(size > 1)
+	{
+	#ifdef HAVE_QSORT
+		qsort(values, (size_t)size, sizeof(ILSwitchValue), CompareCaseLabels);
+	#else
+		unsigned long i;
+		unsigned long j;
+		ILSwitchValue temp;
+		for(i = 0; i < size - 1; ++i)
+		{
+			for(j = i + 1; j < size; ++j)
+			{
+				if(CompareCaseLabels(&(values[i]), &(values[j])) > 0)
+				{
+					temp = values[i];
+					values[i] = values[j];
+					values[j] = temp;
+				}
+			}
+		}
+	#endif
+	}
+
+	/* Check for duplicates in the case label list */
+	if(size > 1)
+	{
+		for(posn = 0; posn < size - 1; ++posn)
+		{
+			if(CompareCaseLabels(&(values[posn]), &(values[posn + 1])) == 0)
+			{
+				CCErrorOnLine(yygetfilename(values[posn + 1].caseLabel),
+				              yygetlinenum(values[posn + 1].caseLabel),
+							  "duplicate case expression");
+				CCErrorOnLine(yygetfilename(values[posn].caseLabel),
+				              yygetlinenum(values[posn].caseLabel),
+							  "previous definition here");
+			}
+		}
+	}
+
+	/* Return the final table size to the caller */
+	return size;
+}
+
+%}
+
+/*
+ * Perform semantic analysis for the "switch" statement.
+ */
+ILNode_SemAnalysis(ILNode_Switch)
+{
+	static ILType * const governingTypes[] = {
+		ILType_Int8, ILType_UInt8, ILType_Int16, ILType_UInt16,
+		ILType_Int32, ILType_UInt32, ILType_Int64, ILType_UInt64, ILType_Char
+	};
+	#define numGoverningTypes	(sizeof(governingTypes) / sizeof(ILType *))
+	CSSemValue value;
+	ILType *actualType;
+	ILType *switchType;
+	ILType *stringType;
+	int posn;
+	unsigned long size;
+	ILNode *savedSwitch;
+
+	/* Perform semantic analysis on the expression */
+	if(!CSSemExpectValue(node->expr, info, &(node->expr), &value))
+	{
+		CCErrorOnLine(yygetfilename(node->expr), yygetlinenum(node->expr),
+					  "invalid expression for `switch' statement");
+		actualType = ILType_Int32;
+	}
+	else
+	{
+		actualType = CSSemGetType(value);
+	}
+
+	/* Determine the governing type for the switch */
+	if(ILTypeIsEnum(actualType))
+	{
+		switchType = actualType;
+	}
+	else
+	{
+		switchType = actualType;
+		for(posn = 0; posn < numGoverningTypes; ++posn)
+		{
+			if(ILCanCoerceKind(info, actualType, governingTypes[posn],
+			   				   IL_CONVERT_USER_DEFINED,1))
+			{
+				switchType = governingTypes[posn];
+				break;
+			}
+		}
+		if(posn >= numGoverningTypes)
+		{
+			stringType = ILFindSystemType(info, "String");
+			if(ILCanCoerceKind(info, actualType, stringType,
+							   IL_CONVERT_USER_DEFINED,1))
+			{
+				switchType = stringType;
+			}
+			else
+			{
+				CCErrorOnLine(yygetfilename(node->expr),
+					  yygetlinenum(node->expr),
+					  "`%s' is invalid as the governing type for a `switch'",
+					  CSTypeToName(actualType));
+				return CSSemValueDefault;
+			}
+		}
+	}
+
+	/* Cast the switch expression to the governing type */
+	ILCast(info, node->expr, &(node->expr), actualType, switchType,1);
+
+	node->switchType=switchType;
+
+	/* Enter the switch context */
+	PushStmtContext(info, CS_STMT_SWITCH);
+	savedSwitch=info->currentSwitch;
+	info->currentSwitch=(ILNode*)node;
+
+	/* Count the number of case labels and find the default case */
+	node->numSwitchValues = CountLabelsAndFindDefault
+			(node->sections, &(node->defaultSection));
+
+	/* Allocate space for the switch value table */
+	size = node->numSwitchValues * sizeof(ILSwitchValue);
+	if(size > 1024)
+	{
+		/* Warning!  This will leak memory! */
+		node->switchValues = (ILSwitchValue *)ILMalloc(size);
+	}
+	else
+	{
+		/* Allocate from the node pool, which will be cleaned up for us */
+		node->switchValues = (ILSwitchValue *)yynodealloc((unsigned int)size);
+	}
+	if(!(node->switchValues))
+	{
+		CCOutOfMemory();
+	}
+
+	/* Perform semantic analysis on the switch body and compute the values */
+	node->numSwitchValues = CollectCaseLabels(info, node->sections,
+											  switchType, node->switchValues);
+
+	/* Determine the type of switch table to generate */
+	CGSetSwitchTableType(node);
+
+	info->currentSwitch=savedSwitch;
+	/* Leave the switch context */
+	PopStmtContext(info);
+
+	/* Done */
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the switch helper nodes.
+ */
+ILNode_SemAnalysis(ILNode_SwitchSectList),
+ILNode_SemAnalysis(ILNode_SwitchSection),
+ILNode_SemAnalysis(ILNode_CaseList),
+ILNode_SemAnalysis(ILNode_CaseLabel),
+ILNode_SemAnalysis(ILNode_DefaultLabel)
+{
+	/* Nothing to do here: the real work is done in "ILNode_Switch" */
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "goto" statement.
+ */
+ILNode_SemAnalysis(ILNode_Goto)
+{
+	/* TODO */
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "goto label" statement.
+ */
+ILNode_SemAnalysis(ILNode_GotoLabel)
+{
+	/* TODO */
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "goto case" statement.
+ */
+ILNode_SemAnalysis(ILNode_GotoCase)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	ILNode_Switch *switchExpr;
+	ILMachineType switchMachineType;
+	ILSwitchValue switchValue;
+	unsigned long posn;
+
+	if(!StmtContextOK(info, CS_STMT_SWITCH, CS_STMT_FINALLY))
+	{
+		if(StmtContextOK(info, CS_STMT_FINALLY, 0))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "`goto' used inside `finally' clause");
+			return CSSemValueDefault;
+		}
+		else
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "`goto' used outside switch");
+			return CSSemValueDefault;
+		}
+	}
+
+	/* if node->currentSwitch is NULL, then somebody messed up the 
+	   PushStmtContext . It is a "bug detection" bug */
+	/* Initialize */
+
+	switchExpr=(ILNode_Switch*)(info->currentSwitch);
+	switchMachineType = ILTypeToMachineType(switchExpr->switchType);
+
+
+	if(!CSSemExpectValue(node->expr, info,
+							 &(node->expr), &value))
+	{
+		CCErrorOnLine(yygetfilename(node->expr),
+					  yygetlinenum(node->expr),
+					  "invalid case label expression");
+		return CSSemValueDefault;
+	}
+	/* Coerce the case expression to the governing type */
+	if(!ILCoerce(info, node->expr, &(node->expr),
+					 CSSemGetType(value), switchExpr->switchType,1))
+	{
+		CCErrorOnLine(yygetfilename(node->expr),
+						  yygetlinenum(node->expr),
+						  "no conversion from `%s' to `%s'",
+						  CSTypeToName(CSSemGetType(value)),
+						  CSTypeToName(switchExpr->switchType));
+		return CSSemValueDefault;
+	}
+	
+	/* Evaluate the constant value for the case expression */
+	if(!ILNode_EvalConst(node->expr, info, &evalValue) ||
+		   !ILGenCastConst(info, &evalValue, evalValue.valueType,
+				   				   switchMachineType))
+	{
+		CCErrorOnLine(yygetfilename(node->expr),
+						  yygetlinenum(node->expr),
+						  "case expression is not constant");
+		return CSSemValueDefault;
+	}
+
+	switchValue.value=evalValue;
+	for(posn = 0; posn < switchExpr->numSwitchValues ; ++posn)
+	{
+		if(CompareCaseLabels(&(switchExpr->switchValues[posn]), 
+			&(switchValue)) == 0)
+		{
+			node->switchSection=(ILNode_SwitchSection*)
+					(switchExpr->switchValues[posn].section);
+			if(node->switchSection->visited==ILVisitMode_Processing)
+			{
+				CCWarningOnLine(yygetfilename(node), yygetlinenum(node),
+				  "circularity in 'goto' detected");
+			}
+			return CSSemValueDefault;
+		}
+	}
+	/* if we get here , the case entry was not locatable */
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "could not find a matching case for 'goto'");
+	
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "goto default" statement.
+ */
+ILNode_SemAnalysis(ILNode_GotoDefault)
+{
+	ILNode_SwitchSection *defaultSection;
+	if(!StmtContextOK(info, CS_STMT_SWITCH, CS_STMT_FINALLY))
+	{
+		if(StmtContextOK(info, CS_STMT_FINALLY, 0))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "`goto' used inside `finally' clause");
+		}
+		else
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "`goto' used outside switch");
+		}
+		return CSSemValueDefault;
+	}
+	defaultSection=(ILNode_SwitchSection*)
+		(((ILNode_Switch*)info->currentSwitch)->defaultSection);
+	if(!defaultSection)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "no `default' case for switch");
+		return CSSemValueDefault;
+	}
+	if(defaultSection->visited == ILVisitMode_Processing)
+	{
+		CCWarningOnLine(yygetfilename(node), yygetlinenum(node),
+		  "circularity in 'goto' detected");
+	}
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "break" statement.
+ */
+ILNode_SemAnalysis(ILNode_Break),
+ILNode_SemAnalysis(ILNode_LabelledBreak)	/* TODO */
+{
+	PushStmtContext(info, CS_STMT_SWITCH);
+
+	if(!StmtContextOK(info, CS_STMT_LOOP | CS_STMT_SWITCH, CS_STMT_FINALLY))
+	{
+		if(StmtContextOK(info, CS_STMT_FINALLY, 0))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "`break' used inside `finally' clause");
+		}
+		else
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "`break' used outside loop or switch");
+		}
+	}
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "continue" statement.
+ */
+ILNode_SemAnalysis(ILNode_Continue),
+ILNode_SemAnalysis(ILNode_LabelledContinue)	/* TODO */
+{
+	if(!StmtContextOK(info, CS_STMT_LOOP, CS_STMT_FINALLY))
+	{
+		if(StmtContextOK(info, CS_STMT_FINALLY, 0))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "`continue' used inside `finally' clause");
+		}
+		else
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "`continue' used outside loop");
+		}
+	}
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "return" statement.
+ */
+ILNode_SemAnalysis(ILNode_Return)
+{
+	/* Emit an error if the return type is not "void" */
+	ILType *returnType = ILTypeGetReturn(ILMethod_Signature
+		(((ILNode_MethodDeclaration *)(info->currentMethod))->methodInfo));
+	if(returnType != ILType_Void)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  "`return' with no value, in method returning non-void");
+	}
+	if(!StmtContextOK(info, 0, CS_STMT_FINALLY))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  		  "`return' used inside `finally' clause");
+	}
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "return expression" statement.
+ */
+ILNode_SemAnalysis(ILNode_ReturnExpr)
+{
+	CSSemValue value;
+	ILType *returnType;
+
+	/* Perform semantic analysis on the expression */
+	if(!CSSemExpectValue(node->expr, info, &(node->expr), &value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid return value");
+		return CSSemValueDefault;
+	}
+
+	/* Determine if the value is compatible with the return type */
+	returnType = ILTypeGetReturn(ILMethod_Signature
+		(((ILNode_MethodDeclaration *)(info->currentMethod))->methodInfo));
+	if(returnType == ILType_Void)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "`return' with a value, in method returning void");
+	}
+	else
+	{
+		/* Coerce to the return type */
+		if(!ILCoerce(info, node->expr, &(node->expr),
+					 CSSemGetType(value), returnType,1))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  		  "incompatible types in return: "
+						  		"no conversion from `%s' to `%s'",
+						  CSTypeToName(CSSemGetType(value)),
+						  			   CSTypeToName(returnType));
+		}
+	}
+
+	/* Check that the return was not used inside a "finally" clause */
+	if(!StmtContextOK(info, 0, CS_STMT_FINALLY))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  		  "`return' used inside `finally' clause");
+	}
+
+	/* Done */
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "throw" statement.
+ */
+ILNode_SemAnalysis(ILNode_Throw)
+{
+	if(!StmtContextOK(info, CS_STMT_CATCH, CS_STMT_FINALLY | CS_STMT_TRY))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+	  		  "`throw' with no value must be used inside a `catch' clause");
+	}
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "throw expression" statement.
+ */
+ILNode_SemAnalysis(ILNode_ThrowExpr)
+{
+	CSSemValue value;
+	ILType *exceptionClass;
+
+	/* Perform semantic analysis on the value */
+	if(!CSSemExpectValue(node->expr, info, &(node->expr), &value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+	  		  		  "invalid throw expression");
+		CSSemSetRValue(value, ILType_Null);
+	}
+
+	/* Attempt to coerce the value to "System.Exception" */
+	exceptionClass = ILFindSystemType(info, "Exception");
+	if(!ILCoerce(info, node->expr, &(node->expr),
+				 CSSemGetType(value), exceptionClass,1))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+	  		  		  "no conversion from `%s' to `%s'",
+					  CSTypeToName(CSSemGetType(value)),
+					  CSTypeToName(exceptionClass));
+	}
+
+	/* Done */
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "try" statement.
+ */
+ILNode_SemAnalysis(ILNode_Try)
+{
+	/* Enter a "try" context */
+	PushStmtContext(info, CS_STMT_TRY);
+
+	/* Perform semantic analysis on the "try" body */
+	StmtSem(node->stmt, info, &(node->stmt));
+
+	/* Perform semantic analysis on the "catch" clauses */
+	StmtSem(node->catchClauses, info, &(node->catchClauses));
+
+	/* Perform semantic analysis on the "finally" clause */
+	StmtSem(node->finallyClause, info, &(node->finallyClause));
+
+	/* Exit from the "try" context */
+	PopStmtContext(info);
+
+	/* Done */
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "catch clause" statement.
+ */
+ILNode_SemAnalysis(ILNode_CatchClause)
+{
+	ILType *exceptionType = ILFindSystemType(info, "Exception");
+	ILType *thrownType;
+	ILScope *newScope;
+	ILNode_MethodDeclaration *method =
+		(ILNode_MethodDeclaration *)(info->currentMethod);
+
+	/* Enter a "catch" context */
+	PushStmtContext(info, CS_STMT_CATCH);
+
+	/* Wrap the catch body in a new scope */
+	newScope = ILScopeCreate(info, info->currentScope);
+	node->stmt = ILNode_NewScope_create(node->stmt);
+	((ILNode_NewScope *)(node->stmt))->scope = newScope;
+
+	/* Validate the thrown value type */
+	if(node->type)
+	{
+		thrownType = CSSemType(node->type, info, &(node->type));
+		if(!ILCanCoerce(info, thrownType, exceptionType,0))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+		  		  		  "`%s' does not inherit from `%s'",
+						  CSTypeToName(thrownType),
+						  CSTypeToName(exceptionType));
+			thrownType = exceptionType;
+		}
+	}
+	else
+	{
+		thrownType = exceptionType;
+	}
+	node->classInfo = ILTypeToClass(info, thrownType);
+
+	/* Declare a new local variable for the catch value */
+	if(node->name)
+	{
+		unsigned long varNum;
+
+		/* Add the type to the local variable signature for this method */
+		varNum = AddLocalToMethod(info, method, thrownType);
+
+		/* Create a local variable entry in the current scope */
+		ILScopeDeclareLocal(newScope, node->name, varNum, node->nameNode);
+
+		/* Record the local variable index for the code generator */
+		node->varIndex = varNum;
+	}
+
+	/* Perform semantic analysis on the catch body */
+	StmtSem(node->stmt, info, &(node->stmt));
+
+	/* Exit from the "catch" context */
+	PopStmtContext(info);
+
+	/* Done */
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "finally clause" statement.
+ */
+ILNode_SemAnalysis(ILNode_FinallyClause)
+{
+	/* Enter a "finally" context */
+	PushStmtContext(info, CS_STMT_FINALLY);
+
+	/* Perform semantic analysis on the finally body */
+	StmtSem(node->stmt, info, &(node->stmt));
+
+	/* Exit from the "finally" context */
+	PopStmtContext(info);
+
+	/* Done */
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "lock" statement.
+ */
+ILNode_SemAnalysis(ILNode_Lock)
+{
+	CSSemValue value;
+	ILType *objectType = ILFindSystemType(info, "Object");
+
+	/* Perform semantic analysis on the lock expression */
+	if(!CSSemExpectValue(node->expr, info, &(node->expr), &value))
+	{
+		CCErrorOnLine(yygetfilename(node->expr), yygetlinenum(node->expr),
+					  "invalid lock expression");
+		CSSemSetRValue(value, objectType);
+	}
+
+	/* Coerce the lock expression to "System.Object" */
+	if(!ILCoerce(info, node->expr, &(node->expr),
+				 CSSemGetType(value), objectType,1))
+	{
+		CCErrorOnLine(yygetfilename(node->expr), yygetlinenum(node->expr),
+					  "no conversion from `%s' to `%s'",
+					  CSTypeToName(CSSemGetType(value)),
+					  CSTypeToName(objectType));
+	}
+
+	/* Enter a "try" context */
+	PushStmtContext(info, CS_STMT_TRY);
+
+	/* Perform semantic analysis on the lock statement body */
+	StmtSem(node->stmt, info, &(node->stmt));
+
+	/* Exit from the "try" context */
+	PopStmtContext(info);
+
+	/* Done */
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "using" statement.
+ */
+ILNode_SemAnalysis(ILNode_UsingStatement)
+{
+	ILNode **stmtParent = 0;
+	
+	if(yyisa(node->resource, ILNode_ResourceDeclaration))
+	{
+		ILType *type;
+		ILNode_ResourceDeclaration *resource;
+
+		resource = (ILNode_ResourceDeclaration *)(node->resource);
+
+		/* Perform semantic analysis on the resource variable type */
+		type = FindLocalType(resource->type, info, &(resource->type), 1);
+
+		if(yyisa(resource->variables, ILNode_List))
+		{
+			ILNode *varNode;
+			ILNode_ListIter iter;
+
+			/* Scan through the variable names and declare them in the current scope */
+			ILNode_ListIter_Init(&iter, resource->variables);
+			while((varNode = ILNode_ListIter_Next(&iter)) != 0)
+			{
+				ILNode *initNode;
+				ILType *newType;
+
+				initNode = varNode;
+				newType = HandleLocalDecl(initNode, info, &initNode, type, 1);
+
+				if(yyisa(initNode, ILNode_VariableDeclarator))
+				{
+					ILNode_VariableDeclarator *declNode;
+					ILNode_LocalVar *localNode;
+					ILNode_Using *using;
+
+					declNode = (ILNode_VariableDeclarator *)(initNode);
+					localNode = (ILNode_LocalVar *)(declNode->name);
+
+					StmtSem(initNode, info, &initNode);
+
+					if(stmtParent)
+					{
+						using = (ILNode_Using *)ILNode_Using_create(localNode,
+																	initNode,
+																	*stmtParent,
+																	newType);
+						*stmtParent = (ILNode *)using;
+					}
+					else
+					{
+						using = (ILNode_Using *)ILNode_Using_create(localNode,
+																	initNode,
+																	node->stmt,
+																	newType);
+
+						node->resource = (ILNode *)using;
+					}
+					stmtParent = &(using->stmt);
+				}
+				else
+				{
+					/* In using statements the variables shall have an initializer */
+					stmtParent = 0;
+				}
+			}
+		}
+		else
+		{
+			ILType *newType;
+
+			newType = HandleLocalDecl(resource->variables, info,
+									  &(resource->variables), type, 1);
+
+			if(yyisa(resource->variables, ILNode_VariableDeclarator))
+			{
+				ILNode_VariableDeclarator *declNode;
+				ILNode *initNode;
+				ILNode_LocalVar *varNode;
+				ILNode_Using *using;
+
+				declNode = (ILNode_VariableDeclarator *)(resource->variables);
+				initNode = resource->variables;
+				varNode = (ILNode_LocalVar *)(declNode->name);
+
+				StmtSem(initNode, info, &(initNode));
+
+				using = (ILNode_Using *)ILNode_Using_create(varNode,
+															initNode,
+															node->stmt,
+															newType);
+
+				stmtParent = &(using->stmt);
+				node->resource = (ILNode *)using;
+			}
+			else
+			{
+				/* In using statements the variables shall have an initializer */
+				stmtParent = 0;
+			}
+		}
+	}
+	else 
+	{
+		ILType *type;
+		CSSemValue value;
+
+		value = ILNode_SemAnalysis(node->resource, info, &(node->resource));
+		type = CSSemGetType(value);
+		if(!type)
+		{
+			CCErrorOnLine(yygetfilename(node->resource),
+						  yygetlinenum(node->resource),
+						  "invalid expression");
+			stmtParent = 0;
+		}
+		else
+		{
+			unsigned long varNum;
+			ILNode_MethodDeclaration *method;
+			ILNode_LocalVar *varNode;
+			ILNode *initNode;
+			ILNode_Using *using;
+
+			CheckIfDisposable(info, node->resource, type);
+
+			/* Locate the method that this local is declared within */
+			method = (ILNode_MethodDeclaration *)(info->currentMethod);
+
+			/* Add the type to the local variable signature for this method */
+			varNum = AddLocalToMethod(info, method, type);
+
+			/* create a nameless local variable */
+			varNode = (ILNode_LocalVar *)ILNode_LocalVar_create(varNum,
+											 ILTypeToMachineType(type));
+
+			initNode = ILNode_SemGuard_create(node->resource, value);
+			initNode = ILNode_Assign_create((ILNode *)varNode, initNode);
+
+			/* Perform semantic analysis on the initializer */
+			ILNode_SemAnalysis(initNode, info, &initNode);
+
+			using = (ILNode_Using *)ILNode_Using_create(varNode,
+														initNode,
+														node->stmt,
+														type);
+
+			stmtParent = &(using->stmt);
+			node->resource = (ILNode *)using;
+		}
+	}
+
+	/* Now perform the semantic analysis on the statement itself */
+	if(stmtParent)
+	{
+		ILNode_SemAnalysis(*stmtParent, info, stmtParent);
+	}
+	else
+	{
+		ILNode_SemAnalysis(node->stmt, info, &(node->stmt));
+	}
+
+	return CSSemValueDefault;
+}
+
+/*
+ * Generate discard code for the "using" statement.
+ */
+ILNode_GenDiscard(ILNode_UsingStatement)
+{
+	ILNode_GenDiscard(node->resource, info);
+}
+
+/*
+ * Perform semantic analysis for a "using" node.
+ */
+ILNode_SemAnalysis(ILNode_Using)
+{
+	return CSSemValueDefault;
+}
+
+/*
+ * Generate discard code for the "using" node.
+ */
+ILNode_GenDiscard(ILNode_Using)
+{
+	ILLabel label = ILLabel_Undefined;
+	ILLabel label1 = ILLabel_Undefined;
+
+	/* First run the initializer for the local */
+	ILNode_GenDiscard(node->init, info);
+
+	/* Encapsulate the statement in a "try" block so that the "Dispose"
+	   method can be called in finally */
+	if(info->asmOutput)
+	{
+		fputs("\t.try {\n", info->asmOutput);
+	}
+	ILGenPushTry(info);
+
+	/* Generate the dicard code for the statement */
+	ILNode_GenDiscard(node->stmt, info);
+
+	/* Leave the try block */
+	ILGenJump(info, IL_OP_LEAVE, &label);
+	
+	/* end the try block and start a finally block */
+	ILGenPopTry(info);
+	if(info->asmOutput)
+	{
+		fputs("\t} finally {\n", info->asmOutput);
+	}
+
+	/* Generate the dispose code */
+	/* TODO: handle value types */
+	ILGenLoadLocal(info, node->localVar->index);
+	ILGenAdjust(info, 1);
+	ILGenJump(info, IL_OP_BRFALSE, &label1);
+	ILGenAdjust(info,-1);
+	ILGenLoadLocal(info, node->localVar->index);
+	ILGenAdjust(info, 1);
+	ILGenCallVirtual(info, 
+				"void [.library]System.IDisposable::Dispose()");
+	ILGenAdjust(info, -1);
+
+	/* Leave the finally block */
+	ILGenLabel(info, &label1);
+	ILGenSimple(info, IL_OP_ENDFINALLY);
+	if(info->asmOutput)
+	{
+		fputs("\t}\n",info->asmOutput);
+	}
+
+	ILGenLabel(info, &label);
+}
+
+/*
+ * Generate Java discard code for the "using" statement.
+ */
+JavaGenDiscard(ILNode_UsingStatement)
+{
+	JavaGenDiscard(node->resource, info);
+}
+
+/*
+ * Generate Java discard code for the "using" node.
+ */
+JavaGenDiscard(ILNode_Using)
+{
+	/* TODO */
+}
+
+/*
+ * Determine if a "using" statement ends in a return statement.
+ */
+ILNode_EndsInReturnImpl(ILNode_UsingStatement)
+{
+	return ILNode_EndsInReturnImpl(node->stmt,info);
+}
+
+/*
+ * Perform semantic analysis for the "unsafe" statement.
+ */
+ILNode_SemAnalysis(ILNode_Unsafe)
+{
+	CCUnsafeEnter(info, (ILNode *)node, "unsafe statement");
+	StmtSem(node->stmt, info, &(node->stmt));
+	CCUnsafeLeave(info);
+	return CSSemValueDefault;
+}
+
+/*
+ * Generate discard code for the "unsafe" statement.
+ */
+ILNode_GenDiscard(ILNode_Unsafe)
+{
+	ILNode_GenDiscard(node->stmt, info);
+}
+
+/*
+ * Generate Java discard code for the "unsafe" statement.
+ */
+JavaGenDiscard(ILNode_Unsafe)
+{
+	JavaGenDiscard(node->stmt, info);
+}
+
+/*
+ * Determine if an "unsafe" statement ends in a return statement.
+ */
+ILNode_EndsInReturnImpl(ILNode_Unsafe)
+{
+	return ILNode_EndsInReturnImpl(node->stmt,info);
+}
+
+/*
+ * Perform semantic analysis for the "fixed" statement.
+ */
+ILNode_SemAnalysis(ILNode_Fixed)
+{
+	ILType *type;
+	const char *name;
+	ILNode_MethodDeclaration *method;
+	ILNode *errorNode;
+	ILNode_ListIter iter;
+	ILNode *varNode;
+	ILNode *nameNode;
+	ILScopeData *data;
+
+	/* Locate the method that this local is declared within */
+	method = (ILNode_MethodDeclaration *)(info->currentMethod);
+
+	/* TODO */
+	CCUnsafeMessage(info, (ILNode *)node, "unsafe `fixed' statement");
+	if(info->outputIsJava)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "`fixed' disallowed when compiling to Java bytecode");
+		return CSSemValueDefault;
+	}
+
+	/* Perform semantic analysis on the local variable type */
+	type = CSSemType(node->type, info, &(node->type));
+
+	if(!ILType_IsPointer(type))
+	{
+		CCErrorOnLine(yygetfilename(node->type), yygetlinenum(node->type),
+					"only pointer types can be declared in fixed statements");
+	}
+
+	/* Scan through the variable names and declare them in the current scope */
+	ILNode_ListIter_Init(&iter, node->decls);
+	while((varNode = ILNode_ListIter_Next(&iter)) != 0)
+	{
+		nameNode=((ILNode_FixedVariable*)varNode)->name;
+		name = ILQualIdentName(nameNode,0);
+		data = ILScopeLookup(info->currentScope, name, 0);
+		if(data)
+		{
+			/* The name is already declared in this scope */
+			CCErrorOnLine(yygetfilename(nameNode), yygetlinenum(nameNode),
+						  "`%s' is already declared in this scope", name);
+			errorNode = ILScopeDataGetNode(data);
+			if(errorNode)
+			{
+				CCErrorOnLine(yygetfilename(errorNode), yygetlinenum(errorNode),
+							  "previous declaration here");
+			}
+		}
+		else
+		{
+			unsigned long varNum;
+
+			if(yyisa(varNode,ILNode_FixAddress))
+			{
+				/* TODO : figure the right way to pin variables */
+			}
+			
+			/* Add the type to the local variable signature for this method */
+			varNum = AddLocalToMethod(info, method, type);
+			
+			/* Create a local variable entry in the current scope */
+			ILScopeDeclareLocal(info->currentScope, name, varNum,
+								((ILNode_FixedVariable*)varNode)->name);
+			info->inFixed = -1;
+			ILNode_SemAnalysis(varNode,info,iter.last);
+			info->inFixed = 0;
+		}
+	}
+	ILNode_SemAnalysis(node->stmt,info,&(node->stmt));
+	return CSSemValueDefault;
+}
+
+/*
+ * Generate discard code for the "fixed" statement.
+ */
+ILNode_GenDiscard(ILNode_Fixed)
+{
+	ILNode_GenDiscard(node->decls,info);
+	ILNode_GenDiscard(node->stmt,info);
+}
+
+/*
+ * Generate Java discard code for the "fixed" statement.
+ */
+JavaGenDiscard(ILNode_Fixed)
+{
+	/* Nothing to do here: `fixed' is illegal for Java code */
+}
+
+/*
+ * Determine if a "fixed" statement ends in a return statement.
+ */
+ILNode_EndsInReturnImpl(ILNode_Fixed)
+{
+	return ILNode_EndsInReturnImpl(node->stmt,info);
+}
+
+/*
+ * Perform semantic analysis for the "fix address" node.
+ */
+ILNode_SemAnalysis(ILNode_FixAddress)
+{
+	*parent = HandleFixedExpr(info, node->name, node->address,
+							  &(node->address), 1);
+
+	/* Perform semantic analysis on the assignment */
+	ILNode_SemAnalysis(*parent, info, parent);
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "fix expression" node.
+ */
+ILNode_SemAnalysis(ILNode_FixExpr)
+{
+	*parent = HandleFixedExpr(info, node->name, node->expr, &(node->expr), 0);
+
+	/* Perform semantic analysis on the assignment */
+	ILNode_SemAnalysis(*parent, info, parent);
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for a variable declaration.
+ */
+ILNode_SemAnalysis(ILNode_VariableDeclarator)
+{
+	if(node->init)
+	{
+		/*
+		 * if we have an initializer then replace this node by an assignment
+		 */
+		*parent = ILNode_Assign_create(node->name, node->init);
+
+		/*
+		 * and perform semantic analysis on the assignment node.
+		 */
+		return ILNode_SemAnalysis(*parent, info, parent);
+	}
+
+	/* Return the default value to the caller */
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for local variable declarations.
+ */
+ILNode_SemAnalysis(ILNode_LocalVarDeclaration)
+{
+	ILType *type;
+
+	type = FindLocalType(node->type, info, &(node->type), 0);
+
+	if(yyisa(node->varNames, ILNode_List))
+	{
+		ILNode *varNode;
+		ILNode_ListIter iter;
+
+		/* Scan through the variable names and declare them in the current scope */
+		ILNode_ListIter_Init(&iter, node->varNames);
+		while((varNode = ILNode_ListIter_Next(&iter)) != 0)
+		{
+			ILNode *replace;
+
+			replace = varNode;
+			HandleLocalDecl(varNode, info, &replace, type, 0);
+
+			if(yyisa(replace, ILNode_VariableDeclarator))
+			{
+				StmtSem(replace, info, &replace);
+			}
+			if(replace != varNode)
+			{
+				*(iter.last) = replace;
+			}
+		}
+	}
+	else
+	{
+		HandleLocalDecl(node->varNames, info, &(node->varNames), type, 0);
+
+		if(yyisa(node->varNames, ILNode_VariableDeclarator))
+		{
+			StmtSem(node->varNames, info, &(node->varNames));
+		}
+	}
+
+	/* Return the default value to the caller */
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for local constant declarations.
+ */
+ILNode_SemAnalysis(ILNode_LocalConstDeclaration)
+{
+	ILNode_ListIter iterator;
+	ILNode_FieldDeclarator *decl;
+	/* since Rhys said that this was a reuse of FieldDecl */
+	CSSemValue value;
+	ILEvalValue evalValue;
+	ILType *type = CSSemType(node->type, info, &(node->type));
+	const char *name;
+	ILScopeData *data;
+	ILNode_MethodDeclaration *method;
+	ILNode *errorNode;
+
+	/* Locate the method that this local is declared within */
+	method = (ILNode_MethodDeclaration *)(info->currentMethod);
+
+	/* Perform semantic analysis on the local variable type */
+	type = CSSemType(node->type, info, &(node->type));
+
+	ILNode_ListIter_Init(&iterator, node->decls);
+	while((decl = (ILNode_FieldDeclarator *)
+						ILNode_ListIter_Next(&iterator)) != 0)
+	{
+		name = ILQualIdentName(decl->name, 0);
+
+		if(!(decl->initializer) || !(decl->name))
+		{
+			CCErrorOnLine(yygetfilename(decl->initializer),
+							  yygetlinenum(decl->initializer),
+							  "no initializer value for const");
+			continue;
+		}
+		/* Perform semantic analysis on the initializer value */
+		value = ILNode_SemAnalysis(decl->initializer, info,
+								   &(decl->initializer));
+		if(!CSSemIsValue(value))
+		{
+			CCErrorOnLine(yygetfilename(decl->initializer),
+						  yygetlinenum(decl->initializer),
+						  "initializer is not a value");
+			continue;
+		}
+
+		/* Make sure that the value is compatible with the field's type */
+		if(!ILCoerce(info, decl->initializer, &(decl->initializer),
+					 CSSemGetType(value), type,1))
+		{
+			CCErrorOnLine(yygetfilename(decl->initializer),
+						  yygetlinenum(decl->initializer),
+			  			  "incompatible types in initialization: "
+			  					"no conversion from `%s' to `%s'",
+			  			  CSTypeToName(CSSemGetType(value)),
+						  CSTypeToName(type));
+			continue;
+		}
+
+		/* Check that the literal value is actually constant */
+		if(!ILNode_EvalConst(decl->initializer, info, &evalValue) ||
+		   !ILGenCastConst(info, &evalValue, evalValue.valueType,
+	                  ILTypeToMachineType(type)))
+		{
+			CCErrorOnLine(yygetfilename(decl->initializer),
+						  yygetlinenum(decl->initializer),
+						  "initializer is not constant");
+			continue;
+		}
+
+		/* Recreate the value with the real type instead of using the type
+		   of the expression */
+		CSSemSetValueKind(value, CSSemGetKind(value), type);
+
+		/* Guard the node from re-evaluation */
+		decl->initializer=ILNode_SemGuard_create(decl->initializer,value);
+		data = ILScopeLookup(info->currentScope, name, 0);
+		if(data)
+		{
+			/* The name is already declared in this scope */
+			CCErrorOnLine(yygetfilename(decl->name), yygetlinenum(decl->name),
+						  "`%s' is already declared in this scope", name);
+			errorNode = ILScopeDataGetNode(data);
+			if(errorNode)
+			{
+				CCErrorOnLine(yygetfilename(errorNode), yygetlinenum(errorNode),
+							  "previous declaration here");
+			}
+		}
+		else
+		{
+			/* Create a local variable entry in the current scope */
+			ILScopeDeclareLocalConst(info->currentScope, name,
+			decl->initializer,decl->name);
+		}
+	}
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for line number information blocks.
+ */
+ILNode_SemAnalysis(ILNode_LineInfo)
+{
+	return ILNode_SemAnalysis(node->stmt, info, &(node->stmt));
+}
+
+/*
+ * Perform semantic analysis for an event add or remove operation.
+ */
+ILNode_SemAnalysis(ILNode_EventAddOrRemove)
+{
+	/* Nothing to do here: this node is generated during semantic
+	   analysis of the "+=" and "-=" operators */
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for a memcpy statement.
+ */
+ILNode_SemAnalysis(ILNode_Memcpy)
+{
+	/* Nothing to do here: this node is generated during semantic
+	   analysis of an invokation expression */
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for a memset statement.
+ */
+ILNode_SemAnalysis(ILNode_Memset)
+{
+	/* Nothing to do here: this node is generated during semantic
+	   analysis of an invokation expression */
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for a resource declaration.
+ */
+ILNode_SemAnalysis(ILNode_ResourceDeclaration)
+{
+	/*
+	 * This is handled completely in semanalyzing an ILNode_UsingStatement.
+	 */
+	return CSSemValueDefault;
+}
+
+ILNode_GenDiscard(ILNode_ResourceDeclaration)
+{
+	ILNode_GenDiscard(node->variables, info);
+}

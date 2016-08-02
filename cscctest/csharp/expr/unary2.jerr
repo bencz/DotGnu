@@ -1,0 +1,4 @@
+./unary2.cs:50: invalid operands to unary `-'
+./unary2.cs:51: invalid operands to unary `~'
+./unary2.cs:52: invalid operands to unary `~'
+./unary2.cs:53: invalid operands to unary `~'

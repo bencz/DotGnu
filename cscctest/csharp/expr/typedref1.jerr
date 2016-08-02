@@ -1,0 +1,10 @@
+./typedref1.cs:30: `__reftype' disallowed when compiling to Java bytecode
+./typedref1.cs:31: `__refvalue' disallowed when compiling to Java bytecode
+./typedref1.cs:32: `__refvalue' disallowed when compiling to Java bytecode
+./typedref1.cs:33: `__refvalue' disallowed when compiling to Java bytecode
+./typedref1.cs:34: `__refvalue' disallowed when compiling to Java bytecode
+./typedref1.cs:44: `__makeref' disallowed when compiling to Java bytecode
+./typedref1.cs:45: `__makeref' disallowed when compiling to Java bytecode
+./typedref1.cs:46: `__makeref' disallowed when compiling to Java bytecode
+./typedref1.cs:47: `__makeref' disallowed when compiling to Java bytecode
+./typedref1.cs:52: `__makeref' disallowed when compiling to Java bytecode

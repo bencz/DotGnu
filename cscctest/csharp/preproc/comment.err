@@ -1,0 +1,8 @@
+./comment.cs:22: parse error at or near `x'
+./comment.cs:26: parse error at or near `y'
+./comment.cs:31: parse error at or near `z'
+./comment.cs:35: parse error at or near `w'
+./comment.cs:39: parse error at or near `v'
+./comment.cs:47: parse error at or near `u'
+./comment.cs:46: #if without matching #endif
+./comment.cs:50: warning: file contains no declarations

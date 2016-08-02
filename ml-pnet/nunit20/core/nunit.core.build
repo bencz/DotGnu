@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+
+<project name="nunit.core" default="all">
+	<target name="all">
+		<compile target="library"
+				 output="nunit.core.dll"
+				 debug="${debug.flag}"
+				 unsafe="false"
+				 install="true"
+				 installasdefault="true">
+
+			<sources basedir="${mono.sources}/nunit20/core/">
+				<includes name="**/*.cs"/> 
+				<excludes name="WarningSuite.cs"/>
+			</sources>
+
+			<references>
+				<file name="../framework/nunit.framework.dll"/>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=neutral"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+		</compile>
+	</target>
+</project>

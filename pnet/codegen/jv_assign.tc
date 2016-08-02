@@ -1,0 +1,812 @@
+%output "jv_assign.c"
+
+%{
+/*
+ * jv_assign.tc - Assignment operator nodes.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <codegen/cg_nodes.h>
+%}
+
+/*
+ * Apply an increment operator to the value on the stack.
+ */
+%operation %inline void JavaInc_ApplyOp(ILGenInfo *info,
+								 		[ILMachineType commonType])
+
+/*
+ * Apply a decrement operator to the value on the stack.
+ */
+%operation %inline void JavaDec_ApplyOp(ILGenInfo *info,
+							 			[ILMachineType commonType])
+
+/*
+ * Generate discard code for an assignment expression.
+ */
+JavaGenDiscard(ILNode_Assign)
+{
+	ILMachineType finalType;
+	void *data1, *data2;
+
+	/* Prepare the l-value for a later store operation */
+	finalType = JavaPrepare(node->expr1, info, &data1, &data2);
+
+	/* Evaluate the second sub-expression and cast to the final type */
+	JavaGenCast(info, JavaGenValue(node->expr2, info), finalType);
+
+	/* Store the value into the destination */
+	JavaStore(node->expr1, info, 0, data1, data2);
+}
+
+%output "cg_assign.c"
+
+%{
+
+/*
+ * Concatenation two string values on the stack.  We assume that
+ * the first will be a string, but the second may need conversion.
+ */
+static void ConcatString(ILGenInfo *info, ILMachineType type1,
+						 ILMachineType type2)
+{
+	/* Convert the second argument into a string if necessary */
+	if(type2 >= ILMachineType_Boolean &&
+	   type2 <= ILMachineType_Decimal)
+	{
+		JavaGenCast(info, type2, ILMachineType_String);
+		type2 = ILMachineType_String;
+	}
+	else if(type2 != ILMachineType_String)
+	{
+		JavaGenCast(info, type2, ILMachineType_ObjectRef);
+		if(info->useJavaLib)
+		{
+			JavaGenCallVirtual(info, "java/lang/Object", "toString",
+							   "()Ljava/lang/String;");
+			type2 = ILMachineType_String;
+		}
+	}
+
+	/* Apply either the string or the object concatenation function */
+	if(type1 == ILMachineType_String && type2 == ILMachineType_String)
+	{
+		if(info->useJavaLib)
+		{
+			JavaGenCallVirtual(info, "java/lang/String", "concat",
+							   "(Ljava/lang/String;)Ljava/lang/String;");
+		}
+		else
+		{
+			JavaGenCallByName(info, "System/String", "Concat",
+					  "(LSystem/String;LSystem/String;)LSystem/String;");
+		}
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/String", "Concat",
+				  "(LSystem/Object;LSystem/Object;)LSystem/String;");
+	}
+	JavaGenAdjust(info, -1);
+}
+
+/*
+ * Common generation code for ILNode_AssignExpression
+ */
+static ILMachineType JavaAssignCommon(ILNode_AssignExpression *node, 
+								      ILGenInfo *info,
+						              int leave)
+{
+	ILMachineType finalType;
+	void *data1, *data2;
+	ILNode_BinaryExpression *bnode = (ILNode_BinaryExpression *)(node->assign);
+
+	/* Get and prepare the l-value for a later store operation */
+	finalType = JavaGetAndPrepare(node->lvalue, info, 0, &data1, &data2);
+
+	/* Perform the operation */
+	if(yyisa(bnode, ILNode_Concat))
+	{
+		if(finalType == ILMachineType_String &&
+		   ILNode_GetType(bnode->expr2, info) == ILMachineType_String)
+		{
+			JavaGenCast(info, JavaGenValue(bnode->expr2, info),
+					    ILMachineType_String);
+		    ConcatString(info, finalType, finalType);
+		}
+		else
+		{
+			JavaGenCast(info, JavaGenValue(bnode->expr2, info),
+					    ILMachineType_ObjectRef);
+		    ConcatString(info, finalType, ILMachineType_ObjectRef);
+		}
+	}
+	else if(yyisa(bnode, ILNode_DelegateAdd))
+	{
+		JavaGenCast(info, JavaGenValue(bnode->expr2, info),
+				  ILMachineType_ObjectRef);
+		JavaGenCallByName(info, "System/Delegate", "Combine",
+				  "(LSystem/Delegate;LSystem/Delegate;)LSystem/Delegate;");
+		JavaGenAdjust(info, -1);
+		JavaGenClassRef(info, JAVA_OP_CHECKCAST,
+				((ILNode_DelegateAdd *)bnode)->delegateClass);
+	}
+	else if(yyisa(bnode, ILNode_DelegateSub))
+	{
+		JavaGenCast(info, JavaGenValue(bnode->expr2, info),
+				  ILMachineType_ObjectRef);
+		JavaGenCallByName(info, "System/Delegate", "Remove",
+				  "(LSystem/Delegate;LSystem/Delegate;)LSystem/Delegate;");
+		JavaGenAdjust(info, -1);
+		JavaGenClassRef(info, JAVA_OP_CHECKCAST,
+				((ILNode_DelegateSub *)bnode)->delegateClass);
+	}
+	else
+	{
+		/* Evaluate the second sub-expression and cast to the final type */
+		JavaGenCast(info, JavaGenValue(node->assign, info), finalType);
+	}
+
+	/* Store the value into the destination */
+	JavaStore(node->lvalue, info, leave, data1, data2);
+	return finalType;
+}
+
+
+%}
+
+/*
+ * Generate discard code for an arithmetic assignment expression.
+ */
+JavaGenDiscard(ILNode_AssignExpression)
+{
+	JavaAssignCommon(node, info, 0);
+}
+
+/*
+ * Generate value code for an assignment expression.
+ */
+JavaGenValue(ILNode_Assign)
+{
+	ILMachineType finalType;
+	void *data1, *data2;
+
+	/* Prepare the l-value for a later store operation */
+	finalType = JavaPrepare(node->expr1, info, &data1, &data2);
+
+	/* Evaluate the second sub-expression and cast to the final type */
+	JavaGenCast(info, JavaGenValue(node->expr2, info), finalType);
+
+	/* Store the value into the destination */
+	JavaStore(node->expr1, info, 1, data1, data2);
+
+	/* Return the final type to the caller */
+	return finalType;
+}
+
+/*
+ * Generate value code for an arithmetic assignment expression.
+ */
+JavaGenValue(ILNode_AssignExpression)
+{
+	return JavaAssignCommon(node, info, 1);
+}
+
+/*
+ * Generate discard code for a pre or post increment.
+ */
+JavaGenDiscard(ILNode_PreInc),
+JavaGenDiscard(ILNode_PostInc)
+{
+	ILMachineType finalType;
+	ILMachineType commonType;
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	finalType = JavaGetAndPrepare(node->expr, info, 0, &data1, &data2);
+
+	/* Determine the common type for the operation.  We use
+	   "int8" as the type of the "1" constant to be added */
+	commonType = ILCommonType(info, finalType, ILMachineType_Int8, 0);
+
+	/* Cast the first sub-expression to the common type */
+	JavaGenCast(info, finalType, commonType);
+
+	/* Increment the value on the top of the stack */
+	JavaInc_ApplyOp(info, commonType);
+
+	/* Convert the common type back into the final type */
+	JavaGenCast(info, commonType, finalType);
+
+	/* Store the value into the destination */
+	JavaStore(node->expr, info, 0, data1, data2);
+}
+
+/*
+ * Generate discard code for a pre or post decrement.
+ */
+JavaGenDiscard(ILNode_PreDec),
+JavaGenDiscard(ILNode_PostDec)
+{
+	ILMachineType finalType;
+	ILMachineType commonType;
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	finalType = JavaGetAndPrepare(node->expr, info, 0, &data1, &data2);
+
+	/* Determine the common type for the operation.  We use
+	   "int8" as the type of the "1" constant to be subtracted */
+	commonType = ILCommonType(info, finalType, ILMachineType_Int8, 0);
+
+	/* Cast the first sub-expression to the common type */
+	JavaGenCast(info, finalType, commonType);
+
+	/* Decrement the value on the top of the stack */
+	JavaDec_ApplyOp(info, commonType);
+
+	/* Convert the common type back into the final type */
+	JavaGenCast(info, commonType, finalType);
+
+	/* Store the value into the destination */
+	JavaStore(node->expr, info, 0, data1, data2);
+}
+
+/*
+ * Generate discard code for a user increment or decrement.
+ */
+JavaGenDiscard(ILNode_UserPreInc),
+JavaGenDiscard(ILNode_UserPostInc),
+JavaGenDiscard(ILNode_UserPreDec),
+JavaGenDiscard(ILNode_UserPostDec)
+{
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	JavaGetAndPrepare(node->expr, info, 0, &data1, &data2);
+
+	/* Increment or decrement the value on the top of the stack */
+	JavaGenCallByMethod(info, node->method);
+
+	/* Store the value into the destination */
+	JavaStore(node->expr, info, 0, data1, data2);
+}
+
+/*
+ * Generate value code for a pre increment.
+ */
+JavaGenValue(ILNode_PreInc)
+{
+	ILMachineType finalType;
+	ILMachineType commonType;
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	finalType = JavaGetAndPrepare(node->expr, info, 0, &data1, &data2);
+
+	/* Determine the common type for the operation.  We use
+	   "int8" as the type of the "1" constant to be added */
+	commonType = ILCommonType(info, finalType, ILMachineType_Int8, 0);
+
+	/* Cast the first sub-expression to the common type */
+	JavaGenCast(info, finalType, commonType);
+
+	/* Increment the value on the top of the stack */
+	JavaInc_ApplyOp(info, commonType);
+
+	/* Convert the common type back into the final type */
+	JavaGenCast(info, commonType, finalType);
+
+	/* Store the value into the destination */
+	JavaStore(node->expr, info, 1, data1, data2);
+
+	/* Return the final type to the caller */
+	return finalType;
+}
+
+/*
+ * Generate value code for a post increment.
+ */
+JavaGenValue(ILNode_PostInc)
+{
+	ILMachineType finalType;
+	ILMachineType commonType;
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	finalType = JavaGetAndPrepare(node->expr, info, 1, &data1, &data2);
+
+	/* Determine the common type for the operation.  We use
+	   "int8" as the type of the "1" constant to be added */
+	commonType = ILCommonType(info, finalType, ILMachineType_Int8, 0);
+
+	/* Cast the first sub-expression to the common type */
+	JavaGenCast(info, finalType, commonType);
+
+	/* Increment the value on the top of the stack */
+	JavaInc_ApplyOp(info, commonType);
+
+	/* Convert the common type back into the final type */
+	JavaGenCast(info, commonType, finalType);
+
+	/* Store the value into the destination */
+	JavaStore(node->expr, info, 0, data1, data2);
+
+	/* Return the final type to the caller */
+	return finalType;
+}
+
+/*
+ * Generate value code for a pre decrement.
+ */
+JavaGenValue(ILNode_PreDec)
+{
+	ILMachineType finalType;
+	ILMachineType commonType;
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	finalType = JavaGetAndPrepare(node->expr, info, 0, &data1, &data2);
+
+	/* Determine the common type for the operation.  We use
+	   "int8" as the type of the "1" constant to be subtracted */
+	commonType = ILCommonType(info, finalType, ILMachineType_Int8, 0);
+
+	/* Cast the first sub-expression to the common type */
+	JavaGenCast(info, finalType, commonType);
+
+	/* Increment the value on the top of the stack */
+	JavaDec_ApplyOp(info, commonType);
+
+	/* Convert the common type back into the final type */
+	JavaGenCast(info, commonType, finalType);
+
+	/* Store the value into the destination */
+	JavaStore(node->expr, info, 1, data1, data2);
+
+	/* Return the final type to the caller */
+	return finalType;
+}
+
+/*
+ * Generate value code for a post decrement.
+ */
+JavaGenValue(ILNode_PostDec)
+{
+	ILMachineType finalType;
+	ILMachineType commonType;
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	finalType = JavaGetAndPrepare(node->expr, info, 1, &data1, &data2);
+
+	/* Determine the common type for the operation.  We use
+	   "int8" as the type of the "1" constant to be subtracted */
+	commonType = ILCommonType(info, finalType, ILMachineType_Int8, 0);
+
+	/* Cast the first sub-expression to the common type */
+	JavaGenCast(info, finalType, commonType);
+
+	/* Increment the value on the top of the stack */
+	JavaDec_ApplyOp(info, commonType);
+
+	/* Convert the common type back into the final type */
+	JavaGenCast(info, commonType, finalType);
+
+	/* Store the value into the destination */
+	JavaStore(node->expr, info, 0, data1, data2);
+
+	/* Return the final type to the caller */
+	return finalType;
+}
+
+/*
+ * Generate value code for a user pre increment or decrement.
+ */
+JavaGenValue(ILNode_UserPreInc),
+JavaGenValue(ILNode_UserPreDec)
+{
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	JavaGetAndPrepare(node->expr, info, 0, &data1, &data2);
+
+	/* Increment or decrement the value on the top of the stack */
+	JavaGenCallByMethod(info, node->method);
+
+	/* Store the value into the destination */
+	JavaStore(node->expr, info, 1, data1, data2);
+
+	/* Return the final type to the caller */
+	return node->type;
+}
+
+/*
+ * Generate value code for a user post increment or decrement.
+ */
+JavaGenValue(ILNode_UserPostInc),
+JavaGenValue(ILNode_UserPostDec)
+{
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	JavaGetAndPrepare(node->expr, info, 1, &data1, &data2);
+
+	/* Increment or decrement the value on the top of the stack */
+	JavaGenCallByMethod(info, node->method);
+
+	/* Store the value into the destination */
+	JavaStore(node->expr, info, 0, data1, data2);
+
+	/* Return the final type to the caller */
+	return node->type;
+}
+
+/*
+ * Stub out pointer-based increment and decrement, which should
+ * never be used in Java code generation modes.
+ */
+JavaGenValue(ILNode_PreIncPtr),
+JavaGenValue(ILNode_PostIncPtr),
+JavaGenValue(ILNode_PreDecPtr),
+JavaGenValue(ILNode_PostDecPtr)
+{
+	return ILMachineType_UnmanagedPtr;
+}
+
+/*
+ * Apply the increment operator to various types.
+ */
+JavaInc_ApplyOp(ILMachineType_Int8)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenSimple(info, JAVA_OP_IADD);
+	JavaGenExtend(info, 1);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_Int8);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2B);
+	}
+}
+JavaInc_ApplyOp(ILMachineType_UInt8)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenSimple(info, JAVA_OP_IADD);
+	JavaGenExtend(info, 1);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_UInt8);
+	}
+	else
+	{
+		JavaGenInt32(info, 0xFF);
+		JavaGenSimple(info, JAVA_OP_IAND);
+	}
+}
+JavaInc_ApplyOp(ILMachineType_Int16)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenSimple(info, JAVA_OP_IADD);
+	JavaGenExtend(info, 1);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_Int16);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2S);
+	}
+}
+JavaInc_ApplyOp(ILMachineType_UInt16),
+JavaInc_ApplyOp(ILMachineType_Char)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenSimple(info, JAVA_OP_IADD);
+	JavaGenExtend(info, 1);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_UInt16);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2C);
+	}
+}
+JavaInc_ApplyOp(ILMachineType_Int32),
+JavaInc_ApplyOp(ILMachineType_NativeInt)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenSimple(info, JAVA_OP_ICONST_1);
+		JavaGenAdjust(info, 1);
+		JavaGenCallIntrinsic(info, "iadd_ovf", "(II)I");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_ICONST_1);
+		JavaGenSimple(info, JAVA_OP_IADD);
+		JavaGenExtend(info, 1);
+	}
+}
+JavaInc_ApplyOp(ILMachineType_UInt32),
+JavaInc_ApplyOp(ILMachineType_NativeUInt)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenSimple(info, JAVA_OP_ICONST_1);
+		JavaGenAdjust(info, 1);
+		JavaGenCallIntrinsic(info, "iuadd_ovf", "(II)I");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_ICONST_1);
+		JavaGenSimple(info, JAVA_OP_IADD);
+		JavaGenExtend(info, 1);
+	}
+}
+JavaInc_ApplyOp(ILMachineType_Int64)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenSimple(info, JAVA_OP_LCONST_1);
+		JavaGenAdjust(info, 2);
+		JavaGenCallIntrinsic(info, "ladd_ovf", "(JJ)J");
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_LCONST_1);
+		JavaGenSimple(info, JAVA_OP_LADD);
+		JavaGenExtend(info, 2);
+	}
+}
+JavaInc_ApplyOp(ILMachineType_UInt64)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenSimple(info, JAVA_OP_LCONST_1);
+		JavaGenAdjust(info, 2);
+		JavaGenCallIntrinsic(info, "luadd_ovf", "(JJ)J");
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_LCONST_1);
+		JavaGenSimple(info, JAVA_OP_LADD);
+		JavaGenExtend(info, 2);
+	}
+}
+JavaInc_ApplyOp(ILMachineType_Float32)
+{
+	JavaGenFloat32(info, (ILFloat)1.0);
+	JavaGenSimple(info, JAVA_OP_FADD);
+	JavaGenExtend(info, 1);
+}
+JavaInc_ApplyOp(ILMachineType_Float64),
+JavaInc_ApplyOp(ILMachineType_NativeFloat)
+{
+	JavaGenFloat64(info, (ILDouble)1.0);
+	JavaGenSimple(info, JAVA_OP_DADD);
+	JavaGenExtend(info, 2);
+}
+JavaInc_ApplyOp(ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenSimple(info, JAVA_OP_LCONST_1);
+		JavaGenAdjust(info, 2);
+		JavaGenCallByName(info, "java/math/BigDecimal", "valueOf",
+						  "(J)Ljava/math/BigDecimal;");
+		JavaGenAdjust(info, -1);
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "add",
+						   "(Ljava/math/BigDecimal;)Ljava/math/BigDecimal;");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Increment__VV",
+						  "(LSystem/Decimal;)LSystem/Decimal;");
+	}
+}
+JavaInc_ApplyOp(ILMachineType_Void),
+JavaInc_ApplyOp(ILMachineType_Boolean),
+JavaInc_ApplyOp(ILMachineType_String),
+JavaInc_ApplyOp(ILMachineType_ObjectRef),
+JavaInc_ApplyOp(ILMachineType_UnmanagedPtr),
+JavaInc_ApplyOp(ILMachineType_ManagedPtr),
+JavaInc_ApplyOp(ILMachineType_TransientPtr),
+JavaInc_ApplyOp(ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+}
+
+/*
+ * Apply the decrement operator to various types.
+ */
+JavaDec_ApplyOp(ILMachineType_Int8)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenSimple(info, JAVA_OP_ISUB);
+	JavaGenExtend(info, 1);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_Int8);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2B);
+	}
+}
+JavaDec_ApplyOp(ILMachineType_UInt8)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenSimple(info, JAVA_OP_ISUB);
+	JavaGenExtend(info, 1);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_UInt8);
+	}
+	else
+	{
+		JavaGenInt32(info, 0xFF);
+		JavaGenSimple(info, JAVA_OP_IAND);
+	}
+}
+JavaDec_ApplyOp(ILMachineType_Int16)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenSimple(info, JAVA_OP_ISUB);
+	JavaGenExtend(info, 1);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_Int16);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2S);
+	}
+}
+JavaDec_ApplyOp(ILMachineType_UInt16),
+JavaDec_ApplyOp(ILMachineType_Char)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenSimple(info, JAVA_OP_ISUB);
+	JavaGenExtend(info, 1);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_UInt16);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2C);
+	}
+}
+JavaDec_ApplyOp(ILMachineType_Int32),
+JavaDec_ApplyOp(ILMachineType_NativeInt)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenSimple(info, JAVA_OP_ICONST_1);
+		JavaGenAdjust(info, 1);
+		JavaGenCallIntrinsic(info, "isub_ovf", "(II)I");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_ICONST_1);
+		JavaGenSimple(info, JAVA_OP_ISUB);
+		JavaGenExtend(info, 1);
+	}
+}
+JavaDec_ApplyOp(ILMachineType_UInt32),
+JavaDec_ApplyOp(ILMachineType_NativeUInt)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenSimple(info, JAVA_OP_ICONST_1);
+		JavaGenAdjust(info, 1);
+		JavaGenCallIntrinsic(info, "iusub_ovf", "(II)I");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_ICONST_1);
+		JavaGenSimple(info, JAVA_OP_ISUB);
+		JavaGenExtend(info, 1);
+	}
+}
+JavaDec_ApplyOp(ILMachineType_Int64)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenSimple(info, JAVA_OP_LCONST_1);
+		JavaGenAdjust(info, 2);
+		JavaGenCallIntrinsic(info, "lsub_ovf", "(JJ)J");
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_LCONST_1);
+		JavaGenSimple(info, JAVA_OP_LSUB);
+		JavaGenExtend(info, 2);
+	}
+}
+JavaDec_ApplyOp(ILMachineType_UInt64)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenSimple(info, JAVA_OP_LCONST_1);
+		JavaGenAdjust(info, 2);
+		JavaGenCallIntrinsic(info, "lusub_ovf", "(JJ)J");
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_LCONST_1);
+		JavaGenSimple(info, JAVA_OP_LSUB);
+		JavaGenExtend(info, 2);
+	}
+}
+JavaDec_ApplyOp(ILMachineType_Float32)
+{
+	JavaGenFloat32(info, (ILFloat)1.0);
+	JavaGenSimple(info, JAVA_OP_FSUB);
+	JavaGenExtend(info, 1);
+}
+JavaDec_ApplyOp(ILMachineType_Float64),
+JavaDec_ApplyOp(ILMachineType_NativeFloat)
+{
+	JavaGenFloat64(info, (ILDouble)1.0);
+	JavaGenSimple(info, JAVA_OP_DSUB);
+	JavaGenExtend(info, 1);
+}
+JavaDec_ApplyOp(ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenSimple(info, JAVA_OP_LCONST_1);
+		JavaGenAdjust(info, 2);
+		JavaGenCallByName(info, "java/math/BigDecimal", "valueOf",
+						  "(J)Ljava/math/BigDecimal;");
+		JavaGenAdjust(info, -1);
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "subtract",
+						   "(Ljava/math/BigDecimal;)Ljava/math/BigDecimal;");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Decrement__VV",
+						  "(LSystem/Decimal;)LSystem/Decimal;");
+	}
+}
+JavaDec_ApplyOp(ILMachineType_Void),
+JavaDec_ApplyOp(ILMachineType_Boolean),
+JavaDec_ApplyOp(ILMachineType_String),
+JavaDec_ApplyOp(ILMachineType_ObjectRef),
+JavaDec_ApplyOp(ILMachineType_UnmanagedPtr),
+JavaDec_ApplyOp(ILMachineType_ManagedPtr),
+JavaDec_ApplyOp(ILMachineType_TransientPtr),
+JavaDec_ApplyOp(ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+}

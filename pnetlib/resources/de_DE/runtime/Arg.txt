@@ -1,0 +1,169 @@
+#
+# Arg.txt - Resources for argument errors.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Arg_MustBeBoolean=Objekt muss vom Typ Boolean sein
+Arg_MustBeByte=Objekt muss vom Typ Byte sein
+Arg_MustBeSByte=Objekt muss vom Typ SByte sein
+Arg_MustBeChar=Objekt muss vom Typ Char sein
+Arg_MustBeInt16=Objekt muss vom Typ Int16 sein
+Arg_MustBeUInt16=Objekt muss vom Typ UInt16 sein
+Arg_MustBeInt32=Objekt muss vom Typ Int32 sein
+Arg_MustBeUInt32=Objekt muss vom Typ UInt32 sein
+Arg_MustBeInt64=Objekt muss vom Typ Int64 sein
+Arg_MustBeUInt64=Objekt muss vom Typ UInt64 sein
+Arg_MustBeDecimal=Objekt muss vom Typ Decimal sein
+Arg_MustBeSingle=Objekt muss vom Typ Single sein
+Arg_MustBeDouble=Objekt muss vom Typ Double sein
+Arg_MustBeDateTime=Objekt muss vom Typ DateTime sein
+Arg_MustBeTimeSpan=Objekt muss vom Typ TimeSpan sein
+Arg_MustBeString=Objekt muss vom Typ String sein
+Arg_MustBeSameEnum=Enumerated objekte muessen vom selben Typ sein
+Arg_MustBeEnum=Muss vom Typ enumerated sein
+Arg_InvalidEnumValue=Ungueltiger enumerated Wert fuer diesen Typ
+Arg_InvalidEnumName=Ungueltiger enumerated String fuer diesen Typ
+Arg_MustBeResourceSet=Objekt muss vom Typ ResourceSet sein
+Arg_MustBeVersion=Objekt muss vom Typ Version sein
+Arg_MustBeGuid=Objekt muss vom Typ Guid sein
+Arg_InvalidBase=Base muss 2, 8, 10, oder 16 sein
+Arg_UnknownTypeCode=Unbekannter type code
+Arg_InvalidHexStyle=Ungueltiger hexadecimal Nummern Style
+Arg_DecBitCtor=Ungueltiges bit array wurde an den Decimal constructor uebergeben
+Arg_NotNull=Argument kann nicht null sein
+Arg_OutOfRange=Argument ist ausserhalb des Gueltigkeitsbereiches
+Arg_OutOfRangeValue=Argument Wert: {0}
+Arg_DateTimeRange=DateTime Wert ist ausserhalb des Gueltigkeitsbereiches
+Arg_SearchCompare=Werte konnten waehrend des suchens nicht verglichen werden
+Arg_RankMustBe1=Array rank muss 1 sein
+Arg_RankMustBe2=Array rank muss 2 sein
+Arg_RankMustBe3=Array rank muss 3 sein
+Arg_InvalidArrayRange=Array range ist ungueltig
+Arg_MustBeType=Angegebener Wert muss ein gueltiger runtime Typ sein
+Arg_MustHaveOneElement=Array muss mindestens 1 Element haben
+Arg_MustBeSameSize=Die zwei Arrays muessen die selbe Groesse haben
+Arg_MustBeSameRank=Die zwei Arrays muessen die selbe Anzahl Dimensionen haben
+Arg_InvalidArrayIndex=Array index ist ungueltig
+Arg_LowBoundsMustMatch=Die unteren Grenzen der beiden Arrays muessen identisch sein
+Arg_ShortItemsArray=Das Element Array ist kuerzer als das Schluessel Array
+Arg_ABMustBeComparable=a oder b muessen die Schnittstelle IComparable implementieren
+Arg_CannotReduceCapacity=Kann Array Kapazitaet nicht unter ihre aktuelle Laenge reduzieren
+Arg_NotANumber=Der Fliesskomma Parameter ist keine Zahl
+Arg_InsufficientSpace=Ungenuegend Array Speicher fuer Operation
+Arg_EndsWithResources=Der angegebene base name darf nicht in ".resources" enden
+Arg_VersionFields=Der angegebene Versionsfeld Zaehler ist ungueltig
+Arg_GuidArray8=Der Guid byte buffer sollte 8 Elemente haben
+Arg_GuidArray16=Der Guid byte buffer sollte 16 Elemente haben
+Arg_NonPrimitiveArray=Der angegebene Array enthaelt keine primitiven Elemente
+Arg_DelegateMethod=Ungueltige Methode fuer die Delegaten Erzeugung
+Arg_DelegateMismatch=Die angegebenen Delegaten sind nicht vom selben Typ
+Arg_NotDelegate=Der angegebene Typ ist kein Delegaten Typ
+Arg_DelegateSignature=Der Delegat und die Methode haben nicht die gleiche Signatur
+Arg_DelegateAccess=Der Aufrufer hat nicht die Berechtigung auf die Delegaten Methode zuzugreiermission to access the delegate method
+Arg_MakeTypedRef=A non-zero list of fields is required to make a typed reference
+Arg_MakeTypedRefFields=Tie Felder fuer eine typed reference muessen Laufzeit Felder sein
+Arg_InvalidEra=Unzulaessiger Era Wert fuer die Kalender Methode
+Arg_NoEraYear=Es existiert kein Aera Jahr fuer die angegebenen Parameter
+Arg_ExistingEntry=Es gibt bereits einen Eintrag mit dem angegebenen Schluessel
+Arg_BitArrayLengths=Die Laenge der zwei bit Arrays sind nicht identisch
+Arg_NotFound=Der angegebene Wert wurde nicht gefunden
+Arg_Value0To99=Der angegebene Wert muss zwischen 0 und 99 inklusive sein
+Arg_Value0To3=Der angegebene Wert muss zwischen 0 und 3 inklusive sein
+Arg_Value0To15=Der angegebene Wert muss zwischen 0 und 15 inklusive sein
+Arg_Value0To4=Der angegebene Wert muss zwischen 0 und 4 inklusive sein
+Arg_Value0To2=Der angegebene Wert muss zwischen 0 und 2 inklusive sein
+Arg_Value0To9=Der angegebene Wert muss zwischen 0 und 9 inklusive sein
+Arg_Value1To9=Der angegebene Wert muss zwischen 1 und 9 inklusive sein
+Arg_Array7Elems=Das angegebene Array muss 7 Elemente haben
+Arg_Array13Elems=Das angegebene Array muss 13 Elemente haben
+Arg_InvalidCalendar=Ungueltiger Kalender fuer die aktuelle Kultur
+Arg_CalendarWeekRule=Ungueltige Kalennderwochen Regel
+Arg_DayOfWeek=Ungueltiger Wochentag Wert
+Arg_InvalidXMLTag=Ungueltiger XML Element Tag Name
+Arg_InvalidXMLText=Ungueltiger XML Element Text
+Arg_InvalidXMLAttrName=Ungueltiger XML Attribut Name
+Arg_InvalidXMLAttrValue=Ungueltiger XML Attribut Wert
+Arg_DuplicateXMLAttr=Es existiert bereits ein XML Attribut mit dem angegebenen Namen
+Arg_PermissionState=Ungueltiger Sicherheits permission Status Wert
+Arg_PermissionVersion=Ungültige Version für das permission Objekt
+Arg_InvalidUTF8=Ungueltige UTF8 byte Sequenz
+Arg_WeakRefCollected=Die schwache Referenz wurde bereits durch den Garbage Collector bearbeitet
+Arg_MustBeCoreLib=Die angegebene Assembly muss die Core library sein
+Arg_InvalidRegion=Ungueltiger Bereichsname oder identifier
+Arg_DateTimeFormatChar=Ungueltiges DateTime Formatierungs Zeichen
+Arg_PermissionMismatch=Unpassende Berechtigungs Objekte
+Arg_EnvironmentAccess=Ungueltige Environment Zugriffsberechtigungswert
+Arg_FileIOAccess=Ungueltiger Datei I/O Zugriffsberechtigungswert
+Arg_SecurityFlag=Ungueltiger Wert fuer Sicherheits Berechtigungs Flag
+Arg_ReflectionFlag=Ungueltiger Wert fuer Reflection Berechtigungs Flag
+Arg_FileDialogAccess=Ungueltiger Wert fuer Datei Dialog Zugriffsberechtigung
+Arg_InvalidSite=Ungueltiger Wert fuer Site Berechtigung
+Arg_WindowFlag=Ungueltiger Wert fuer Fenster Berechtigung
+Arg_ClipboardFlag=Ungueltiger Wert fuer Clipboard Berechtigungs Flag
+Arg_PublicKeyBlob=Ungueltiger Wert fuer Public Key Blob
+Arg_RegistryAccess=Ungueltiger Wert fuer Registry Zugriffsberechtigung
+Arg_PermissionsExecution=Berechtigungen zur Programmausfuehrung
+Arg_PermissionsFullTrust=Erlaube alles Berechtigungen
+Arg_PermissionsInternet=Erlaube Zugriff auf das Internet
+Arg_PermissionsLocalIntranet=Erlaube Zugriff auf das lokalel Intranet
+Arg_PermissionsNothing=Entziehe alle Berechtigungen
+Arg_PermissionsSkipVerification=Erlaube dem Programm die Verifizierung zu ueberspringen
+Arg_InvalidAsync=Ungueltiges Objekt angegeben fuer Asynchrone Lese/Schreibe Operation
+Arg_InvalidHive=Ungueltiger Registry hive
+Arg_SynchronizationFlag=Ungueltiges Wert fuer Synchronisations Flag
+Arg_PointerType=Der angegebene Parameter ist kein Pointer Typ
+Arg_PointerValue=Der angegebene Parameter ist kein Pointer Wert
+Arg_InvalidSoapValue=Der angegeben String ist kein zulaessiger SOAP Wert
+Arg_SecurityZone=Die angegebene Wert fuer Sicherheitszone ist unzulaessig
+Arg_CannotMarshalStruct=Der angegebene Structure Typ konnte nicht marshaled werden
+Arg_NotGenericMethod=Die angegebene Methode ist nicht generisch
+Arg_GenericParameterCount=Die Anzahl generischer Parameter stimmt nicht ueberein
+Arg_InvalidUnityObject=Es wurde ein ungueltiges Einheits Objekts waehrend der Deserialisierung entdeckt
+Arg_InvalidMemberObject=Es wurde ein ungueltiges member Objekt waehrend der Deserialisierung entdeckt
+Arg_InvalidUrl=Ungueltige URL
+Arg_InvalidMembershipCondition=Ungueltige Codegruppen Mitliedschaftsbedingung
+Arg_InvalidRegex=Ungueltige regulaerer Ausdruck
+Arg_ResourceAlreadyPresent=Die angegebene Ressource existiert bereits
+ArgRange_DecimalScale=Dezimal scale Faktor muss zwischen 0 und 28, inklusive sein
+ArgRange_YMD=Jahr, Monat, Tag Angabe ist ausserhalb des gueltigen Bereiches
+ArgRange_HMS=Stunde, Minute, Sekunde Angabe ist ausserhalb des gueltigen Bereiches
+ArgRange_DateTimeTicks=Ticks Wert fuer DateTime ist ausserhalb des gueltigen Bereiches
+ArgRange_TimeSpan=TimeSpan Wert ist ausserhalb des gueltigen Bereiches
+ArgRange_Array=Array Position oder Laenge ist ausserhalb des gueltigen Bereiches
+ArgRange_NonNegative=Wert darf nicht negativ sein
+ArgRange_NonNegOrNegOne=Wert muss positiv sein, 0, oder -1
+ArgRange_PositiveNonZero=Wert muss positiv und nicht Null sein
+ArgRange_NegativeOrZero=Wert muss negativ oder Null sein
+ArgRange_Negative=Wert muss negativ sein
+ArgRange_StringIndex=String index ist ausserhalb des gueltigen Bereiches
+ArgRange_StringRange=String range ist ausserhalb des gueltigen Bereiches
+ArgRange_RoundDigits=Zu rundende Stelle muss zwischen 0 and 15 liegen, inclusive
+ArgRange_MinValueGtMaxValue=minValue ist groesser als maxValue
+ArgRange_StringNonEmpty=String Wert darf nicht leer sein
+ArgRange_MaxStrCapacity=Maximale String Kapazitaet muss 1 oder groesser sein
+ArgRange_StrCapacity=Ungueltige String Kapazitaet
+ArgRange_StrBuilderLength=Ungueltige string builder Laenge
+ArgRange_Year=Wert fuer Jahr ist ausserhalb des gueltigen Bereiches
+ArgRange_Month=Wert fuer Monat ist ausserhalb des gueltigen Bereiches
+ArgRange_Day=Wert fuer Tag ist ausserhalb des gueltigen Bereiches
+ArgRange_HashLoadFactor=Ungueltiger Hashtable Fuellfaktor
+ArgRange_QueueGrowFactor=Ungueltigerer Wachstumsfaktor fuer Queues
+ArgRange_GCGeneration=GC Generation ist ausserhalb des gueltigen Bereiches
+ArgRange_HijriAdjustment=Hijri Angleichungswerte muessen zwischen -2 und 2 liegen
+ArgRange_HijriDate=Datumswert ist ausserhalb des Bereichs fuer den Hijri Kalender
+ArgRange_BufferSize=Buffer groesse ist ausserhalb des gueltigen Bereichs
+ArgRange_DateTimeRange=DateTime Wert ist ausserhalb des gueltigen Bereichs

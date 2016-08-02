@@ -1,0 +1,4 @@
+./cdtor2.c:22: incorrect signature for constructor or destructor
+./cdtor2.c:26: incorrect signature for constructor or destructor
+./cdtor2.c:32: incorrect signature for constructor or destructor
+./cdtor2.c:35: incorrect signature for constructor or destructor

@@ -1,0 +1,719 @@
+/*
+ * cs_misc.tc - Semantic analysis and codegen for C# miscellaneous node types.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/*
+ * Perform semantic analysis for the "typeof" operator.
+ */
+ILNode_SemAnalysis(ILNode_TypeOf)
+{
+	CSSemValue value;
+
+	/* Get the semantic value for the sub-expression */
+	value = ILNode_SemAnalysisType(node->expr, info, &(node->expr));
+
+	/* Check that the argument is of the correct kind */
+	if(CSSemIsType(value))
+	{
+		if(ILType_IsPrimitive(CSSemGetType(value)))
+		{
+			node->type = ILType_FromClass
+				(ILTypeToClass(info, CSSemGetType(value)));
+		}
+		else
+		{
+			node->type = CSSemGetType(value);
+		}
+	}
+	else
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid argument to `typeof' operator");
+		node->type = ILFindSystemType(info, "Int32");
+	}
+
+	/* The type of the expression is "System.Type" */
+	CSSemSetRValue(value, ILFindSystemType(info, "Type"));
+	return value;
+}
+
+/*
+ * Get the type of the "typeof" operator.
+ */
+ILNode_GetType(ILNode_TypeOf)
+{
+	return ILMachineType_ObjectRef;
+}
+
+/*
+ * Generate value code for the "typeof" operator.
+ */
+ILNode_GenValue(ILNode_TypeOf)
+{
+	ILGenTypeToken(info, IL_OP_LDTOKEN, node->type);
+	ILGenAdjust(info, 1);
+	ILGenCallByName(info,
+			"class [.library]System.Type "
+				"[.library]System.Type::GetTypeFromHandle"
+				"(valuetype [.library]System.RuntimeTypeHandle)");
+	return ILMachineType_ObjectRef;
+}
+
+/*
+ * Generate Java value code for the "typeof" operator.
+ */
+JavaGenValue(ILNode_TypeOf)
+{
+	const char *name;
+
+	/* Use the "System.Type.GetType" method to resolve the type,
+	   because the JVM does not have an equivalent to "ldtoken" */
+	name = CSTypeToName(node->type);
+	JavaGenStringConst(info, name, strlen(name));
+	JavaGenCallByName(info, "System/String", "__FromJavaString",
+					  "(Ljava/lang/String;)LSystem/String;");
+	JavaGenAdjust(info, 1);
+	JavaGenCallByName(info, "System/Type", "GetType",
+					  "(LSystem/String;)LSystem/Type;");
+
+	/* The type of the whole expression is "object reference" */
+	return ILMachineType_ObjectRef;
+}
+
+/*
+ * Get the machine type for the "sizeof" operator.
+ */
+ILNode_GetType(ILNode_SizeOf)
+{
+	return ILMachineType_Int32;
+}
+
+/*
+ * Generate value code for the "sizeof" operator.
+ */
+ILNode_GenValue(ILNode_SizeOf)
+{
+	if(node->size != 0)
+	{
+		ILGenInt32(info, node->size);
+	}
+	else
+	{
+		ILClass *classInfo = ILTypeToClass(info, node->type);
+		ILGenClassToken(info, IL_OP_PREFIX + IL_PREFIX_OP_SIZEOF, classInfo);
+	}
+	ILGenAdjust(info, 1);
+	return ILMachineType_Int32;
+}
+
+/*
+ * Evaluate the constant value for the "sizeof" operator.
+ */
+ILNode_EvalConst(ILNode_SizeOf)
+{
+	if(node->size != 0)
+	{
+		value->valueType = ILMachineType_Int32;
+		value->un.i4Value = node->size;
+		return 1;
+	}
+	else
+	{
+		/* Non-primitive types must be evaluated at runtime */
+		return 0;
+	}
+}
+
+/*
+ * Generate Java value code for the "sizeof" operator.
+ */
+JavaGenValue(ILNode_SizeOf)
+{
+	/* Only called for primitive types */
+	JavaGenInt32(info, node->size);
+	JavaGenAdjust(info, 1);
+	return ILMachineType_Int32;
+}
+
+%{
+
+/*
+ * Get the size of a type if it is static.  Returns zero if it isn't.
+ */
+static ILUInt32 GetPrimitiveTypeSize(ILType *type)
+{
+	if(ILType_IsPrimitive(type))
+	{
+		switch(ILType_ToElement(type))
+		{
+			case IL_META_ELEMTYPE_BOOLEAN:
+			case IL_META_ELEMTYPE_I1:
+			case IL_META_ELEMTYPE_U1:		return 1;
+
+			case IL_META_ELEMTYPE_CHAR:
+			case IL_META_ELEMTYPE_I2:
+			case IL_META_ELEMTYPE_U2:		return 2;
+
+			case IL_META_ELEMTYPE_I4:
+			case IL_META_ELEMTYPE_U4:
+			case IL_META_ELEMTYPE_R4:		return 4;
+
+			case IL_META_ELEMTYPE_I8:
+			case IL_META_ELEMTYPE_U8:
+			case IL_META_ELEMTYPE_R8:		return 8;
+		}
+	}
+	return 0;
+}
+
+%}
+
+/*
+ * Perform semantic analysis for the "sizeof" operator.
+ */
+ILNode_SemAnalysis(ILNode_SizeOf)
+{
+	CSSemValue value;
+
+	/* Get the semantic value for the sub-expression */
+	value = ILNode_SemAnalysis(node->expr, info, &(node->expr));
+
+	/* sizeof(primitive) is safe in C# 2.0 */
+	if(!ILType_IsPrimitive(CSSemGetType(value)))
+	{
+		/* Print an error or warning for this construct if necessary */
+		CCUnsafeMessage(info, (ILNode *)node, "unsafe `sizeof' operator");
+	}
+
+	/* Convert native types into their value type forms */
+	if(CSSemIsType(value))
+	{
+		if(CSSemGetType(value) == ILType_Int)
+		{
+			CSSemSetType(value, ILFindSystemType(info, "IntPtr"));
+		}
+		else if(CSSemGetType(value) == ILType_UInt)
+		{
+			CSSemSetType(value, ILFindSystemType(info, "UIntPtr"));
+		}
+	}
+
+	/* Check the semantic value */
+	if(!CSSemIsType(value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid argument to `sizeof' operator");
+		node->type = ILType_Int32;
+	}
+	else if(!ILType_IsPrimitive(CSSemGetType(value)) &&
+			!ILType_IsValueType(CSSemGetType(value)) &&
+			!ILType_IsPointer(CSSemGetType(value)))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "cannot take the size of a managed type");
+		node->type = ILType_Int32;
+	}
+	else if(!ILType_IsPrimitive(CSSemGetType(value)) && info->outputIsJava)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "`sizeof' disallowed when compiling to Java bytecode");
+		node->type = ILType_Int32;
+	}
+	else if(CSSemGetType(value) == ILType_Void)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "`void' type is not allowed in this context");
+		node->type = ILType_Int32;
+	}
+	else if(ILType_IsPointer(CSSemGetType(value)))
+	{
+		/* Pointers always have the same size as a native integer */
+		node->type = ILType_Int;
+	}
+	else
+	{
+		node->type = CSSemGetType(value);
+	}
+
+	/* Pre-compute the size if this is a primitive type */
+	node->size = GetPrimitiveTypeSize(node->type);
+
+	/* Return the type information to the caller */
+	CSSemSetRValue(value, ILType_Int32);
+	return value;
+}
+
+/*
+ * Get the machine type for the "stackalloc" operator.
+ */
+ILNode_GetType(ILNode_StackAlloc)
+{
+	if(info->outputIsJava)
+	{
+		return ILMachineType_ObjectRef;
+	}
+	else
+	{
+		return ILMachineType_UnmanagedPtr;
+	}
+}
+
+/*
+ * Generate value code for the "stackalloc" operator.
+ */
+ILNode_GenValue(ILNode_StackAlloc)
+{
+	ILNode_GenValue(node->expr2, info);
+	ILGenSimple(info, IL_PREFIX_OP_LOCALLOC + IL_OP_PREFIX);
+	return ILMachineType_UnmanagedPtr;
+}
+
+/*
+ * Generate Java value code for the "stackalloc" operator.
+ */
+JavaGenValue(ILNode_StackAlloc)
+{
+	/* TODO */
+	return ILMachineType_ObjectRef;
+}
+
+/*
+ * Perform semantic analysis for the "stackalloc" operator.
+ */
+ILNode_SemAnalysis(ILNode_StackAlloc)
+{
+	ILNode *tempNode;
+	ILType *type;
+	CSSemValue value;
+
+	/* Print an error or warning for this construct if necessary */
+	CCUnsafeMessage(info, (ILNode *)node, "unsafe `stackalloc' operator");
+
+	/* Perform semantic analysis on the sub-expressions */
+	/* The first must be a type */
+	type = CSSemType(node->expr1, info, &(node->expr1));
+
+	/* The second one must be an integer expression */
+	value = ILNode_SemAnalysis(node->expr2, info, &(node->expr2));
+	if(!CSSemIsValue(value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid element number count in stackalloc expression");
+	}
+	else
+	{
+		if(!ILCoerce(info, node->expr2, &node->expr2,
+					 CSSemGetType(value), ILType_Int32, 1))
+		{
+			CCErrorOnLine(yygetfilename(node->expr2), yygetlinenum(node->expr2),
+						  "incompatible types in stackalloc element number specifier: "
+						  "no conversion from `%s' to `int'",
+						  CSTypeToName(CSSemGetType(value)));
+		}
+	}
+	/*
+	 * Replace expr1 and expr2 with semguards so that they will not get
+	 * semanalyzed again
+	 */
+	node->expr2 = ILNode_SemGuard_create(node->expr2, value);
+	CSSemSetType(value, type);
+	tempNode = ILNode_SemGuard_create(node->expr1, value);
+	tempNode = ILNode_SizeOf_create(tempNode);
+	node->expr2 = ILNode_Mul_create(tempNode, node->expr2);
+	/* Now semanalyze the final expression again */
+	value = ILNode_SemAnalysis(node->expr2, info, &(node->expr2));
+
+	/* The result has the type "pointer to type" */
+	type = ILTypeCreateRef(info->context, IL_TYPE_COMPLEX_PTR, type);
+	if(!type)
+	{
+		CCOutOfMemory();
+	}
+
+	CSSemSetRValue(value, type);
+	return value;
+}
+
+ILNode_SemAnalysis(ILNode_NewExpression)
+{
+	CSSemValue value;
+	ILNode_ListIter iter;
+	ILNode *child;
+	ILNode *expr;
+	ILNode **parentNode;
+	ILNode **parentOfExpr;
+	ILEvalValue evalValue;
+	int numDimensions = 0;
+	int dim;
+	ILType *elemType;
+
+	/* Determine if the array creation is normal or initializer-based */
+	if(node->indexes)
+	{
+		if(yyisa(node->type, ILNode_ArrayType))
+		{
+			/* Create the final array type with the rank specified by the
+			   number of expressions. */
+			node->type =
+				ILNode_ArrayType_create(node->type, CountArgList(node->indexes));
+		}
+		else
+		{
+			/* Build the full type node, by combining the element
+			   type, indexed dimensions, and the rank specifiers */
+			node->type =
+				ILNode_ArrayType_create(node->type, CountArgList(node->indexes));
+			ILNode_ListIter_Init(&iter, node->rank);
+			while((child = ILNode_ListIter_Next(&iter)) != 0)
+			{
+				node->type = ILNode_ArrayType_create
+					(node->type, ((ILNode_TypeSuffix *)child)->count);
+			}
+
+		}
+
+		/* Perform semantic analysis on the array type */
+		node->arrayType = CSSemType(node->type, info, &(node->type));
+
+		/* Perform semantic analysis on the array dimensions */
+		child = node->indexes;
+		parentOfExpr = &(node->indexes);
+		while(yyisa(child, ILNode_ArgList))
+		{
+			++numDimensions;
+			expr = ((ILNode_ArgList *)child)->expr2;
+			parentNode = &(((ILNode_ArgList *)child)->expr2);
+			if(CSSemExpectValue(expr, info, parentNode, &value))
+			{
+				if(!ILCoerce(info, *parentNode, parentNode,
+							 CSSemGetType(value), ILType_Int32,1) &&
+				   !ILCoerce(info, *parentNode, parentNode,
+							 CSSemGetType(value), ILType_UInt32,1) &&
+				   !ILCoerce(info, *parentNode, parentNode,
+							 CSSemGetType(value), ILType_Int64,1) &&
+				   !ILCoerce(info, *parentNode, parentNode,
+							 CSSemGetType(value), ILType_UInt64,1))
+				{
+					CCErrorOnLine
+						(yygetfilename(expr), yygetlinenum(expr),
+			  			 "incompatible types in dimension specifier: "
+						 	"no conversion from `%s' to `int', `uint', "
+							"`long', or `ulong'",
+					     CSTypeToName(CSSemGetType(value)));
+				}
+			}
+			else
+			{
+				CCErrorOnLine(yygetfilename(expr), yygetlinenum(expr),
+							  "invalid dimension in array creation expression");
+			}
+			parentOfExpr = &(((ILNode_ArgList *)child)->expr1);
+			child = *parentOfExpr;
+		}
+		++numDimensions;
+		expr = child;
+		parentNode = parentOfExpr;
+		if(CSSemExpectValue(expr, info, parentNode, &value))
+		{
+			if(!ILCoerce(info, *parentNode, parentNode,
+						 CSSemGetType(value), ILType_Int32,1) &&
+			   !ILCoerce(info, *parentNode, parentNode,
+						 CSSemGetType(value), ILType_UInt32,1) &&
+			   !ILCoerce(info, *parentNode, parentNode,
+						 CSSemGetType(value), ILType_Int64,1) &&
+			   !ILCoerce(info, *parentNode, parentNode,
+						 CSSemGetType(value), ILType_UInt64,1))
+			{
+				CCErrorOnLine
+					(yygetfilename(expr), yygetlinenum(expr),
+		  			 "incompatible types in dimension specifier: "
+					 	"no conversion from `%s' to `int', `uint', "
+						"`long', or `ulong'",
+				     CSTypeToName(CSSemGetType(value)));
+			}
+		}
+		else
+		{
+			CCErrorOnLine(yygetfilename(expr), yygetlinenum(expr),
+						  "invalid dimension in array creation expression");
+		}
+	}
+	else
+	{
+		/* Perform semantic analysis on the array type, which is
+		   assumed to already have rank specifiers */
+		node->arrayType = CSSemType(node->type, info, &(node->type));
+
+		/* Check that the supplied type is actually an array */
+		if(!ILType_IsArray(node->arrayType))
+		{
+			CCErrorOnLine(yygetfilename(node->type), yygetlinenum(node->type),
+						  "array initializer used with non-array type");
+			CSSemSetRValue(value, node->arrayType);
+			return value;
+		}
+	}
+
+	/* Check that the element type has a class form associated with it.
+	   If we are compiling in a "no floating point" profile, the
+	   "System.Single" and "System.Double" classes won't exist, which
+	   will lead to problems during the code generation phase */
+	elemType = ILTypeGetElemType(node->arrayType);
+	if(!ILTypeToClass(info, elemType))
+	{
+		CCErrorOnLine(yygetfilename(node->type), yygetlinenum(node->type),
+					  "array of `%s' used in a profile that cannot support it",
+					  CSTypeToName(elemType));
+	}
+
+	/* Handle array initializers */
+	if(node->arrayInitializer)
+	{
+		/* Wrap the initializer in an "ILNode_ArrayInit" node */
+		node->arrayInitializer =
+				ILNode_ArrayInit_create(node->arrayInitializer);
+
+		/* Validate the initializer's shape against the actual type,
+		   and then coerce all of the elements to their final types */
+		if(!ILArrayInitShapeOK(info, node->arrayInitializer, node->arrayType))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  "incorrect pattern of elements in array initializer");
+		}
+		else
+		{
+			CoerceArrayInit(info, node->arrayInitializer,
+							&(node->arrayInitializer),
+						    ILTypeGetElemType(node->arrayType));
+		}
+
+		/* If we have indices, then they must be constant and match
+		   the sizes of the initializer dimensions */
+		if(node->indexes)
+		{
+			dim = numDimensions;
+			child = node->indexes;
+			while(yyisa(child, ILNode_ArgList))
+			{
+				expr = ((ILNode_ArgList *)child)->expr2;
+				if(!ILNode_EvalConst(expr, info, &evalValue) ||
+				   !ILGenCastConst(info, &evalValue, evalValue.valueType,
+								   ILMachineType_Int64) ||
+				   evalValue.un.i8Value !=
+				   		(ILInt64)ILGetArrayInitLength
+							(((ILNode_ArrayInit *)(node->arrayInitializer))
+									->expr, dim - 1))
+				{
+					CCErrorOnLine(yygetfilename(expr), yygetlinenum(expr),
+						  "dimension %d does not match initializer", dim);
+				}
+				child = (((ILNode_ArgList *)child)->expr1);
+				--dim;
+			}
+			expr = child;
+			if(!ILNode_EvalConst(expr, info, &evalValue) ||
+			   !ILGenCastConst(info, &evalValue, evalValue.valueType,
+							   ILMachineType_Int64) ||
+			   evalValue.un.i8Value !=
+			   		(ILInt64)ILGetArrayInitLength
+						(((ILNode_ArrayInit *)(node->arrayInitializer))
+								->expr, dim - 1))
+			{
+				CCErrorOnLine(yygetfilename(expr), yygetlinenum(expr),
+					  "dimension %d does not match initializer", dim);
+			}
+		}
+
+		/* Replace the current node with the initializer node */
+		*parent = node->arrayInitializer;
+	}
+
+	/* Done */
+	CSSemSetRValue(value, node->arrayType);
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the "semantic guard" expression.
+ * This is an "as-is" node that has already been analysed in a
+ * previous pass and should not be analysed again.  This usually
+ * happens when field initializers are turned into statements
+ * within static constructors.
+ */
+ILNode_SemAnalysis(ILNode_SemGuard)
+{
+	return node->value;
+}
+
+/*
+ * Perform semantic analysis for an array initialization expression.
+ */
+ILNode_SemAnalysis(ILNode_ArrayInit)
+{
+	if(node->arrayType)
+	{
+		/* We've already visited this node, so return its type */
+		CSSemValue value;
+		CSSemSetRValue(value, node->arrayType);
+		return value;
+	}
+	else
+	{
+		/* We haven't visited this node, so it has been used in
+		   an incorrect context.  Initializers can be used on
+		   fields and variables using regular assignment, or in
+		   array creation expressions */
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("internal error in array initializer"));
+		return CSSemValueDefault;
+	}
+}
+
+/*
+ * Perform semantic analysis on a "make reference" operator.
+ */
+ILNode_SemAnalysis(ILNode_MakeRefAny)
+{
+	CSSemValue value;
+
+	/* Cannot use this operator with Java output */
+	if(info->outputIsJava)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "`__makeref' disallowed when compiling to Java bytecode");
+	}
+
+	/* Perform semantic analysis on the sub-expression
+	   which must be an l-value.  S-values are not allowed
+	   because we have no way of knowing if some future
+	   code may try to read the value via the typedref */
+	value = ILNode_SemAnalysis(node->expr, info, &(node->expr));
+	if(!CSSemIsLValue(value) ||
+	   yyisa(node->expr, ILNode_LValueNoRef))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid lvalue in `__makeref' expression");
+		node->type = ILType_Int32;
+	}
+	else
+	{
+		node->type = CSSemGetType(value);
+	}
+
+	/* The type of "__makeref" expressions is always ILType_TypedRef */
+	CSSemSetRValue(value, ILType_TypedRef);
+	return value;
+}
+
+/*
+ * Perform semantic analysis on a "get reference type" operator.
+ */
+ILNode_SemAnalysis(ILNode_RefType)
+{
+	CSSemValue value;
+
+	/* Cannot use this operator with Java output */
+	if(info->outputIsJava)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "`__reftype' disallowed when compiling to Java bytecode");
+	}
+
+	/* Perform semantic analysis on the sub-expression, which
+	   must be ILType_TypedRef */
+	if(!CSSemExpectValue(node->expr, info, &(node->expr), &value) ||
+	   CSSemGetType(value) != ILType_TypedRef)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  	  "invalid argument to `__reftype'");
+	}
+
+	/* The result is "System.Type" */
+	CSSemSetRValue(value, ILFindSystemType(info, "Type"));
+	return value;
+}
+
+/*
+ * Perform semantic analysis on a "get reference value" operator.
+ */
+ILNode_SemAnalysis(ILNode_RefValue)
+{
+	CSSemValue value;
+
+	/* Cannot use this operator with Java output */
+	if(info->outputIsJava)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "`__refvalue' disallowed when compiling to Java bytecode");
+	}
+
+	/* Perform semantic analysis on the first sub-expression,
+	   which must be ILType_TypedRef */
+	if(!CSSemExpectValue(node->expr1, info, &(node->expr1), &value) ||
+	   CSSemGetType(value) != ILType_TypedRef)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  	  "invalid first argument to `__refvalue'");
+	}
+
+	/* Perform semantic analysis on the second sub-expression,
+	   which must be a type */
+	node->type = CSSemType(node->expr2, info, &(node->expr2));
+
+	/* The result is an r-value of the supplied type */
+	CSSemSetRValue(value, node->type);
+	return value;
+}
+
+ILNode_SemAnalysis(ILNode_BaseDestructor)
+{
+	ILNode_MethodDeclaration *caller;
+	ILType *type;
+	
+	caller= (ILNode_MethodDeclaration *)(info->currentMethod);
+
+	if(!caller)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  "cannot call base destructors outside a method ");
+		return CSSemValueDefault;
+	}
+	
+	type = ILType_FromClass(ILMethod_Owner(caller->methodInfo));
+	if(ILTypeIsObjectClass(type))
+	{
+		return CSSemValueDefault;
+	}
+	return ILNode_SemAnalysis(node->destructor,info,&(node->destructor));
+}
+
+/*
+ * Generate value code for the "stackalloc" operator.
+ */
+ILNode_GenDiscard(ILNode_StackAlloc)
+{
+	/* For handling side effects only */
+	ILNode_GenDiscard(node->expr2, info);
+}
+
+ILNode_GenDiscard(ILNode_BaseDestructor)
+{
+	ILNode_GenDiscard(node->destructor,info);
+}
+

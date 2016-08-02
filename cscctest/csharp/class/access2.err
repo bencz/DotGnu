@@ -1,0 +1,6 @@
+./access2.cs:37: `PrivateTest' is not a member of the type `TestNS.TestAccess'
+./access2.cs:37: invalid base type
+./access2.cs:37: `PrivateTest' is not a member of the type `TestNS.TestAccess'
+./access2.cs:37: invalid base type
+./access2.cs:43: no accessible base class constructors
+./access2.cs:44: called object is not a method or delegate

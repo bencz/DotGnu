@@ -1,0 +1,214 @@
+<?xml version="1.0"?>
+<configuration>
+
+<!--
+
+Machine defaults file.
+
+This file contains configuration information that is expected to be
+static across all installations of the system.  The "machine.config"
+file is the proper location for information that may change between
+installations.
+
+Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+
+This program is free software; you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation; either version 2 of the License, or
+(at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this program; if not, write to the Free Software
+Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+-->
+
+<configSections>
+
+	<!-- Define the structure of the "appSettings" section -->
+	<section name="appSettings"
+			 type="System.Configuration.NameValueFileSectionHandler, System"/>
+
+	<!-- Configuration data for System.Diagnostics -->
+	<section name="system.diagnostics"
+			 type="System.Diagnostics.DiagnosticsConfigurationHandler, System"/>
+
+	<!-- Configuration data for System.Net -->
+	<sectionGroup name="system.net">
+		<section name="authenticationModules"
+				 type="System.Net.Configuration.NetAuthenticationModuleHandler, System"/>
+		<section name="connectionManagement"
+				 type="System.Net.Configuration.ConnectionManagementHandler, System"/>
+		<section name="defaultProxy"
+				 type="System.Net.Configuration.DefaultProxyHandler, System"/>
+		<section name="settings"
+				 type="System.Net.Configuration.NetConfigurationHandler, System"/>
+		<section name="webRequestModules"
+				 type="System.Net.Configuration.WebRequestModuleHandler, System"/>
+	</sectionGroup>
+
+	<!-- Configuration data for System.Web -->
+	<sectionGroup name="system.web">
+		<section name="authentication"
+				 type="System.Web.Configuration.AuthenticationConfigHandler, System.Web"
+				 allowDefinition="MachineToApplication"/>
+		<section name="authorization"
+				 type="System.Web.Configuration.AuthorizationConfigHandler, System.Web"/>
+		<section name="browserCaps"
+				 type="System.Web.Configuration.HttpCapabilitiesSectionHandler, System.Web"/>
+		<section name="clientTarget"
+				 type="System.Web.Configuration.ClientTargetSectionHandler, System.Web"/>
+		<section name="compilation"
+				 type="System.Web.Configuration.CompilationConfigurationHandler, System.Web"/>
+		<section name="customErrors"
+				 type="System.Web.Configuration.CustomErrorsConfigHandler, System.Web"/>
+		<section name="deviceFilters"
+				 type="System.Web.Mobile.MobileDeviceCapabilitiesSectionHandler, System.Web.Mobile"/>
+		<section name="globalization"
+				 type="System.Web.Configuration.GlobalizationConfigurationHandler, System.Web"/>
+		<section name="httpHandlers"
+				 type="System.Web.Configuration.HttpHandlersSectionHandler, System.Web"/>
+		<section name="httpModules"
+				 type="System.Web.Configuration.HttpModulesConfigurationHandler, System.Web"/>
+		<section name="httpRuntime"
+				 type="System.Web.Configuration.HttpRuntimeConfigurationHandler, System.Web"/>
+		<section name="identity"
+				 type="System.Web.Configuration.IdentityConfigHandler, System.Web"/>
+		<section name="machineKey"
+				 type="System.Web.Configuration.MachineKeyConfigHandler, System.Web"
+				 allowDefinition="MachineToApplication"/>
+		<section name="mobileControls"
+				 type="System.Web.UI.MobileControls.MobileControlsSectionHandler, System.Web.Mobile"/>
+		<!-- This is to changed from System.Web.UI to System.Web.Configuration to cater to ml-pnet quirks -->
+		<section name="pages"
+				 type="System.Web.Configuration.PagesConfigurationHandler, System.Web"/>
+		<section name="processModel"
+				 type="System.Web.Configuration.ProcessModelConfigurationHandler, System.Web"
+				 allowDefinition="MachineOnly"/>
+		<section name="securityPolicy"
+				 type="System.Web.Configuration.SecurityPolicyConfigHandler, System.Web"
+				 allowDefinition="MachineToApplication"/>
+		<section name="sessionState"
+				 type="System.Web.SessionState.SessionStateSectionHandler, System.Web"
+				 allowDefinition="MachineToApplication"/>
+		<section name="trace"
+				 type="System.Web.Configuration.TraceConfigurationHandler, System.Web"/>
+		<section name="trust"
+				 type="System.Web.Security.CodeAccessSecurityHandler, System.Web"
+				 allowDefinition="MachineToApplication"/>
+		<section name="webControls"
+				 type="System.Web.Configuration.WebControlsSectionHandler, System.Web"/>
+		<section name="webServices"
+				 type="System.Web.Services.Configuration.WebServicesConfigurationSectionHandler, System.Web.Services"/>
+	</sectionGroup>
+
+	<!-- Configuration data for System.Windows.Forms -->
+	<section name="system.windows.forms"
+			 type="System.Windows.Forms.WindowsFormsSectionHandler, System.Windows.Forms"/>
+
+    <!-- Ignore sections that don't follow the standard pattern -->
+    <section name="mscorlib"
+             type="System.Configuration.IgnoreSectionHandler, System"
+			 allowLocation="false"/>
+    <section name="runtime"
+             type="System.Configuration.IgnoreSectionHandler, System"
+			 allowLocation="false"/>
+    <section name="startup"
+             type="System.Configuration.IgnoreSectionHandler, System"
+			 allowLocation="false"/>
+    <section name="system.runtime.remoting"
+             type="System.Configuration.IgnoreSectionHandler, System"
+			 allowLocation="false"/>
+
+</configSections>
+
+<!-- The following section should match the sources used for ml-pnet -->
+<system.web>
+	<httpHandlers>
+		<add verb="*" path="Trace.axd" type="System.Web.Handlers.TraceHandler, System.Web" />
+		<add verb="*" path="*.aspx" type="System.Web.UI.PageHandlerFactory, System.Web" />
+		<add verb="*" path="*.asmx" validate="false" type="System.Web.Services.Protocols.WebServiceHandlerFactory, System.Web.Services" />
+		<add verb="*" path="*.ashx" type="System.Web.UI.SimpleHandlerFactory, System.Web" />
+		<add verb="GET" path="WebResource.axd" type="System.Web.Handlers.AssemblyResourceLoader, System.Web" />
+		<add verb="*" path="*.asax" type="System.Web.HttpForbiddenHandler, System.Web" />
+		<add verb="*" path="*.ascx" type="System.Web.HttpForbiddenHandler, System.Web" />
+		<add verb="*" path="*.config" type="System.Web.HttpForbiddenHandler, System.Web" />
+		<add verb="*" path="*.cs" type="System.Web.HttpForbiddenHandler, System.Web" />
+		<add verb="*" path="*.rem" type="System.Runtime.Remoting.Channels.Http.HttpRemotingHandlerFactory, System.Runtime.Remoting" validate="false" />
+  		<add verb="*" path="*.soap" type="System.Runtime.Remoting.Channels.Http.HttpRemotingHandlerFactory, System.Runtime.Remoting" validate="false" />
+		<add verb="GET,HEAD" path="*" type="System.Web.StaticFileHandler, System.Web" />
+		<add verb="*" path="*" type="System.Web.HttpMethodNotAllowedHandler, System.Web" />
+	</httpHandlers>
+
+	<httpModules>
+		<add name="FormsAuthentication" type="System.Web.Security.FormsAuthenticationModule, System.Web" />
+		<add name="UrlAuthorization" type="System.Web.Security.UrlAuthorizationModule, System.Web" />
+		<add name="Session" type="System.Web.SessionState.SessionStateModule, System.Web" />
+		<add name="OutputCache" type="System.Web.Caching.OutputCacheModule, System.Web" />
+</httpModules>
+
+	<authentication mode="Forms">
+	</authentication>
+	
+	<machineKey validationKey="AutoGenerate" decryptionKey="AutoGenerate" validation="SHA1" />
+	<globalization  requestEncoding="utf-8"
+			responseEncoding="utf-8"
+			fileEncoding="utf-8"/>
+	<!--
+			culture="en-US"
+			uiculture="en-US" />
+	-->
+	<sessionState mode="InProc" />
+	
+	<webServices>
+		<protocols>
+			<add name="HttpSoap"/>
+			<add name="HttpPost"/>
+			<add name="HttpGet"/>
+			<add name="Documentation"/>
+		</protocols>
+		<wsdlHelpGenerator href="DefaultWsdlHelpGenerator.aspx" />
+	</webServices>
+
+	<webControls clientScriptsLocation="/web_scripts" />
+
+	<compilation debug="false" defaultLanguage="c#">
+		<compilers>
+		<compiler language="cs;c#;csharp" extension=".cs" warningLevel="1" compilerOptions=""
+			  type="Microsoft.CSharp.CSharpCodeProvider, System" />
+		<compiler language="vb;vbs;visualbasic;vbscript" extension=".vb"
+			  warningLevel="1" compilerOptions=""
+			  type="Microsoft.VisualBasic.VBCodeProvider, System" />
+		</compilers>
+		<assemblies>
+			<!--<add assembly="mscorlib" /> -->
+			<add assembly="System" />
+			<add assembly="System.Xml" />
+			<add assembly="System.Data" />
+			<add assembly="System.Web" />
+			<add assembly="System.Web.Services" />
+			<add assembly="System.Drawing" />
+			<add assembly="*" /> <!-- Add assemblies in bin directory -->
+		</assemblies>
+	</compilation>
+	
+	<httpRuntime executionTimeout="90"
+			 maxRequestLength="4096"
+			 useFullyQualifiedRedirectUrl="false"
+			 minFreeThreads="8"
+			 minLocalRequestFreeThreads="4"
+			 appRequestQueueLimit="100" />
+
+	<pages 	buffer="true"
+		enableSessionState="true"
+		autoEventWireup="true"
+		validateRequest="true" />
+
+</system.web>
+
+</configuration>

@@ -1,0 +1,90 @@
+0.8.2 (25 June 2009)
+
+	* Build System.XML.
+
+0.8.0 (3 March 2007)
+
+	* Re-release with a new version number.
+
+0.7.4 (17 January 2006)
+
+	* Re-release with a new version number.
+
+0.7.2 (17 August 2005)
+
+	* Add IBM.Data.DB2 to ml-pnet (Klaus Treichel).
+	* Handle movement of Mono's TODOAttribute class (Klaus Treichel).
+	* Exclude conflicting code in tests and LDAP code (Klaus Treichel).
+
+0.7.0 (11 June 2005)
+
+	* Updated debian files (Russell Stuart).
+	* System.ServiceProcess (Marc Haisenco)/
+	* Mono.GetOptions, System.Data (Klaus Treichel).
+
+0.6.12 (16 January 2005)
+
+	* Add references to Mono.Security where necessary (Klaus Treichel).
+	* Build fixes for SqlSharp (Klaus Treichel).
+	* Exclude test directories for System.Data (Klaus Treichel).
+
+0.6.10 (30 October 2004)
+
+	* README updates (Gopal V).
+	* Npgsql, System.Web (Gopal V).
+	* Update debian packaging information (Russell Stuart).
+	* Custommarshalers, System.Web, Mono.Security.Win32, nunit.util,
+	  ByteFX.Data, Sysem.Data (Klaus Treichel).
+	* Change the build system to support profiles (Klaus Treichel).
+	* Perform corlib tests per namespace (Klaus Treichel).
+
+0.6.8 (8 August 2004)
+
+	* Add nunit20 and wsdl tools (Klaus Treichel).
+	* Mono.Http, System.Messaging.Design (Klaus Treichel).
+	* System.Runtime.Remoting, System.Data.OracleClient (Klaus Treichel).
+	* Support for running Mono's nunit tests cases (Klaus Treichel).
+	* Exclude Mono.Posix temporarily because of cscc issues (Klaus Treichel).
+	* Rename "nunit-console" to "nunit-console-pnet" to prevent clashes
+	  with Mono installations (Rhys Weatherley).
+
+0.6.6 (29 May 2004)
+
+	* Mono.Security and System.Data libs that depend on it (Klaus Treichel).
+	* Import jay and use it to help build System.Data (Gopal V).
+	* System.Web, System.Web.Services (Gopal V).
+
+0.6.2 (3 January 2004)
+
+	* Use "ilgac" to install assemblies correctly into the cache.
+	* Fix the "missing" script.
+	* Mono.Cairo, System.Data.SqlXml, System.Data.ObjectSpaces.
+	* Mono.Security, Mono.Security.Win32, Novell.Directory.Ldap.
+	* System.Security, System.DirectoryServices, Mono.Data.SqliteClient.
+	* Mono.Data.SybaseClient, Mono.Data.TdsClient.
+
+0.6.0 (15 October 2003)
+
+	* Remove "System.EnterpriseServices" and "ICSharpCode.SharpZipLib"
+	  because pnetlib has its own versions now.
+	* Disable "ByteFX.Data" because of missing dependencies.
+
+0.5.12 (6 September 2003)
+
+	* Add "System.dll" to the dependencies for "System.ServiceProcess".
+	* Remove "System.Configuration.Install" because pnetlib now has it.
+
+0.5.10 (26 July 2003)
+
+	* Updates to match changes to Mono build system (Gopal V).
+
+0.5.8 (17 June 2003)
+
+	* First release version - version numbers sync'ed to pnet.
+	* ByteFX.Data, Custommarshalers, ICSharpCode.SharpZipLib,
+	  Mono.Data.DB2Client, Mono.Data.MySql, Mono.Data.PostgreSqlClient,
+	  Mono.Data.Tds, Mono.Directory.LDAP, Mono.GetOptions, Mono.Posix,
+	  Npgsql, PEAPI, System.Configuration.Install, System.Data,
+	  System.Data.OracleClient, System.EnterpriseServices, System.Management,
+	  System.Messaging, System.Runtime.Serialization.Formatters.Soap,
+	  System.ServiceProcess

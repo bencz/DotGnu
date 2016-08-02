@@ -1,0 +1,7 @@
+
+The classes in this directory implement generic counterparts to the
+non-generic classes in the "System.Collections" namespace, plus some
+extras that are modelled on the C++ Standard Template Library.
+
+See the file "Generics.html" for a description of the design considerations
+and an overview of the classes provided.

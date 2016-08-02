@@ -1,0 +1,1006 @@
+/*
+ * c_invoke.tc - Function invocation handling for C.
+ *
+ * Copyright (C) 2002, 2008  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/*
+ * Perform semantic analysis on a function reference node.
+ * This will only be called when the function is used as
+ * a value rather than as part of a function invocation,
+ * so we don't need to worry about forward references.
+ */
+ILNode_CSemAnalysis(ILNode_FunctionRef)
+{
+	CSemValue value;
+	CSemSetRValue(value, node->signature);
+	return value;
+}
+
+/*
+ * Get the type of a function reference node.
+ */
+ILNode_GetType(ILNode_FunctionRef)
+{
+	return ILMachineType_UnmanagedPtr;
+}
+
+/*
+ * Generate value code for a function reference node.
+ */
+ILNode_GenValue(ILNode_FunctionRef)
+{
+	if(info->asmOutput)
+	{
+		fputs("\tldftn\t", info->asmOutput);
+		ILDumpMethodType(info->asmOutput, info->image, node->signature,
+						 IL_DUMP_QUOTE_NAMES, 0, node->name, 0);
+		putc('\n', info->asmOutput);
+	}
+	ILGenAdjust(info, 1);
+	return ILMachineType_UnmanagedPtr;
+}
+JavaGenValue(ILNode_FunctionRef)
+{
+	/* Never called: nothing to do here */
+	return ILMachineType_UnmanagedPtr;
+}
+
+%{
+
+/*
+ * Information about an evaluated function argument.
+ */
+typedef struct
+{
+	CSemValue	value;
+	ILNode     *node;
+	ILNode    **parent;
+
+} CEvalArg;
+
+/*
+ * Count the number of values in an argument list.
+ */
+static ILUInt32 CountArgs(ILNode *args)
+{
+	ILUInt32 num;
+	if(!args)
+	{
+		return 0;
+	}
+	num = 1;
+	while(yyisa(args, ILNode_ArgList))
+	{
+		++num;
+		args = ((ILNode_ArgList *)args)->expr1;
+	}
+	return num;
+}
+
+/*
+ * Perform semantic analysis on a specific invocation argument.
+ */
+static void ArgumentSem(ILGenInfo *info, CEvalArg *arg, ILNode *argList,
+						ILNode **argListParent, ILUInt32 index, ILUInt32 num)
+{
+	/* Find the actual argument and its parent */
+	while(num > (index + 1))
+	{
+		--num;
+		argListParent = &(((ILNode_ArgList *)argList)->expr1);
+		argList = ((ILNode_ArgList *)argList)->expr1;
+	}
+	if(yyisa(argList, ILNode_ArgList))
+	{
+		argListParent = &(((ILNode_ArgList *)argList)->expr2);
+		argList = ((ILNode_ArgList *)argList)->expr2;
+	}
+
+	/* Populate the "arg" structure */
+	arg->value = ILNode_CSemAnalysis(argList, info, argListParent, 0);
+	arg->node = *argListParent;
+	arg->parent = argListParent;
+
+	/* Check that the argument is an r-value */
+	if(!CSemIsRValue(arg->value))
+	{
+		if(!CSemIsError(arg->value))
+		{
+			CCErrorOnLine(yygetfilename(arg->node),
+						  yygetlinenum(arg->node),
+						  _("invalid value for argument %lu"),
+						  (unsigned long)(index + 1));
+		}
+	}
+}
+
+/*
+ * Coerce an array of argument values to their corresponding
+ * types in a function signature.
+ */
+static void CoerceArgs(ILGenInfo *info, ILNode_CInvocationExpression *node,
+					   ILType *signature, CEvalArg *args, ILUInt32 numArgs)
+{
+	ILUInt32 numParams = (unsigned long)ILTypeNumParams(signature);
+	ILUInt32 paramNum;
+	ILType *type;
+
+	/* Check that we have the correct number of arguments */
+	if(numArgs < numParams)
+	{
+		if(node->name)
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("too few arguments to function `%s'"),
+						  node->name);
+		}
+		else
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("too few arguments to function call"));
+		}
+		numParams = numArgs;
+	}
+	else if(numArgs > numParams)
+	{
+		if(node->name)
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("too many arguments to function `%s'"),
+						  node->name);
+		}
+		else
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("too many arguments to function call"));
+		}
+	}
+
+	/* Coerce the arguments that we have left */
+	for(paramNum = 0; paramNum < numParams; ++paramNum)
+	{
+		type = CTypeGetParam(signature, paramNum + 1);
+		if(CTypeIsByRef(type))
+		{
+			/* This argument is passed by reference (i.e. 'type & name') */
+			type = CTypeGetByRef(type);
+			if(!CSemIsLValue(args[paramNum].value))
+			{
+				if(node->name)
+				{
+					CCErrorOnLine
+						(yygetfilename(node), yygetlinenum(node),
+						 _("l-value expected for argument %lu of `%s'"),
+						 (unsigned long)(paramNum + 1), node->name);
+				}
+				else
+				{
+					CCErrorOnLine
+						(yygetfilename(node), yygetlinenum(node),
+						 _("l-value expected for argument %lu"),
+						 (unsigned long)(paramNum + 1));
+				}
+			}
+			else if(!CTypeIsIdentical(type, CSemGetType(args[paramNum].value)))
+			{
+				/* The type must match exactly in reference parameters */
+				goto incompat;
+			}
+			else
+			{
+				if(CTypeIsConst(CSemGetType(args[paramNum].value)) &&
+				   !CTypeIsConst(type))
+				{
+					/* Trying to pass a const value via a non-const argument */
+					if(node->name)
+					{
+						CCErrorOnLine
+							(yygetfilename(node), yygetlinenum(node),
+							 _("discarding const from argument %lu of `%s'"),
+							 (unsigned long)(paramNum + 1), node->name);
+					}
+					else
+					{
+						CCErrorOnLine
+							(yygetfilename(node), yygetlinenum(node),
+							 _("discarding const from argument %lu"),
+							 (unsigned long)(paramNum + 1));
+					}
+				}
+
+				/* Wrap the l-value in an address-of node to pass by-ref */
+				*(args[paramNum].parent) = ILNode_AddressOf_create
+						(args[paramNum].node);
+				CGenCloneLine(*(args[paramNum].parent), args[paramNum].node);
+			}
+		}
+		else if(!CCanCoerceValue(args[paramNum].value, type))
+		{
+		incompat:
+			if(node->name)
+			{
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+							  _("incompatible type for argument %lu of `%s'"),
+							  (unsigned long)(paramNum + 1), node->name);
+			}
+			else
+			{
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+							  _("incompatible type for argument %lu"),
+							  (unsigned long)(paramNum + 1));
+			}
+		}
+		else
+		{
+			CCoerceNode(info, args[paramNum].node, args[paramNum].parent,
+						args[paramNum].value, type);
+		}
+	}
+}
+
+/*
+ * Build a call site for a vararg function call.
+ */
+static ILType *BuildVarargCallSite(ILGenInfo *info,
+								   ILType *origSignature,
+								   CEvalArg *args, ILUInt32 numArgs)
+{
+	ILType *signature;
+	ILUInt32 numParams;
+	ILUInt32 paramNum;
+	ILType *type;
+
+	/* Copy the existing signature and its arguments */
+	signature = ILTypeCreateMethod
+			(info->context, ILTypeGetReturnWithPrefixes(origSignature));
+	if(!signature)
+	{
+		CCOutOfMemory();
+	}
+	ILTypeSetCallConv(signature, ILType_CallConv(origSignature));
+	numParams = ILTypeNumParams(origSignature);
+	for(paramNum = 1; paramNum <= numParams; ++paramNum)
+	{
+		if(!ILTypeAddParam(info->context, signature,
+				   ILTypeGetParamWithPrefixes(origSignature, paramNum)))
+		{
+			CCOutOfMemory();
+		}
+	}
+
+	/* Add the sentinel separator */
+	if(!ILTypeAddSentinel(info->context, signature))
+	{
+		CCOutOfMemory();
+	}
+
+	/* Coerce the remaining arguments to their natural vararg types
+	   and add the types to the call site signature */
+	for(paramNum = 0; paramNum < numArgs; ++paramNum)
+	{
+		type = CFunctionNaturalType(info, CSemGetType(args[paramNum].value), 1);
+
+		/* Use "CCastNode" to prevent "pointer->integer" warnings
+		   that are not important in this context */
+		CCastNode(info, args[paramNum].node, args[paramNum].parent,
+				  args[paramNum].value, type);
+		if(!ILTypeAddParam(info->context, signature, type))
+		{
+			CCOutOfMemory();
+		}
+	}
+	return signature;
+}
+
+%}
+
+/*
+ * Perform semantic analysis for function invocation expressions.
+ */
+ILNode_CSemAnalysis(ILNode_CInvocationExpression)
+{
+	CSemValue value;
+	void *data;
+	ILType *signature;
+	ILNode *funcNode;
+	ILType *type;
+	CEvalArg *argTypes;
+	ILUInt32 numArgs;
+	ILUInt32 argNum;
+
+	/* Determine if this is a call by name or a call by reference */
+	signature = 0;
+	funcNode = 0;
+	if(yyisa(node->expr1, ILNode_FunctionRef))
+	{
+		/* Record the name for later and then look up the function signature */
+		node->name = ((ILNode_FunctionRef *)(node->expr1))->name;
+		signature = ((ILNode_FunctionRef *)(node->expr1))->signature;
+		if(signature == ILType_Invalid)
+		{
+			data = CScopeLookup(node->name);
+			if(data)
+			{
+				signature = CScopeGetType(data);
+				funcNode = CScopeGetNode(data);
+			}
+		}
+	}
+	else
+	{
+		/* Perform semantic analysis on the function pointer argument */
+		node->name = 0;
+		value = ILNode_CSemAnalysis(node->expr1, info,
+									&(node->expr1), stmtLevel);
+		if(CSemIsMethodGroup(value))
+		{
+			/* Reference to a method group: switch to C# invocation */
+			if(yyisa(node->expr1, ILNode_AsIs))
+			{
+				*parent = ILNode_CSharpInvocation_create
+					(CSemGetType(value), CSemGetMethodName(value),
+					 node->expr1, node->expr2);
+			}
+			else
+			{
+				*parent = ILNode_CSharpInvocation_create
+					(CSemGetType(value), CSemGetMethodName(value),
+					 0, node->expr2);
+			}
+			CGenCloneLine(*parent, (ILNode *)node);
+			return ILNode_CSemAnalysis(*parent, info, parent, stmtLevel);
+		}
+		else if(!CSemIsRValue(value) || !CTypeIsFunctionPtr(CSemGetType(value)))
+		{
+			if(!CSemIsError(value))
+			{
+				CCErrorOnLine(yygetfilename(node->expr1),
+							  yygetlinenum(node->expr1),
+							  _("called object is not a function"));
+			}
+		}
+		else
+		{
+			signature = ILTypeStripPrefixes(CSemGetType(value));
+		}
+	}
+
+	/* Perform semantic analysis on the invocation arguments */
+	numArgs = CountArgs(node->expr2);
+	if(numArgs != 0)
+	{
+		argTypes = (CEvalArg *)ILMalloc(numArgs * sizeof(CEvalArg));
+		if(!argTypes)
+		{
+			CCOutOfMemory();
+		}
+		for(argNum = 0; argNum < numArgs; ++argNum)
+		{
+			ArgumentSem(info, &(argTypes[argNum]), node->expr2,
+						&(node->expr2), argNum, numArgs);
+		}
+	}
+	else
+	{
+		argTypes = 0;
+	}
+
+	/* Infer a forward-reference signature if we weren't given one */
+	if(!signature)
+	{
+		signature = ILTypeCreateMethod(info->context, ILType_Int32);
+		if(!signature)
+		{
+			CCOutOfMemory();
+		}
+		for(argNum = 0; argNum < numArgs; ++argNum)
+		{
+			type = CSemGetType(argTypes[argNum].value);
+			type = CFunctionNaturalType(info, type, 0);
+			if(!ILTypeAddParam(info->context, signature, type))
+			{
+				CCOutOfMemory();
+			}
+		}
+		if(node->name)
+		{
+			/* Warn about a forward reference and add it to the global scope */
+			CCWarningOnLine(yygetfilename(node->expr1),
+							yygetlinenum(node->expr1),
+							_("implicit declaration of function `%s'"),
+							node->name);
+			CScopeAddInferredFunction(node->name, signature);
+		}
+	}
+
+	/* Coerce the supplied arguments to the signature parameter types */
+	if((ILType_CallConv(signature) & IL_META_CALLCONV_MASK) !=
+			IL_META_CALLCONV_VARARG)
+	{
+		/* This is a regular function call */
+		CoerceArgs(info, node, signature, argTypes, numArgs);
+	}
+	else
+	{
+		/* This is a variable-argument function call */
+		argNum = (ILUInt32)(ILTypeNumParams(signature));
+		if(argNum >= numArgs)
+		{
+			/* No variable arguments were supplied */
+			CoerceArgs(info, node, signature, argTypes, numArgs);
+		}
+		else
+		{
+			/* Coerce the fixed arguments and build a call site signature */
+			CoerceArgs(info, node, signature, argTypes, argNum);
+			signature = BuildVarargCallSite
+				(info, signature, argTypes + argNum, numArgs - argNum);
+		}
+	}
+
+	/* Set the call site signature, for use by the code generator */
+	node->callSiteSig = signature;
+
+	/* Free the temporary argument structures */
+	if(argTypes != 0)
+	{
+		ILFree(argTypes);
+	}
+
+	/* Construct the semantic value for the return type */
+	type = ILTypeGetReturnWithPrefixes(signature);
+	if(ILTypeIdentical(type, ILType_Void))
+	{
+		return CSemValueDefault;
+	}
+	else
+	{
+		CSemSetRValue(value, type);
+		return value;
+	}
+}
+
+/*
+ * Generate value code for function invocation expressions.
+ * Similar to "ILNode_InvocationExpression", except this can
+ * generate code in the absence of a "methodInfo" block, for
+ * references to forward and extern functions.
+ */
+ILNode_GenValue(ILNode_CInvocationExpression)
+{
+	ILMachineType resultType;
+	long saveStack;
+
+	/* Save the current stack height, so we know where to
+	   unwind to when popping the arguments */
+	saveStack = info->stackHeight;
+
+	/* Push the argument expressions */
+	if(node->expr2)
+	{
+		ILNode_GenValue(node->expr2, info);
+	}
+
+	/* Push the function pointer if this is not a call by name expression */
+	if(!(node->name))
+	{
+		ILNode_GenValue(node->expr1, info);
+	}
+
+	/* Invoke the method */
+	if(info->asmOutput)
+	{
+		if(node->name)
+		{
+			fputs("\tcall\t", info->asmOutput);
+			ILDumpMethodType(info->asmOutput, info->image,
+							 node->callSiteSig, IL_DUMP_QUOTE_NAMES,
+							 0, node->name, 0);
+			putc('\n', info->asmOutput);
+		}
+		else
+		{
+			fputs("\tcalli\t", info->asmOutput);
+			ILDumpMethodType(info->asmOutput, info->image,
+							 node->callSiteSig, IL_DUMP_QUOTE_NAMES,
+							 0, "", 0);
+			putc('\n', info->asmOutput);
+		}
+	}
+	resultType = ILTypeToMachineType(ILTypeGetReturn(node->callSiteSig));
+
+	/* Re-adjust the stack to remove the arguments */
+	if(resultType == ILMachineType_Void)
+	{
+		info->stackHeight = saveStack;
+	}
+	else
+	{
+		info->stackHeight = saveStack + 1;
+		if(info->stackHeight > info->maxStackHeight)
+		{
+			info->maxStackHeight = info->stackHeight;
+		}
+	}
+
+	/* Done */
+	return resultType;
+}
+
+%{
+
+/*
+ * Internal worker function for locating static C# methods.
+ */
+static ILMethod *ResolveCSMethod(ILGenInfo *info, ILClass *classInfo,
+							     ILClass *callScope, const char *name,
+							     ILType **args, int numArgs, int isStatic)
+{
+	ILMember *member;
+	ILMethod *method;
+	ILMethod *closestMatch = 0;
+	ILType *signature;
+	ILType *argType;
+	int arg, same;
+
+	while(classInfo != 0)
+	{
+		classInfo = ILClassResolve(classInfo);
+		member = 0;
+		while((member = ILClassNextMemberByKind
+					(classInfo, member, IL_META_MEMBERKIND_METHOD)) != 0)
+		{
+			/* Filter out members that aren't interesting */
+			method = (ILMethod *)member;
+			if(strcmp(ILMethod_Name(method), name) != 0)
+			{
+				continue;
+			}
+			if((isStatic && !ILMethod_IsStatic(method)) ||
+			   (!isStatic && ILMethod_IsStatic(method)))
+			{
+				continue;
+			}
+
+			/* Check that this is the signature we are interested in */
+			signature = ILMethod_Signature(method);
+			if(!ILType_IsMethod(signature))
+			{
+				continue;
+			}
+			if(numArgs != (int)(ILTypeNumParams(signature)))
+			{
+				continue;
+			}
+			same = 1;
+			for(arg = 1; arg <= numArgs; ++arg)
+			{
+				argType = ILTypeGetParam(signature, arg);
+				if(!ILTypeIdentical(argType, args[arg - 1]))
+				{
+					if(!CCanCoerce(args[arg - 1], argType))
+					{
+						break;
+					}
+					same = 0;
+				}
+			}
+			if(arg <= numArgs)
+			{
+				continue;
+			}
+
+			/* Check the method's access level against the call scope */
+			if(!ILMemberAccessible(member, callScope))
+			{
+				continue;
+			}
+
+			/* We've found a candidate method */
+			if(same)
+			{
+				/* We have an exact match, so return that */
+				return method;
+			}
+			else if(!closestMatch)
+			{
+				/* This match is close, but try to find a better one */
+				closestMatch = method;
+			}
+		}
+
+		/* Move up to the parent class */
+		if(ILClass_IsInterface(classInfo))
+		{
+			/* Scan the parents of this interface */
+			ILImplements *impl = 0;
+			while((impl = ILClassNextImplements(classInfo, impl)) != 0)
+			{
+				method = ResolveCSMethod(info, ILImplements_InterfaceClass(impl),
+									     callScope, name, args, numArgs,
+										 isStatic);
+				if(method)
+				{
+					return method;
+				}
+			}
+			classInfo = 0;
+		}
+		else
+		{
+			classInfo = ILClass_ParentClass(classInfo);
+		}
+	}
+
+	/* Return the closest match if we didn't find an exact match */
+	return closestMatch;
+}
+
+%}
+
+/*
+ * Perform semantic analysis for C# invocation expressions.
+ */
+ILNode_CSemAnalysis(ILNode_CSharpInvocation)
+{
+	ILClass *classInfo;
+	ILType *signature;
+	CEvalArg *argTypes;
+	ILType **typeArray;
+	ILUInt32 numArgs;
+	ILUInt32 argNum;
+	ILMethod *method;
+	ILClass *callScope;
+	CSemValue value;
+	ILNode_InvocationExpression *invoke;
+
+	/* Convert the type into its C# class */
+	classInfo = ILTypeToClass(info, ILTypeStripPrefixes(node->type));
+
+	/* Perform semantic analysis on the invocation arguments */
+	numArgs = CountArgs(node->args);
+	if(numArgs != 0)
+	{
+		argTypes = (CEvalArg *)ILMalloc(numArgs * sizeof(CEvalArg));
+		if(!argTypes)
+		{
+			CCOutOfMemory();
+		}
+		typeArray = (ILType **)ILMalloc(numArgs * sizeof(ILType *));
+		if(!typeArray)
+		{
+			CCOutOfMemory();
+		}
+		for(argNum = 0; argNum < numArgs; ++argNum)
+		{
+			ArgumentSem(info, &(argTypes[argNum]), node->args,
+						&(node->args), argNum, numArgs);
+			typeArray[argNum] = ILTypeStripPrefixes
+				(CSemGetType(argTypes[argNum].value));
+		}
+	}
+	else
+	{
+		argTypes = 0;
+		typeArray = 0;
+	}
+
+	/* Resolve a static method that takes the supplied arguments */
+	callScope = ILClassLookup(ILClassGlobalScope(info->image), "<Module>", 0);
+	if(classInfo)
+	{
+		method = ResolveCSMethod(info, classInfo, callScope,
+								 node->name, typeArray,
+								 (int)numArgs, (node->thisExpr == 0));
+	}
+	else
+	{
+		method = 0;
+	}
+	if(!method)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("no candidate for method invocation"));
+		if(argTypes)
+		{
+			ILFree(argTypes);
+		}
+		if(typeArray)
+		{
+			ILFree(typeArray);
+		}
+		return CSemValueError;
+	}
+
+	/* Coerce the arguments to the method's actual parameter types */
+	signature = ILMethod_Signature(method);
+	for(argNum = 0; argNum < numArgs; ++argNum)
+	{
+		CCoerceNode(info, argTypes[argNum].node,
+					argTypes[argNum].parent, argTypes[argNum].value,
+				    ILTypeGetParam(signature, argNum + 1));
+	}
+
+	/* Build the new method invocation node for the code generator */
+	invoke = (ILNode_InvocationExpression *)
+		ILNode_InvocationExpression_create(0, node->args);
+	CGenCloneLine((ILNode *)invoke, (ILNode *)node);
+	invoke->thisExpr = node->thisExpr;
+	invoke->methodInfo = method;
+	invoke->callSiteSig = 0;
+	*parent = (ILNode *)invoke;
+
+	/* Clean up the memory that we used */
+	if(argTypes)
+	{
+		ILFree(argTypes);
+	}
+	if(typeArray)
+	{
+		ILFree(typeArray);
+	}
+
+	/* Construct the r-value for the method's return type */
+	signature = ILTypeGetReturnWithPrefixes(signature);
+	if(ILTypeIdentical(signature, ILType_Void))
+	{
+		return CSemValueDefault;
+	}
+	else
+	{
+		CSemSetRValue(value, signature);
+		return value;
+	}
+}
+
+/*
+ * Perform semantic analysis for "new object" expressions.
+ */
+ILNode_CSemAnalysis(ILNode_CNewObject)
+{
+	/* TODO */
+	return CSemValueDefault;
+}
+
+/*
+ * Get the type of a "new object" expression.
+ */
+ILNode_GetType(ILNode_CNewObject)
+{
+	return ILTypeToMachineType(node->type);
+}
+
+/*
+ * Generate value code for "new object" expressions.
+ */
+ILNode_GenValue(ILNode_CNewObject)
+{
+	/* TODO */
+	return ILTypeToMachineType(node->type);
+}
+JavaGenValue(ILNode_CNewObject)
+{
+	/* Nothing to do here */
+	return ILTypeToMachineType(node->type);
+}
+
+/*
+ * Perform semantic analysis for "new array" expressions.
+ */
+ILNode_CSemAnalysis(ILNode_CNewArray)
+{
+	CSemValue value;
+
+	/* Deal with unknown "new" specifiers */
+	if(node->specifier == ILGC_Unknown)
+	{
+		if(ILTypeIsReference(node->type))
+		{
+			node->specifier = ILGC_Managed;
+		}
+		else
+		{
+			node->specifier = ILGC_Unmanaged;
+		}
+	}
+
+	/* Determine the result type */
+	if(node->specifier == ILGC_Managed)
+	{
+		node->resultType = ILTypeCreateArray(info->context, 1, node->type);
+		if(!(node->resultType))
+		{
+			CCOutOfMemory();
+		}
+	}
+	else
+	{
+		node->resultType = CTypeCreatePointer(info, node->type);
+	}
+
+	/* Perform semantic analysis on the size expression */
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	if(!CSemIsRValue(value))
+	{
+		if(!CSemIsError(value))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("invalid size argument to array construction"));
+		}
+	}
+	else if(!CCanCoerceValue(value, ILType_UInt32))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("size argument is not numeric"));
+	}
+	else
+	{
+		CCoerceNode(info, node->expr, &(node->expr), value, ILType_UInt32);
+	}
+
+	/* Set the result type and exit */
+	CSemSetRValue(value, node->resultType);
+	return value;
+}
+
+/*
+ * Get the type of a "new array" expression.
+ */
+ILNode_GetType(ILNode_CNewArray)
+{
+	return ILTypeToMachineType(node->resultType);
+}
+
+/*
+ * Generate value code for "new array" expressions.
+ */
+ILNode_GenValue(ILNode_CNewArray)
+{
+	ILNode_GenValue(node->expr, info);
+	if(node->specifier == ILGC_Managed)
+	{
+		/* Allocate a managed array */
+		ILGenArrayNew(info, node->type);
+	}
+	else
+	{
+		/* Allocate an unmanaged array using "malloc" */
+		/* TODO: overloaded "new" operators */
+		CGenSizeOf(info, node->type);
+		ILGenSimple(info, IL_OP_MUL);
+		ILGenAdjust(info, -1);
+		ILGenCallByName(info, "void * 'malloc'(unsigned int32)");
+	}
+	return ILTypeToMachineType(node->resultType);
+}
+JavaGenValue(ILNode_CNewArray)
+{
+	/* Nothing to do here */
+	return ILTypeToMachineType(node->resultType);
+}
+
+/*
+ * Perform semantic analysis for "delete" expressions.
+ */
+ILNode_CSemAnalysis(ILNode_CDelete)
+{
+	CSemValue value;
+	CSemValue arraySize;
+	ILType *type;
+	ILType *stripped;
+	ILMethod *method;
+
+	/* Perform semantic analysis on the sub-expressions */
+	if(node->expr1)
+	{
+		arraySize = ILNode_CSemAnalysis
+			(node->expr1, info, &(node->expr1), stmtLevel);
+		if(!CSemIsRValue(arraySize))
+		{
+			if(!CSemIsError(arraySize))
+			{
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+							  _("invalid size operand to `delete'"));
+			}
+			arraySize = CSemValueDefault;
+		}
+	}
+	else
+	{
+		arraySize = CSemValueDefault;
+	}
+	value = ILNode_CSemAnalysis(node->expr2, info, &(node->expr2), stmtLevel);
+	if(!CSemIsRValue(value))
+	{
+		if(!CSemIsError(value))
+		{
+			goto invalid;
+		}
+		return CSemValueError;
+	}
+
+	/* Determine how to delete the specified value */
+	type = CSemGetType(value);
+	stripped = ILTypeStripPrefixes(type);
+	if(CTypeIsPointer(type))
+	{
+		/* TODO: overloaded operators and array element destruction */
+
+		/* Use the default destructor to free the pointer */
+		return CSemValueDefault;
+	}
+	else if(ILType_IsClass(stripped))
+	{
+		/* See if the class has a "__dtor" method */
+		method = ILResolveInstanceMethod
+				(info, ILType_ToClass(stripped),
+				 ILClassLookup(ILClassGlobalScope(info->image), "<Module>", 0),
+				 "__dtor", 0, 0);
+		if(method)
+		{
+			node->dtor = method;
+			return CSemValueDefault;
+		}
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("`%s' does not have a public destructor"),
+					  CTypeToName(info, type));
+		return CSemValueError;
+	}
+
+invalid:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  _("invalid operand to `delete'"));
+	return CSemValueError;
+}
+
+/*
+ * Get the type of a "delete" expression.
+ */
+ILNode_GetType(ILNode_CDelete)
+{
+	return ILMachineType_Void;
+}
+
+/*
+ * Generate discard and value code for "delete" expressions.
+ */
+ILNode_GenDiscard(ILNode_CDelete)
+{
+	ILNode_GenValue(node->expr2, info);
+	if(node->dtor)
+	{
+		/* Use the destructor that we discovered earlier */
+		ILGenCallByMethod(info, node->dtor);
+	}
+	else
+	{
+		/* The default destructor calls the "free" function */
+		ILGenCallByName(info, "void 'free'(void *)");
+	}
+	ILGenAdjust(info, -1);
+}
+ILNode_GenValue(ILNode_CDelete)
+{
+	ILNode_GenDiscard(node, info);
+	return ILMachineType_Void;
+}
+JavaGenValue(ILNode_CDelete)
+{
+	/* Nothing to do here */
+	return ILMachineType_Void;
+}

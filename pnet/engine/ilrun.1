@@ -1,0 +1,173 @@
+.\" Copyright (c) 2002, 2003 Southern Storm Software, Pty Ltd.
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.TH ilrun 1 "13 October 2003" "Southern Storm Software" "Portable.NET Development Tools"
+.SH NAME
+ilrun \- the Portable.NET runtime engine
+.SH SYNOPSIS
+\fBilrun\fR [ options ] \fIprogram\fR [ \fIprogram-options\fR ]
+.SH DESCRIPTION
+.B Ilrun
+loads and executes the Intermediate Language (IL) \fIprogram\fR, passing
+it the supplied \fIprogram-options\fR.  For example:
+.RS
+.nf
+\fC
+ilrun hello.exe
+\fR
+.fi
+.RE
+The "\fC.exe\fR" extension is not required: you can rename the program to
+"\fChello\fR" if you wish.
+
+If the IL program has command-line options, they can be supplied after
+the name of the IL executable:
+.RS
+.nf
+\fC
+ilrun getenv.exe PATH
+\fR
+.fi
+.RE
+Most IL programs will rely upon the "\fCmscorlib.dll\fR" file
+to provide library facilities.  A pre-compiled version of this file
+can be found in the "\fCsamples\fR" directory on the "\fCpnet\fR"
+distribution.
+
+The "\fCmscorlib.dll\fR" file should either be placed in the
+same directory as the program you are running, or in the system-wide
+location "\fCPREFIX/lib/cscc/lib\fR", where "\fCPREFIX\fR"
+is the directory where you installed Portable.NET (e.g. "\fC/usr/local\fR").
+.SH OPTIONS
+.TP
+.B \-\-heap\-size \fInum\fR, \-H \fInum\fR
+Set the size of the heap to \fInum\fR kilobytes.  By default, the
+heap is unlimited in size.
+.TP
+.B \-\-stack\-size \fInum\fR, \-S \fInum\fR
+Set the size of the operation stack to \fInum\fR kilobytes.  By default, the
+stack is 8k in size.
+.TP
+.B \-\-library\-dir \fIdir\fR, \-L \fIdir\fR
+Add \fIdir\fR to the list of directories to be searched for libraries
+that are referenced by the application.
+.TP
+.B \-\-register [\fIpath\fB]
+Linux kernel only: register \fBilrun\fR with the kernel so that it
+will be run automatically when IL binaries are executed.  See the
+section "USING ILRUN WITH THE LINUX KERNEL" below for more information.
+.TP
+.B \-\-unregister
+Linux kernel only: unregister \fBilrun\fR from the kernel.
+.TP
+.B \-\-method\-profile, \-M
+Display how many times each method was called on exit.
+.TP
+.B \-\-trace, \-T
+Trace every method call or return.
+.TP
+.B \-\-dump\-config, \-D
+Dump configuration information for the engine.  \fB-DD\fR will dump
+even more information.
+.TP
+.B \-\-help
+Print a usage message for the \fBilrun\fR program.
+.TP
+.B \-v, \-\-version
+Print the version of the \fBilrun\fR program.
+.TP
+.B \-\-
+Marks the end of the command-line options, and the beginning of
+the input filenames.  You may need to use this if your program
+filename begins with '-'.  e.g. "ilrun -- -input.exe".
+.SH "USING ILRUN WITH THE LINUX KERNEL"
+If your operating system uses the Linux kernel, and you have root access,
+then you can avoid typing \fBilrun\fR to execute programs from the
+command-line.
+
+You must first register \fBilrun\fR with the Linux kernel, by executing
+the following command as root:
+.RS
+.nf
+\fC
+ ilrun --register
+\fR
+.fi
+.RE
+Then you can run programs as follows:
+.RS
+.nf
+\fC
+ chmod +x hello.exe
+ ./hello\.exe
+\fR
+.fi
+.RE
+This will also work if you rename "\fChello.exe\fR" to "\fChello\fR",
+and then place it somewhere on your PATH.
+
+To unregister \fBilrun\fR, execute the following command as root:
+.RS
+.nf
+\fC
+ ilrun --unregister
+\fR
+.fi
+.RE
+Note: registration will only work with the Linux kernel (versions 2.2
+and later), and when you are logged in as root.
+
+When you register \fBilrun\fR, it attempts to construct the
+full path of the engine to pass to the kernel.  Normally it does this
+by searching the PATH.  You can specify an explicit pathname as follows:
+.RS
+.nf
+\fC
+ ilrun --register /usr/local/bin/ilrun
+\fR
+.fi
+.RE
+.SH "USING ILRUN WITH WINE"
+Because IL programs have a similar format to regular PE/COFF Windows
+executables, it is not always clear whether a program should be executed
+with \fBilrun\fR or with \fBwine\fR.
+
+If you pass a regular Windows executable to \fBilrun\fR, it will hand
+off control to \fBwine\fR to run the program.  It uses the first executable
+called \fBwine\fR on the PATH.
+
+If your Wine installation is not on the PATH, you can set the
+WINE environment variable to specify its location.
+
+Wine also has facilities for registering itself with the Linux kernel to
+run PE/COFF executables.  Only one PE/COFF handler can be registered
+at a time.  It is important that \fBilrun\fR be registered as the
+primary PE/COFF handler, because Wine does not currently know how
+to hand off IL programs to \fBilrun\fR.
+.SH "AUTHOR"
+Written by Southern Storm Software, Pty Ltd.
+
+http://www.southern-storm.com.au/
+.SH "SEE ALSO"
+ilasm(1), ildasm(1), cscc(1)
+.SH "DIAGNOSTICS"
+Exit status is 1 if an error occurred while processing the input.
+Otherwise the exit status is 0.
+.TP
+wine: No such file or directory
+
+The \fBilrun\fR program was passed a regular Windows PE/COFF executable
+that did not contain IL data.  The engine attempted to hand the program
+off to \fBwine\fR for execution, but \fBwine\fR was not found.

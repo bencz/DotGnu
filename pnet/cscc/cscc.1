@@ -1,0 +1,493 @@
+.\" Copyright (c) 2001 Southern Storm Software, Pty Ltd.
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.TH cscc 1 "9 May 2002" "Southern Storm Software" "Portable.NET Development Tools"
+.SH NAME
+cscc \- the C-Sharp code compiler
+.SH SYNOPSIS
+\fBcscc\fR [ options ] \fIinput\fR ...
+.SH DESCRIPTION
+\fBCscc\fR compiles input source files, typically in the C# (pronounced
+C-Sharp) programming language.
+.SH OPTIONS
+The command-line syntax of \fBcscc\fR has been deliberately designed
+to match that of C compilers such as \fBgcc\fR(1), to shorten the learning
+curve for new users. Use \fBcscc /help\fR to see the alternative syntax
+options available for compatibility with CSC. 
+.TP
+.hy 0
+.na
+.B Overall Options
+\-c
+\-S
+\-E
+\-o \fIfile\fR
+\-pipe
+\-v
+\-vv
+\-x \fIlanguage\fR
+.TP
+.B Language Options
+\-flatin1\-charset
+\-foctal\-chars
+\-foctal\-constants
+\-fdecimal\-constants
+\-fchecked
+\-funchecked
+\-fsyntax-check
+\-fsemantic-check
+\-funsafe
+\-fhidebysig
+\-fhidebyname
+.TP
+.B Warning Options
+\-Wall
+\-Werror
+\-w
+\-W
+\-Woctal\-chars
+\-Woctal\-constants
+\-Wunknown\-escapes
+\-Winvalid\-utf8
+\-Wlarge\-unicode\-chars
+\-Wmulti\-char\-constant
+\-Wunsafe
+\-Wempty-input
+.TP
+.B Debugging Options
+\-g
+.TP
+.B Optimization Options
+\-O
+\-O2
+\-O3
+\-O0
+\-fno-peephole
+.TP
+.B Preprocessor Options
+\-C
+\-P
+\-D\fIsymbol\fR
+\-U\fIsymbol\fR
+\-undef
+\-dM
+\-dN
+\-M
+\-MD
+\-MG
+\-MM
+\-MMD
+.TP
+.B Assembler Options
+\-fno\-short\-insns
+\-filasm\-path=\fIpathname\fR
+\-mjvm
+\-fstdlib\-name=\fIname\fR
+\-fsave\-asm
+.TP
+.B Directory Options
+\-I\fIdir\fR
+\-nostdinc
+\-nostdinc++
+.TP
+.B Linker Options
+\-e \fIentrypoint\fR
+\-L\fIdir\fR
+\-nostdlib
+\-l\fIlibrary\fR
+\-shared
+\-static
+\-m32bit\-only
+\-fresources=\fIresfile\fR
+\-fculture=\fIname\fR
+\-mcui\-subsystem
+\-mgui\-subsystem
+\-gtk
+\-gnome
+\-winforms
+.TP
+.B Other Options
+\-dumpversion
+\-\-help
+\-fplugin-\fIkey\fR-path=\fIpathname\fR
+.ad
+.hy 1
+.SH "OVERALL OPTIONS"
+.TP
+.B \-c
+Compile or assemble the input source files to object files,
+but do not link.  The object file corresponding to the input
+file `\fBfile.ext\fR' will be called `\fBfile.obj\fR' unless the
+`\fB\-o\fR' option is supplied.
+
+If the language compiles multiple input source files at a time,
+then there will be a single output file.  The name of the output
+file will be based on the name of the first input file unless
+the `\fB\-o\fR' option is supplied.
+.TP
+.B \-S
+Compile the input source files to produce assembly language in
+the Intermediate Language format.  The assembly file corresponding
+to the input file `\fBfile.ext\fR' will be called `\fBfile.il\fR'
+unless the `\fB\-o\fR' option is supplied.
+
+If the language compiles multiple input source files at a time,
+then there will be a single output file.  The name of the output
+file will be based on the name of the first input file unless
+the `\fB\-o\fR' option is supplied.
+.TP
+.B \-E
+Preprocess the input files and write the preprocessed source
+to the output file.  If no output file is supplied, then
+the preprocessed source is written to standard output.
+.TP
+.B \-o FILE
+Specify the name of the file to write the output to.  The default
+depends upon how \fBcscc\fR is invoked.  Specifying FILE as `-'
+indicates that the output should be set to standard output.
+Standard output can only be used for pre-processing.
+
+If none of `\fB\-c\fB', `\fB\-S\fR', or `\fB\-E\fR' are supplied,
+then the default output file is `\fBa.exe\fR' or `\fBa.dll\fR'.
+The latter is used when the `\fB\-shared\fR' option is supplied.
+.TP
+.B \-pipe
+Not used at present.  Provided for compatibility with \fBgcc\fR(1).
+.TP
+.B \-v
+Print verbose debugging information about the files that are
+being compiled.
+.TP
+.B \-vv
+Print the names of the command-lines that are executed by
+\fBcscc\fR to invoke external programs such as language plug-ins
+and the assembler, \fBilasm\fR(1).
+.TP
+.B \-x language
+Specify the source language to use to compile all input files.
+This is typically not needed, because \fBcscc\fR can guess the
+language from the input file's extension.
+
+The options `\fB\-x cs\fR' and `\fB\-x csharp\fR' specify
+that the language is C#.
+
+See the Texinfo documentation for \fBcscc\fR for more information
+on language plugins.
+.PP
+Default file extensions typically follow the Windows conventions
+of `\fB.obj\fR', `\fB.exe\fR', and `\fB.dll\fR' rather than the
+Unix conventions of `\fB.o\fR', no extension, and `\fB.so\fR'
+respectively.  This is due to the Windows nature of IL binaries,
+and to prevent confusion with native Unix binaries.  The `\fB\-o\fR'
+option can be used to override the defaults.
+.SH "LANGUAGE OPTIONS"
+Every language supported by \fBcscc\fR has its own set of language,
+warning, and other options.  This manpage describes the options
+for C# only.
+.TP
+.B \-flatin1\-charset
+The input source file's character set is Latin-1, instead of
+the UTF-8 default.
+
+If the source is in a character set other than Latin-1 or UTF-8,
+the programmer must arrange for it to be converted into UTF-8
+prior to invoking the compiler.
+.TP
+.B \-foctal\-chars
+The C# language standard does not support octal characters constants
+by default.  This option is enabled by default.
+
+If this option is enabled, sequences such as `\fB\\033\fR' will be
+processed as in C, with a warning.  The `\fB\-Wno\-octal\-chars\fR'
+option can be used to disable the warning.  Use the `\fB\-fno\-octal\-chars\fR'
+option to disable the use of octal character constants.
+.TP
+.B \-foctal\-constants
+The C# language standard does not support octal integer constants
+by default.  Selecting this option will enable them.
+
+If this option is not present, sequences such as `033' will be
+parsed as decimal, and a warning will be displayed.  The
+`\fB\-Wno\-octal\-constants\fR' or `\fB\-fdecimal\-constants\fR' options
+will disable the warning.
+.TP
+.B \-fdecimal\-constants
+Parse character sequences that look like octal integers as
+decimal and suppress the warning.  If both `\fB\-foctal\-constants\fR'
+and `\fB\-fdecimal\-constants\fR' are supplied, then the former
+takes precedence.
+.TP
+.B \-fchecked, \-funchecked
+Compile arithmetic expressions so that overflow exceptions will
+or will not be thrown, respectively.  The default is `\fB\-funchecked\fR'.
+The `\fBchecked\fR' and `\fBunchecked\fR' keywords can be used in
+source files to override this setting.
+.TP
+.B \-fsyntax\-check
+Parse the input source file to check its syntax, but don't
+go any further with compilation.
+.TP
+.B \-fsemantic\-check
+Parse the input source file to check its syntax and perform semantic
+analysis, but don't go any further with compilation.
+.TP
+.B \-funsafe
+Permit the use of unsafe C# language constructs in the input
+source file.  If this option is not supplied, all unsafe
+constructs will result in an error.
+.TP
+.B \-fhidebysig, \-fhidebyname
+Normally C# methods are marked as "hide by signature" so that
+multiple methods with the same name can be properly distinguished.
+Other languages (e.g. C and VB) use "hide by name", where the signature
+is not relevant when looking for a method.  These options allow the type
+of method resolution to be controlled.  It is mostly of use when
+writing libraries in C# that will be visible to non-C# applications.
+.SH "WARNING OPTIONS"
+.TP
+.B \-Wall, \-W
+Enable all warnings that are supported by the compiler.
+Individual warnings can be disabled with `\fB\-Wno\-XXX\fR' options.
+For example, `\fB\-Wall \-Wno\-empty\-input\fR' will enable
+all warnings except the "empty input file" warning.
+.TP
+.B \-Werror
+Convert all warnings into errors.
+.TP
+.B \-w
+Suppress all warnings.
+.TP
+.B \-Woctal\-chars
+Warn if the programmer uses the octal form of a character.
+The C# language standard only supports `\fB\\0\fR', but this
+compiler also supports sequences such as `\fB\\033\fR'.
+.TP
+.B \-Woctal\-constants
+Warn if the programmer uses a sequence that looks like an
+octal integer constant, but which is being parsed as decimal
+in accordance with the C# language standard.
+.TP
+.B \-Wunknown\-escapes
+Warn if an unknown escape sequence is used in a string or
+character constant.
+.TP
+.B \-Winvalid\-utf8
+Warn if an invalid UTF-8 sequence is encountered in the
+input source file.
+.TP
+.B \-Wlarge\-unicode\-chars
+Warn if a character constant uses a Unicode character with
+a codepoint value greater than 65535.
+.TP
+.B \-Wmulti\-char\-constant
+Warn if a character constant contains more than one character.
+.TP
+.B \-Wunsafe
+Warn when an unsafe construct is used in the program.
+.TP
+.B \-Wempty\-input
+Warn if the input source file does not contain any declarations.
+.SH "DEBUGGING OPTIONS"
+.TP
+.B \-g
+Enable the generation of debug symbol information in the output file.
+.SH "OPTIMIZATION OPTIONS"
+.TP
+.B \-O, \-O2, \-O3
+Enable various levels of optimization.
+.TP
+.B \-O0
+Disable all optimizations.
+.TP
+.B \-fno-peephole
+Disable peephole optimization of the code.
+.SH "PREPROCESSOR OPTIONS"
+.TP
+.B \-C
+Include comments in pre-processor output.  This option is not yet
+supported.
+.TP
+.B \-P
+Don't use `\fB#line\fR' directives in pre-processor output.
+.TP
+.B \-D\fIsymbol\fR
+Define the macro `\fIsymbol\fR' prior to pre-processing the input.
+
+C# does not support macros with values.  Supplying a command-line
+option of `\fB\-Dsymbol=value\fR' will result in a macro called
+`\fBsymbol=value\fR', which cannot be tested effectively in C#
+source code.
+.TP
+.B \-U\fIsymbol\fR
+Undefine the macro `\fIsymbol\fR' prior to pre-processing the input.
+.TP
+.B \-undef
+Undefine all standard macros prior to pre-processing the input.
+.TP
+.B \-dM
+Dump the macros that were defined in the input source instead of
+dumping the pre-processor output.  This can only be used with the
+`\fB\-E\fR' option.
+.TP
+.B \-dN
+Dump both the pre-processor output and the macros that were defined.
+This can only be used with the `\fB\-E\fR' option.
+.TP
+.B \-M, \-MD, \-MG, \-MM, \-MMD
+Generate dependency information from the pre-processor (C language only).
+.PP
+The standard macro `\fB__CSCC__\fR' is defined to indicate that
+\fBcscc\fR is being used to compile the source code.
+
+The standard macros `\fBDEBUG\fR' or `\fBRELEASE\fR' will be defined
+to indicate if a debug (`\fB\-g\fR') or release version is being built.
+
+The standard macro `\fB__JVM__\fR' is defined to indicate that
+the output is JVM code instead of IL code.
+.SH "ASSEMBLER OPTIONS"
+.TP
+.B \-fno\-short\-insns
+Causes the `\-no\-short\-insns' command-line option to be
+passed to the \fBilasm\fR(1) assembler.
+
+This alters how the assembler generates the final object code.
+You typically don't need to use this option.
+.TP
+.B \-filasm\-path=\fIpathname\fR
+Specifies the full pathname of the \fBilasm\fR(1) assembler.  By default,
+\fBcscc\fR searches for \fBilasm\fR along the PATH.
+.TP
+.B \-mjvm
+Compile to JVM bytecode instead of IL bytecode.
+.TP
+.B \-fstdlib\-name=\fIname\fR
+Change the name of the standard library to \fIname\fR.  The default
+value is "mscorlib".
+.TP
+.B \-fsave\-asm
+Do not delete intermediate assembly output files.  This is useful
+for debugging compiler problems.
+.SH "DIRECTORY OPTIONS"
+.TP
+.B \-I\fIdir\fR
+Specify the name of a directory in which the compiler should search
+for included files.
+.TP
+.B \-fnostdinc
+Don't use standard include directories.
+.TP
+.B \-fnostdinc++
+Don't use standard C++ include directories.
+.PP
+These options are not currently used by the C# compiler.  They are
+provided for future language plug-ins that may use include files.
+.SH "LINKER OPTIONS"
+.TP
+.B \-e \fIentrypoint\fR
+Specify the name of the entry point for the program.  This may
+either be a class name (e.g. `\fBMainClass\fR') or a method
+name (e.g. `\fBMainClass.Main\fR').  If this option is not supplied,
+the linker will search for any class with a static method called
+`\fBMain\fR'.
+.TP
+.B \-L\fIdir\fR
+Specify the name of a directory in which the compiler should search
+for libraries that the program will be linked against.
+.TP
+.B \-nostdlib
+Don't use standard library directories and libraries.
+.TP
+.B \-l\fIlibrary\fR
+Link against the specified library.  For example, specifying
+`\fB\-lSystem.XML\fR' will search for the library `\fBSystem.XML.dll\fR'
+along the library search path.
+
+Unless `\fB\-nostdlib\fR' is supplied, the library `\fBmscorlib\fR'
+is implicitly assumed to always be linked against.
+
+Libraries can also be specified by listing their filenames explicitly
+on the command-line.  For example: `\fB/usr/local/lib/cscc/System.XML.dll\fR'
+would have the same effect as `\fB\-lSystem.XML\fR'.
+.TP
+.B \-shared
+Create a shared library (.dll) instead of an executable (.exe).
+.TP
+.B \-static
+Link statically against the supplied libraries.  This will incorporate
+the object file data for the libraries into the program being built.
+
+You normally will not need to use this option, unless you are concerned
+that a foreign host may not have all of the libraries that are required
+to execute the program.
+
+This option will never statically link against a library that has
+native, internalcall, or PInvoke methods.  In particular, `\fBmscorlib.dll\fR'
+will never be linked statically.
+.TP
+.B \-m32bit\-only
+Mark the final output file as only suitable to be executed on 32-bit
+platforms.  Use of this option is severely discouraged as it makes
+the resultant program less portable.
+.TP
+.B \-fresources=\fIresfile\fR
+Specify the name of a resource file to be linked with the final
+library or executable.  Multiple `\fB\-fresources\fR' options
+may be used to specify multiple resource files.
+.TP
+.B \-fculture=\fIname\fR
+Specify the resource culture (e.g. "en-US").
+.TP
+.B \-mcui\-subsystem
+Tag the output file so that it can run within the command-line subsystem
+under Windows.  This is the default.
+.TP
+.B \-mgui\-subsystem
+Tag the output file so that it can run within the GUI subsystem
+under Windows.
+.TP
+.B \-gtk
+Link against all of the libraries that are necessary to use Gtk#.
+.TP
+.B \-gnome
+Link against all of the libraries that are necessary to use Gnome#.
+.TP
+.B \-winforms
+Link against all of the libraries that are necessary to use WinForms.
+.SH "OTHER OPTIONS"
+.TP
+.B \-dumpversion
+Dump the version of \fBcscc\fR to standard error and then exit.
+.TP
+.B \-\-help
+Print a usage message about the supported options and then exit.
+.TP
+.B \-fplugin-\fIkey\fB-path=\fIpathname\fR
+Specify the \fIpathname\fR of a language plug-in to be used to compile
+the language identified by \fIkey\fR.
+
+See the Texinfo documentation for \fBcscc\fR for more information
+on language plugins.
+.SH "AUTHOR"
+Written by Southern Storm Software, Pty Ltd.
+
+http://www.southern-storm.com.au/
+.SH "SEE ALSO"
+ilasm(1), ildasm(1), gcc(1)
+.SH "HOMEPAGE"
+Portable.NET is part of the DotGNU project, see the homepage at
+http://dotgnu.org/.
+.SH "DIAGNOSTICS"
+Exit status is 1 if an error occurred while processing the input.
+Otherwise the exit status is 0.

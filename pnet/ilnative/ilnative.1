@@ -1,0 +1,51 @@
+.\" Copyright (c) 2001 Southern Storm Software, Pty Ltd.
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.TH ilnative 1 "23 March 2001" "Southern Storm Software" "Portable.NET Development Tools"
+.SH NAME
+ilnative \- the Intermediate Language (IL) native utility
+.SH SYNOPSIS
+\fBilnative\fR [ options ] \fIinput\fR ...
+.SH DESCRIPTION
+.B Ilnative
+lists the native methods that are used within an IL object file
+(.obj), an IL executable (.exe), or an IL dynamic link library (.dll).
+.SH OPTIONS
+.TP
+.B \-n, \-\-names-only
+Only print the names of the methods, and not the type information.
+.TP
+.B \-\-help
+Print a usage message for the \fBilnative\fR program.
+.TP
+.B \-v, \-\-version
+Print the version of the \fBilnative\fR program.
+.TP
+.B \-\-
+Marks the end of the command-line options, and the beginning of
+the input filenames.  You may need to use this if your filename
+begins with '-'.  e.g. "ilnative -- -input.obj".  This is not needed
+if the input is stdin: "ilnative -" is perfectly valid.
+.SH "AUTHOR"
+Written by Southern Storm Software, Pty Ltd.
+
+http://www.southern-storm.com.au/
+.SH "SEE ALSO"
+ilasm(1), ildasm(1), ilsize(1), cscc(1)
+.SH "DIAGNOSTICS"
+Exit status is 1 if an error occurred while processing the input.
+Otherwise the exit status is 0.  See the manual page for
+\fBilsize\fR(1) for a complete list of errors that may occur
+when loading an IL image file.

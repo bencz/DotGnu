@@ -1,0 +1,232 @@
+/*
+ * java_semantics.tc - Semantic analysis operations for Java
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ * Copyright (C) 2003  Gopal.V
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+%output "java_semantics.c"
+
+%{
+#include <cscc/java/java_internal.h>
+#include <cscc/java/java_semvalue.h>
+
+%}
+
+%operation JavaSemValue ILNode_JSemAnalysis([ILNode *node],
+											ILGenInfo *info,
+											ILNode **parent) = 
+											{JavaSemValueDefault}
+
+ILNode_JSemAnalysis(ILNode)
+{
+	fprintf(stderr,"%s:%d <%s>\n",__FILE__,__LINE__,yykindname(node));
+	return JavaSemValueDefault;
+}
+
+%decls %end %{
+
+/*
+ * Perform semantic analysis on a type.  This is
+ * guaranteed to always return a correct type value.
+ * The "void" type will produce an error, if present.
+ */
+ILType *JavaSemType(ILNode *type, ILGenInfo *info, ILNode **parent);
+
+/*
+ * Perform semantic analysis on a literal type identifier.
+ * This function changes the compiler state and then calls
+ * JavaSemType;
+ */
+ILType *JavaSemTypeLiteral(ILNode *type, ILGenInfo *info, ILNode **parent);
+
+/*
+ * Perform semantic analysis on a type that can also
+ * include the "void" type.
+ */
+ILType *JavaSemTypeVoid(ILNode *type, ILGenInfo *info, ILNode **parent);
+
+/*
+ * Perform semantic analysis on a base type.  Returns
+ * zero if not a legal base type.
+ */
+int JavaSemBaseType(ILNode *type, ILGenInfo *info, ILNode **parent,
+				  ILNode **baseNode, ILClass **baseClass);
+
+/*
+ * Perform semantic analysis on a node and expect a value.
+ * Returns non-zero if a value, or zero on error.
+ */
+int JavaSemExpectValue(ILNode *node, ILGenInfo *info,
+					 ILNode **parent, JavaSemValue *value);
+
+/*
+ * Perform semantic analysis on a node and expect a type.
+ * Returns non-zero if a value, or zero on error.
+ */
+int JavaSemExpectType (ILNode *type, ILGenInfo *info, ILNode **parent);
+
+/*
+ * Perform semantic analysis on the node corresponding to a
+ * program item.  This is used to finialize semantic analysis
+ * on declarations that are forward-declared at the point of use.
+ */
+void JavaSemProgramItem(ILGenInfo *info, ILProgramItem *item);
+
+%}
+
+%{
+
+#include <codegen/cg_nodemap.h>
+
+%}
+
+
+%end %{
+
+static ILType *JavaSemFilterVoid(ILType *resultType, ILNode *type)
+{
+	if(resultType == ILType_Void)
+	{
+		CCErrorOnLine(yygetfilename(type), yygetlinenum(type),
+					  "`void' type is not allowed in this context");
+		resultType = ILType_Int32;
+	}
+	return resultType;
+}
+
+static ILType *JavaSemValidate(ILNode *type, JavaSemValue value)
+{
+	if(!JavaSemIsType(value))
+	{
+		if(!JavaSemIsError(value))
+		{
+			if(yyisa(type, ILNode_QualIdent) 
+				|| yyisa(type, ILNode_Identifier))
+			{
+				CCErrorOnLine(yygetfilename(type), yygetlinenum(type),
+						  "invalid type specification `%s' ", 
+						  ILQualIdentName(type,0));
+			}
+			else if(yyisa(type, ILNode_MemberAccess))
+			{
+				CCErrorOnLine(yygetfilename(type), yygetlinenum(type),
+						  "invalid type specification `%s' ", 
+						  ILMemberAccessName(type));
+			}
+			else
+			{
+				CCErrorOnLine(yygetfilename(type), yygetlinenum(type),
+						  "invalid type specification");
+			}
+		}
+		return ILType_Int32;
+	}
+	else
+	{
+		return JavaSemGetType(value);
+	}
+}
+
+ILType *JavaSemType(ILNode *type, ILGenInfo *info, ILNode **parent)
+{
+	return JavaSemFilterVoid(JavaSemTypeVoid(type, info, parent), type);
+}
+
+ILType *JavaSemTypeLiteral(ILNode *type, ILGenInfo *info, ILNode **parent)
+{
+	JavaSemValue value;
+	int save;
+
+	/* NULL is used in some places in the grammar to indicate "void" */
+	if(!type) return JavaSemFilterVoid(ILType_Void, type);
+	
+	save = info->inSemType;
+	info->inSemType = info->typeGather;
+	value = ILNode_JSemAnalysis(type, info, parent);
+	info->inSemType = save;
+	return JavaSemFilterVoid(JavaSemValidate(type, value),type);
+}
+
+ILType *JavaSemTypeVoid(ILNode *type, ILGenInfo *info, ILNode **parent)
+{
+	JavaSemValue value;
+	int save;
+
+	/* NULL is used in some places in the grammar to indicate "void" */
+	if(!type) return ILType_Void;
+ 	
+	save = info->inSemType;
+	info->inSemType = info->typeGather;
+	value = ILNode_JSemAnalysis(type, info, parent);
+	info->inSemType = save;
+
+	return JavaSemValidate(type, value);
+}
+
+int JavaSemExpectType (ILNode *type, ILGenInfo *info, ILNode **parent)
+{
+	JavaSemValue value;
+	value = ILNode_JSemAnalysis(type, info, parent);
+	return JavaSemIsType(value);
+}
+
+int JavaSemBaseType(ILNode *type, ILGenInfo *info, ILNode **parent,
+				  ILNode **baseNode, ILClass **baseClass)
+{
+	JavaSemValue value;
+	int save = info->inSemType;
+	info->inSemType = info->typeGather;
+	value = ILNode_JSemAnalysis(type, info, parent);
+	info->inSemType = save;
+	if(JavaSemIsType(value))
+	{
+		*baseNode = 0;
+		*baseClass = ILTypeToClass(info, JavaSemGetType(value));
+		return (*baseClass != 0);
+	}
+	else if(JavaSemIsTypeNode(value))
+	{
+		*baseNode = JavaSemGetTypeNode(value);
+		*baseClass = 0;
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+int JavaSemExpectValue(ILNode *node, ILGenInfo *info,
+					 ILNode **parent, JavaSemValue *value)
+{
+	*value = ILNode_JSemAnalysis(node, info, parent);
+	return JavaSemIsValue(*value);
+}
+
+void JavaSemProgramItem(ILGenInfo *info, ILProgramItem *item)
+{
+	ILGenItemContext context;
+	ILNode *node;
+	node = ILEnterProgramItemContext(info, item, CCCodeGen.globalScope, &context);
+	if(node)
+	{
+		ILNode_JSemAnalysis(node, info, &node);
+		ILLeaveProgramItemContext(info, &context);
+	}
+}
+%}

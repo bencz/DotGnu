@@ -1,0 +1,2384 @@
+
+2002-09-02  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* samples/I18N.CJK.dll, samples/I18N.MidEast.dll,
+	samples/I18N.Other.dll, samples/I18N.Rare.dll,
+	samples/I18N.West.dll, samples/I18N.dll,
+	samples/System.Xml.dll, samples/System.dll,
+	samples/mscorlib.dll: update all assemblies from pnetlib.
+
+	* NEWS, configure.in: update version for the "0.4.4" release.
+
+	* configure.in: update working version to "0.4.5".
+
+2002-08-23  Gopal.V  <gopalv82@symonds.net>
+
+	* cscc/csharp/cs_stmt.tc, codegen/cg_nodes.tc, codegen/cg_stmt.tc:
+	foreach loop with casted variables for simple array iteration.
+
+2002-08-30  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/lib_array.c: reversed array bounds check (Gopal V).
+
+2002-08-29  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/c/c_types.c: don't add "BitFieldAttribute" to a type if
+	the bit field is anonymous.
+
+2002-08-28  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/c/c_grammar.y, cscc/c/c_oper.tc, cscc/c/c_scope.c:
+	fix constant folding of operators.
+
+	* cscc/c/c_oper.tc (BinarySem): minor bug in previous check-in.
+
+	* cscc/common/cc_main.c: add "-w" to the cpp command-line to
+	stop GNU cpp complaining about the symbols that we redefine.
+
+2002-08-26  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/call.c (_ILCallPackVaParams): copy the "va_list"
+	parameter using memcpy rather than a structure copy, because
+	"va_list" is an array type on some platforms and the structure
+	copy doesn't work.
+
+2002-08-25  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* ilalink/link_create.c, ilalink/link_image.c, ilalink/link_main.c,
+	ilalink/linker.h, include/il_linker.h: add the link images to the
+	context in a single pass before processing their contents.
+
+	* ilalink/link_image.c, ilalink/link_library.c, ilalink/linker.h:
+	load the global C variable and function definitions from the
+	link images into a hash table prior to processing.
+
+	* ilalink/link_class.c, ilalink/link_image.c, ilalink/link_type.c,
+	ilalink/linker.h: rename private classes in C object files so
+	that the same name can be used in multiple objects (e.g. "$strings").
+
+	* ilalink/link_class.c, ilalink/link_field.c, ilalink/link_method.c,
+	ilalink/link_module.c, ilalink/linker.h: rename private fields and
+	methods in C object files so that the same name can be used in
+	multiple objects.
+
+2002-08-24  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/c/c_grammar.y, cscc/c/c_scope.c, cscc/c/c_scope.h,
+	cscc/c/c_types.c, cscc/c/c_types.h: process enumerated constants.
+
+2002-08-23  Gopal.V  <gopalv82@symonds.net>
+	
+	* cscc/c/c_lvalue.tc: The member lookup in dereferenced
+	access (ILNode_CDerefField)
+
+2002-08-23  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/c/c_grammar.y, cscc/c/c_library.c, cscc/c/c_types.c,
+	cscc/c/c_types.h, doc/c_language_abi.html: add bit field definitions
+	to the C compiler.
+
+	* cscc/c/c_defs.tc, cscc/c/c_lvalue.tc, cscc/c/c_oper.tc,
+	cscc/c/c_stubs.tc, cscc/c/c_types.c, cscc/c/c_types.h: implement
+	semantic analysis and code generation for bit fields.
+
+	* codegen/cg_gen.c, codegen/cg_gen.h, codegen/cg_stmt.tc,
+	cscc/c/c_function.c, cscc/c/c_internal.c, cscc/c/c_stmt.tc:
+	implement semantic analysis and code generation for "goto".
+
+2002-08-22  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/c/c_coerce.c, cscc/c/c_grammar.y, cscc/c/c_scanner.l,
+	doc/c_language_abi.html: replace "__bool__" with the ISO C "_Bool".
+
+	* cscc/c/c_grammar.y, cscc/c/c_scanner.l: add imaginary constants
+	to the C scanner and grammar.
+
+	* cscc/csharp/cs_grammar.y, cscc/csharp/cs_scanner.l: add the
+	"__long_double" keyword to the C# compiler, to make it easier to
+	define standard ABI types for C.
+
+	* cscc/c/c_builtin.tc, cscc/c/c_library.c, cscc/c/c_oper.tc,
+	csupport/LongDouble.cs, csupport/Makefile.am, csupport/Markers.cs,
+	csupport/NativeFloat.il, doc/c_language_abi.html: rename the
+	"NativeFloat" class to "LongDouble", and implement in C# instead
+	of in IL.
+
+	* codegen/cg_optable.c: add builtin operator definitions for
+	the "__long_double" type.
+
+	* csupport/Complex.cs, csupport/Makefile.am: add complex number
+	types to support ISO C complex number arithmetic.
+
+	* doc/c_language_abi.html: document the complex number types
+	in the ABI definition.
+
+2002-08-21  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/common/cc_main.c, ilalink/link_create.c, ilalink/link_library.c,
+	ilalink/link_main.c, ilalink/linker.h, include/il_linker.h:
+	using "-nostdlib" should turn off the standard library assemblies,
+	but not the standard search directories.
+
+	* ilalink/link_library.c, ilalink/link_main.c, ilalink/link_type.c,
+	ilalink/linker.h, include/il_linker.h: re-design the process of
+	adding libraries to the linker context so that recursively-referenced
+	libraries are automatically loaded.
+
+	* ilalink/link_library.c, ilalink/linker.h: convert member
+	reference signatures at the point of use, not when the library
+	is first loaded.
+
+	* ilalink/link_create.c, ilalink/link_library.c, ilalink/linker.h:
+	expand library references such as "-lm" to "-llibm64".
+
+	* cscc/c/c_function.c: output a dummy method body in strong aliases
+	for vararg functions, for better interoperability with other CLR's.
+
+	* ilalink/link_class.c, ilalink/link_create.c, ilalink/link_library.c,
+	ilalink/link_main.c, ilalink/link_method.c, ilalink/link_module.c,
+	ilalink/link_type.c, ilalink/linker.h, include/il_linker.h:
+	use "$Module$" instead of "<Module>" when linking a library, to
+	improve interoperability with other CLR's that cannot directly
+	reference "<Module>" in another assembly.
+
+	* doc/c_language_abi.html: document the use of "$Module$.
+
+	* csupport/Crt0.cs: use "$Module$" to look up the module type
+	in the "libc" assembly.
+
+	* cscc/c/c_coerce.c (ApplyCoercion): set the "toType" in the
+	returned semantic value in the default case of making no change
+	to the representation of the value.
+
+	* image/opdef.c: correct a bug in the opcode list: "stdind.i"
+	should be "stind.i".
+
+2002-08-20  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/c/c_function.c, cscc/c/c_function.h, doc/c_language_abi.html:
+	implement attributes for constructors and destructors.
+
+	* codegen/cg_gen.c, codegen/cg_gen.h, codegen/cg_nodes.tc,
+	codegen/cg_stmt.tc, cscc/c/c_defs.tc, cscc/c/c_grammar.y,
+	cscc/c/c_scope.c, cscc/c/c_stmt.tc, cscc/c/c_stubs.tc,
+	cscc/csharp/cs_grammar.y: semantic analysis and code generation
+	for C "switch" statements.
+
+	* cscc/c/c_grammar.y: mark enumerated constants as TODO;
+	flush pending initializers before parsing the body of a function.
+
+	* cscc/c/c_const.tc: store strings in separate fields within
+	the string pool, so that we don't have the overhead of adding
+	a string pool offset every time a string is referenced.
+
+	* cscc/c_main.c, cscc/cs_main.c, cscc/cscc.c, cscc/csdoc.c,
+	cscc/common/cc_main.c, cscc/common/cc_main.h, ilalink/link_library.c,
+	ilalink/link_main.c, include/il_linker.h: make sure that "mscorlib"
+	and "OpenSystem.C" are linked into C applications, even if "-nostdlib"
+	is supplied to the compiler.
+
+	* cscc/common/cc_main.c: don't compile against "mscorlib" if
+	"-fbuiltin-library" is supplied, to allow "cscctest" to work.
+
+2002-08-19  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/c/c_coerce.c, cscc/c/c_declspec.c, cscc/c/c_library.c,
+	cscc/c/c_oper.tc, cscc/c/c_types.c, cscc/c/c_types.h,
+	csupport/Markers.cs, doc/c_language_abi.html: mark function pointer
+	types with the "IsFunctionPointer" modifier so that they can be
+	distinguished from function types.
+
+	* cscc/c/c_declspec.c, cscc/c/c_grammar.y: process function
+	declarations that use "typeof" to strip the type off another
+	function.
+
+	* cscc/c/c_defs.tc, cscc/c/c_function.c, cscc/c/c_function.h,
+	cscc/c/c_grammar.y, cscc/c/c_stubs.tc, dumpasm/dump_type.c:
+	implement function attributes for weak aliases, strong aliases,
+	and PInvoke references.
+
+	* cscc/c/c_function.c: add the "tail" prefix to function calls
+	in weak and strong alias definitions.
+
+	* cscc/c/c_defs.tc, cscc/c/c_grammar.y, cscc/c/c_oper.tc:
+	semantic analysis for the ternary conditional operator.
+
+	* codegen/cg_cast.tc, cscc/c/c_oper.tc: implement constant
+	folding for various operators.
+
+2002-08-17  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* codegen/cg_decls.tc, cscc/csharp/cs_gather.c,
+	cscc/csharp/cs_grammar.y, cscc/csharp/cs_scanner.l: add the
+	"__module" keyword to the C# compiler, which exports the contents
+	of a class into the global C scope.
+
+	* cscc/c/c_internal.c: don't register the internal "OpenSystem.C"
+	library if the external one was specified on the link line.
+
+	* csupport/FileTable.cs: fine-tune the file descriptor table
+	API, to make it easier to use from the "open" system call.
+
+	* cscc/c/c_typesize.c: minor bugs in type sizes and alignments.
+
+2002-08-16  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* ilalink/link_method.c, ilasm/ilasm_build.c, image/meta_build.c:
+	correct link and load behaviour for vararg calls across assembly
+	boundaries.
+
+	* libgc/mark.c: temporary fix to work around cygwin 1.3 problems.
+
+	* engine/unroll_x86_ptr.c: remove redundant "nop" instructions
+	that were left over from previous debugging efforts.
+
+	* engine/cvm.h: fix the padding of "CVMWord" so that it will always
+	be 4 on all i386 platforms, regardless of the compiler and platform.
+
+	* ilalink/link_main.c: turn on the linking of "libc" for C apps.
+
+2002-08-15  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* ilalink/link_create.c, ilalink/link_library.c,
+	ilalink/link_method.c, ilalink/linker.h: begin adding support
+	for C-style module linking to "ilalink".
+
+	* ilalink/link_method.c: resolve global symbol references
+	into libraries.
+
+2002-08-14  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* ilalink/link_main.c, image/errors.c, image/pecoff_loader.c,
+	include/il_image.h: explode ".a" files to their contents when
+	linking.
+
+	* ilalink/link_main.c, image/pecoff_loader.c, include/il_image.h:
+	minor bugs in previous check-in.
+
+	* cscc/c/c_builtin.tc: recognise instructions within a "__asm__"
+	statement that correspond to "return".
+
+2002-08-13  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* codegen/cg_scope.c, codegen/cg_scope.h, cscc/c/c_grammar.y,
+	cscc/c/c_scope.c, cscc/c/c_scope.h, cscc/csharp/cs_lvalue.tc:
+	handle forward declarations for global variables.
+
+	* csupport/Markers.cs, doc/c_language_abi.html: add the
+	"OriginalName" attribute and document it.
+
+	* cscc/c/c_function.c, cscc/c/c_grammar.y, cscc/c/c_scope.c,
+	cscc/c/c_scope.h: implement forward declarations for functions.
+
+	* cscc/csharp/cs_stmt.tc (ILNode_Foreach): push into a loop
+	context inside the body of a "foreach" loop.
+
+	* cscc/cscc.c, cscc/c/c_crt0.c: slight modifications to the
+	compiler to make integration with automake/autoconf easier.
+
+	* cscc/cscc.c, cscc/common/cc_main.c, cscc/common/cc_options.c,
+	cscc/common/cc_options.h: add the "-imacros" option to the
+	compiler command-line.
+
+	* engine/lib_marshal.c (AllocHGlobal): use "calloc" instead
+	of "malloc", to ensure that the memory is cleared.
+
+	* cscc/c/c_declspec.c (CDeclSpecFinalize): recognise "unsigned"
+	as allowed on the "uint32" type.
+
+2002-08-12  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/verify.c (AssignCompatible): resolve classes before
+	checking for compatibility.
+
+	* samples/mscorlib.dll: new version with Gopal V's File patch.
+
+	* cscc/c/c_defs.tc, cscc/c/c_grammar.y, cscc/c/c_lvalue.tc,
+	cscc/c/c_stubs.tc: implement the "." and "->" field access operators.
+
+	* codegen/cg_misc.tc, cscc/c/c_defs.tc, cscc/c/c_grammar.y,
+	cscc/c/c_lvalue.tc, cscc/c/c_oper.tc, cscc/c/c_stubs.tc:
+	implement the "*" and "&" pointer operators.
+
+	* cscc/c/c_grammar.y: bug fix - wrong node type was being used
+	for array access operators.
+
+	* engine/verify_call.c (MatchSignature): allow managed pointers
+	to be converted into any type of unmanaged pointer in unsafe mode.
+
+	* engine/cvm_ptr.c: implement the "ldrva" CVM instruction.
+
+	* codegen/cg_misc.tc: bug fixes to "is null" code generation for
+	unmanaged pointers.
+
+	* engine/verify_conv.c: allow managed pointers to be converted
+	into integer types in unsafe mode.
+
+	* tests/test_verify.h, tests/test_vconv.c: modify the verifier
+	test suite to record that conversions from managed pointers to
+	numeric types are allowed in unsafe mode.
+
+	* cscc/c/c_scope.c (CScopeAddLocal): adding local variables to
+	the wrong scope.
+
+	* engine/ilrun.c, engine/process.c, ildb/ildb_run.c,
+	include/il_engine.h: shift the command-line array creation logic
+	into "ILExecProcessSetCommandLine", and make sure that the value
+	for "TaskMethods.GetCommandLineArgs" is initialised correctly.
+
+2002-08-11  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* codegen/cg_misc.tc, cscc/c/c_builtin.tc, cscc/c/c_defs.tc,
+	cscc/c/c_grammar.y, cscc/c/c_invoke.tc, cscc/c/c_stubs.tc:
+	implement the basic semantic analysis and code generation
+	logic for function invocation.
+
+	* cscc/c/c_invoke.tc, cscc/c/c_stmt.tc, cscc/c/c_types.c:
+	invocation support for static C# methods.
+
+	* image/pecoff_writer.c: add extra padding at the beginning
+	of a PE/COFF image to make room for 4 or more sections.
+
+2002-08-10  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/c/c_const.tc, cscc/c/c_types.c: code generation for
+	string constants.
+
+	* cscc/c/c_grammar.y, cscc/c/c_lvalue.tc, cscc/c/c_stmt.tc,
+	cscc/c/c_stubs.tc: code generation for global variables.
+
+	* cscc/c_main.c, cscc/c/Makefile.am, cscc/c/c_crt0.c,
+	cscc/c/c_declspec.c, cscc/c/c_internal.c, cscc/c/c_internal.h,
+	cscc/c/c_lexutils.c, cscc/c/c_oper.tc, cscc/c/c_types.c,
+	cscc/c/c_typesize.c, cscc/c/c_typesize.h: remove "gen_32bit_only"
+	and replace it with a smarter type size detection system.
+
+	* csupport/Markers.cs, ilalink/link_create.c, ilalink/link_image.c,
+	ilalink/link_main.c, ilalink/link_module.c, ilalink/linker.h,
+	include/il_linker.h: recognise memory model alignment flags in
+	the linker.
+
+	* cscc/c/c_typesize.h, cscc/c/c_typesize.c: fine-tune the type
+	size flags a little bit.
+
+	* cscc/c/c_function.c, cscc/c/c_oper.tc: minor bug fixes in the
+	handling of "setjmp" and "va_arg".
+
+	* doc/c_users_guide.html, doc/c_language_abi.html: check in some
+	documentation for using the C compiler and the technical details
+	of the ABI.
+
+2002-08-09  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* samples/I18N.CJK.dll, samples/I18N.MidEast.dll,
+	samples/I18N.Other.dll, samples/I18N.Rare.dll,
+	samples/I18N.West.dll, samples/I18N.dll: update the I18N
+	assemblies from the latest version of pnetlib.
+
+	* cscc/c/c_oper.tc: implement pointer arithmetic for "+" and "-".
+
+	* engine/lib_string.c: reset "finalLen" before performing the
+	replace phase in "String.Replace", by <nick@chemlab.org>.
+
+	* codegen/cg_arith.tc, cscc/c/c_function.c, cscc/c/c_grammar.y,
+	cscc/c/c_oper.tc: implement assignment expressions in the C compiler.
+
+	* codegen/cg_assign.tc, codegen/cg_nodes.tc, codegen/jv_assign.tc,
+	cscc/c/c_library.c, cscc/c/c_oper.tc, cscc/c/c_stubs.tc,
+	cscc/csharp/cs_oper.tc: implement increment and decrement operators.
+
+	* cscc/c/c_defs.tc, cscc/c/c_internal.c, cscc/c/c_oper.tc:
+	implement relational operators.
+
+2002-08-08  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/cscc.c: implement "ProcessWithAssembler" in the compiler
+	front-end.
+
+	* ilalink/link_class.c: don't bail out with an error on the
+	"<Module>" class when linking two or more object files.
+
+	* cscc/c/c_builtin.tc, csupport/Makefile.am, csupport/NativeFloat.il:
+	unpack "native float" values from variable-argument lists using
+	the "OpenSystem.C.NativeFloat" value type.
+
+	* csupport/Markers.cs: define the "StrongAliasFor" attribute class.
+
+	* image/marshal.c, image/meta_types.c, include/il_types.h:
+	detect PInvoke'd delegates correctly even if a supertype like
+	"Delegate" or "MulticastDelegate" is supplied as the parameter.
+
+	* cscc/c/c_grammar.y: handle trailing commas in "enum" definitions.
+
+2002-08-07  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/csharp/cs_misc.tc: implement array initializers in "new"
+	expressions.
+
+	* cscc/c/c_declspec.c: (CDeclSpecFinalize): report some errors
+	later in the process so we can catch errors that result from
+	choosing a default "int" type.
+
+	* cscc/c/c_types.c (AppendThree): add one to the size of the
+	string to be allocated, to account for the '\0'.
+
+	* cscc/c/c_declspec.c, cscc/c/c_grammar.y, cscc/c/c_library.c,
+	cscc/c/c_types.c, image/meta_types.c: fix bugs in type declarators.
+
+	* cscc/c/c_defs.tc, cscc/c/c_internal.c, cscc/c/c_internal.h,
+	cscc/c/c_lvalue.tc, cscc/c/c_oper.tc, cscc/c/c_stubs.tc,
+	cscc/c/c_types.c, cscc/c/c_types.h: implement node routines for
+	array operators; add a "GenAddress" node routine for doing
+	efficient computations of effective addresses at runtime.
+
+2002-08-06  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/c/c_defs.tc, cscc/c/c_grammar.y, cscc/c/c_invoke.tc,
+	cscc/c/c_scanner.l, cscc/c/c_types.c, cscc/c/c_types.h:
+	add some extension syntax to the grammar to allow C# types to
+	be used as type specifiers, and to allow static methods in
+	C# classes to be invoked.
+
+	* cscc/c/c_grammar.y: flush initializers after a function,
+	not before, so that they include any initializers that were
+	created during the function's body.
+
+	* cscc/c/c_lexutils.c (CLexLineDirective): update the correct
+	filename and line number variables when a "#" directive is seen.
+
+	* cscc/c/c_declspec.c: fix bugs in the type specifier logic
+	for the basic numeric types.
+
+	* image/meta_build.c (Load_MemberRef): store the correct
+	signature in a member reference.
+
+	* samples/mscorlib.dll: new version with Gopal V's string split fix.
+
+2002-08-05  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/c/c_declspec.c, cscc/c/c_declspec.h, cscc/c/c_grammar.y,
+	cscc/c/c_types.c, cscc/c/c_types.h, csupport/Markers.cs:
+	clean up the creation and management of array types.
+
+	* cscc/c/c_grammar.y, cscc/c/c_scanner.l, cscc/c/c_scope.c,
+	cscc/c/c_types.c, cscc/c/c_types.h: add back some limited support
+	for native structs and unions, for use with PInvoke.
+
+	* cscc/c/c_declspec.c, cscc/c/c_declspec.h, cscc/c/c_grammar.y,
+	cscc/c/c_scanner.l, cscc/c/c_types.c: use a cleaner syntax for
+	native integer types.
+
+	* cscc/c/Makefile.am, cscc/c/c_builtin.tc, cscc/c/c_defs.tc,
+	cscc/c/c_function.c, cscc/c/c_grammar.y, cscc/c/c_scanner.l:
+	implement builtin operators for variable-argument lists, setjmp,
+	alloca, and embedded assembly statements.
+
+	* cscc/c/c_defs.tc, cscc/c/c_function.c, cscc/c/c_grammar.y,
+	cscc/c/c_types.c: implement struct/union field declarations and
+	abstract declarators for function pointer types.
+
+	* cscc/c/c_defs.tc, cscc/c/c_grammar.y, cscc/c/c_invoke.tc,
+	cscc/c/c_lvalue.tc, cscc/c/c_oper.tc, cscc/c/c_scope.c,
+	cscc/c/c_scope.h: begin implementing node creation and semantic
+	analysis for identifiers.
+
+	* codegen/cg_decls.tc, codegen/cg_gen.h, cscc/c/c_defs.tc,
+	cscc/c/c_function.c, cscc/c/c_function.h, cscc/c/c_grammar.y,
+	cscc/c/c_lvalue.tc, cscc/c/c_scope.c, cscc/c/c_scope.h: add enough
+	support code to get basic local variable declarations working.
+
+	* cscc/c/c_function.c: mark local variable types for output.
+
+2002-08-04  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* codegen/cg_gen.c, codegen/cg_misc.tc, cscc/c/Makefile.am,
+	cscc/c/c_coerce.c, cscc/c/c_grammar.y, cscc/c/c_internal.c,
+	cscc/c/c_internal.h, cscc/c/c_oper.tc, cscc/c/c_stmt.tc,
+	cscc/c/c_types.c, cscc/c/c_types.h: implement C type coercions
+	and simple binary operators.
+
+	* cscc/c/c_declspec.c, cscc/c/c_declspec.h, cscc/c/c_function.c,
+	cscc/c/c_grammar.y, cscc/c/c_library.c, cscc/c/c_scanner.l,
+	cscc/c/c_scope.c, cscc/c/c_types.c, cscc/c/c_types.h,
+	csupport/Markers.cs: remove native pointers, structs, and unions
+	from the C compiler, as it makes the system too complex.
+
+2002-08-03  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* Makefile.am, configure.in, cscc/c/c_crt0.c, cscc/c/c_function.c,
+	cscc/c/c_internal.c, cscc/c/c_library.c, cscc/c/c_types.c,
+	csupport/.cvsignore, csupport/Crt0.cs, csupport/FileTable.cs,
+	csupport/LongJmp.cs, csupport/Makefile.am, csupport/Markers.cs,
+	csupport/README: check in the "OpenSystem.C" support library
+	and modify the C compiler slightly to match the support library.
+
+	* cscc/c/c_declspec.c, cscc/c/c_types.c, cscc/c/c_types.h:
+	decay array parameter types into their pointer counterparts.
+
+	* engine/verify_except.c: "rethrow" can be used even if the
+	stack isn't empty.
+
+	* engine/verify_obj.c: perform the correct stack height adjustment
+	for the "sizeof" instruction.
+
+	* codegen/cg_stmt.tc (GenReturn): don't reduce the stack height
+	if generating code for a "return" with no value, as there is no
+	value being popped.
+
+	* cscc/csharp/cs_lvalue.tc, cscc/csharp/cs_oper.tc: set the correct
+	error-reporting line numbers for nodes that are generated during
+	semantic analysis, to ease debugging of the code generator.
+
+	* engine/lib_reflect.c: implement the "Module.GetModuleType"
+	internalcall.
+
+	* samples/mscorlib.dll: new version with a minor fix to
+	"System.Reflection.Module".
+
+	* ilalink/Makefile.am, ilalink/link_create.c, ilalink/link_image.c,
+	ilalink/link_library.c, ilalink/link_main.c, ilalink/link_module.c,
+	ilalink/linker.h, include/il_linker.h: recognise C object modules
+	at link time, and add extra support libraries to the link line
+	if detected.
+
+	* cscc/c/c_library.c, csupport/Markers.cs: add the attributes
+	"InitializerOrderAttribute" and "FinalizerOrderAttribute".
+
+	* cscc/c/c_function.c, cscc/c/c_function.h, cscc/c/c_grammar.y,
+	cscc/c/c_stmt.tc: implement semantic analysis for some of the
+	basic statement types.
+
+	* codegen/cg_assign.tc: bug in string concatenation, when using
+	the "+=" operator.
+
+2002-08-02  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/c/c_declspec.c, cscc/c/c_declspec.h, cscc/c/c_defs.tc,
+	cscc/c/c_grammar.y, cscc/c/c_stubs.tc, cscc/c/c_types.c:
+	continue implementing declarators and declaration specifiers..
+
+	* codegen/cg_decls.tc, codegen/cg_gen.h, codegen/cg_stmt.tc,
+	cscc/c_main.c, cscc/cs_main.c, cscc/csdoc.c, cscc/c/Makefile.am,
+	cscc/c/c_crt0.c, cscc/c/c_function.c, cscc/c/c_function.h,
+	cscc/c/c_grammar.y, cscc/c/c_internal.h, cscc/c/c_scanner.l,
+	cscc/c/c_scope.c, cscc/c/c_scope.h, cscc/c/c_typeout.c,
+	cscc/c/c_types.c, cscc/c/c_types.h, cscc/common/cc_main.c,
+	cscc/common/cc_main.h: get the basic structure in place to
+	parse and output functions - still need to implement semantic
+	analysis for C node types.
+
+	* cscc/common/cc_main.c: don't output the unsafe attributes
+	into C object modules - leave it for the linker to do that.
+
+	* cscc/c_main.c, cscc/c/c_internal.c, cscc/c/c_internal.h,
+	cscc/c/c_scope.c, cscc/c/c_scope.h: move the code generator
+	startup logic to "cscc/c"; tag the C object module with the
+	"32 vs 64" memory model indication.
+
+	* codegen/cg_gen.c, codegen/cg_gen.h, codegen/cg_library.c,
+	cscc/c/Makefile.am, cscc/c/c_internal.c, cscc/c/c_internal.h,
+	cscc/c/c_library.c: create the builtin library that is used
+	by the C compiler for utility classes.
+
+2002-08-01  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* codegen/cg_scope.c, codegen/cg_scope.h, cscc/c_main.c,
+	cscc/c/Makefile.am, cscc/c/c_declspec.c, cscc/c/c_declspec.h,
+	cscc/c/c_defs.tc, cscc/c/c_grammar.y, cscc/c/c_internal.c,
+	cscc/c/c_internal.h, cscc/c/c_oper.tc, cscc/c/c_scanner.l,
+	cscc/c/c_scope.c, cscc/c/c_scope.h, cscc/c/c_types.c,
+	cscc/c/c_types.h: add support for C declaration specifiers, scopes,
+	struct headers, union headers, and enum headers.
+
+	* include/il_utils.h, support/hashtab.c (ILHashIterNext):
+	incorrect iteration logic.
+
+	* cscc/c_main.c, cscc/c/Makefile.am, cscc/c/c_grammar.y,
+	cscc/c/c_typeout.c, cscc/c/c_types.c: output required type definitions
+	at the end of the C compile process.
+
+	* cscc/c_main.c, cscc/c/Makefile.am, cscc/c/c_crt0.c,
+	cscc/c/c_internal.c, cscc/c/c_internal.h, cscc/c/c_scope.c,
+	cscc/c/c_scope.h: output "crt0" code if the current module
+	has a "main" function defined.
+
+	* cscc/c/c_crt0.c: improved "crt0" code.
+
+2002-07-31  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* configure.in, cscc/Makefile.am, cscc/c_main.c, cscc/c/.cvsignore,
+	cscc/c/Makefile.am, cscc/c/c_const.tc, cscc/c/c_defs.tc,
+	cscc/c/c_grammar.y, cscc/c/c_internal.c, cscc/c/c_internal.h,
+	cscc/c/c_invoke.tc, cscc/c/c_lexutils.c, cscc/c/c_lexutils.h,
+	cscc/c/c_lvalue.tc, cscc/c/c_oper.tc, cscc/c/c_rename.h,
+	cscc/c/c_scanner.l, cscc/c/c_stmt.tc, cscc/c/c_stubs.tc,
+	cscc/c/c_types.c, cscc/c/c_types.h: initial check-in of the C
+	language front-end for cscc (it doesn't work yet, so don't
+	get too excited).
+
+	* cscc/c_main.c, cscc/cs_main.c, cscc/csdoc.c, cscc/common/cc_main.c,
+	cscc/common/cc_main.h: add a new mode to "cc_main.c" that can use
+	the C pre-processor instead of the C# pre-processor.
+
+	* cscc/c_main.c, cscc/cscc.c, cscc/common/.cvsignore,
+	cscc/common/Makefile.am, cscc/common/cc_main.c,
+	cscc/common/cc_options.c, cscc/common/cc_options.h,
+	cscc/common/cpp_defs.sh: fix bugs in the C pre-processor interface,
+	and make sure that all host-specific cpp macros are turned off.
+
+2002-07-30  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* image/writer.c (SortClasses): process types in order, even
+	if they are nested.
+
+	* image/meta_writer.c (Format_TypeDef): ignore fields and methods
+	that have MemberRef tokens, as they aren't important to determine
+	the first field and method token in the type.
+
+	* codegen/cg_decls.tc: fully qualify method references for
+	properties and events, to prevent the assembler defaulting to
+	the global module type for unqualified references.
+
+	* cscc/csharp/cs_grammar.y: don't use the class attributes on
+	the default constructor for the class.
+
+2002-07-29  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* ilalink/link_create.c, ilalink/link_field.c, ilalink/link_image.c,
+	ilalink/linker.h, image/image.c, image/image.h, image/pecoff_loader.c,
+	include/il_image.h: implement linker functionality for ".sdata"
+	and ".tls" sections.
+
+	* ilalink/link_class.c, ilasm/ilasm_build.c, image/class.c,
+	image/writer.c, include/il_program.h: sort the field, method, and
+	parameter tables at the end of the assemble/link instead of after
+	each top-level class.  This allows us to mix global fields and
+	methods with ordinary classes more easily.
+
+	* ilasm/ilasm_build.c, ilasm/ilasm_build.h, ilasm/ilasm_grammar.y:
+	allow global fields and methods to be mixed with ordinary classes;
+	use the global module class as the default when the class is not
+	specified in a field or method reference.
+
+	* ildasm/ildasm_class.c: print pseudo class headers and footers
+	for the "<Module>" type if it is not empty.
+
+	* ilasm/ilasm_grammar.y: change the "<Module>" type to "public" if
+	it contains public fields or methods.
+
+	* ilasm/ilasm_build.c, ilasm/ilasm_build.h, ilasm/ilasm_output.c,
+	image/class.c, include/il_program.h: move dangling global references
+	to the "<ModuleExtern>" typeref at the end of the assembling process.
+
+2002-07-26  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* codegen/cg_stmt.tc, cscc/csharp/cs_attrs.c: begin to put the
+	structure in place to support semantic analysis of attribute values
+	(disabled at present).
+
+2002-07-25  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/csharp/cs_stmt.tc (ILNode_Foreach): stack clobbering bug
+	in the definition of "args": the array size should be 1, not 0.
+
+	* NEWS, configure.in: update version for the "0.4.2" release.
+
+	* configure.in: update working version to "0.4.3".
+
+	* image/lib_attrs.c (DllImportAttribute): set the "pinvokeimpl"
+	flag when a "DllImport" attribute is processed.
+
+	* codegen/cg_nodes.tc, cscc/csharp/cs_attrs.c, cscc/csharp/cs_gather.c:
+	process attribute target specifications.
+
+2002-07-25  Andrew Mitchell  <ajmitch@dunedin.lug.net.nz>
+
+	* debian/*: Update Deabin packaging scripte to reflect that the pnet
+	package was split.
+	
+2002-07-25  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* ilalink/link_type.c (_ILLinkerConvertType): clear the "next__"
+	field in new method signatures before converting the parmaters,
+	to prevent the new signature picking up a pointer to the old type.
+
+2002-07-24  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/csharp/cs_lvalue.tc (FieldToConstant): jump to the class
+	instead of the field if we are processing an enumerated type,
+	so that default fields are given values in the correct order.
+
+2002-07-23  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* csunit/TestMain.cs: derive the type name from the name of the
+	test assembly; write usage messages to stdout instead of stderr.
+
+	* csunit/README: update the CSUnit README file to contain more
+	information on writing test cases.
+
+	* csant/csant_cscc.c: add the "sanewarnings" flag to compile tags
+	to turn off annoying warnings that don't mean anything.
+
+2002-07-22  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/lib_thread.c: implement the "Thread.InternalSleep"
+	internalcall.
+
+	* csant/csant.c, csant/csant_build.c, csant/csant_cscc.c,
+	csant/csant_defs.h, csant/csant_task.c: add the "csdoc" task
+	type for csant, to process program documentation.
+
+	* csant/csant.c, csant/csant_build.c, csant/csant_cscc.c,
+	csant/csant_defs.h, csant/csant_fileset.c, csant/csant_fileset.h,
+	csant/csant_parse.c, csant/csant_task.c: use separate base
+	directories for source and build locations, to support "out of tree"
+	builds when csant is combined with automake/autoconf.
+
+	* csant/csant_parse.c: implement property substitution in csant
+	task parameters.
+
+	* csant/csant_fileset.c (CSAntFileSetLoad): off by 1 bug when
+	checking the "excludes" list.
+
+	* csant/csant_fileset.c (CSAntFileSetLoad): add the "basedir"
+	attribute to the "file" tag to override the source or build
+	directory that is used by default.
+
+	* image/debug_reader.c (ILDebugIterInit): update "left" and "right"
+	when searching for the extents of a debug information range.
+
+	* Makefile.am, configure.in, csunit/*: copy the "csunit" program
+	from pnetlib to pnet, so that we can use it for testing other
+	applications and libraries besides pnetlib.
+
+2002-07-20  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* codegen/cg_ainit.tc, codegen/cg_lvalue.tc, codegen/cg_utils.c:
+	fix code generation for "ldelema", which should take a type
+	as an argument.
+
+2002-07-19  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/common/cc_options.c: remove "gtk-imaging-sharp" from the
+	link line, because it is no longer part of Gtk#.
+
+	* include/il_dumpasm.h, include/il_program.h: change instances
+	of the word "namespace" into "nspace" in the headers to better
+	integrate with modern C++ compilers.
+
+	* profiles/mkprofile.sh: remove the "older than" test from the
+	mkprofile.sh script because it was interfering with some very
+	old versions of "test".
+
+	* codegen/cg_decls.tc, cscc/csharp/cs_attrs.c: add quick and
+	dirty support for the "DllImport" attribute.
+
+2002-07-18  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* samples/mscorlib.dll: latest version with cryptography classes.
+
+	* cscc/csharp/cs_grammar.y: fix nesting level detection for delegates.
+
+2002-07-17  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/int_proto.h, engine/int_table.c, engine/lib_crypt.c,
+	samples/mscorlib.dll: implement the "NumSub" helper method for
+	implementing RSA; check-in a new version of pnetlib.
+
+2002-07-16  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* support/bignum.c, tests/test_crypt.c: rewrite the big number
+	division algorithm to use a simpler, and more reliable, algorithm.
+
+	* include/il_bignum.h, support/bignum.c, tests/test_crypt.c:
+	test cases and bug fixes for "ILBigNumInv".
+
+	* support/bignum.c, tests/test_crypt.c: regression tests and
+	bug fixes for "ILBigNumPow".
+
+2002-07-15  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* support/des.c: fix bugs in the structure of Triple-DES.
+
+	* tests/test_crypt.c: regression tests for Triple-DES.
+
+	* support/bignum.c, tests/test_crypt.c: big number regression tests
+	and bug fixes.
+
+2002-07-14  Gopal.V  <gopalv82@symonds.net>
+
+	* csdoc/doc_html.c, csdoc/doc_texi.c : fix the table bug
+	in csdoc2html and csdoc2texi
+
+2002-07-14  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/int_proto.h, engine/int_table.c, engine/lib_string.c:
+	replace the "String.EqualRange" internalcall with the new
+	"String.FindInRange" interncall.  Based on a suggestion by
+	Gopal V.
+
+	* samples/I18N.CJK.dll, samples/I18N.MidEast.dll,
+	samples/I18N.Other.dll, samples/I18N.Rare.dll,
+	samples/I18N.West.dll, samples/I18N.dll,
+	samples/System.Xml.dll, samples/System.dll,
+	samples/mscorlib.dll: update all assemblies from the latest
+	version of pnetlib.
+
+	* engine/lib_crypt.c, include/Makefile.am, include/il_bignum.h,
+	support/Makefile.am, support/bignum.c: add big number arithmetic
+	routines to the support and engine code.
+
+	* cscc/cscc.c (ProcessWithPlugin): handle the -E option properly.
+
+	* tests/test_crypt.c, tests/Makefile.am: add regression tests
+	for the cryptographic algorithms.
+
+2002-07-13  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/lib_crypt.c, include/il_crypt.h, support/Makefile.am,
+	support/des.c: implement the DES and Triple-DES symmetric
+	encryption algorithms.
+
+2002-07-12  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/lib_crypt.c, include/il_crypt.h, support/Makefile.am,
+	support/sha256.c, support/sha384.c, support/sha512.c: implement
+	the SHA-256, SHA-384, and SHA-512 hash algorithms.
+
+	* engine/lib_crypt.c, include/il_crypt.h, support/Makefile.am,
+	support/aes.c, support/rc2.c: implement the AES and RC2 symmetric
+	encryption algorithms.
+
+	* engine/int_proto.h, engine/int_table.c, engine/lib_crypt.c,
+	samples/mscorlib.dll: stub out new cryptography-related internalcalls.
+
+2002-07-07  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* image/link.c: error in the handling of module names that already
+	include a ".so" suffix.
+
+	* ilalink/link_main.c: chmod the .exe file to +x at the end of
+	the link process.
+
+2002-07-06  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/Makefile.am, engine/int_proto.h, engine/int_table.c,
+	engine/lib_crypt.c, samples/mscorlib.dll: implement internalcall's
+	for the "CryptoMethods" class.
+
+	* cscc/csharp/cs_gather.c (CreateEvent): use a slightly different
+	test for delegate types because the "Invoke" method may not be
+	in existence yet.
+
+	* codegen/cg_decls.tc: wrong assembler directives for events.
+
+2002-07-05  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/Makefile.am, cscc/cscc.c, ilalink/Makefile.am,
+	ilalink/ilalink.c, ilalink/link_main.c, include/il_linker.h,
+	samples/Makefile.am: integrate the linker directly into the
+	"cscc" front-end so that it isn't necessary to call out to
+	a separate program to do the link.
+
+2002-07-04  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* ilalink/Makefile.am, ilalink/ilalink.c, ilalink/link_create.c,
+	ilalink/link_library.c, ilalink/linker.h, include/il_linker.h:
+	normalize the linker's search path with the rest of the system.
+
+	* cscc/cscc.c, cscc/common/cc_main.c: modify path searching so
+	that it is consistent with the engine and linker with respect
+	to system assemblies.
+
+	* doc/pnettools.texi, cscc/cscc.1: document the "-gtk" and
+	"-gnome" options.
+
+	* doc/gtk-sharp.HOWTO: add some documentation for how to use
+	Gtk# with Portable.NET.
+
+	* clrwrap/Makefile.am, codegen/Makefile.am, csant/Makefile.am,
+	cscc/Makefile.am, cscc/common/Makefile.am, cscc/csharp/Makefile.am,
+	csdoc/Makefile.am, dumpasm/Makefile.am, engine/Makefile.am,
+	ilalink/Makefile.am, ilasm/Makefile.am, ildasm/Makefile.am,
+	ildb/Makefile.am, ildiff/Makefile.am, ilfind/Makefile.am,
+	ilnative/Makefile.am, ilsize/Makefile.am, image/Makefile.am,
+	resgen/Makefile.am, samples/Makefile.am, support/Makefile.am,
+	tests/Makefile.am: out of tree builds (Stephen Compall).
+
+	* codegen/cg_cast.tc, codegen/cg_const.tc, codegen/cg_nodes.tc,
+	codegen/jv_const.tc, cscc/csharp/cs_const.tc: implement code
+	generation and constant evaluation for casting pointer values.
+
+	* Makefile.am, configure.in, doc/pnettools.texi, ildd/.cvsignore,
+	ildd/Makefile.am, ildd/ildd.1, ildd/ildd.c: add the "ildd" program
+	to the stack, which prints assembly and PInvoke dependencies.
+
+	* README: change the reference to "gunzip" to "zcat".
+
+2002-07-02  Gopal.V  <gopalv82@symonds.net>
+
+	* doc/Doxyfile: Add Doxygen configuration file (contributed
+	by C H Gowri Kumar (gkumar@csa.iisc.ernet.in)
+
+2002-07-02  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/common/cc_options.c: add the "-gtk" and "-gnome" options
+	to the compiler, to make it easier for programmers to add the
+	necessary libraries to the command-line.
+
+2002-07-01  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/csharp/cs_invoke.tc, engine/engine.h, engine/lib_delegate.c,
+	engine/verify_call.c, image/meta_types.c, include/il_types.h:
+	implement semantic analysis for delegate creation expressions
+	in the C# compiler.
+
+	* cscc/common/cc_main.c (InitCodeGen): add the -L link path to
+	the image context so that assembly references can be resolved.
+
+	* codegen/cg_arith.tc, codegen/cg_assign.tc, codegen/cg_nodes.tc,
+	codegen/jv_arith.tc, codegen/jv_assign.tc, cscc/csharp/cs_oper.tc:
+	delegate combination and removal operators; implement the missing
+	"+=" operator for strings.
+
+	* codegen/cg_library.c, codegen/cg_resolve.c: add builtin operators
+	for "Delegate" and "MulticastDelegate"; fix operator matching rules
+	in "ResolveMethod".
+
+	* cscc/csharp/cs_gather.c, cscc/csharp/cs_grammar.y: implement
+	type gathering for events.
+
+	* codegen/cg_decls.tc, codegen/cg_nodes.tc, cscc/csharp/cs_decls.tc,
+	cscc/csharp/cs_gather.c: semantic analysis and code generation
+	for events.
+
+	* codegen/cg_decls.tc, cscc/csharp/cs_gather.c: bug fixes to
+	previous check-in.
+
+	* cscc/csharp/cs_lookup.c: if we find a field and an event with
+	the same name, then favour the field.
+
+	* cscc/csharp/cs_gather.c: improve duplicate detection for events.
+
+	* codegen/cg_nodes.tc, codegen/cg_stmt.tc, codegen/jv_stmt.tc,
+	cscc/csharp/cs_lvalue.tc, cscc/csharp/cs_oper.tc,
+	cscc/csharp/cs_stmt.tc: implement code generation and semantic
+	analysis for the "+=" and "-=" operators on events.
+
+	* ilasm/ilasm_build.c: allow assembly references to be specified
+	implicitly, to make it easier to handle transistive inclusions.
+
+	* ilalink/link_library.c (ILLinkerResolveLibrary): bug in the
+	handling of assembly names that contain '.' but don't end in ".dll".
+
+	* engine/lib_object.c, image/meta_build.c, image/meta_index.c,
+	image/test_macros.c, support/file.c, support/socket.c,
+	tests/test_thread.c: eliminate compiler warnings on IA-64 that
+	were due to mismatches between the size of "int" and "void *".
+
+2002-06-30  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* libffi/configure, libffi/configure.in: add host detection
+	for GNU/Hurd (thanks to Andrew Mitchell).
+
+	* image/link.c, include/il_image.h, samples/Makefile.am,
+	samples/pnetlib.here: re-write assembly path resolution so that
+	it can "see past" system assemblies from other CLR's that may
+	be on the path prior to the pnetlib assemblies; use the same
+	path for PInvoke modules.
+
+	* cscc/common/cc_main.c: integrate the full system search path
+	into the compiler and csdoc.
+
+	* samples/System.dll: updated version with more System.ComponentModel
+	classes.
+
+	* engine/cvm_conv.c: insert extra casts for "I2P_LOWER".
+
+2002-06-29  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* samples/mscorlib.dll: new version with delegate comparison fix.
+
+	* engine/verify_ptr.c (IL_OP_LDOBJ): fix verification of "ldobj"
+	instructions that involve primitive types like IntPtr and UIntPtr.
+
+	* image/link.c: search a default module path if LD_LIBRARY_PATH
+	is not defined.
+
+	* engine/internal.c: don't include the "Marshal" class if PInvoke
+	has been disabled.
+
+	* engine/cvmc_ptr.c, engine/cvmc_setup.c: mis-spelled identifiers
+	in 64-bit version of the CVM coder.
+
+	* samples/mscorlib.dll: new version with range check fixes to String.
+
+2002-06-28  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/cvm.h, engine/cvm_conv.c, engine/cvm_dasm.c,
+	engine/cvm_lengths.c, engine/cvmc_setup.c, image/marshal.c,
+	include/il_meta.h: marshal "ref String[]" parameters correctly.
+
+	* engine/Makefile.am, engine/int_proto.h, engine/int_table.c,
+	engine/lib_marshal.c, samples/mscorlib.dll: implement internalcall
+	methods for the "Marshal" class.
+
+	* samples/I18N.CJK.dll, samples/I18N.MidEast.dll,
+	samples/I18N.Other.dll, samples/I18N.Rare.dll,
+	samples/I18N.West.dll, samples/I18N.dll,
+	samples/System.Xml.dll, samples/System.dll,
+	samples/mscorlib.dll: update all assemblies from pnetlib.
+
+	* image/link.c, support/dynlink.c: prepend "lib" to the name
+	of a shared object if the supplied name was not found.
+
+2002-06-27  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* NEWS, configure.in: update version for the "0.4.0" release.
+
+	* configure.in: update working version to "0.4.1".
+
+2002-06-26  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* ildb/ildb_context.c, ildb/ildb_context.h, ildb/ildb_list.c,
+	ildb/ildb_run.c, ildb/ildb_show.c, ildb/ildb_source.c,
+	ildb/ildb_source.h: implement "list ,main", "info line", and
+	"info source", to assist with integration with xxgdb.
+
+	* image/item.c (_ILProgramItemLink): never link a program
+	item to itself.
+
+	* engine/verify.c, image/opdef.c: the IL "break" instruction is
+	verifiable, but is otherwise ignored by the verifier/coder.
+
+	* tests/Makefile.am, tests/test_verify.c, tests/test_verify.h,
+	tests/test_vmisc.c: adjust the verification test for "break" to
+	match the engine; add tests for "arglist", "cpblk", and "initblk".
+
+2002-06-26  Gopal.V  <gopalv82@symonds.net>
+
+	* ilnative/ilcheck.c : repurpose it for checking for PInvoke 
+	calls and their images in the DSO files.	
+
+2002-06-25  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* ildb/ildb_display.c, ildb/ildb_utils.h: debugger support for
+	printing the contents of memory values.
+
+	* ildb/Makefile.am, ildb/ildb_cmd.h, ildb/ildb_context.c,
+	ildb/ildb_context.h, ildb/ildb_input.c, ildb/ildb_input.h,
+	ildb/ildb_main.c, ildb/ildb_run.c, ildb/ildb_utils.c,
+	ildb/ildb_utils.h: add support to the debugger to load and run
+	applications (breakpoints are not yet supported though).
+
+	* ildb/ildb_run.c: modify the output of the "run" command so
+	that xxgdb can properly detect program start and termination.
+
+	* ildb/Makefile.am, ildb/ildb_context.c, ildb/ildb_context.h,
+	ildb/ildb_run.c, ildb/ildb_search.c, ildb/ildb_search.h,
+	ildb/ildb_source.c, ildb/ildb_source.h: add debugger support
+	for creating pseudo source files for programs that weren't
+	compiled with -g.
+
+2002-06-24  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/csharp/cs_lookup.c (CSResolveMemberName): special hack
+	for enumerated types that have the same name as instance properties.
+
+	* image/image.h, image/meta_writer.c, image/pecoff_writer.c,
+	image/writer.c: fix the back-patching of field RVA's.
+
+	* engine/unroll_x86.c, engine/unroll_x86_ptr.c,
+	engine/unroll_x86_var.c: fix usage of x86_mov_membase_reg and
+	x86_mov_memindex_reg when byte destinations are involved.
+
+	* engine/cvm.c, engine/cvm.h, engine/cvm_dasm.c, engine/cvm_format.h,
+	engine/cvm_lengths.c, engine/cvmc.c, engine/cvmc_call.c,
+	engine/cvmc_gen.h, engine/cvmc_setup.c, engine/engine.h,
+	engine/lib_diag.c, engine/null_coder.c, engine/process.c,
+	include/il_coder.h, include/il_engine.h: add hooks into the
+	runtime engine to support future debugging operations by ildb.
+
+2002-06-23  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* codegen/Makefile.am, codegen/cg_gen.c, codegen/cg_gen.h,
+	codegen/cg_nodemap.c, codegen/cg_nodemap.h: introduce an associative
+	map that allows nodes to be associated with program items, to easily
+	map from one to the other.
+
+	* cscc/csharp/cs_gather.c: associate nodes with program items
+	during the type gathering process.
+
+	* codegen/cg_nodemap.c, codegen/cg_nodes.tc,
+	cscc/csharp/cs_decls.tc, cscc/csharp/cs_gather.c,
+	cscc/csharp/cs_lvalue.tc, cscc/csharp/cs_semantics.tc:
+	protect declaration nodes from double-evaluation during semantic
+	analysis; handle forward definitions of constants.
+
+	* cscc/csharp/cs_attrs.c, cscc/csharp/cs_decls.tc,
+	cscc/csharp/cs_internal.h: add some of the scaffolding that is
+	necessary to process attributes for classes, methods, and properties.
+
+	* engine/lib_string.c, engine/pinvoke.c: perform marshalling
+	conversions when a delegate closure is called by native code.
+
+	* engine/cvm_conv.c: convert delegates into function closures
+	when calling PInvoke methods.
+
+2002-06-21  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/call.c, engine/cvm_call.c, engine/engine.h,
+	engine/lib_defs.h, engine/lib_delegate.c, engine/pinvoke.c,
+	samples/mscorlib.dll: continue implementation of delegates;
+	rearrange the method call support code to improve code sharing.
+
+	* engine/verify.c, engine/verify_call.c, engine/verify_obj.c:
+	verify delegate construction.
+
+	* engine/internal.c (_ILFindInternalCall): if the namespace is
+	not present, then we still want to process arrays and delegates.
+
+	* codegen/cg_misc.tc, codegen/cg_nodes.tc, codegen/cg_output.c,
+	codegen/cg_output.h, codegen/jv_misc.tc, cscc/csharp/cs_invoke.tc:
+	code generation for delegate creation.
+
+	* engine/lib_defs.h, engine/lib_delegate.c, engine/pinvoke.c:
+	invocation support for multicast delegates.
+
+2002-06-20  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/Makefile.am, engine/delegate.c, engine/engine.h,
+	engine/lib_defs.h, engine/lib_misc.c, engine/pinvoke.c,
+	samples/mscorlib.dll: begin implementing delegate support.
+
+	* engine/Makefile.am, engine/delegate.c, engine/engine.h,
+	engine/internal.c, engine/lib_delegate.c: implement the
+	internalcall support code for delegates; rename "delegate.c"
+	as "lib_delegate.c" for consistency with other library classes.
+
+2002-06-19  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/engine.h, engine/heap.c, engine/int_proto.h,
+	engine/int_table.c, engine/internal.c, engine/lib_gc.c,
+	include/il_gc.h, samples/mscorlib.dll, support/def_gc.c,
+	support/hb_gc.c: implement internalcall methods for "System.GC".
+
+	* engine/engine.h, engine/int_proto.h, engine/int_table.c,
+	engine/lib_gc.c, engine/process.c, include/il_gc.h,
+	samples/mscorlib.dll, support/def_gc.c, support/hb_gc.c:
+	implement GC handles and weak references.
+
+	* engine/process.c (ILExecProcessDestroy): bug fix for SEGV
+	in previous check-in.
+
+	* engine/lib_thread.c: implement internalcall methods for
+	"WaitHandle" and "Mutex".
+
+	* engine/int_proto.h, engine/int_table.c, engine/lib_enum.c,
+	samples/mscorlib.dll: rationalise parameter naming for
+	"Enum.GetEnumValueFromName".
+
+	* engine/lib_misc.c: implement "ClrMakeTypedReference" internalcall.
+
+	* engine/int_proto.h, engine/int_table.c, engine/lib_misc.c,
+	samples/mscorlib.dll: implement "ClrSetTypedReference" internalcall.
+
+2002-06-18  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/convert.c, engine/cvm_arith.c, engine/cvm_var.c,
+	engine/lib_misc.c, engine/lib_type.c, samples/mscorlib.dll:
+	change "NotSupportedException" into "NotImplementedException",
+	to be ECMA-compatible.
+
+	* csdoc/doc_html.c, csdoc/doc_load.c, csdoc/doc_tree.h:
+	report the library that a type or member resides in.
+
+	* engine/internal.c, engine/lib_object.c, engine/lib_type.c,
+	profiles/README, profiles/compact, profiles/compact-fp,
+	profiles/full, profiles/kernel, profiles/kernel-fp,
+	profiles/tiny: profile support for disabling the "runtime
+	infrastructure" parts of the system library.
+
+	* csant/csant.c, csant/csant_cscc.c, csant/csant_defs.h,
+	csant/csant_parse.c: add the "-p" command-line option to csant,
+	to support definition profiles.
+
+2002-06-17  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/cvm_conv.c, engine/lib_string.c, include/il_engine.h:
+	fix remaining ANSI vs UTF-8 issues in the engine's string handling.
+
+	* engine/lib_type.c: begin implementing "ClrType.GetInterface" and
+	"ClrType.GetInterfaces".
+
+	* csdoc/Makefile.am, csdoc/csdoc2hier.1, doc/pnettools.texi,
+	csdoc/csdoc2hier.c: add the "csdoc2hier" program to the system,
+	which dumps a tree hierarchy of the classes in an XML
+	documentation file.
+
+	* support/ansi.c: bug fixes to Latin1 ANSI routines.
+
+	* engine/internal.c, engine/lib_defs.h, engine/lib_reflect.c,
+	engine/lib_type.c, samples/mscorlib.dll: re-enable some classes
+	that used to turned off when reflection was turned off, because
+	they are not strictly part of the reflection library.
+
+2002-06-16  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/heap.c (InitializeClass): throw "TypeInitializationException"
+	if a class could not be initialized by the layout routines.
+
+	* engine/cvm_ptr.c: use "_ILEngineAllocObject" instead of
+	"_ILEngineAlloc" in the CVM "new" instruction, because the class
+	may not have been laid out yet.
+
+	* engine/convert.c (_ILConvertMethod): if the method's class cannot
+	be laid out, then throw "TypeInitializationException".
+
+	* engine/cvm.h, engine/cvm_dasm.c, engine/cvm_inline.c,
+	engine/cvm_lengths.c, engine/cvmc_call.c: add the new CVM
+	instructions "monitor_enter" and "monitor_exit".
+
+	* engine/cvm.h, engine/cvm_dasm.c, engine/cvm_lengths.c,
+	engine/cvm_stack.c, engine/cvmc_var.c: add the new CVM instruction
+	"local_alloc" to implement IL's "localloc" instruction.
+
+	* engine/verify.c (AssignCompatible): allow managed pointers to
+	be assigned to any pointer-like destination in "unsafe" mode.
+
+	* engine/verify_ptr.c: remove obsolete comment.
+
+	* engine/lib_string.c (_IL_String_Equals): fix the length that
+	is passed to ILMemCmp.
+
+	* samples/I18N.CJK.dll, samples/I18N.MidEast.dll,
+	samples/I18N.Other.dll, samples/I18N.Rare.dll,
+	samples/I18N.West.dll, samples/I18N.dll,
+	samples/System.Xml.dll, samples/System.dll,
+	samples/mscorlib.dll: update all assemblies from the pnetlib
+	source, primarily for the text resource fixes.
+
+	* engine/lib_encoding.c, include/il_utils.h, support/Makefile.am,
+	support/ansi.c, support/locale.c: move the ANSI handling routines
+	out of "engine" and into "support".
+
+2002-06-15  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* include/Makefile.am: add mising .h files to the install.
+
+	* Makefile.am, configure.in, clrwrap/.cvsignore, clrwrap/Makefile.am,
+	clrwrap/clrwrap.1, clrwrap/clrwrap.c: add the "clrwrap" program
+	to the system, which is designed to make it easier to launch
+	IL programs on Unix systems.
+
+2002-06-14  Gopal.V  <gopalv82@symonds.net>
+	
+	* cscc/csharp/cs_stmt.tc: fix SEGFAULT during -nostdlib
+	compile for "foreach" collection expression
+
+2002-06-14  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/csdoc.c (DumpClassNameSP): increment "namespace" when
+	outputting underscores to replace dots in namespace names.
+
+	* cscc/csharp/cs_grammar.y: #ifdef around YYEOF because some
+	versions of yacc don't have it.
+
+	* tools/pnet_build.sh, tools/pnet_build.cfg, tools/pnet_build.README:
+	add an automated build script to the system, to assist people who
+	want to do regular sanity-check builds.
+
+	* engine/Makefile.am, engine/lib_charinfo.c, engine/lib_dir.c,
+	engine/lib_platform.c, engine/lib_task.c, engine/lib_time.c:
+	split "lib_platform.c" into multiple files, one per class, which
+	should make it easier to cut down the engine on embedded platforms.
+
+	* engine/engine.h, engine/ilrun.c, engine/lib_task.c,
+	engine/process.c, include/il_engine.h: save the command-line
+	argument array so that it can be returned to the application
+	via the "Platform.TaskMethods" class.
+
+	* engine/lib_stdio.c: implement the remaining "StdRead" methods
+	in the "Platform.Stdio" class.
+
+	* engine/lib_helpers.c: implement the remaining methods in the
+	"RuntimeHelpers" class.
+
+	* engine/internal.c, profiles/compact, profiles/compact-fp,
+	profiles/full, profiles/kernel, profiles/kernel-fp: add profile
+	support to enable or disable filesystem operations in "lib_file.c"
+	and "lib_dir.c".
+
+	* engine/verify_obj.c (BoxValue): check for the correct combinations
+	of stack value and boxing types.
+
+	* engine/verify_arith.c (binaryShiftMatrix): wrong inferred type
+	for the combination (I4, I) - should be I4, not I.
+
+2002-06-13  Gopal.V  <gopalv82@symonds.net>
+	
+	* codegen/cg_resolve.c, codegen/cg_resolve.h: add "ILResolveProperty"
+	which gets a property by name from a class.
+
+	* cscc/csharp/cs_stmt.tc , codegen/cg_stmt.tc , codegen/cg_nodes.tc,
+	codegen/jv_stmt.tc, codegen/jv_nodes.tc: implement semantic analysis
+	and code-generation	for "foreach" Collection expressions.
+
+2002-06-13  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* support/gen_errno.sh: copy the "#include <errno.h>" line into
+	a temporary file, to work around C compilers that do not accept
+	"-" as a source file for pre-processing.
+
+	* configure.in, include/il_config.h.in: detect the "nsl" and
+	"socket" libraries for platforms that require them (e.g. Solaris).
+
+	* ilasm/ilasm_build.c (ILAsmBuildNewClass): set the default
+	parent to "System.Object" if unspecified.
+
+2002-06-12  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* support/gen_errno.sh: work-around versions of grep that lack
+	the -q option (e.g. Solaris grep).
+
+	* Makefile.am, acconfig.h, configure.in, ildb/Makefile.am,
+	ilnative/Makefile.am, include/il_config.h.in, support/Makefile.am,
+	support/def_gc.c, support/hb_gc.c, support/pt_defs.c,
+	support/pt_defs.h, support/thr_choose.h, tests/Makefile.am:
+	add the "--without-libgc" option to "configure", to allow building
+	the system without a full garbage collector.
+
+	* engine/process.c: don't call "ILDynLibraryClose" if PInvoke
+	is disabled, as it will never be required.
+
+	* doc/embedded.html: document how the runtime engine can be
+	stripped down to run in embedded environments.
+
+	* engine/verify_call.c, engine/verify_except.c, engine/verify_obj.c,
+	engine/verify_ptr.c, engine/verify_stack.c: implement the "ThrowSystem"
+	function, which builds and throws exceptions for certain kinds of
+	verification failure.
+
+	* engine/cvm_except.c: do not fetch the stack trace if reflection
+	or debug line information has been disabled.
+
+	* engine/verify.c: do not call "ILDebugPresent" if debug line
+	information has been disabled.
+
+	* engine/convert.c: avoid calling back into the class library
+	for exceptions that are thrown by "_ILConvertMethod".
+
+	* engine/lookup.c (LookupClass): detect classes within the
+	"System" namespace correctly.
+
+	* samples/mscorlib.dll: new version of the class library, which
+	is hardened against runtime engines that are missing reflection.
+
+	* ilasm/ilasm_output.c (ILAsmOutFinalizeMethod): apply fixups
+	to class references in exception blocks.
+
+	* engine/lib_helpers.c: bug fix - #endif in the wrong place.
+
+	* engine/verify.c, image/Makefile.am, image/opcodes.c,
+	image/opcodes_small.c, image/opdef.c, include/il_opcodes.h:
+	create a "small" set of opcode tables for use when the opcode
+	name is not required and memory is tight; modify the verifier
+	to use the small opcode table.
+
+	* engine/cvm_doc.txt: describe the "dformat" tag.
+
+	* engine/ilrun.c, engine/process.c, include/il_engine.h,
+	support/allocate.c, support/filemap.c, support/mem_debug.h:
+	add some debug code that allows "ILMalloc" usage to be tracked.
+
+2002-06-11  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* include/il_engine.h, engine/thread.c: add "ILExecThreadCurrent",
+	which gets the current "ILExecThread *" object from within the
+	context of a PInvoke'd method.
+
+	* engine/heap.c, support/hb_gc.c: enable finalizers in single-threaded
+	environments (multi-threaded finalization is TBD).
+
+	* libffi/ChangeLog, libffi/src/powerpc/ffi_darwin.c,
+	libffi/src/s390/sysv.S, libffi/src/x86/ffi.c: update libffi sources
+	from the gcc CVS repository.
+
+	* libffi/src/sparc/v8.S: fix pre-processor problems on Sparc.
+
+	* engine/cvm.c, engine/cvm_arith.c, engine/cvm_call.c,
+	engine/cvm_compare.c, engine/cvm_const.c, engine/cvm_conv.c,
+	engine/cvm_ptr.c, engine/cvm_var.c, engine/cvmc.c,
+	engine/lib_helpers.c, engine/lib_misc.c: disable floating-point
+	CVM instructions and internalcalls if disabled by the profile.
+
+	* image/member.c: #ifdef out Java support if disabled by the profile.
+
+	* image/ser_parse.c: #ifdef out parsing of float/double attribute
+	values if disabled by the profile.
+
+	* engine/int_proto.h, engine/int_table.c, engine/internal.c,
+	engine/lib_platform.c, ilnative/ilinternal.c: disable the "Math",
+	"Single", "Double", and "Decimal" classes if specified by the
+	profile; stub out new "DirMethods" internalcalls.
+
+	* engine/cvm_call.c, engine/cvmc_call.c, engine/cvmc_setup.c,
+	engine/internal.c, engine/lib_diag.c, engine/lib_misc.c,
+	engine/lib_type.c, engine/verify.c, engine/verify_call.c:
+	#ifdef out vararg, networking, and reflection support if
+	requested by the profile.
+
+	* engine/call.c, engine/convert.c, engine/cvm.c, engine/cvm_call.c,
+	engine/verify.c: arrange to throw "NotSupportedException" if
+	an internalcall method is not present, and "MissingMethodException"
+	if a PInvoke method is not present.
+
+	* engine/internal.c, profiles/compact, profiles/compact-fp,
+	profiles/full, profiles/kernel, profiles/kernel-fp: #ifdef out
+	debug line support if specified by the profile.
+
+2002-06-10  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* include/il_config_win.h, include/il_values.h: remove the out
+	of date file "il_config_win.h".
+
+	* support/allocate.c (PageInit): probe "/dev/zero" to see if
+	it is really capable of allocating page-based memory.
+
+	* samples/I18N.CJK.dll, samples/I18N.MidEast.dll,
+	samples/I18N.Other.dll, samples/I18N.Rare.dll,
+	samples/I18N.West.dll, samples/I18N.dll,
+	samples/System.Xml.dll, samples/System.dll,
+	samples/mscorlib.dll: update all assemblies from the latest
+	version of pnetlib.
+
+	* NEWS, configure.in: update version for the "0.3.8" release.
+
+	* configure.in: update working version to "0.3.9".
+
+	* configure.in, include/.cvsignore, include/Makefile.am,
+	include/il_values.h, profiles/README, profiles/compact,
+	profiles/compact-fp, profiles/full, profiles/kernel,
+	profiles/kernel-fp, profiles/mkprofile.sh: add the build
+	profile definitions and the "--with-profile" configure option.
+
+	* engine/cvm_call.c, engine/cvm_config.h, engine/engine.h,
+	engine/ilrun.c, engine/lib_encoding.c, engine/method_cache.c,
+	engine/process.c, image/pecoff_loader.c, support/unicode.c:
+	add the simple configuration profile #ifdef's to the code.
+
+	* engine/convert.c, engine/cvm_conv.c, engine/cvmc_setup.c,
+	engine/pinvoke.c, image/link.c, image/marshal.c: #ifdef out
+	PInvoke support if disabled by the profile.
+
+	* engine/lib_array.c, engine/lib_defs.h, engine/lib_helpers.c,
+	engine/lib_object.c: #ifdef out support for multi-dimensional
+	arrays if disabled by the profile.
+
+2002-06-09  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* codegen/cg_stmt.tc, codegen/jv_stmt.tc: make sure that the
+	extra value is popped from the stack when generating "switch"
+	statements using "if" tests rather than table lookups.
+
+	* ilasm/ilasm_output.c (ILAsmOutSwitchEnd): compute the correct
+	value for the number of switch entries.
+
+	* ilasm/ilasm_output.c: compute switch label references relative
+	to the end of the switch, instead of the position of the reference.
+
+	* engine/method_cache.c (_ILCacheCreate): "limit == 0" is supposed
+	to mean unlimited.
+
+2002-06-08  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* tests/test_thread.c: simple tests for creating wait mutexes.
+
+2002-06-07  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* include/il_thread.h, support/Makefile.am, support/thr_defs.h,
+	support/thread.c, support/wait.c, support/wait_mutex.c,
+	support/wakeup.c: begin implementing support for wait handles.
+
+	* codegen/cg_misc.tc, codegen/cg_nodes.tc, codegen/cg_stmt.tc,
+	cscc/csharp/cs_stmt.tc: re-implement "ILNodeEndsInReturn" as
+	a node operation so that it is easier to maintain and can be
+	overridden from "cscc/csharp" for non-codegen node types.
+
+	* support/wait.c: implement "EnterWait" and "LeaveWait".
+
+	* support/wait_mutex.c: implement the name table for named mutexes.
+
+2002-06-04  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/box.c, engine/call.c, engine/convert.c, engine/cvm_call.c,
+	engine/cvmc.c, engine/cvmc_obj.c, engine/cvmc_ptr.c, engine/engine.h,
+	engine/heap.c, engine/layout.c, engine/lib_array.c, engine/lib_type.c,
+	engine/lookup.c, engine/process.c, engine/thread.c,
+	engine/verify_obj.c, include/il_engine.h: begin adding support
+	for metadata locks to the engine.
+
+	* engine/engine.h, engine/lib_thread.c, engine/process.c,
+	engine/thread.c: associate the "self" thread handle with the
+	main thread.
+
+2002-06-03  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/cvmc_branch.c: wrong offset for switch entries.
+
+	* engine/unroll_x86.c, engine/unroll_x86_arith.c,
+	engine/unroll_x86_branch.c, engine/unroll_x86_ptr.c,
+	engine/unroll_x86_var.c: implement code unrolling for CVM
+	object access instructions.
+
+	* engine/unroll_x86.c, engine/unroll_x86_ptr.c: unroll CVM
+	array access instructions.
+
+	* engine/cvmc.c, engine/ilrun.c, engine/method_cache.c,
+	engine/method_cache.h, engine/null_coder.c, engine/process.c,
+	include/il_coder.h, include/il_engine.h, include/il_gc.h,
+	support/hb_gc.c: add the "-P" option to ilrun to dump the
+	GC heap and method cache sizes on exit.
+
+	* engine/cvm.c, engine/cvm_config.h, engine/unroll_x86.c:
+	clean up the #ifdef's that detect code unrolling.
+
+	* engine/cvm.c: document the "unroll_method" instruction.
+
+	* support/allocate.c: implement true page allocation on
+	systems with mmap support.
+
+2002-06-02  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/unroll_x86.c (ReExecute): fix a bug in the stack height
+	adjustment.
+
+2002-06-01  Gopal.V  <gopalv82@symonds.net>
+
+	* engine/lib_reflect.c: Internal call for Type[] Assembly.GetTypes(),
+	as a temporary solution until we support mutiple module assemblies.
+
+	* samples/httpsrv.cs, samples/Makefile.am : A sample of a network 
+	based app, a very minimal http server.
+	
+2002-06-01  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/pinvoke.c (_ILMakeCifForMethod): bug in the generation
+	of ffi types when the return type is a structure.
+
+	* engine/cvm.c, engine/engine.h, engine/unroll_x86.c,
+	engine/unroll_x86_arith.c, engine/unroll_x86_branch.c,
+	engine/unroll_x86_conv.c, engine/unroll_x86_ptr.c: fix various
+	x86 code generation bugs in the code unroller.
+
+	* engine/unroll_x86.c, engine/unroll_x86_arith.c,
+	engine/unroll_x86_const.c, engine/unroll_x86_conv.c,
+	engine/unroll_x86_var.c: more bugs in code unroller, which has
+	now been enabled.
+
+	* engine/unroll_x86.c, engine/unroll_x86_arith.c: implement
+	code unrolling for CVM division instructions.
+
+2002-05-31  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/Makefile.am, engine/cvm_lengths.c, engine/unroll_x86.c,
+	engine/unroll_x86_arith.c, engine/unroll_x86_branch.c,
+	engine/unroll_x86_const.c, engine/unroll_x86_conv.c,
+	engine/unroll_x86_ptr.c, engine/unroll_x86_var.c,
+	engine/x86_codegen.h: initial check-in of x86 code unroller.
+
+	* engine/cvm.c, engine/cvm.h, engine/cvm_dasm.c, engine/cvm_lengths.c,
+	engine/cvmc.c, engine/cvmc_branch.c, engine/cvmc_setup.c,
+	engine/engine.h, engine/null_coder.c, engine/unroll_x86.c,
+	engine/unroll_x86_branch.c, engine/unroll_x86_conv.c,
+	engine/verify.c, include/il_coder.h: hook the x86 code unroller
+	into the rest of the engine, but don't enable it yet because
+	it still has some bugs.
+
+2002-05-27  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/engine.h, engine/layout.c: use the image's "secure" bit
+	to determine if explicit class layout is permitted.
+
+	* engine/cvmc_setup.c, engine/pinvoke.c: pass value types by value
+	to PInvoke methods.
+
+	* engine/cvm.h, engine/cvm_conv.c, engine/cvm_dasm.c,
+	engine/cvmc_setup.c, image/marshal.c, include/il_meta.h,
+	include/il_program.h: implement new marshalling types for
+	PInvoke methods and add new CVM instructions to support them.
+
+	* engine/engine.h, engine/layout.c, engine/pinvoke.c: implement
+	marshalling of PInvoke value types that have explicit layout.
+
+	* doc/pinvoke.html: rewrite "pinvoke.html" to document the
+	current PInvoke conventions within the engine.
+
+	* include/il_system.h, support/Makefile.am, support/clflush.c:
+	add the "ILCacheFlush" support function, to enable the flushing
+	of the CPU data/instruction caches.
+
+2002-05-26  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* codegen/cg_gen.c, codegen/cg_nodes.tc, codegen/cg_stmt.tc,
+	codegen/jv_stmt.tc, cscc/csharp/cs_stmt.tc: add a special case
+	to "foreach" to handle iteration over strings more efficiently.
+
+	* engine/cvmc_setup.c, engine/pinvoke.c: rewrite the CVM method
+	setup implementation so that we can use either "ffi_call" or
+	"ffi_raw_call" to invoke native methods.
+
+	* engine/cvm_call.h, engine/cvm_config.h, engine/cvmc_gen.h:
+	move CVM_CTOR_OFFSET into "cvm_config.h" so that the interpreter
+	can use the value directly, rather than needing to call the
+	coder to get it during constructor calls.
+
+	* engine/cvm.h: fix the definition of "CVMWord::padding".
+
+	* configure.in: move AC_EXEEXT and AC_OBJEXT down to after
+	AC_PROG_CC, because they depend upon on it on some platforms.
+
+	* engine/cvm_call.c: short-cut "call_virtual" and "call_interface"
+	when the method has already been converted.
+
+2002-05-25  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/lib_array.c: add special cases for 2-dimensional arrays.
+
+	* engine/cvm.h, engine/cvm_call.c, engine/cvm_conv.c,
+	engine/cvm_dasm.c, engine/cvmc.c, engine/cvmc_arith.c,
+	engine/engine.h: add new instructions that can support raw ffi calls.
+
+2002-05-24  Andrew Mitchell  <ajmitch@dunedin.lug.net.nz>
+
+	* debian/*: add files related to Debian packaging.
+	* debian/pnet, debian/pnet-dev: remove generated files from CVS
+	to avoid conflicts
+	
+2002-05-24  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/HACKING, engine/cvm.c, engine/cvm_branch.c,
+	engine/cvm_call.c, engine/cvm_config.h, engine/cvmc.c,
+	engine/cvmc_setup.c: alter the way that CVM is configured,
+	so that all configuration parameters are centralised into
+	"cvm_config.h".
+
+	* configure.in, engine/Makefile.am, engine/cvm.c, engine/cvm_call.c,
+	engine/cvm_config.h, engine/cvm_format.h, engine/cvmc.c,
+	engine/cvmc_gen.h, engine/mklabel.sh: turn on direct threading
+	support in the CVM interpreter.
+
+	* engine/cvm.h, engine/cvm_call.c, engine/cvm_dasm.c,
+	engine/cvm_format.h, engine/cvmc.c, engine/cvmc_call.c,
+	engine/cvmc_setup.c: convert the "tail" instruction into a
+	"tail_call" instruction which combines "tail" and "call";
+	implement tail calls for the direct threaded interpreter.
+
+	* engine/cvm_call.c, engine/cvm_format.h, engine/cvmc.c,
+	engine/cvmc_call.c, engine/null_coder.c, engine/verify_call.c,
+	include/il_coder.h: begin implementing support for indirect
+	method calls.
+
+	* engine/Makefile.am: add ilrun.1 to the build process.
+
+	* doc/cvmdoc.py, engine/cvm.c, engine/cvm_arith.c,
+	engine/cvm_branch.c, engine/cvm_call.c, engine/cvm_compare.c,
+	engine/cvm_const.c, engine/cvm_conv.c, engine/cvm_except.c,
+	engine/cvm_inline.c, engine/cvm_ptr.c, engine/cvm_stack.c,
+	engine/cvm_var.c: document the direct format of each instruction.
+
+2002-05-23  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* support/locale.c: #ifdef for CODESET because it isn't defined
+	on NetBSD, although nl_langinfo is.
+
+	* engine/cvmc_branch.c: code generation problem with branches
+	and comparisons that involve pointers.
+
+	* engine/cvm.c, engine/cvm_arith.c, engine/cvm_branch.c,
+	engine/cvm_call.c, engine/cvm_compare.c, engine/cvm_const.c,
+	engine/cvm_conv.c, engine/cvm_except.c, engine/cvm_inline.c,
+	engine/cvm_ptr.c, engine/cvm_stack.c, engine/cvm_var.c,
+	engine/cvm_format.h: abstract the details of operand unpacking
+	and instruction lengths, to make it easier to change to a direct
+	threading interpreter in the future.
+
+	* engine/verify.c: fetch the instruction information before
+	checking jump targets, so that the correct debug information
+	is reported if an error occurs during jump target processing.
+
+	* engine/verify_branch.c (ValidateStack): handle subclass
+	relationships properly when the stack is non-empty, including
+	array subclass relationships.
+
+	* tests/Makefile.am: turn off -O2 so that the huge test suite
+	source files compile quicker and don't overload the compiler's
+	optimisation engine.
+
+	* engine/cvm_format.h, engine/cvmc.c, engine/cvmc_branch.c,
+	engine/cvmc_const.c, engine/cvmc_gen.h: implement some of the
+	code generation and instruction pattern macros that are needed
+	to support direct threaded interpretation.
+
+2002-05-22  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* auto_gen.sh, configure.in, codegen/Makefile.am, csant/Makefile.am,
+	cscc/Makefile.am, cscc/common/Makefile.am, cscc/csharp/Makefile.am,
+	csdoc/Makefile.am, dumpasm/Makefile.am, engine/Makefile.am,
+	ilalink/Makefile.am, ilasm/Makefile.am, ildasm/Makefile.am,
+	ildb/Makefile.am, ildiff/Makefile.am, ilfind/Makefile.am,
+	ilnative/Makefile.am, ilsize/Makefile.am, image/Makefile.am,
+	resgen/Makefile.am, support/Makefile.am, tests/Makefile.am:
+	automake/autoconf updates which should help make things build
+	more smoothly on automake 1.5 systems.
+
+	* engine/lib_reflect.c (CreateFileStream): strip extra '/' from
+	the assembly pathname so that we don't get two '/'s in the name.
+
+	* engine/cvmc_setup.c, engine/int_table.c, ilnative/ilinternal.c:
+	handle the libffi expansion that occurs when native return types
+	are 32-bits or less in size.
+
+	* cscc/common/cc_errors.h: add an extra argument to the "CC_PRINTF"
+	macro to work around problems in MacOSX's preprocessor.
+
+	* cscc/common/cc_main.c (CCPluginParseError): recognise error
+	message forms from Bison 1.29 and higher.
+
+	* cscc/csharp/cs_grammar.y, ilasm/ilasm_grammar.y: add an ugly
+	hack to work around missing "-lfl" on MacOSX.
+
+	* configure.in: add the "-no-cpp-precomp" flag to CFLAGS if
+	the compiler supports it, because we don't want "smart"
+	preprocessing on MacOSX.
+
+2002-05-21  Gopal.V  <gopalv82@symonds.net>
+	
+	* cscc/csharp/cs_lvalue.tc,codegen/cg_lvalue.tc,codegen/cg_misc.tc
+	codegen/jv_lvalue.tc , codegen/jv_misc.tc: implement semantic
+	analysis and code generation of base references in cscc
+	
+2002-05-21  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/cvm.c, engine/cvm_arith.c, engine/cvm_branch.c,
+	engine/cvm_call.c, engine/cvm_compare.c, engine/cvm_const.c,
+	engine/cvm_conv.c, engine/cvm_except.c, engine/cvm_inline.c,
+	engine/cvm_ptr.c, engine/cvm_stack.c, engine/cvm_var.c,
+	engine/mklabel.sh: mark the end of each instruction case, because
+	it may be useful in future engine optimisations.
+
+2002-05-16  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/cvmc_setup.c (CVMCoder_SetupExternCtor): wrong return
+	value if we don't have an allocating constructor.
+
+	* engine/cvmc_var.c, engine/layout.c: handle "typedref"
+	values correctly.
+
+	* engine/verify_call.c (MatchSignature): pass the correct
+	index to "ILCoderPackVarArgs" for the first vararg parameter.
+
+	* engine/cvm_call.c, engine/cvmc.c, engine/cvmc_arith.c,
+	engine/cvmc_branch.c, engine/cvmc_call.c, engine/cvmc_const.c,
+	engine/cvmc_conv.c, engine/cvmc_except.c, engine/cvmc_gen.h,
+	engine/cvmc_obj.c, engine/cvmc_ptr.c, engine/cvmc_setup.c,
+	engine/cvmc_stack.c, engine/cvmc_var.c: implement a better
+	abstraction for CVM code generation to make it easier to change
+	the representation format in the future.
+
+	* engine/cvm_call.c (PackVarArgs): box "float" and "double"
+	values correctly during vararg method calls.
+
+2002-05-15  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/cscc.c: "-fsave-asm" saves the assembly output even if
+	the assembler fails.
+
+	* ilalink/link_class.c, ilalink/link_create.c, ilasm/ilasm_build.c,
+	ildasm/ildasm_class.c, image/class.c, image/meta_build.c,
+	image/meta_types.c, image/sig_parse.c: fix the handling of vararg
+	call sites in the linker, assembler, disassembler, and image code.
+
+	* codegen/cg_gen.c, image/member.c, include/il_program.h,
+	include/il_types.h: add the "ILMethodResolveCallSite" function
+	and related support code.
+
+	* ildasm/ildasm_java.c, ildasm/ildasm_method.c, image/opcodes.c,
+	include/il_opcodes.h: remove the "IL_OPCODE_ARGS_UNSAFE" value,
+	because it is not strictly accurate.
+
+	* engine/cvmc.c, engine/cvmc_call.c, engine/null_coder.c,
+	engine/verify_call.c, engine/verify_obj.c, include/il_coder.h:
+	verification of vararg method calls.
+
+	* engine/verify.c: recognise "typedref" values in "TypeToEngineType"
+	and "AssignCompatible".
+
+	* engine/cvm.h, engine/cvm_call.c, engine/cvm_dasm.c,
+	engine/cvmc.c, engine/cvmc_call.c, engine/cvmc_obj.c,
+	engine/cvmc_setup.c: add the "pack_varargs" CVM instruction to
+	repack the stack when calling a vararg method.
+
+	* support/test_float.c, engine/cvm_arith.c: add #ifdef's for hpux,
+	which uses "isfinite" instead of "finite".
+
+	* engine/call.c, engine/cvm.c, engine/cvm_call.c: throw
+	"System.Security.VerificationException" when the verifier fails.
+
+	* engine/cvm_dasm.c: simplify the reporting of "tail" instructions.
+
+	* engine/cvm.h, engine/cvm_call.c, engine/cvm_dasm.c,
+	engine/cvmc_call.c: collapse "call" and "call_extern" into a
+	single "call" instruction; look for a cached method entry point
+	in "call_ctor"; use the correct number of parameter words when
+	collapsing the stack for tail calls.
+
+2002-05-14  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/cvm_call.c, engine/cvm_except.c, engine/engine.h:
+	change "exceptHeight" into a pointer, to reduce the overhead
+	of exception handling slightly.
+
+	* include/il_values.h: remove parentheses that were causing
+	build breakages on MacOSX.
+
+	* csdoc/Makefile.am: move "csdocvalil", "csdoc2stub", and
+	"csdoc2test" to "noinst_PROGRAMS".
+
+	* ilnative/ilinternal.c: generate marshalling stubs for use when
+	libffi is not present on a system.
+
+	* acconfig.h, configure.in, engine/Makefile.am, engine/engine.h,
+	engine/int_table.c, ildb/Makefile.am, ilnative/Makefile.am,
+	include/il_config.h.in: hook the marshalling stub generator into
+	the system; add the "--without-libffi" option to configure.in.
+
+	* Makefile.am: don't build libffi unless "USING_LIBFFI" is defined.
+
+	* engine/convert.c, engine/cvm.c, engine/cvm_call.c, engine/engine.h,
+	engine/internal.c, engine/layout.c, engine/lib_array.c,
+	engine/pinvoke.c, ilnative/ilcheck.c: modify the engine to handle
+	both libffi and non-libffi internalcall marshalling.
+
+	* configure.in: directory cd error for "libgc" configuration;
+	turn off libffi by default on hpux.
+
+	* libgc/configure.host: remove "+ESdbgasm" option on hpux builds
+	as it causes problems on hpux/gcc systems.
+
+2002-05-13  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* libffi/src/powerpc/ffi_darwin.c: rearrange declarations
+	to declare "fd" properly.  Thanks to Glenn Chambers
+	<gchamber@bright.net>.
+
+	* engine/cvm.c: turn off computed goto's when profiling instructions.
+
+	* engine/cvm.h, engine/cvm_dasm.c, engine/cvm_var.c,
+	engine/cvmc_var.c: optimise loads and stores of bool/byte variables.
+
+	* engine/mklabel.sh: remove the "function" keyword, because it
+	is not portable to all shells.
+
+	* acconfig.h, configure.in, include/il_config.h.in,
+	engine/mklabel.sh: detect PIC and non-PIC forms of computed
+	goto's separately because older versions of gcc only support
+	the non-PIC form.
+
+	* engine/cvm.c, engine/mklabel.sh: make instruction debugging
+	work in the presence of computed goto's.
+
+	* engine/mklabel.sh: modify the awk scripts to work around versions
+	of awk that don't support hex string to number conversion.
+
+	* engine/cvm.c, engine/cvm_dasm.c, engine/cvm_ptr.c,
+	engine/cvm_var.c, engine/ilrun.c: add variable profiling.
+
+2002-05-12  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/csharp/cs_decls.tc, cscc/csharp/cs_lvalue.tc,
+	cscc/csharp/cs_stmt.tc: convert '//' comments into '/*'.
+
+	* engine/.cvsignore, engine/Makefile.am, engine/cvm.c,
+	engine/cvm_arith.c, engine/cvm_branch.c, engine/cvm_call.c,
+	engine/cvm_compare.c, engine/cvm_const.c, engine/cvm_conv.c,
+	engine/cvm_except.c, engine/cvm_inline.c, engine/cvm_ptr.c,
+	engine/cvm_stack.c, engine/cvm_var.c, engine/mklabel.sh:
+	modify the CVM interpreter so that it can use computed goto's
+	instead of "switch" on compilers that support it.
+
+	* acconfig.h, configure.in, include/il_config.h.in: detect
+	computed goto support during configuration.
+
+	* engine/HACKING, engine/Makefile.am, engine/asmfix.c: remove
+	"ilrun_opt", as "ilrun" is now at least as fast as it.
+
+2002-05-11  Gopal.V  <gopalv82@symonds.net>
+
+	* cscc/csharp/cs_stmt.tc, codegen/cg_scope.c,  codegen/cg_scope.h, 
+	cscc/csharp/cs_lvalue.tc: try to implementlocal "consts"
+
+2002-05-11  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* libffi/*: remove all libffi source files, prior to upgrade,
+	and then add the new sources.
+
+	* config-ml.in, config.if, libtool.m4, ltcf-c.sh, ltconfig, ltmain.sh,
+	move-if-change: new autotools files to assist with building libffi.
+
+	* Makefile.am, configure.in: configure and build libffi and libgc
+	more carefully than we were previously.
+
+	* engine/Makefile.am, engine/pinvoke.c, ildb/Makefile.am,
+	ilnative/Makefile.am, tests/Makefile.am: modify sources and link
+	lines where necessary to accomodate the new libffi.
+
+	* Makefile.am: make sure that libffi and libgc are cleaned up
+	correctly when "make clean" and "make distclean" are used.
+
+	* NEWS, configure.in: update version for the "0.3.6" release.
+
+	* configure.in: update working version to "0.3.7".
+
+	* engine/cvm_call.c: short-cut the common case of "COP_CALL_EXTERN"
+	being used to call a method that has been converted already.
+
+	* engine/cvm.c, engine/cvm_call.c, engine/cvm_except.c,
+	engine/engine.h, engine/lib_array.c, engine/thread.c:
+	convert the "frame" variable in the thread object and call frames
+	into a pointer because it is more efficient than a relative offset.
+
+	* engine/cvm_call.c: don't reset "thread->exceptHeight" on entry
+	to a method because it will be overwritten if it is needed anyway;
+	add some assembly hacks to prevent gcc getting overeager when
+	it optimises the method call code.
+
+2002-05-10  Jonathan Springer <jspringer@verizon.net>
+
+	* engine/cvm_call.c (_ILAllocCallFrame): Throw an 
+	OutOfMemoryException (pre-allocated) if new memory can
+	not be allocated to extend the frame stack.
+
+	* engine/cvm_call.c, engine/cvm_dasm.c,
+	engine/cvmc.c, engine/cvmc_call.c, engine/null_coder.c,
+	engine/verify_call.c, include/il_coder.h:  Add support 
+	for IL 'tail. call' sequence.  Note that tail. does not 
+	yes support 'calli' or 'callvirt' instructions, which 
+	is OK by ECMA-335.  
+
+	* engine/ilrun.c:  When argument parsing throws an
+	exception, print it out using the standard mechanisms.
+
+2002-05-10  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* ilalink/link_create.c: don't report "unresolved type reference"
+	for synthetic types and synthetic uses of "System.Array".
+
+	* codegen/cg_stmt.tc, codegen/jv_stmt.tc (ILNode_If): do not
+	generate branch instructions at the end of a "then" clause if
+	it ends with a "return" statement, because it will cause incorrect
+	code generation if the "else" clause also ends with a "return".
+
+	* codegen/cg_logical.tc, codegen/jv_logical.tc (ILNode_LogicalNot):
+	reversed test in "GenValue".
+
+	* cscc/csdoc.c, cscc/common/cc_main.c, cscc/common/cc_main.h:
+	turn on doc comments when compiling C# code with "csdoc".
+
+	* cscc/csdoc.c: bug fixes to XML output for interfaces and
+	constructors.
+
+	* cscc/csdoc.c: do not output "System.Object" as a base type
+	in the C# signature, because it looks odd.
+
+2002-05-09  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* libgc/misc.c: fix a Win32-ism that is affecting builds on
+	some Cygwin systems.
+
+	* codegen/cg_library.c, codegen/cg_lvalue.tc, codegen/cg_misc.tc,
+	codegen/cg_output.c, codegen/jv_lvalue.tc, codegen/jv_misc.tc:
+	continue implementation of method invocation for value types.
+
+	* codegen/cg_misc.tc, codegen/cg_nodes.tc, codegen/jv_misc.tc,
+	cscc/csharp/cs_invoke.tc, cscc/csharp/cs_lvalue.tc: box managed
+	values that are passed to ordinary class methods as "this".
+
+	* engine/lib_enum.c (_IL_Enum_GetEnumName): wrong pointer used
+	to fetch the field name.
+
+	* engine/mkint.sh, engine/HACKING: add the "mkint.sh" script
+	to the CVS repository.
+
+	* cscc/cscc.1, cscc/cscc.c, doc/pnettools.texi: add the "-fsave-asm"
+	option to the compiler to assist with debugging.
+
+2002-05-08  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* codegen/cg_gen.c, codegen/cg_misc.tc, codegen/cg_nodes.tc,
+	codegen/cg_output.c, codegen/cg_output.h, cscc/csharp/cs_decls.tc,
+	cscc/csharp/cs_gather.c, cscc/csharp/cs_grammar.y,
+	cscc/csharp/cs_invoke.tc: complete the implementation of the
+	"__arglist" keyword in the compiler.
+
+	* codegen/cg_lvalue.tc (ILNode_MemberField): bug fixes to field
+	accesses within managed values - previously the code was assuming
+	that everything was an object reference.
+
+	* codegen/cg_resolve.c: use the current class as the default
+	call scope when resolving operators.
+
+	* codegen/cg_resolve.c (ResolveMethod): off by one when checking
+	if all arguments were coercable; continue resolving if member is
+	inaccessible.
+
+	* codegen/cg_nodes.tc, cscc/csharp/cs_grammar.y,
+	cscc/csharp/cs_stmt.tc: implement semantic analysis for the simple
+	array case of the "foreach" statement.
+
+	* codegen/cg_misc.tc, codegen/jv_misc.tc, cscc/csharp/cs_lvalue.tc:
+	improve method invocation handling for value types.
+
+2002-05-07  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* codegen/cg_library.c, codegen/cg_misc.tc, codegen/cg_nodes.tc,
+	codegen/jv_misc.tc, cscc/csharp/cs_grammar.y, cscc/csharp/cs_misc.tc,
+	cscc/csharp/cs_scanner.l: implement the "__makeref", "__reftype",
+	and "__refvalue" operators.
+
+	* doc/pnettools.texi: document the new compiler keywords.
+
+2002-05-06  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* codegen/cg_scope.c, codegen/cg_scope.h, cscc/csharp/Makefile.am,
+	cscc/csharp/cs_attrs.c, cscc/csharp/cs_internal.h: begin adding
+	support for attribute semantic analysis.
+
+	* codegen/cg_misc.tc, codegen/cg_nodes.tc, codegen/jv_misc.tc,
+	cscc/csharp/cs_decls.tc, cscc/csharp/cs_grammar.y,
+	cscc/csharp/cs_internal.h, cscc/csharp/cs_invoke.tc:
+	implement non-static field initializers.
+
+	* codegen/cg_lvalue.tc, codegen/cg_nodes.tc, codegen/cg_utils.c,
+	codegen/cg_utils.h, codegen/jv_lvalue.tc, cscc/csharp/cs_lvalue.tc:
+	implement code generation for "ref" and "out" argument variables.
+
+	* engine/engine.h, engine/int_proto.h, engine/int_table.c,
+	engine/lib_misc.c, engine/process.c, engine/verify_obj.c,
+	samples/mscorlib.dll: implement internalcall's for "ArgIterator"
+	and "TypedReference.ToObject"; bug fix to verification of "arglist";
+	update "mscorlib.dll" with new declaration of "ArgIterator.End".
+
+	* codegen/cg_gen.c, codegen/cg_gen.h, codegen/cg_library.c,
+	codegen/cg_misc.tc, codegen/cg_nodes.tc, codegen/jv_misc.tc,
+	cscc/csharp/cs_grammar.y, cscc/csharp/cs_invoke.tc,
+	cscc/csharp/cs_scanner.l: begin adding support for the "__arglist"
+	keyword in the compiler.
+
+2002-05-05  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/call.c, engine/cvm_call.c, engine/engine.h,
+	engine/ilrun.1, engine/ilrun.c, engine/process.c: adjust for
+	pnet coding guidelines; make the -S option kbytes to be consistent
+	with -H; document -S in the manpage.
+
+	* engine/lib_diag.c (_IL_StackFrame_GetExceptionStackTrace):
+	perform manual allocation of the stack frame array to stop the
+	engine being recursively re-entered on StackOverflowException;
+	limit the number of reported frames to 256.
+
+2002-05-04  Jonathan Springer <jonathan.springer@verizon.net>
+
+	* engine/call.c, engine/cvm_call.c, engine/engine.h:
+	implement dynamic reallocations of frame stack (and add some stack
+	overflow exceptions where they were TODOs).
+
+	* engine/call.c:  Use _ILSystemException to provide
+	StackOverflowException information from CallMethod and CallMethodV.
+
+	* enigine/ilrun.c, engine/process.c, include/il_engine.h:
+	Add '--stack-size' and '-S' command-line arguments to allow override
+	of default stack size (8K).
+
+2002-05-05  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* csdoc/doc_valil.c (AttributeToName): length-determination error
+	that caused SEGV's when converting attributes.
+
+	* codegen/cg_stmt.tc (EndsInReturn): recognise ILNode_LineInfo
+	nodes when checking for "return" statements.
+
+	* engine/cvm.c, engine/cvm_except.c, engine/engine.h,
+	samples/except.cs: insert stack traces into exception objects
+	that are created by the engine; expose "SystemException" as
+	"_ILSystemException" so it can be reused elsewhere.
+
+	* ildiff/.cvsignore: add .cvsignore file to ildiff directory.
+
+2002-05-04  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* cscc/csharp/cs_grammar.y (OuterDeclaration): don't call "yyerrok"
+	if we have reached EOF, because it will cause the parser to loop
+	indefinitely when an error is detected at the outermost level.
+
+	* engine/Makefile.am, engine/int_proto.h, engine/int_table.c,
+	engine/lib_emit.c, engine/lib_reflect.c, samples/System.dll,
+	samples/mscorlib.dll: update pnetlib and stub the extra internalcall's
+	that "Reflection.Emit" requires.
+
+	* engine/ilverify.c: resolve assembly references when verifying
+	an IL application.
+
+	* codegen/cg_stmt.tc (EndsInReturn): recognise ILNode_ThrowExpr
+	as a "return" statement.
+
+	* cscc/csharp/cs_grammar.y: wrap blocks and for/foreach statements
+	in "ILNode_NewScope" nodes to perform correct variable scoping.
+
+	* support/socket.c: use "sizeof(struct sockaddr_in)" instead of
+	"sizeof(struct sockaddr)".
+
+	* engine/int_proto.h, engine/int_table.c, engine/lib_socket.c,
+	support/socket.c: make the IP addresses consistently network
+	byte order in all relevant places; implement conversions between
+	host and network byte order.
+
+	* samples/System.dll, samples/System.Xml.dll: updated assemblies.
+
+2002-05-03  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/HACKING: update the section on "internalcall" methods.
+
+2002-05-02  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* image/ser_parse.c (ILSerializeReaderGetExtra): reversed the parse
+	order of an extra field's name and type.
+
+	* image/Makefile.am, image/item.c, image/lib_attrs.c,
+	include/il_program.h, include/il_system.h, support/allocate.c:
+	implement routines to convert C# attribute values into metadata
+	for builtins like "MethodImpl", "DllImport", "MarshalAs", etc.
+
+2002-05-01  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* support/spawn.c: report signals from spawned child processes.
+
+	* codegen/cg_optable.c: do not insert primitive type coercions
+	into the result of an operator, as the type is already final.
+
+	* image/pecoff_writer.c (ILWriterTextWrite): bug fix for blocks
+	that are greater than 2k in size.
+
+	* configure.in, engine/lib_socket.c, include/il_config.h.in,
+	include/il_sysio.h, support/socket.c: fix bugs in the "select"
+	implementation; make it bullet-proof against signals; pass
+	back more information about which descriptors fired.
+
+2002-05-01 Charlie Carnow  <carnow@gmx.net>
+
+	* support/socket.c, engine/lib_socket.c: Implementation of
+	Select
+
+2002-04-30  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* codegen/cg_ainit.tc, codegen/cg_misc.tc, codegen/cg_nodes.tc,
+	codegen/cg_output.c, codegen/cg_output.h, codegen/jv_misc.tc,
+	cscc/csharp/cs_grammar.y, cscc/csharp/cs_misc.tc: semantic
+	analysis and code generation for array "new" operator.
+
+	* samples/codepage.cs: add command-line options to assist with
+	dumping the contents of code pages.
+
+	* samples/I18N.CJK.dll, samples/I18N.MidEast.dll,
+	samples/I18N.Other.dll, samples/I18N.Rare.dll,
+	samples/I18N.West.dll, samples/I18N.dll,
+	samples/System.Xml.dll, samples/System.dll,
+	samples/mscorlib.dll: new versions of the library assemblies.
+
+2002-04-29  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* include/il_thread.h, support/no_defs.h, support/pt_defs.c,
+	support/pt_defs.h, support/thr_defs.h, support/thread.c,
+	support/w32_defs.h, support/wakeup.c: implement thread joins.
+
+	* include/il_thread.h, support/thr_defs.h, support/thread.c:
+	implement thread abort handling.
+
+2002-04-28  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/ilrun.c, engine/process.c, include/il_engine.h:
+	recognise invalid program entry points and refuse to run
+	the program if one is supplied.
+
+	* support/pt_defs.c (_ILCondVarTimedWait): mismatch between
+	microseconds and nanoseconds.
+
+	* tests/test_thread.c: tests for "ILThreadSleep".
+
+2002-04-27  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* support/Makefile.am, support/mutex.c, support/no_defs.c,
+	support/no_defs.h, support/pt_defs.c, support/pt_defs.h,
+	support/thr_defs.h, support/thread.c, support/w32_defs.c,
+	support/w32_defs.h: rearrange the threading code so that
+	90% of it is common between platforms.
+
+	* support/w32_defs.h: minor macro bugs in previous check-in.
+
+	* support/pt_include.h, support/pt_mutex.c, support/pt_thread.c,
+	support/pt_wait.c, support/w32_include.h, support/w32_mutex.c,
+	support/w32_thread.c: remove files that are no longer necessary
+	after the rearrangement.
+
+	* image/meta_types.c (ILTypeGetEnumType, ILTypeGetDelegateMethod):
+	resolve the class before searching it for fields or methods.
+
+	* samples/System.dll, samples/mscorlib.dll: updated assemblies.
+
+	* include/il_thread.h, support/Makefile.am, support/no_defs.c,
+	support/no_defs.h, support/pt_defs.c, support/pt_defs.h,
+	support/thr_defs.h, support/thread.c, support/w32_defs.c,
+	support/w32_defs.h, support/wakeup.c: implement condition mutexes,
+	condition variables, thread wakeup objects, and thread sleeping.
+
+	* support/w32_defs.h: missing definitions for the "_ILCondMutex"
+	and "_ILCondVar" types.
+
+2002-04-26  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* support/pt_include.h, support/pt_mutex.c, support/pt_thread.c,
+	support/pt_wait.c: implement "safe" thread suspends that will not
+	suspend a thread that is currently holding a mutex or a rwlock.
+
+	* support/pt_thread.c: clean up the mutexes and semaphores that
+	are owned by a thread when it is destroyed.
+
+	* tests/test_thread.c: more thread-related test cases.
+
+2002-04-25  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* support/pt_thread.c: fix problems with "resumeRequested" flag.
+
+	* configure.in, include/il_config.h.in: add "usleep" to the set
+	of functions that are autoconf'ed.
+
+	* include/il_thread.h, support/README.threads, support/no_thread.c,
+	support/pt_thread.c, support/w32_thread.c: implement some more
+	thread primitives; unblock the pthreads cancel signal during
+	thread suspends; describe what needs to be done to add a new
+	thread package.
+
+	* tests/.cvsignore, tests/Makefile.am, tests/test_thread.c:
+	add the beginnings of a regression test suite for threading.
+
+	* support/w32_thread.c: missing parameter to "TerminateThread".
+
+	* support/pt_thread.c: set the thread object in a thread-specific
+	variable for the main thread.
+
+	* support/w32_thread.c: make sure that the body of "ILThreadInit"
+	is only run once.
+
+	* include/il_thread.h, support/no_thread.c, support/pt_thread.c,
+	support/w32_thread.c, tests/test_thread.c: bug fixes to threading
+	primitives.
+
+	* support/w32_include.h, support/w32_mutex.c, support/w32_thread.c:
+	fix bugs in the Win32 threading system that were exposed by the
+	test suite; implement "safe" thread suspension that ensures that
+	critical sections are not held by suspended Win32 threads.
+
+	* tests/test_thread.c: add tests that check that a thread cannot
+	be suspended while it holds a mutex or a read/write lock.
+
+2002-04-24  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* include/il_thread.h, support/Makefile.am, support/no_thread.c,
+	support/pt_include.h, support/pt_mutex.c, support/pt_thread.c,
+	support/pt_wait.c: continue implementing threading primitives.
+
+	* acconfig.h, configure.in, include/il_config.h.in,
+	libgc/misc.c, libgc/include/private/gcconfig.h, support/hb_gc.c:
+	enable libgc's threading support for Win32/Cygwin.
+
+	* support/Makefile.am, support/no_thread.c, support/pt_include.h,
+	support/pt_mutex.c, support/pt_thread.c, support/pt_wait.c,
+	support/thr_choose.h, support/w32_mutex.c, support/w32_thread.c:
+	begin implementing Win32 thread routines and centralise the
+	detection of thread packages into "thr_choose.h".
+
+	* image/Makefile.am, image/meta_types.c, image/misc.c,
+	image/misc_token.c, image/types.c, support/Makefile.am,
+	support/alloc.c, support/allocate.c, support/convert.c,
+	support/cvt_float.c: rename some source files that had duplicate
+	names because it was causing breakpoint problems in gdb.
+
+2002-04-23  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* engine/HACKING: describe more of the engine architecture.
+
+	* configure.in, include/Makefile.am, include/il_thread.h,
+	support/Makefile.am, support/no_thread.c, support/pt_include.h,
+	support/pt_thread.c: begin adding threading primitives, based
+	on pthreads.
+
+2002-04-22  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* codegen/cg_gen.c, codegen/cg_gen.h, cscc/common/cc_main.c:
+	never use the ".library" builtin unless the "-fbuiltin-library"
+	command-line option is supplied; create AssemblyRef's for all
+	libraries that are specified by "-l" options.
+
+	* cscc/csharp/cs_decls.tc: add the "beforefieldinit" flag to
+	classes that need it.
+
+	* codegen/cg_gen.c, codegen/cg_gen.h, codegen/cg_output.c,
+	cscc/common/cc_errors.c: add security attributes to the output
+	image if unsafe constructs are used in the source program.
+
+	* image/meta_build.c (Load_MemberRef): scan up the class
+	hierarchy to resolve a member because C# compilers output
+	the direct parent class in "base.X" expressions, even if
+	"X" lives in an indirect ancestor.
+
+	* csdoc/doc_backend.h, csdoc/doc_main.c, csdoc/doc_valil.c,
+	csdoc/status.sh: process multiple "-fimage" options in "csdocvalil".
+
+2002-04-21  Gopal.V  <gopalv82@symonds.net>
+
+	* csdoc/doc_test.c : Test stubber for ECMA classes , added
+	csdoc2test to create stub test classes.
+
+2002-04-21  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* support/spawn.c (ILSpawnProcess): pass the first few options
+	directly on the command-line instead of in the response file.
+
+	* csant/csant_cscc.c (BuildCscCommandLine): pass "/noconfig" in
+	addition to "/nostdlib" to csc, because "/nostdlib" only turns
+	off mscorlib.dll, and not all standard libraries.
+
+	* samples/I18N.CJK.dll, samples/I18N.MidEast.dll,
+	samples/I18N.Other.dll, samples/I18N.Rare.dll,
+	samples/I18N.West.dll, samples/I18N.dll,
+	samples/Makefile.am, samples/System.Xml.dll,
+	samples/System.dll, samples/mscorlib.dll: new versions after
+	fixing build problems with System and System.Xml.
+
+2002-04-20  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* ChangeLog, doc/ChangeLog-2: move the contents of "ChangeLog" to
+	"doc/ChangeLog-2", because it was starting to get too big to manage.
+
+	* engine/cvm.c, engine/cvm_dasm.c: profile "wide" instructions.
+
+	* engine/cvm.h, engine/cvm_dasm.c, engine/cvm_ptr.c, engine/cvmc.c,
+	engine/cvmc_obj.c, engine/null_coder.c, engine/verify_var.c,
+	include/il_coder.h: introduce the "pread_this" and "iread_this"
+	instructions into CVM to optimise the common cases of accessing
+	fields relative to "this".
+
+	* engine/cvm.c, engine/cvm_call.c, engine/cvmc.c, engine/ilrun.c,
+	engine/method_cache.c, engine/method_cache.h, image/program.h:
+	implement method profiling in the engine to get a picture of
+	which methods in pnetlib are highly used.

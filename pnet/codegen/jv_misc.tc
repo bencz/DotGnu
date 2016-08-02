@@ -1,0 +1,2481 @@
+/*
+ * jv_misc.tc - Miscellaneous operator nodes.
+ *
+ * Copyright (C) 2001, 2009  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/*
+ * Generate discard code for a comma expression.
+ */
+JavaGenDiscard(ILNode_Comma)
+{
+	JavaGenDiscard(node->expr1, info);
+	JavaGenDiscard(node->expr2, info);
+}
+
+/*
+ * Generate discard code for an "as is" expression.
+ */
+JavaGenDiscard(ILNode_AsIs),
+JavaGenDiscard(ILNode_ToConst)
+{
+	/* Evaluate the expression for its side effects only */
+	return JavaGenDiscard(node->expr, info);
+}
+
+/*
+ * Generate discard code for an "overflow" expression.
+ */
+JavaGenDiscard(ILNode_Overflow)
+{
+	int oldOverflow = info->overflowInsns;
+	info->overflowInsns = -1;
+	JavaGenDiscard(node->expr, info);
+	info->overflowInsns = oldOverflow;
+}
+
+/*
+ * Generate discard code for a "no overflow" expression.
+ */
+JavaGenDiscard(ILNode_NoOverflow)
+{
+	int oldOverflow = info->overflowInsns;
+	info->overflowInsns = 0;
+	JavaGenDiscard(node->expr, info);
+	info->overflowInsns = oldOverflow;
+}
+
+/*
+ * Generate discard code for a "pedantic" expression.
+ */
+JavaGenDiscard(ILNode_Pedantic)
+{
+	int oldPedantic = info->pedanticArith;
+	info->pedanticArith = -1;
+	JavaGenDiscard(node->expr, info);
+	info->pedanticArith = oldPedantic;
+}
+
+/*
+ * Generate discard code for a "no pedantic" expression.
+ */
+JavaGenDiscard(ILNode_NoPedantic)
+{
+	int oldPedantic = info->pedanticArith;
+	info->pedanticArith = 0;
+	JavaGenDiscard(node->expr, info);
+	info->pedanticArith = oldPedantic;
+}
+
+/*
+ * Generate discard code for a conditional expression.
+ */
+JavaGenDiscard(ILNode_Conditional)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	ILEvalValue value;
+
+	/* Determine the common type to use for the cases */
+	commonType = Conditional_Type(node, info, &type1, &type2);
+
+	/* Generate the discard code.  We must generate as value if the
+	   final type is different because an exception might occur during
+	   the type conversion.  If we optimize away the conversion, then
+	   the final code might have different behaviour */
+	if(ILNode_EvalConst(node->expr1, info, &value) &&
+	   ILGenConstToBoolean(info, &value))
+	{
+		/* The condition is constant, so generate only the case we need */
+		if(value.un.i4Value)
+		{
+			if(type1 == commonType)
+			{
+				JavaGenDiscard(node->expr2, info);
+			}
+			else
+			{
+				JavaGenValue(node->expr2, info);
+				JavaGenCast(info, type1, commonType);
+				JavaGenCast(info, commonType, ILMachineType_Void);
+			}
+		}
+		else
+		{
+			if(type2 == commonType)
+			{
+				JavaGenDiscard(node->expr3, info);
+			}
+			else
+			{
+				JavaGenValue(node->expr3, info);
+				JavaGenCast(info, type2, commonType);
+				JavaGenCast(info, commonType, ILMachineType_Void);
+			}
+		}
+	}
+	else
+	{
+		/* We need the general case of the conditional */
+		JavaGenElse(node->expr1, info, &label1);
+		if(type1 == commonType)
+		{
+			JavaGenDiscard(node->expr2, info);
+		}
+		else
+		{
+			JavaGenValue(node->expr2, info);
+			JavaGenCast(info, type1, commonType);
+			JavaGenCast(info, commonType, ILMachineType_Void);
+		}
+		JavaGenJump(info, JAVA_OP_GOTO, &label2);
+		JavaGenLabel(info, &label1);
+		if(type2 == commonType)
+		{
+			JavaGenDiscard(node->expr3, info);
+		}
+		else
+		{
+			JavaGenValue(node->expr3, info);
+			JavaGenCast(info, type2, commonType);
+			JavaGenCast(info, commonType, ILMachineType_Void);
+		}
+		JavaGenLabel(info, &label2);
+	}
+}
+
+/*
+ * Generate discard code for a "this" expression.
+ */
+JavaGenDiscard(ILNode_This)
+{
+	/* Nothing needs to be done here */
+}
+
+/*
+ * Generate discard code for an "as" or "is" expression.
+ */
+JavaGenDiscard(ILNode_As),
+JavaGenDiscard(ILNode_Is)
+{
+	/* Evaluate the expression for its side effects only */
+	JavaGenDiscard(node->expr, info);
+}
+
+/*
+ * Generate discard code for a dereference expression.
+ */
+JavaGenDiscard(ILNode_Deref)
+{
+	/* Evaluate the sub-expression for side effects */
+	JavaGenDiscard(node->expr, info);
+}
+
+/*
+ * Generate discard code for an "address of" expression.
+ */
+JavaGenDiscard(ILNode_AddressOf)
+{
+	/* Evaluate the sub-expression for side effects */
+	JavaGenDiscard(node->expr, info);
+}
+
+/*
+ * Generate discard code for an "is null" or "is not null" expression.
+ */
+JavaGenDiscard(ILNode_IsNull),
+JavaGenDiscard(ILNode_IsNonNull)
+{
+	/* Evaluate the expression for its side effects only */
+	JavaGenDiscard(node->expr, info);
+}
+
+/*
+ * Generate value code for a comma expression.
+ */
+JavaGenValue(ILNode_Comma)
+{
+	JavaGenDiscard(node->expr1, info);
+	return JavaGenValue(node->expr2, info);
+}
+
+/*
+ * Generate value code for an "as is" expression.
+ */
+JavaGenValue(ILNode_AsIs),
+JavaGenValue(ILNode_ToConst)
+{
+	return JavaGenValue(node->expr, info);
+}
+
+/*
+ * Generate value code for an "overflow" expression.
+ */
+JavaGenValue(ILNode_Overflow)
+{
+	int oldOverflow = info->overflowInsns;
+	ILMachineType valueType;
+	info->overflowInsns = -1;
+	valueType = JavaGenValue(node->expr, info);
+	info->overflowInsns = oldOverflow;
+	return valueType;
+}
+
+/*
+ * Generate value code for a "no overflow" expression.
+ */
+JavaGenValue(ILNode_NoOverflow)
+{
+	int oldOverflow = info->overflowInsns;
+	ILMachineType valueType;
+	info->overflowInsns = 0;
+	valueType = JavaGenValue(node->expr, info);
+	info->overflowInsns = oldOverflow;
+	return valueType;
+}
+
+/*
+ * Generate value code for a "pedantic" expression.
+ */
+JavaGenValue(ILNode_Pedantic)
+{
+	int oldPedantic = info->pedanticArith;
+	ILMachineType valueType;
+	info->pedanticArith = -1;
+	valueType = JavaGenValue(node->expr, info);
+	info->pedanticArith = oldPedantic;
+	return valueType;
+}
+
+/*
+ * Generate value code for a "no pedantic" expression.
+ */
+JavaGenValue(ILNode_NoPedantic)
+{
+	int oldPedantic = info->pedanticArith;
+	ILMachineType valueType;
+	info->pedanticArith = 0;
+	valueType = JavaGenValue(node->expr, info);
+	info->pedanticArith = oldPedantic;
+	return valueType;
+}
+
+/*
+ * Generate value code for a cast expression.
+ */
+JavaGenValue(ILNode_CastSimple)
+{
+	ILMachineType type = JavaGenValue(node->expr, info);
+	JavaGenCast(info, type, node->machineType);
+	return node->machineType;
+}
+JavaGenValue(ILNode_CastType)
+{
+	ILMachineType type = JavaGenValue(node->expr, info);
+	JavaGenTypeRef(info, JAVA_OP_CHECKCAST, node->type);
+	JavaGenAdjust(info, -JavaGenTypeSize(type));
+	type = ILTypeToMachineType(node->type);
+	JavaGenAdjust(info, JavaGenTypeSize(type));
+	return type;
+}
+JavaGenValue(ILNode_CastStringToCharPtr)
+{
+	JavaGenValue(node->expr, info);
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	return ILMachineType_UnmanagedPtr;
+}
+JavaGenValue(ILNode_CastArrayToElementPtr)
+{
+	JavaGenValue(node->expr, info);
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	return ILMachineType_UnmanagedPtr;
+}
+
+/*
+ * Generate value code for a user conversion expression.
+ */
+JavaGenValue(ILNode_UserConversion)
+{
+	JavaGenValue(node->expr, info);
+	JavaGenCallByMethod(info, node->method);
+	return node->machineType;
+}
+
+/*
+ * Generate value code for a conditional expression.
+ */
+JavaGenValue(ILNode_Conditional)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	ILEvalValue value;
+
+	/* Determine the common type to use for the cases */
+	commonType = Conditional_Type(node, info, &type1, &type2);
+
+	/* If the condition is constant, then only generate the case we need */
+	if(ILNode_EvalConst(node->expr1, info, &value) &&
+	   ILGenConstToBoolean(info, &value))
+	{
+		if(value.un.i4Value)
+		{
+			JavaGenValue(node->expr2, info);
+			JavaGenCast(info, type1, commonType);
+		}
+		else
+		{
+			JavaGenValue(node->expr3, info);
+			JavaGenCast(info, type2, commonType);
+		}
+	}
+	else
+	{
+		/* Generate the full case of the conditional */
+		int height;
+		JavaGenElse(node->expr1, info, &label1);
+		height = info->stackHeight;
+		JavaGenCast(info, JavaGenValue(node->expr2, info), commonType);
+		info->stackHeight = height;
+		JavaGenJump(info, JAVA_OP_GOTO, &label2);
+		JavaGenLabel(info, &label1);
+		JavaGenCast(info, JavaGenValue(node->expr3, info), commonType);
+		JavaGenLabel(info, &label2);
+	}
+
+	/* The common type is the final type */
+	return commonType;
+}
+
+/*
+ * Generate value code for a "to bool" expression.
+ */
+JavaGenValue(ILNode_ToBool)
+{
+	ILMachineType type;
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+
+	if(node->trueMethod)
+	{
+		/* Use a user-supplied "op_True" operator */
+		type = JavaGenValue(node->expr, info);
+		JavaGenCallByMethod(info, node->trueMethod);
+		JavaGenAdjust(info, -(JavaGenTypeSize(type) - 1));
+	}
+	else if(node->falseMethod)
+	{
+		/* Use a user-supplied "op_False" operator */
+		type = JavaGenValue(node->expr, info);
+		JavaGenCallByMethod(info, node->falseMethod);
+		JavaGenAdjust(info, -(JavaGenTypeSize(type) - 1));
+		JavaGenJump(info, JAVA_OP_IFNE, &label1);
+		JavaGenSimple(info, JAVA_OP_ICONST_1);
+		JavaGenJump(info, JAVA_OP_GOTO, &label2);
+		JavaGenLabel(info, &label1);
+		JavaGenSimple(info, JAVA_OP_ICONST_0);
+		JavaGenLabel(info, &label2);
+	}
+	else
+	{
+		/* Use a built-in boolean conversion */
+		JavaGenCast(info, JavaGenValue(node->expr, info),
+					ILMachineType_Boolean);
+	}
+
+	return ILMachineType_Boolean;
+}
+
+/*
+ * Generate value code for a "this" expression.
+ */
+JavaGenValue(ILNode_This)
+{
+	ILType *type;
+	ILMachineType machineType;
+
+	/* Push the value of "this" onto the stack */
+	JavaGenSimple(info, JAVA_OP_ALOAD_0);
+	JavaGenAdjust(info, 1);
+
+	/* Determine the type of the class that we are in */
+	if(info->currentClass)
+	{
+		type = ILClassToType(((ILNode_ClassDefn *)(info->currentClass))
+								->classInfo);
+	}
+	else
+	{
+		type = ILFindSystemType(info, "Object");
+	}
+	machineType = ILTypeToMachineType(type);
+
+	/* Do we need to unpack a value type instance? */
+	if(ILTypeIsValue(type))
+	{
+		machineType = JavaUnboxValue(info, ILMachineType_ObjectRef,
+					         		 machineType, ILTypeIsEnum(type), 1,
+									 ILTypeToClass(info, type));
+	}
+
+	/* Done */
+	return machineType;
+}
+
+/*
+ * L-value processing for "this", which isn't used under JVM.
+ */
+JavaPrepare(ILNode_This),
+JavaGetAndPrepare(ILNode_This)
+{
+	return ILMachineType_Void;
+}
+JavaStore(ILNode_This)
+{
+}
+
+/*
+ * Generate value code for an argument list expression.
+ */
+JavaGenValue(ILNode_ArgList)
+{
+	JavaGenValue(node->expr1, info);
+	return JavaGenValue(node->expr2, info);
+}
+
+/*
+ * Generate value code for a vararg list expression.
+ */
+JavaGenValue(ILNode_VarArgList)
+{
+	/* Not used with Java - this should never be called */
+	return ILMachineType_ManagedValue;
+}
+
+/*
+ * Generate value code for a vararg expansion expression.
+ */
+JavaGenValue(ILNode_VarArgExpand)
+{
+	/* Not used with Java - this should never be called */
+	return ILMachineType_Void;
+}
+
+/*
+ * Generate value code for an argument expression.
+ */
+JavaGenValue(ILNode_Argument)
+{
+	/* We don't need to do ref and out parameters,
+	   because semantic analysis will disallow such
+	   expressions when compiling to the JVM */
+	return JavaGenValue(node->expression, info);
+}
+
+/*
+ * Generate value code for an argument array expression.
+ */
+JavaGenValue(ILNode_ArgArray)
+{
+	ILMachineType machineType;
+	ILUInt32 posn;
+
+	/* Create a new array of the desired size */
+	JavaGenUInt32(info, node->numElems);
+	JavaGenNewArray(info, node->elemType);
+	JavaGenAdjust(info, 1);
+
+	/* Populate the members of the array */
+	machineType = ILTypeToMachineType(node->elemType);
+	for(posn = 0; posn < node->numElems; ++posn)
+	{
+		JavaGenSimple(info, JAVA_OP_DUP);
+		JavaGenUInt32(info, posn);
+		JavaGenAdjust(info, 2);
+		JavaGenCast(info, JavaGenValue
+			(GetArgArrayElem(node->args, posn, node->numElems), info),
+			machineType);
+		JavaGenStoreArray(info, machineType);
+		JavaGenAdjust(info, -3);
+	}
+	return ILMachineType_ObjectRef;
+}
+
+/*
+ * Generate value code for an "as" expression.
+ */
+JavaGenValue(ILNode_As)
+{
+	ILLabel label1 = ILLabel_Undefined;
+
+	/* Evaluate the sub-expression and cast to an object reference */
+	JavaGenCast(info, JavaGenValue(node->expr, info),
+			    ILMachineType_ObjectRef);
+
+	/* Test the object using the "instanceof" instruction */
+	JavaGenSimple(info, JAVA_OP_DUP);
+	JavaGenAdjust(info, 1);
+	JavaGenClassRef(info, JAVA_OP_INSTANCEOF, node->classInfo);
+	JavaGenJump(info, JAVA_OP_IFNE, &label1);
+	JavaGenAdjust(info, -1);
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenSimple(info, JAVA_OP_ACONST_NULL);
+	JavaGenLabel(info, &label1);
+
+	/* The return value is also an object */
+	return ILMachineType_ObjectRef;
+}
+
+/*
+ * Generate value code for an "is" expression.
+ */
+JavaGenValue(ILNode_Is)
+{
+	/* Evaluate the sub-expression and cast to an object reference */
+	JavaGenCast(info, JavaGenValue(node->expr, info),
+			    ILMachineType_ObjectRef);
+
+	/* Test the object using the "instanceof" instruction */
+	JavaGenClassRef(info, JAVA_OP_INSTANCEOF, node->classInfo);
+
+	/* The return value is boolean */
+	return ILMachineType_Boolean;
+}
+
+/*
+ * Generate value code for a dereference expression.
+ */
+JavaGenValue(ILNode_Deref)
+{
+	/* TODO */
+	return ILMachineType_Void;
+}
+
+/*
+ * Generate value code for an "address of" expression.
+ */
+JavaGenValue(ILNode_AddressOf)
+{
+	/* TODO */
+	return ILMachineType_Void;
+}
+
+/*
+ * Generate value code for an "error" expression.
+ */
+JavaGenValue(ILNode_Error)
+{
+	return ILMachineType_Void;
+}
+
+%decls %end %{
+
+/*
+ * Box a value on the stack into an object.
+ */
+void JavaBoxValue(ILGenInfo *info, ILMachineType type,
+				  int isEnumType, ILClass *classInfo);
+
+/*
+ * Unbox a value onto the stack.
+ */
+ILMachineType JavaUnboxValue(ILGenInfo *info, ILMachineType subExprType,
+					         ILMachineType type, int isEnumType,
+					         int isRightType, ILClass *classInfo);
+
+%}
+
+%{
+
+void JavaBoxValue(ILGenInfo *info, ILMachineType type,
+				  int isEnumType, ILClass *classInfo)
+{
+	char *javaName;
+	char *signature;
+
+	switch(type)
+	{
+		case ILMachineType_Void:
+		{
+			/* Shouldn't happen */
+		}
+		break;
+
+		case ILMachineType_Boolean:
+		{
+			if(info->useJavaLib)
+			{
+				JavaGenNewObj(info, "java/lang/Boolean");
+				JavaGenSimple(info, JAVA_OP_DUP_X1);
+				JavaGenAdjust(info, 2);
+				JavaGenSimple(info, JAVA_OP_SWAP);
+				JavaGenCallCtor(info, "java/lang/Boolean", "<init>", "(Z)V");
+				JavaGenAdjust(info, -2);
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/Boolean", "copyIn__",
+								  "(Z)LSystem/Boolean;");
+			}
+		}
+		break;
+
+		case ILMachineType_Int8:
+		{
+			if(isEnumType)
+			{
+				/* Boxing an enumerated value */
+				javaName = JavaGetClassName(info, classInfo);
+				signature = JavaStrAppend(info, 0, "(B)L");
+				signature = JavaStrAppend(info, signature, javaName);
+				signature = JavaStrAppend(info, signature, ";");
+				JavaGenCallByName(info, javaName, "copyIn__", signature);
+				ILFree(javaName);
+				ILFree(signature);
+			}
+			else if(info->useJavaLib)
+			{
+				JavaGenNewObj(info, "java/lang/Byte");
+				JavaGenSimple(info, JAVA_OP_DUP_X1);
+				JavaGenAdjust(info, 2);
+				JavaGenSimple(info, JAVA_OP_SWAP);
+				JavaGenCallCtor(info, "java/lang/Byte", "<init>", "(B)V");
+				JavaGenAdjust(info, -2);
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/SByte", "copyIn__",
+								  "(B)LSystem/SByte;");
+			}
+		}
+		break;
+
+		case ILMachineType_UInt8:
+		{
+			if(isEnumType)
+			{
+				/* Boxing an enumerated value */
+				javaName = JavaGetClassName(info, classInfo);
+				signature = JavaStrAppend(info, 0, "(I)L");
+				signature = JavaStrAppend(info, signature, javaName);
+				signature = JavaStrAppend(info, signature, ";");
+				JavaGenCallByName(info, javaName, "copyIn__B", signature);
+				ILFree(javaName);
+				ILFree(signature);
+			}
+			else if(info->useJavaLib)
+			{
+				JavaGenNewIntrinsic(info, "UByte");
+				JavaGenSimple(info, JAVA_OP_DUP_X1);
+				JavaGenAdjust(info, 2);
+				JavaGenSimple(info, JAVA_OP_SWAP);
+				JavaGenCallCtorIntrinsic(info, "UByte", "<init>", "(I)V");
+				JavaGenAdjust(info, -2);
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/Byte", "copyIn__B",
+								  "(I)LSystem/Byte;");
+			}
+		}
+		break;
+
+		case ILMachineType_Int16:
+		{
+			if(isEnumType)
+			{
+				/* Boxing an enumerated value */
+				javaName = JavaGetClassName(info, classInfo);
+				signature = JavaStrAppend(info, 0, "(S)L");
+				signature = JavaStrAppend(info, signature, javaName);
+				signature = JavaStrAppend(info, signature, ";");
+				JavaGenCallByName(info, javaName, "copyIn__", signature);
+				ILFree(javaName);
+				ILFree(signature);
+			}
+			else if(info->useJavaLib)
+			{
+				JavaGenNewObj(info, "java/lang/Short");
+				JavaGenSimple(info, JAVA_OP_DUP_X1);
+				JavaGenAdjust(info, 2);
+				JavaGenSimple(info, JAVA_OP_SWAP);
+				JavaGenCallCtor(info, "java/lang/Short", "<init>", "(S)V");
+				JavaGenAdjust(info, -2);
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/Int16", "copyIn__",
+								  "(S)LSystem/Int16;");
+			}
+		}
+		break;
+
+		case ILMachineType_UInt16:
+		{
+			if(isEnumType)
+			{
+				/* Boxing an enumerated value */
+				javaName = JavaGetClassName(info, classInfo);
+				signature = JavaStrAppend(info, 0, "(I)L");
+				signature = JavaStrAppend(info, signature, javaName);
+				signature = JavaStrAppend(info, signature, ";");
+				JavaGenCallByName(info, javaName, "copyIn__S", signature);
+				ILFree(javaName);
+				ILFree(signature);
+			}
+			else if(info->useJavaLib)
+			{
+				JavaGenNewIntrinsic(info, "UShort");
+				JavaGenSimple(info, JAVA_OP_DUP_X1);
+				JavaGenAdjust(info, 2);
+				JavaGenSimple(info, JAVA_OP_SWAP);
+				JavaGenCallCtorIntrinsic(info, "UShort", "<init>", "(I)V");
+				JavaGenAdjust(info, -2);
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/UInt16", "copyIn__S",
+								  "(I)LSystem/UInt16;");
+			}
+		}
+		break;
+
+		case ILMachineType_Char:
+		{
+			if(info->useJavaLib)
+			{
+				JavaGenNewObj(info, "java/lang/Character");
+				JavaGenSimple(info, JAVA_OP_DUP_X1);
+				JavaGenAdjust(info, 2);
+				JavaGenSimple(info, JAVA_OP_SWAP);
+				JavaGenCallCtor(info, "java/lang/Character", "<init>", "(C)V");
+				JavaGenAdjust(info, -2);
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/Char", "copyIn__",
+								  "(C)LSystem/Char;");
+			}
+		}
+		break;
+
+		case ILMachineType_Int32:
+		case ILMachineType_NativeInt:
+		{
+			if(isEnumType)
+			{
+				/* Boxing an enumerated value */
+				javaName = JavaGetClassName(info, classInfo);
+				signature = JavaStrAppend(info, 0, "(I)L");
+				signature = JavaStrAppend(info, signature, javaName);
+				signature = JavaStrAppend(info, signature, ";");
+				JavaGenCallByName(info, javaName, "copyIn__", signature);
+				ILFree(javaName);
+				ILFree(signature);
+			}
+			else if(info->useJavaLib)
+			{
+				JavaGenNewObj(info, "java/lang/Integer");
+				JavaGenSimple(info, JAVA_OP_DUP_X1);
+				JavaGenAdjust(info, 2);
+				JavaGenSimple(info, JAVA_OP_SWAP);
+				JavaGenCallCtor(info, "java/lang/Integer", "<init>", "(I)V");
+				JavaGenAdjust(info, -2);
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/Int32", "copyIn__",
+								  "(I)LSystem/Int32;");
+			}
+		}
+		break;
+
+		case ILMachineType_UInt32:
+		case ILMachineType_NativeUInt:
+		{
+			if(isEnumType)
+			{
+				/* Boxing an enumerated value */
+				javaName = JavaGetClassName(info, classInfo);
+				signature = JavaStrAppend(info, 0, "(I)L");
+				signature = JavaStrAppend(info, signature, javaName);
+				signature = JavaStrAppend(info, signature, ";");
+				JavaGenCallByName(info, javaName, "copyIn__I", signature);
+				ILFree(javaName);
+				ILFree(signature);
+			}
+			else if(info->useJavaLib)
+			{
+				JavaGenNewIntrinsic(info, "UInteger");
+				JavaGenSimple(info, JAVA_OP_DUP_X1);
+				JavaGenAdjust(info, 2);
+				JavaGenSimple(info, JAVA_OP_SWAP);
+				JavaGenCallCtorIntrinsic(info, "UInteger", "<init>", "(I)V");
+				JavaGenAdjust(info, -2);
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/UInt32", "copyIn__I",
+								  "(I)LSystem/UInt32;");
+			}
+		}
+		break;
+
+		case ILMachineType_Int64:
+		{
+			if(isEnumType)
+			{
+				/* Boxing an enumerated value */
+				javaName = JavaGetClassName(info, classInfo);
+				signature = JavaStrAppend(info, 0, "(J)L");
+				signature = JavaStrAppend(info, signature, javaName);
+				signature = JavaStrAppend(info, signature, ";");
+				JavaGenCallByName(info, javaName, "copyIn__", signature);
+				ILFree(javaName);
+				ILFree(signature);
+				JavaGenAdjust(info, -1);
+			}
+			else if(info->useJavaLib)
+			{
+				JavaGenNewObj(info, "java/lang/Long");
+				JavaGenSimple(info, JAVA_OP_DUP_X2);
+				JavaGenAdjust(info, 2);
+				JavaGenSimple(info, JAVA_OP_DUP_X2);
+				JavaGenAdjust(info, 2);
+				JavaGenSimple(info, JAVA_OP_POP2);
+				JavaGenAdjust(info, -2);
+				JavaGenCallCtor(info, "java/lang/Long", "<init>", "(J)V");
+				JavaGenAdjust(info, -3);
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/Int64", "copyIn__",
+								  "(J)LSystem/Int64;");
+				JavaGenAdjust(info, -1);
+			}
+		}
+		break;
+
+		case ILMachineType_UInt64:
+		{
+			if(isEnumType)
+			{
+				/* Boxing an enumerated value */
+				javaName = JavaGetClassName(info, classInfo);
+				signature = JavaStrAppend(info, 0, "(J)L");
+				signature = JavaStrAppend(info, signature, javaName);
+				signature = JavaStrAppend(info, signature, ";");
+				JavaGenCallByName(info, javaName, "copyIn__L", signature);
+				ILFree(javaName);
+				ILFree(signature);
+				JavaGenAdjust(info, -1);
+			}
+			else if(info->useJavaLib)
+			{
+				JavaGenNewIntrinsic(info, "ULong");
+				JavaGenSimple(info, JAVA_OP_DUP_X2);
+				JavaGenAdjust(info, 2);
+				JavaGenSimple(info, JAVA_OP_DUP_X2);
+				JavaGenAdjust(info, 2);
+				JavaGenSimple(info, JAVA_OP_POP2);
+				JavaGenAdjust(info, -2);
+				JavaGenCallCtorIntrinsic(info, "ULong", "<init>", "(J)V");
+				JavaGenAdjust(info, -3);
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/UInt64", "copyIn__L",
+								  "(J)LSystem/UInt64;");
+				JavaGenAdjust(info, -1);
+			}
+		}
+		break;
+
+		case ILMachineType_Float32:
+		{
+			if(info->useJavaLib)
+			{
+				JavaGenNewObj(info, "java/lang/Float");
+				JavaGenSimple(info, JAVA_OP_DUP_X1);
+				JavaGenAdjust(info, 2);
+				JavaGenSimple(info, JAVA_OP_SWAP);
+				JavaGenCallCtor(info, "java/lang/Float", "<init>", "(F)V");
+				JavaGenAdjust(info, -2);
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/Single", "copyIn__",
+								  "(F)LSystem/Single;");
+			}
+		}
+		break;
+
+		case ILMachineType_Float64:
+		case ILMachineType_NativeFloat:
+		{
+			if(info->useJavaLib)
+			{
+				JavaGenNewObj(info, "java/lang/Double");
+				JavaGenSimple(info, JAVA_OP_DUP_X2);
+				JavaGenAdjust(info, 2);
+				JavaGenSimple(info, JAVA_OP_DUP_X2);
+				JavaGenAdjust(info, 2);
+				JavaGenSimple(info, JAVA_OP_POP2);
+				JavaGenAdjust(info, -2);
+				JavaGenCallCtor(info, "java/lang/Double", "<init>", "(D)V");
+				JavaGenAdjust(info, -3);
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/Double", "copyIn__",
+								  "(D)LSystem/Double;");
+				JavaGenAdjust(info, -1);
+			}
+		}
+		break;
+
+		case ILMachineType_UnmanagedPtr:
+		case ILMachineType_TransientPtr:
+		{
+			/* Shouldn't happen */
+		}
+		break;
+
+		case ILMachineType_ObjectRef:
+		case ILMachineType_String:
+		{
+			/* The value is already a boxed object */
+		}
+		break;
+
+		case ILMachineType_Decimal:
+		{
+			if(info->useJavaLib)
+			{
+				/* A "java/math/BigDecimal" object is its own boxed form */
+				break;
+			}
+		}
+		/* Fall through to the next case */
+
+		case ILMachineType_ManagedPtr:
+		case ILMachineType_ManagedValue:
+		{
+			/* We have a managed pointer or value, so use the "copyIn__"
+			   method to make a complete copy of the value being boxed */
+			javaName = JavaGetClassName(info, classInfo);
+			signature = JavaStrAppend(info, 0, "(L");
+			signature = JavaStrAppend(info, signature, javaName);
+			signature = JavaStrAppend(info, signature, ";)L");
+			signature = JavaStrAppend(info, signature, javaName);
+			signature = JavaStrAppend(info, signature, ";");
+			JavaGenCallByName(info, javaName, "copyIn__", signature);
+			ILFree(javaName);
+			ILFree(signature);
+		}
+		break;
+	}
+}
+
+ILMachineType JavaUnboxValue(ILGenInfo *info, ILMachineType subExprType,
+					         ILMachineType type, int isEnumType,
+					         int isRightType, ILClass *classInfo)
+{
+	char *javaName;
+	char *signature;
+
+	/* Determine the destination type for the unbox operation */
+	if(subExprType == type ||
+	   (subExprType != ILMachineType_ObjectRef &&
+	    subExprType != ILMachineType_ManagedPtr))
+	{
+		/* The sub-expression is already in the unboxed form */
+		return subExprType;
+	}
+
+	/* At this point, we have either an object reference or
+	   a managed pointer, which we must unbox into a value */
+	switch(type)
+	{
+		case ILMachineType_Void:
+		{
+			/* Just pop the value because we won't need it after this */
+			JavaGenCast(info, subExprType, ILMachineType_Void);
+		}
+		break;
+
+		case ILMachineType_Boolean:
+		{
+			if(info->useJavaLib)
+			{
+				JavaGenCallVirtual(info, "java/lang/Boolean", "booleanValue",
+								   "()Z");
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/Boolean", "copyOut__",
+								  "(LSystem/Boolean;)Z");
+			}
+		}
+		break;
+
+		case ILMachineType_Int8:
+		{
+			if(isEnumType)
+			{
+				/* Unboxing an enumerated value */
+				javaName = JavaGetClassName(info, classInfo);
+				signature = JavaStrAppend(info, 0, "(L");
+				signature = JavaStrAppend(info, signature, javaName);
+				signature = JavaStrAppend(info, signature, ";)B");
+				JavaGenCallByName(info, javaName, "copyOut__", signature);
+				ILFree(javaName);
+				ILFree(signature);
+			}
+			else if(info->useJavaLib)
+			{
+				JavaGenCallVirtual(info, "java/lang/Byte", "byteValue", "()B");
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/SByte", "copyOut__",
+								  "(LSystem/SByte;)B");
+			}
+		}
+		break;
+
+		case ILMachineType_UInt8:
+		{
+			if(isEnumType)
+			{
+				/* Unboxing an enumerated value */
+				javaName = JavaGetClassName(info, classInfo);
+				signature = JavaStrAppend(info, 0, "(L");
+				signature = JavaStrAppend(info, signature, javaName);
+				signature = JavaStrAppend(info, signature, ";)I");
+				JavaGenCallByName(info, javaName, "copyOut__B", signature);
+				ILFree(javaName);
+				ILFree(signature);
+			}
+			else if(info->useJavaLib)
+			{
+				JavaGenCallVirtIntrinsic(info, "UByte",
+										 "ubyteValue__B", "()I");
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/Byte", "copyOut__B",
+								  "(LSystem/Byte;)I");
+			}
+		}
+		break;
+
+		case ILMachineType_Int16:
+		{
+			if(isEnumType)
+			{
+				/* Unboxing an enumerated value */
+				javaName = JavaGetClassName(info, classInfo);
+				signature = JavaStrAppend(info, 0, "(L");
+				signature = JavaStrAppend(info, signature, javaName);
+				signature = JavaStrAppend(info, signature, ";)S");
+				JavaGenCallByName(info, javaName, "copyOut__", signature);
+				ILFree(javaName);
+				ILFree(signature);
+			}
+			else if(info->useJavaLib)
+			{
+				JavaGenCallVirtual(info, "java/lang/Short",
+								   "shortValue", "()S");
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/Int16", "copyOut__",
+								  "(LSystem/Int16;)S");
+			}
+		}
+		break;
+
+		case ILMachineType_UInt16:
+		{
+			if(isEnumType)
+			{
+				/* Unboxing an enumerated value */
+				javaName = JavaGetClassName(info, classInfo);
+				signature = JavaStrAppend(info, 0, "(L");
+				signature = JavaStrAppend(info, signature, javaName);
+				signature = JavaStrAppend(info, signature, ";)I");
+				JavaGenCallByName(info, javaName, "copyOut__S", signature);
+				ILFree(javaName);
+				ILFree(signature);
+			}
+			else if(info->useJavaLib)
+			{
+				JavaGenCallVirtIntrinsic(info, "UShort",
+										 "ushortValue__S", "()I");
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/UInt16", "copyOut__S",
+								  "(LSystem/UInt16;)I");
+			}
+		}
+		break;
+
+		case ILMachineType_Char:
+		{
+			if(info->useJavaLib)
+			{
+				JavaGenCallVirtual(info, "java/lang/Character",
+								   "charValue", "()C");
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/Char", "copyOut__",
+								  "(LSystem/Char;)C");
+			}
+		}
+		break;
+
+		case ILMachineType_Int32:
+		case ILMachineType_NativeInt:
+		{
+			if(isEnumType)
+			{
+				/* Unboxing an enumerated value */
+				javaName = JavaGetClassName(info, classInfo);
+				signature = JavaStrAppend(info, 0, "(L");
+				signature = JavaStrAppend(info, signature, javaName);
+				signature = JavaStrAppend(info, signature, ";)I");
+				JavaGenCallByName(info, javaName, "copyOut__", signature);
+				ILFree(javaName);
+				ILFree(signature);
+			}
+			else if(info->useJavaLib)
+			{
+				JavaGenCallVirtual(info, "java/lang/Integer",
+								   "intValue", "()I");
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/Int32", "copyOut__",
+								  "(LSystem/Int32;)I");
+			}
+		}
+		break;
+
+		case ILMachineType_UInt32:
+		case ILMachineType_NativeUInt:
+		{
+			if(isEnumType)
+			{
+				/* Unboxing an enumerated value */
+				javaName = JavaGetClassName(info, classInfo);
+				signature = JavaStrAppend(info, 0, "(L");
+				signature = JavaStrAppend(info, signature, javaName);
+				signature = JavaStrAppend(info, signature, ";)I");
+				JavaGenCallByName(info, javaName, "copyOut__I", signature);
+				ILFree(javaName);
+				ILFree(signature);
+			}
+			else if(info->useJavaLib)
+			{
+				JavaGenCallVirtIntrinsic(info, "UInteger",
+								         "uintValue__I", "()I");
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/UInt32", "copyOut__I",
+								  "(LSystem/UInt32;)I");
+			}
+		}
+		break;
+
+		case ILMachineType_Int64:
+		{
+			if(isEnumType)
+			{
+				/* Unboxing an enumerated value */
+				javaName = JavaGetClassName(info, classInfo);
+				signature = JavaStrAppend(info, 0, "(L");
+				signature = JavaStrAppend(info, signature, javaName);
+				signature = JavaStrAppend(info, signature, ";)J");
+				JavaGenCallByName(info, javaName, "copyOut__", signature);
+				ILFree(javaName);
+				ILFree(signature);
+				JavaGenAdjust(info, 1);
+			}
+			else if(info->useJavaLib)
+			{
+				JavaGenCallVirtual(info, "java/lang/Long",
+								   "longValue", "()J");
+				JavaGenAdjust(info, 1);
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/Int64", "copyOut__",
+								  "(LSystem/Int64;)J");
+				JavaGenAdjust(info, 1);
+			}
+		}
+		break;
+
+		case ILMachineType_UInt64:
+		{
+			if(isEnumType)
+			{
+				/* Unboxing an enumerated value */
+				javaName = JavaGetClassName(info, classInfo);
+				signature = JavaStrAppend(info, 0, "(L");
+				signature = JavaStrAppend(info, signature, javaName);
+				signature = JavaStrAppend(info, signature, ";)J");
+				JavaGenCallByName(info, javaName, "copyOut__L", signature);
+				ILFree(javaName);
+				ILFree(signature);
+				JavaGenAdjust(info, 1);
+			}
+			else if(info->useJavaLib)
+			{
+				JavaGenCallVirtIntrinsic(info, "ULong",
+								         "ulongValue__L", "()J");
+				JavaGenAdjust(info, 1);
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/UInt64", "copyOut__L",
+								  "(LSystem/UInt64;)J");
+				JavaGenAdjust(info, 1);
+			}
+		}
+		break;
+
+		case ILMachineType_Float32:
+		{
+			if(info->useJavaLib)
+			{
+				JavaGenCallVirtual(info, "java/lang/Float",
+								   "floatValue", "()F");
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/Single", "copyOut__",
+								  "(LSystem/Single;)F");
+			}
+		}
+		break;
+
+		case ILMachineType_Float64:
+		case ILMachineType_NativeFloat:
+		{
+			if(info->useJavaLib)
+			{
+				JavaGenCallVirtual(info, "java/lang/Double",
+								   "floatValue", "()D");
+				JavaGenAdjust(info, 1);
+			}
+			else
+			{
+				JavaGenCallByName(info, "System/Double", "copyOut__",
+								  "(LSystem/Double;)D");
+				JavaGenAdjust(info, 1);
+			}
+		}
+		break;
+
+		case ILMachineType_ObjectRef:
+		case ILMachineType_String:
+		{
+			/* The unboxed form of an object is also an object.
+			   We just do a cast to ensure it has the right type */
+			if(!isRightType)
+			{
+				JavaGenClassRef(info, JAVA_OP_CHECKCAST, classInfo);
+			}
+		}
+		break;
+
+		case ILMachineType_UnmanagedPtr:
+		case ILMachineType_TransientPtr:
+		{
+			/* Shouldn't happen */
+		}
+		break;
+
+		case ILMachineType_Decimal:
+		{
+			if(info->useJavaLib)
+			{
+				/* A "java/math/BigDecimal" value is its own unboxed form */
+				break;
+			}
+		}
+		/* Fall through to the next case */
+
+		case ILMachineType_ManagedPtr:
+		case ILMachineType_ManagedValue:
+		{
+			/* Use the "copyIn__" method to make a copy of the value.
+			   We don't use "copyOut__" because its implementation
+			   would be identical to "copyIn__", and so there is no
+			   reason to duplicate effort */
+			javaName = JavaGetClassName(info, classInfo);
+			signature = JavaStrAppend(info, 0, "(L");
+			signature = JavaStrAppend(info, signature, javaName);
+			signature = JavaStrAppend(info, signature, ";)L");
+			signature = JavaStrAppend(info, signature, javaName);
+			signature = JavaStrAppend(info, signature, ";");
+			JavaGenCallByName(info, javaName, "copyIn__", signature);
+			ILFree(javaName);
+			ILFree(signature);
+		}
+		break;
+	}
+
+	return type;
+}
+
+%}
+
+/*
+ * Generate value code for a "box" expression.
+ *
+ * Because the JVM doesn't have value types, boxing operations
+ * can be a little weird.  The compiler generates special
+ * static methods in each value type called "copyIn__" and
+ * "copyOut__" to assist with boxing and unboxing.
+ */
+JavaGenValue(ILNode_Box)
+{
+	JavaBoxValue(info, JavaGenValue(node->expr, info),
+				 node->isEnumType, node->classInfo);
+	return ILMachineType_ObjectRef;
+}
+
+/*
+ * Generate value code for an "unbox" expression.
+ */
+JavaGenValue(ILNode_Unbox)
+{
+	ILMachineType subExprType;
+
+	/* Evaluate the sub-expression to get the object pointer */
+	subExprType = JavaGenValue(node->expr, info);
+
+	/* Unbox the value */
+	return JavaUnboxValue(info, subExprType, node->machineType,
+						  node->isEnumType, 0, node->classInfo);
+}
+
+JavaGenValue(ILNode_NewExpression)
+{
+	long saveStack;
+	int rank;
+	ILNode *temp;
+
+	/* Bail out if initializer-based (semantic analysis should
+	   have turned this node into "ILNode_ArrayInit") */
+	if(!(node->indexes))
+	{
+		return ILMachineType_ObjectRef;
+	}
+
+	/* Output the indexes */
+	saveStack = info->stackHeight;
+	OutputArrayDims(info, node->indexes);
+
+	/* Create the array */
+	if(!yyisa(node->indexes, ILNode_ArgList))
+	{
+		/* Single-dimensional array creation */
+		JavaGenNewArray(info, ILTypeGetElemType(node->arrayType));
+	}
+	else
+	{
+		/* Multi-dimensional array creation */
+		rank = 1;
+		temp = node->indexes;
+		while(yyisa(temp, ILNode_ArgList))
+		{
+			++rank;
+			temp = ((ILNode_ArgList *)temp)->expr1;
+		}
+		JavaGenNewMultiArray(info, node->arrayType, rank);
+	}
+
+	/* Set the final stack position */
+	info->stackHeight = saveStack + 1;
+
+	/* Arrays are always object references */
+	return ILMachineType_ObjectRef;
+}
+
+JavaGenValue(ILNode_ObjectCreationExpression)
+{
+	long saveStack;
+
+	/* Construct the memory for the object */
+	JavaGenClassRef(info, JAVA_OP_NEW, ILMethod_Owner(node->methodInfo));
+	JavaGenAdjust(info, 1);
+
+	/* Save the current stack height, so we know where to
+	   unwind to when popping the arguments */
+	saveStack = info->stackHeight;
+
+	/* Push the argument expressions */
+	JavaGenSimple(info, JAVA_OP_DUP);
+	JavaGenAdjust(info, 1);
+	if(node->argList)
+	{
+		JavaGenValue(node->argList, info);
+	}
+
+	/* Invoke the constructor */
+	JavaGenCallSpecialByMethod(info, node->methodInfo);
+
+	/* Re-adjust the stack to remove the arguments */
+	info->stackHeight = saveStack;
+	if(info->stackHeight > info->maxStackHeight)
+	{
+		info->maxStackHeight = info->stackHeight;
+	}
+
+	/* The final managed value or object reference is now on the stack */
+	if(ILClassIsValueType(ILMethod_Owner(node->methodInfo)))
+	{
+		return ILMachineType_ManagedValue;
+	}
+	else
+	{
+		return ILMachineType_ObjectRef;
+	}
+}
+
+/*
+ * Generate value code for a delegate constructor call.
+ */
+JavaGenValue(ILNode_DelegateCreationExpression)
+{
+	/* Delegate creation is not yet supported in Java */
+	return ILMachineType_ObjectRef;
+}
+
+/*
+ * Generate value code for a default value type constructor call.
+ */
+JavaGenValue(ILNode_DefaultConstructor)
+{
+	ILMachineType type = ILTypeToMachineType(node->type);
+	switch(type)
+	{
+		case ILMachineType_Void:
+		{
+			/* Nothing to do here: shouldn't happen anyway */
+		}
+		break;
+
+		case ILMachineType_Boolean:
+		case ILMachineType_Int8:
+		case ILMachineType_UInt8:
+		case ILMachineType_Int16:
+		case ILMachineType_UInt16:
+		case ILMachineType_Char:
+		case ILMachineType_Int32:
+		case ILMachineType_UInt32:
+		case ILMachineType_NativeInt:
+		case ILMachineType_NativeUInt:
+		{
+			JavaGenSimple(info, JAVA_OP_ICONST_0);
+			JavaGenAdjust(info, 1);
+		}
+		break;
+
+		case ILMachineType_Int64:
+		case ILMachineType_UInt64:
+		{
+			JavaGenSimple(info, JAVA_OP_ICONST_0);
+			JavaGenSimple(info, JAVA_OP_I2L);
+			JavaGenAdjust(info, 2);
+		}
+		break;
+
+		case ILMachineType_Float32:
+		{
+			JavaGenSimple(info, JAVA_OP_FCONST_0);
+			JavaGenAdjust(info, 1);
+		}
+		break;
+
+		case ILMachineType_Float64:
+		case ILMachineType_NativeFloat:
+		{
+			JavaGenSimple(info, JAVA_OP_DCONST_0);
+			JavaGenAdjust(info, 2);
+		}
+		break;
+
+		case ILMachineType_String:
+		case ILMachineType_ObjectRef:
+		{
+			JavaGenSimple(info, JAVA_OP_ACONST_NULL);
+			JavaGenAdjust(info, 1);
+		}
+		break;
+
+		case ILMachineType_Decimal:
+		{
+			if(info->useJavaLib)
+			{
+				JavaGenSimple(info, JAVA_OP_LCONST_0);
+				JavaGenCallByName(info, "java/math/BigDecimal", "valueOf",
+						  		  "(J)Ljava/math/BigDecimal;");
+				JavaGenExtend(info, 2);
+				JavaGenAdjust(info, 1);
+			}
+			else
+			{
+				JavaGenSimple(info, JAVA_OP_ICONST_0);
+				JavaGenCallByName(info, "System/Decimal", "op_Implicit__iV",
+						  		  "(I)LSystem/Decimal;");
+				JavaGenAdjust(info, 1);
+			}
+		}
+		break;
+
+		default:
+		{
+			/* Create an instance of the value type using
+			   the default constructor */
+			char *name;
+			name = JavaGetClassName(info, ILTypeToClass(info, node->type));
+			JavaGenTypeRef(info, JAVA_OP_NEW, node->type);
+			JavaGenAdjust(info, 1);
+			JavaGenSimple(info, JAVA_OP_DUP);
+			JavaGenAdjust(info, 1);
+			JavaGenCallCtor(info, name, "<init>", "()V");
+			JavaGenAdjust(info, -1);
+			ILFree(name);
+		}
+		break;
+	}
+	return type;
+}
+
+/*
+ * Generate the value code for a reference initialization.
+ */
+JavaGenValue(ILNode_RefInit)
+{
+	/* Reference initialization is not yet supported in Java */
+	return ILTypeToMachineType(node->type);
+}
+
+/*
+ * Generate value code for a value type constructor call with the reference
+ * passed as argument 1 and emitted like a normal method call.
+ */
+JavaGenValue(ILNode_RefValueTypeCreationExpression)
+{
+	/* Invoking constructors this way is not yet supported in Java */
+	return ILTypeToMachineType(node->type);
+}
+
+%decls %end %{
+
+/*
+ * Prepare a "this" expression for use in a method invocation
+ * or field access expression.
+ */
+void JavaPrepareForThisAccess(ILGenInfo *info, ILNode *thisExpr,
+							  ILClass *classInfo);
+
+%}
+
+%{
+
+void JavaPrepareForThisAccess(ILGenInfo *info, ILNode *thisExpr,
+							  ILClass *classInfo)
+{
+	ILType *fullType;
+	ILMachineType thisType;
+	if(yyisa(thisExpr, ILNode_MarkType))
+	{
+		fullType = ((ILNode_MarkType *)thisExpr)->type;
+		thisExpr = ((ILNode_MarkType *)thisExpr)->expr;
+	}
+	else
+	{
+		fullType = 0;
+	}
+	if(yyisa(thisExpr, ILNode_This))
+	{
+		/* Just push the "this" pointer: we don't want to convert
+		   it into a value and then re-box it */
+		JavaGenSimple(info, JAVA_OP_ALOAD_0);
+		JavaGenAdjust(info, 1);
+	}
+	else if(fullType && ILTypeIsValue(fullType))
+	{
+		/* Box the value before calling the method */
+		thisType = JavaGenValue(thisExpr, info);
+		JavaBoxValue(info, thisType, ILTypeIsEnum(fullType),
+				     ILTypeToClass(info, fullType));
+	}
+	else
+	{
+		/* Assume that the "this" expression will be an object reference */
+		JavaGenCast(info, JavaGenValue(thisExpr, info),
+					ILMachineType_ObjectRef);
+	}
+}
+
+%}
+
+/*
+ * Generate value code for a method invocation expression.
+ */
+JavaGenValue(ILNode_InvocationExpression)
+{
+	ILMachineType resultType;
+	long saveStack;
+
+	/* Save the current stack height, so we know where to
+	   unwind to when popping the arguments */
+	saveStack = info->stackHeight;
+
+	/* Push the "this" expression if necessary */
+	if(node->thisExpr && node->methodInfo)
+	{
+		JavaPrepareForThisAccess(info, node->thisExpr,
+								 ILMethod_Owner(node->methodInfo));
+	}
+
+	/* Push the argument expressions */
+	if(node->expr2)
+	{
+		JavaGenValue(node->expr2, info);
+	}
+
+	/* Invoke the method */
+	if(node->methodInfo)
+	{
+ 		if(node->baseCall)
+ 		{
+ 			JavaGenCallSpecialByMethod(info,node->methodInfo);
+ 		}
+ 		else
+ 		{
+ 			JavaGenCallMethod(info, node->methodInfo, saveStack);
+ 		}
+		resultType = ILTypeToMachineType
+			(ILTypeGetReturn(ILMethod_Signature(node->methodInfo)));
+	}
+	else
+	{
+		resultType = ILMachineType_Void;
+	}
+
+	/* Re-adjust the stack to remove the arguments */
+	if(resultType == ILMachineType_Void)
+	{
+		info->stackHeight = saveStack;
+	}
+	else
+	{
+		info->stackHeight = saveStack + JavaGenTypeSize(resultType);
+		if(info->stackHeight > info->maxStackHeight)
+		{
+			info->maxStackHeight = info->stackHeight;
+		}
+	}
+
+	/* Done */
+	return resultType;
+}
+
+JavaGenValue(ILNode_BaseInit),
+JavaGenValue(ILNode_ThisInit)
+{
+	/* These are place-holders that are used by "InvocationExpression"
+	   to assist with the invocation of parent class constructors */
+	return ILMachineType_Void;
+}
+
+/*
+ * Generate value code for a non-static field initializer node.
+ */
+JavaGenValue(ILNode_NonStaticInit)
+{
+	ILNode_MethodDeclaration *decl;
+	if(info->currentClass)
+	{
+		/* Do we have a non-static initializer for this class? */
+		decl = (ILNode_MethodDeclaration *)
+			(((ILNode_ClassDefn *)(info->currentClass))->initCtorsMethod);
+		if(decl && decl->body)
+		{
+			/* Output the body of the initializer here */
+			JavaGenDiscard(decl->body, info);
+		}
+	}
+	return ILMachineType_Void;
+}
+
+/*
+ * Generate value code for an "is null" expression.
+ */
+JavaGenValue(ILNode_IsNull)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenCast(info, JavaGenValue(node->expr, info),
+				ILMachineType_ObjectRef);
+	JavaGenJump(info, JAVA_OP_IFNULL, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenLabel(info, &label2);
+	return ILMachineType_Boolean;
+}
+
+/*
+ * Generate value code for an "is not null" expression.
+ */
+JavaGenValue(ILNode_IsNonNull)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenCast(info, JavaGenValue(node->expr, info),
+				ILMachineType_ObjectRef);
+	JavaGenJump(info, JAVA_OP_IFNONNULL, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenLabel(info, &label2);
+	return ILMachineType_Boolean;
+}
+
+/*
+ * Generate value code for typedref operators.
+ */
+JavaGenValue(ILNode_MakeRefAny),
+JavaGenValue(ILNode_RefType),
+JavaGenValue(ILNode_RefValue)
+{
+	/* Not supported for Java output */
+	return ILNode_GetType(node, info);
+}
+
+/*
+ * Generate value code for an array length operator.
+ */
+JavaGenValue(ILNode_ArrayLength)
+{
+	JavaGenValue(node->expr, info);
+	JavaGenSimple(info, JAVA_OP_ARRAYLENGTH);
+	return ILMachineType_NativeInt;
+}
+
+/*
+ * Generate the "then" branch for a comma expression.
+ */
+JavaGenThen(ILNode_Comma)
+{
+	JavaGenDiscard(node->expr1, info);
+	JavaGenThen(node->expr2, info, label);
+}
+
+/*
+ * Generate the "else" branch for a comma expression.
+ */
+JavaGenElse(ILNode_Comma)
+{
+	JavaGenDiscard(node->expr1, info);
+	JavaGenElse(node->expr2, info, label);
+}
+
+/*
+ * Generate the "then" branch for an "as is" expression.
+ */
+JavaGenThen(ILNode_AsIs),
+JavaGenThen(ILNode_ToConst)
+{
+	JavaGenThen(node->expr, info, label);
+}
+
+/*
+ * Generate the "else" branch for an "as is" expression.
+ */
+JavaGenElse(ILNode_AsIs),
+JavaGenElse(ILNode_ToConst)
+{
+	JavaGenElse(node->expr, info, label);
+}
+
+/*
+ * Generate the "then" branch for an "overflow" expression.
+ */
+JavaGenThen(ILNode_Overflow)
+{
+	int oldOverflow = info->overflowInsns;
+	info->overflowInsns = -1;
+	JavaGenThen(node->expr, info, label);
+	info->overflowInsns = oldOverflow;
+}
+
+/*
+ * Generate the "else" branch for an "overflow" expression.
+ */
+JavaGenElse(ILNode_Overflow)
+{
+	int oldOverflow = info->overflowInsns;
+	info->overflowInsns = -1;
+	JavaGenElse(node->expr, info, label);
+	info->overflowInsns = oldOverflow;
+}
+
+/*
+ * Generate the "then" branch for a "no overflow" expression.
+ */
+JavaGenThen(ILNode_NoOverflow)
+{
+	int oldOverflow = info->overflowInsns;
+	info->overflowInsns = 0;
+	JavaGenThen(node->expr, info, label);
+	info->overflowInsns = oldOverflow;
+}
+
+/*
+ * Generate the "else" branch for a "no overflow" expression.
+ */
+JavaGenElse(ILNode_NoOverflow)
+{
+	int oldOverflow = info->overflowInsns;
+	info->overflowInsns = 0;
+	JavaGenElse(node->expr, info, label);
+	info->overflowInsns = oldOverflow;
+}
+
+/*
+ * Generate the "then" branch for a "pedantic" expression.
+ */
+JavaGenThen(ILNode_Pedantic)
+{
+	int oldPedantic = info->pedanticArith;
+	info->pedanticArith = -1;
+	JavaGenThen(node->expr, info, label);
+	info->pedanticArith = oldPedantic;
+}
+
+/*
+ * Generate the "else" branch for a "pedantic" expression.
+ */
+JavaGenElse(ILNode_Pedantic)
+{
+	int oldPedantic = info->pedanticArith;
+	info->pedanticArith = -1;
+	JavaGenElse(node->expr, info, label);
+	info->pedanticArith = oldPedantic;
+}
+
+/*
+ * Generate the "then" branch for a "no pedantic" expression.
+ */
+JavaGenThen(ILNode_NoPedantic)
+{
+	int oldPedantic = info->pedanticArith;
+	info->pedanticArith = 0;
+	JavaGenThen(node->expr, info, label);
+	info->pedanticArith = oldPedantic;
+}
+
+/*
+ * Generate the "else" branch for a "no pedantic" expression.
+ */
+JavaGenElse(ILNode_NoPedantic)
+{
+	int oldPedantic = info->pedanticArith;
+	info->pedanticArith = 0;
+	JavaGenElse(node->expr, info, label);
+	info->pedanticArith = oldPedantic;
+}
+
+%output "cg_misc.c"
+
+%{
+
+/*
+ * Determine if a statement node is of base access.
+ */
+#define IsBaseAccess(node)	(!(node) || yykind((node)) == \
+ 			yykindof(ILNode_BaseAccess))
+
+/*
+ * Generate a branch for a conditional expression.
+ */
+static void JavaConditionalBranch(ILNode_Conditional *node, ILGenInfo *info,
+							      ILLabel *label, int thenCase)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	ILEvalValue value;
+
+	/* Determine the common type to use for the cases */
+	commonType = Conditional_Type(node, info, &type1, &type2);
+
+	/* If the condition is constant, then only generate the case we need */
+	if(ILNode_EvalConst(node->expr1, info, &value) &&
+	   ILGenConstToBoolean(info, &value))
+	{
+		if(value.un.i4Value)
+		{
+			/* The condition is always true */
+			if(type1 == commonType)
+			{
+				if(thenCase)
+				{
+					JavaGenThen(node->expr2, info, label);
+				}
+				else
+				{
+					JavaGenElse(node->expr2, info, label);
+				}
+			}
+			else
+			{
+				JavaGenValue(node->expr2, info);
+				JavaGenCast(info, type1, commonType);
+				if(thenCase)
+				{
+					JavaStackThen(info, label, commonType);
+				}
+				else
+				{
+					JavaStackElse(info, label, commonType);
+				}
+			}
+		}
+		else
+		{
+			/* The condition is always false */
+			if(type2 == commonType)
+			{
+				if(thenCase)
+				{
+					JavaGenThen(node->expr3, info, label);
+				}
+				else
+				{
+					JavaGenElse(node->expr3, info, label);
+				}
+			}
+			else
+			{
+				JavaGenValue(node->expr3, info);
+				JavaGenCast(info, type2, commonType);
+				if(thenCase)
+				{
+					JavaStackThen(info, label, commonType);
+				}
+				else
+				{
+					JavaStackElse(info, label, commonType);
+				}
+			}
+		}
+	}
+	else
+	{
+		/* Generate the full case of the conditional.  Use value testing
+		   if the type is different in case the conversion might generate
+		   a conversion exception.  Optimizing the convert away will change
+		   the behaviour of the expression */
+		JavaGenElse(node->expr1, info, &label1);
+		if(type1 == commonType)
+		{
+			if(thenCase)
+			{
+				JavaGenThen(node->expr2, info, label);
+			}
+			else
+			{
+				JavaGenElse(node->expr3, info, label);
+			}
+		}
+		else
+		{
+			JavaGenValue(node->expr2, info);
+			JavaGenCast(info, type1, commonType);
+			if(thenCase)
+			{
+				JavaStackThen(info, label, commonType);
+			}
+			else
+			{
+				JavaStackElse(info, label, commonType);
+			}
+		}
+		JavaGenJump(info, JAVA_OP_GOTO, &label2);
+		JavaGenLabel(info, &label1);
+		if(type2 == commonType)
+		{
+			if(thenCase)
+			{
+				JavaGenThen(node->expr3, info, label);
+			}
+			else
+			{
+				JavaGenElse(node->expr3, info, label);
+			}
+		}
+		else
+		{
+			JavaGenValue(node->expr3, info);
+			JavaGenCast(info, type2, commonType);
+			if(thenCase)
+			{
+				JavaStackThen(info, label, commonType);
+			}
+			else
+			{
+				JavaStackElse(info, label, commonType);
+			}
+		}
+		JavaGenLabel(info, &label2);
+	}
+}
+
+%}
+
+/*
+ * Generate the "then" branch for a conditional expression.
+ */
+JavaGenThen(ILNode_Conditional)
+{
+	JavaConditionalBranch(node, info, label, 1);
+}
+
+/*
+ * Generate the "else" branch for a conditional expression.
+ */
+JavaGenElse(ILNode_Conditional)
+{
+	JavaConditionalBranch(node, info, label, 0);
+}
+
+/*
+ * Generate the "then" branch for a "to bool" expression.
+ */
+JavaGenThen(ILNode_ToBool)
+{
+	ILMachineType type;
+	if(node->trueMethod)
+	{
+		/* Use a user-supplied "op_True" operator */
+		type = JavaGenValue(node->expr, info);
+		JavaGenCallByMethod(info, node->trueMethod);
+		JavaGenJump(info, JAVA_OP_IFNE, label);
+		JavaGenAdjust(info, -JavaGenTypeSize(type));
+	}
+	else if(node->falseMethod)
+	{
+		/* Use a user-supplied "op_False" operator */
+		type = JavaGenValue(node->expr, info);
+		JavaGenCallByMethod(info, node->falseMethod);
+		JavaGenJump(info, JAVA_OP_IFEQ, label);
+		JavaGenAdjust(info, -JavaGenTypeSize(type));
+	}
+	else
+	{
+		/* Use a built-in boolean conversion */
+		JavaGenThen(node->expr, info, label);
+	}
+}
+
+/*
+ * Generate the "else" branch for a "to bool" expression.
+ */
+JavaGenElse(ILNode_ToBool)
+{
+	ILMachineType type;
+	if(node->trueMethod)
+	{
+		/* Use a user-supplied "op_True" operator */
+		type = JavaGenValue(node->expr, info);
+		JavaGenCallByMethod(info, node->trueMethod);
+		JavaGenJump(info, JAVA_OP_IFEQ, label);
+		JavaGenAdjust(info, -JavaGenTypeSize(type));
+	}
+	else if(node->falseMethod)
+	{
+		/* Use a user-supplied "op_False" operator */
+		type = JavaGenValue(node->expr, info);
+		JavaGenCallByMethod(info, node->falseMethod);
+		JavaGenJump(info, JAVA_OP_IFNE, label);
+		JavaGenAdjust(info, -JavaGenTypeSize(type));
+	}
+	else
+	{
+		/* Use a built-in boolean conversion */
+		JavaGenElse(node->expr, info, label);
+	}
+}
+
+/*
+ * Generate the "then" branch for an "as" or "is" expression.
+ */
+JavaGenThen(ILNode_As),
+JavaGenThen(ILNode_Is)
+{
+	/* Evaluate the sub-expression and cast to an object reference */
+	JavaGenCast(info, JavaGenValue(node->expr, info),
+			    ILMachineType_ObjectRef);
+
+	/* Test the object using the "instanceof" instruction */
+	JavaGenClassRef(info, JAVA_OP_INSTANCEOF, node->classInfo);
+
+	/* Jump based on the result */
+	JavaGenJump(info, JAVA_OP_IFNE, label);
+	JavaGenAdjust(info, -1);
+}
+
+/*
+ * Generate the "else" branch for an "as" or "is" expression.
+ */
+JavaGenElse(ILNode_As),
+JavaGenElse(ILNode_Is)
+{
+	/* Evaluate the sub-expression and cast to an object reference */
+	JavaGenCast(info, JavaGenValue(node->expr, info),
+			    ILMachineType_ObjectRef);
+
+	/* Test the object using the "instanceof" instruction */
+	JavaGenClassRef(info, JAVA_OP_INSTANCEOF, node->classInfo);
+
+	/* Jump based on the result */
+	JavaGenJump(info, JAVA_OP_IFEQ, label);
+	JavaGenAdjust(info, -1);
+}
+
+/*
+ * Generate the "then" branch for an "is null" expression.
+ */
+JavaGenThen(ILNode_IsNull),
+JavaGenElse(ILNode_IsNonNull)
+{
+	JavaGenCast(info, JavaGenValue(node->expr, info),
+				ILMachineType_ObjectRef);
+	JavaGenJump(info, JAVA_OP_IFNULL, label);
+	JavaGenAdjust(info, -1);
+}
+
+/*
+ * Generate the "else" branch for an "is null" expression.
+ */
+JavaGenElse(ILNode_IsNull),
+JavaGenThen(ILNode_IsNonNull)
+{
+	JavaGenCast(info, JavaGenValue(node->expr, info),
+				ILMachineType_ObjectRef);
+	JavaGenJump(info, JAVA_OP_IFNONNULL, label);
+	JavaGenAdjust(info, -1);
+}
+
+%{
+
+/*
+ * Prepare a sub-expression for storage.
+ */
+static ILMachineType JavaPrepare_SubExpr(ILNode_LValueUnaryExpr *node,
+									     ILGenInfo *info, void **data1,
+									     void **data2)
+{
+	if(yyisa(node->expr, ILNode_LValue))
+	{
+		return JavaPrepare((ILNode_LValue *)(node->expr),
+						   info, data1, data2);
+	}
+	else
+	{
+		return ILMachineType_Void;
+	}
+}
+
+%}
+
+/*
+ * Prepare for storage for an "as is" operator.
+ */
+JavaPrepare(ILNode_AsIs)
+{
+	return JavaPrepare_SubExpr((ILNode_LValueUnaryExpr *)node,
+							   info, data1, data2);
+}
+
+/*
+ * Prepare for storage for an "overflow" operator.
+ */
+JavaPrepare(ILNode_Overflow)
+{
+	int oldOverflow = info->overflowInsns;
+	ILMachineType valueType;
+	info->overflowInsns = -1;
+	valueType = JavaPrepare_SubExpr((ILNode_LValueUnaryExpr *)node,
+								    info, data1, data2);
+	info->overflowInsns = oldOverflow;
+	return valueType;
+}
+
+/*
+ * Prepare for storage for a "no overflow" operator.
+ */
+JavaPrepare(ILNode_NoOverflow)
+{
+	int oldOverflow = info->overflowInsns;
+	ILMachineType valueType;
+	info->overflowInsns = 0;
+	valueType = JavaPrepare_SubExpr((ILNode_LValueUnaryExpr *)node,
+								    info, data1, data2);
+	info->overflowInsns = oldOverflow;
+	return valueType;
+}
+
+/*
+ * Prepare for storage for a "pedantic" operator.
+ */
+JavaPrepare(ILNode_Pedantic)
+{
+	int oldPedantic = info->pedanticArith;
+	ILMachineType valueType;
+	info->pedanticArith = -1;
+	valueType = JavaPrepare_SubExpr((ILNode_LValueUnaryExpr *)node,
+								    info, data1, data2);
+	info->pedanticArith = oldPedantic;
+	return valueType;
+}
+
+/*
+ * Prepare for storage for a "no pedantic" operator.
+ */
+JavaPrepare(ILNode_NoPedantic)
+{
+	int oldPedantic = info->pedanticArith;
+	ILMachineType valueType;
+	info->pedanticArith = 0;
+	valueType = JavaPrepare_SubExpr((ILNode_LValueUnaryExpr *)node,
+								    info, data1, data2);
+	info->pedanticArith = oldPedantic;
+	return valueType;
+}
+
+/*
+ * Prepare for storage for a dereference operator.
+ */
+JavaPrepare(ILNode_Deref)
+{
+	/* TODO */
+	return ILMachineType_Void;
+}
+
+%{
+
+/*
+ * Get and prepare a sub-expression for storage.
+ */
+static ILMachineType JavaGetAndPrepare_SubExpr(ILNode_LValueUnaryExpr *node,
+									           ILGenInfo *info, int leave,
+										       void **data1, void **data2)
+{
+	if(yyisa(node->expr, ILNode_LValue))
+	{
+		return JavaGetAndPrepare((ILNode_LValue *)(node->expr),
+							     info, leave, data1, data2);
+	}
+	else
+	{
+		return ILMachineType_Void;
+	}
+}
+
+%}
+
+/*
+ * Get and prepare for storage for an "as is" operator.
+ */
+JavaGetAndPrepare(ILNode_AsIs)
+{
+	return JavaGetAndPrepare_SubExpr((ILNode_LValueUnaryExpr *)node,
+								     info, leave, data1, data2);
+}
+
+/*
+ * Get and prepare for storage for an "overflow" operator.
+ */
+JavaGetAndPrepare(ILNode_Overflow)
+{
+	int oldOverflow = info->overflowInsns;
+	ILMachineType valueType;
+	info->overflowInsns = -1;
+	valueType = JavaGetAndPrepare_SubExpr((ILNode_LValueUnaryExpr *)node,
+								          info, leave, data1, data2);
+	info->overflowInsns = oldOverflow;
+	return valueType;
+}
+
+/*
+ * Get and prepare for storage for a "no overflow" operator.
+ */
+JavaGetAndPrepare(ILNode_NoOverflow)
+{
+	int oldOverflow = info->overflowInsns;
+	ILMachineType valueType;
+	info->overflowInsns = 0;
+	valueType = JavaGetAndPrepare_SubExpr((ILNode_LValueUnaryExpr *)node,
+								          info, leave, data1, data2);
+	info->overflowInsns = oldOverflow;
+	return valueType;
+}
+
+/*
+ * Get and prepare for storage for a "pedantic" operator.
+ */
+JavaGetAndPrepare(ILNode_Pedantic)
+{
+	int oldPedantic = info->pedanticArith;
+	ILMachineType valueType;
+	info->pedanticArith = -1;
+	valueType = JavaGetAndPrepare_SubExpr((ILNode_LValueUnaryExpr *)node,
+								          info, leave, data1, data2);
+	info->pedanticArith = oldPedantic;
+	return valueType;
+}
+
+/*
+ * Get and prepare for storage for a "no pedantic" operator.
+ */
+JavaGetAndPrepare(ILNode_NoPedantic)
+{
+	int oldPedantic = info->pedanticArith;
+	ILMachineType valueType;
+	info->pedanticArith = 0;
+	valueType = JavaGetAndPrepare_SubExpr((ILNode_LValueUnaryExpr *)node,
+								          info, leave, data1, data2);
+	info->pedanticArith = oldPedantic;
+	return valueType;
+}
+
+/*
+ * Get and prepare for storage for a dereference operator.
+ */
+JavaGetAndPrepare(ILNode_Deref)
+{
+	/* TODO */
+	return ILMachineType_Void;
+}
+
+%{
+
+/*
+ * Store a sub-expression.
+ */
+static void JavaStore_SubExpr(ILNode_LValueUnaryExpr *node,
+					          ILGenInfo *info, int leave,
+						      void **data1, void **data2)
+{
+	if(yyisa(node->expr, ILNode_LValue))
+	{
+		JavaStore((ILNode_LValue *)(node->expr), info, leave, data1, data2);
+	}
+}
+
+%}
+
+/*
+ * Store for an "as is" operator.
+ */
+JavaStore(ILNode_AsIs)
+{
+	JavaStore_SubExpr((ILNode_LValueUnaryExpr *)node,
+					  info, leave, data1, data2);
+}
+
+/*
+ * Store for an "overflow" operator.
+ */
+JavaStore(ILNode_Overflow)
+{
+	int oldOverflow = info->overflowInsns;
+	info->overflowInsns = -1;
+	JavaStore_SubExpr((ILNode_LValueUnaryExpr *)node,
+					  info, leave, data1, data2);
+	info->overflowInsns = oldOverflow;
+}
+
+/*
+ * Store for a "no overflow" operator.
+ */
+JavaStore(ILNode_NoOverflow)
+{
+	int oldOverflow = info->overflowInsns;
+	info->overflowInsns = 0;
+	JavaStore_SubExpr((ILNode_LValueUnaryExpr *)node,
+					  info, leave, data1, data2);
+	info->overflowInsns = oldOverflow;
+}
+
+/*
+ * Store for a "pedantic" operator.
+ */
+JavaStore(ILNode_Pedantic)
+{
+	int oldPedantic = info->pedanticArith;
+	info->pedanticArith = -1;
+	JavaStore_SubExpr((ILNode_LValueUnaryExpr *)node,
+					  info, leave, data1, data2);
+	info->pedanticArith = oldPedantic;
+}
+
+/*
+ * Store for a "no pedantic" operator.
+ */
+JavaStore(ILNode_NoPedantic)
+{
+	int oldPedantic = info->pedanticArith;
+	info->pedanticArith = 0;
+	JavaStore_SubExpr((ILNode_LValueUnaryExpr *)node,
+					  info, leave, data1, data2);
+	info->pedanticArith = oldPedantic;
+}
+
+/*
+ * Store for a dereference operator.
+ */
+JavaStore(ILNode_Deref)
+{
+	/* TODO */
+}

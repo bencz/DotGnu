@@ -1,0 +1,1740 @@
+/*
+ * cs_decls.tc - Semantic analysis for C# class and type declarations.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+%{
+
+/*
+ * Error reporting function for "ILGenImplementsAllInterfaces".
+ */
+static void InterfaceErrorFunc(ILNode *node, ILClass *classInfo,
+							   ILMember *missingMember)
+{
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  _("`%s' does not implement `%s'"),
+				  CSTypeToName(ILClassToType(classInfo)),
+				  CSItemToName((ILProgramItem *)missingMember));
+}
+
+/*
+ * Proxy reporting function for "ILGenImplementsAllInterfaces".
+ */
+static void InterfaceProxyFunc(ILNode *node, ILClass *classInfo,
+							   ILMethod *missingMember,
+							   ILMethod *proxyReplacement)
+{
+	ILNode_ClassDefn *defn = (ILNode_ClassDefn *)node;
+	ILNode *proxy = ILNode_ProxyDeclaration_create
+		(missingMember, proxyReplacement);
+	ILNode *body;
+	if(!(defn->body))
+	{
+		body = defn->body = ILNode_List_create();
+	}
+	else
+	{
+		body = defn->body;
+		if(yyisa(body, ILNode_ScopeChange))
+		{
+			body = ((ILNode_ScopeChange *)body)->body;
+		}
+	}
+	ILNode_List_Add(body, proxy);
+}
+
+/*  Since we can't (shouldn't?) inherit list from multiple types, this
+ *  operation will iterate over a list of declarations adding to the 
+ *  compound constructor */
+static void CSListGatherStaticCtor(ILNode_List *node, ILNode_List *ctor)
+{
+	ILNode_ListIter iter;
+	ILNode_Declaration *curr;
+
+	if (yyisa(node, ILNode_List) || node == 0)
+	{
+		/* Iterate through the body gathering up the necessary constructors */
+		ILNode_ListIter_Init(&iter, node);
+		while ((curr = (ILNode_Declaration *)ILNode_ListIter_Next(&iter)))
+		{
+			ILNode_Declaration_GatherStaticCtor(curr, ctor);
+		}
+	}
+}
+
+/* 
+ * append entries in the oldList to the collectedList to order
+ * the user specified static ctors after the ones from field decl
+ */
+static void AppendStaticCtor(ILNode_List *collectedList, 
+							 ILNode_List *oldList, int withSemGuard)
+{
+	if(!oldList)
+	{
+		return;
+	}
+
+	if (yyisa(oldList, ILNode_List))
+	{
+		ILNode_ListIter iter;
+		ILNode *curr;
+
+		ILNode_ListIter_Init(&iter, oldList);
+		while((curr = ILNode_ListIter_Next(&iter)))
+		{
+			if(withSemGuard)
+			{
+				curr = ILNode_SemGuard_create(curr, CSSemValueDefault);
+			}
+			ILNode_List_Add(collectedList, curr);
+		}
+	}
+}
+
+/*
+ * Check for multiple explicit static constructors.
+ */
+static void CheckStaticCtor(ILNode *staticCtors, int hasStaticCtor)
+{
+	ILNode_ListIter iter;
+	ILNode *staticCtor;
+
+	ILNode_ListIter_Init(&iter, staticCtors);
+	if(!hasStaticCtor)
+	{
+		/* skip the first one */
+		if(!ILNode_ListIter_Next(&iter))
+		{
+			return;
+		}
+	}
+	while((staticCtor = ILNode_ListIter_Next(&iter)) != NULL)
+	{
+		CCErrorOnLine(yygetfilename(staticCtor),
+					  yygetlinenum(staticCtor),
+					  "Cannot have more than one static constructor");
+	}
+}
+
+/*
+ * Create the static constructor method.
+ */
+static ILNode *CreateStaticCtorMethod(ILGenInfo *info, ILClass *classInfo)
+{
+	ILMethod *methodInfo;
+	ILType *signature;
+	ILNode *ctorMethod;
+
+	ctorMethod = ILNode_MethodDeclaration_create(0,
+												 CS_MODIFIER_STATIC |
+												 CS_MODIFIER_METHOD_CONSTRUCTOR,
+												 0 /* void */,
+												 ILQualIdentSimple(ILInternString(".cctor", 6).string),
+												 0 /* no type formals */,
+												 0 /* no parameters */,
+												 0 /* no body */);
+	methodInfo = ILMethodCreate(classInfo, 0, ".cctor",
+								IL_META_METHODDEF_PRIVATE |
+								IL_META_METHODDEF_STATIC |
+								IL_META_METHODDEF_HIDE_BY_SIG |
+								IL_META_METHODDEF_SPECIAL_NAME |
+								IL_META_METHODDEF_RT_SPECIAL_NAME);
+	if(!methodInfo)
+	{
+		CCOutOfMemory();
+	}
+	signature = ILTypeCreateMethod(info->context, ILType_Void);
+	if(!signature)
+	{
+		CCOutOfMemory();
+	}
+	ILMemberSetSignature((ILMember *)methodInfo, signature);
+	((ILNode_MethodDeclaration *)(ctorMethod))->methodInfo = methodInfo;
+
+	return ctorMethod;
+}
+
+/*
+ * Handle static field declarations and constructors.
+ */
+static void HandleStaticCtor(ILGenInfo *info, ILNode_ClassDefn *node)
+{
+	ILNode *staticCtor;
+	ILNode_ClassDefn *ctorDefn;
+	ILNode *staticInitList;
+	ILNode *staticCtorsMethod;
+
+	/* First check if there is an explicit static constructor */
+	staticCtor = 0;
+	ctorDefn = 0;
+	staticCtorsMethod = 0;
+	if(node->staticCtors)
+	{
+		CheckStaticCtor(node->staticCtors, 0);
+		staticCtor = node->staticCtors;
+		ctorDefn = node;
+	}
+#if IL_VERSION_MAJOR > 1
+	if(node->otherParts)
+	{
+		ILNode_ListIter iter;
+		ILNode *part;
+
+		ILNode_ListIter_Init(&iter, node->otherParts);
+		while((part = ILNode_ListIter_Next(&iter)) != NULL)
+		{
+			ILNode_ClassDefn *partDefn;
+
+			partDefn = (ILNode_ClassDefn *)part;
+			if(partDefn->staticCtors)
+			{
+				CheckStaticCtor(node->staticCtors, (staticCtor != 0));
+				if(!staticCtor)
+				{
+					staticCtor = partDefn->staticCtors;
+					ctorDefn = partDefn;
+				}
+			}
+		}
+	}
+#endif /* IL_VERSION_MAJOR > 1 */
+
+	/* Now collect the static fields with initialization */
+	staticInitList = ILNode_List_create();
+	ILNode_Declaration_GatherStaticCtor((ILNode_Declaration *)node->body,
+										(ILNode_List *)staticInitList);
+#if IL_VERSION_MAJOR > 1
+	if(node->otherParts)
+	{
+		ILNode_ListIter iter;
+		ILNode *part;
+
+		ILNode_ListIter_Init(&iter, node->otherParts);
+		while((part = ILNode_ListIter_Next(&iter)) != NULL)
+		{
+			ILNode_ClassDefn *partDefn;
+			ILNode *partInitList;
+
+			partDefn = (ILNode_ClassDefn *)part;
+			partInitList = ILNode_List_create();
+			ILNode_Declaration_GatherStaticCtor((ILNode_Declaration *)partDefn->body,
+												(ILNode_List *)partInitList);
+
+			if(ILNode_List_Length(partInitList) > 0)
+			{
+				/* Perform semantic analysis on this part */
+				ILNode *savedClass;
+				ILNode *savedNamespace;
+				ILNode *savedMethod;
+
+				if(staticCtorsMethod == 0)
+				{
+					staticCtorsMethod = CreateStaticCtorMethod(info, partDefn->classInfo);
+				}
+
+				savedClass = info->currentClass;
+				savedNamespace = info->currentNamespace;
+				savedMethod = info->currentMethod;
+				info->currentClass = (ILNode *)partDefn;
+				info->currentNamespace = partDefn->namespaceNode;
+				info->currentMethod = staticCtorsMethod;
+
+				ILNode_SemAnalysis(partInitList, info, &partInitList);
+
+				info->currentClass = savedClass;
+				info->currentNamespace = savedNamespace;
+				info->currentMethod = savedMethod;
+
+				/* Append the list of this part to the main list */
+				AppendStaticCtor((ILNode_List*)staticInitList,
+								  (ILNode_List*)partInitList, 1);
+			}
+		}
+	}
+#endif /* IL_VERSION_MAJOR > 1 */
+
+	/* append the explicit static constructors to the end of the 
+	   gathered list */
+	AppendStaticCtor((ILNode_List*)staticInitList,
+					  (ILNode_List*)staticCtor, 0);
+
+	if(ILNode_List_Length(staticInitList) == 0)
+	{
+		/*  There were no static constructors after all  */
+		node->staticCtors = 0;
+	}
+	else
+	{
+		/* Create a method for the static constructors and
+		   then perform semantic analysis on its contents */
+		ILNode *savedClass;
+		ILNode *savedNamespace;
+		ILNode *savedMethod;
+
+		if(staticCtorsMethod == 0)
+		{
+			staticCtorsMethod = CreateStaticCtorMethod(info, node->classInfo);
+		}
+		((ILNode_MethodDeclaration *)staticCtorsMethod)->body =
+									ILNode_NewScope_create(staticInitList);
+		node->staticCtorsMethod = staticCtorsMethod;
+
+		/*
+		 * Perform semantic analysis on the cctor in the context of the
+		 * explicit static constructor declaration.
+		 */
+		if(!ctorDefn)
+		{
+			ctorDefn = node;
+		}
+		savedClass = info->currentClass;
+		savedNamespace = info->currentNamespace;
+		savedMethod = info->currentMethod;
+		info->currentClass = (ILNode *)ctorDefn;
+		info->currentNamespace = ctorDefn->namespaceNode;
+		info->currentMethod = NULL;
+
+		ILNode_SemAnalysis(node->staticCtorsMethod, info,
+						   &(node->staticCtorsMethod));
+
+		info->currentClass = savedClass;
+		info->currentNamespace = savedNamespace;
+		info->currentMethod = savedMethod;
+
+		if(!staticCtor)
+		{
+			/* The class contains static initializers for fields, but no
+			   explicit static constructor.  Add the "beforefieldinit"
+			   flag to the set of modifiers */
+			if(node->classInfo)
+			{
+				ILClassSetAttrs(node->classInfo,
+								IL_META_TYPEDEF_BEFORE_FIELD_INIT,
+								IL_META_TYPEDEF_BEFORE_FIELD_INIT);
+			}
+		}
+	}
+}
+
+%}
+
+%operation void ILNode_Declaration_GatherStaticCtor
+		([ILNode_Declaration *node], ILNode_List *ctor) = {0};
+
+/*
+ * Perform semantic analysis for class definitions.
+ */
+ILNode_SemAnalysis(ILNode_ClassDefn)
+{
+	CSSemValue value;
+	ILNode *savedClass;
+	ILNode *savedNamespace;
+	ILNode *savedMethod;
+	int target;
+
+	/* Determine if we have already visited this node */
+	if(node->visited == ILVisitMode_Processing)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "circularity detected in class definition");
+		return CSSemValueDefault;
+	}
+	else if(node->visited == ILVisitMode_Done)
+	{
+		return CSSemValueDefault;
+	}
+	node->visited = ILVisitMode_Processing;
+
+	/* Process the attributes for the class */
+	if(node->defaultMemberName)
+	{
+		CSAddDefaultMemberAttr(info, node->classInfo, node->defaultMemberName);
+	}
+	if(ILClass_IsInterface(node->classInfo))
+	{
+		target = IL_ATTRIBUTE_TARGET_INTERFACE;
+	}
+	else if(ILTypeIsEnum(ILType_FromValueType(node->classInfo)))
+	{
+		target = IL_ATTRIBUTE_TARGET_ENUM;
+	}
+	else if(ILTypeIsDelegate(ILType_FromClass(node->classInfo)))
+	{
+		target = IL_ATTRIBUTE_TARGET_DELEGATE;
+	}
+	else if(ILClassIsValueType(node->classInfo))
+	{
+		target = IL_ATTRIBUTE_TARGET_STRUCT;
+	}
+	else
+	{
+		target = IL_ATTRIBUTE_TARGET_CLASS;
+	}
+	if(node->attributes)
+	{
+		savedClass = info->currentClass;
+		savedNamespace = info->currentNamespace;
+		savedMethod = info->currentMethod;
+		info->currentClass = (ILNode *)node;
+		info->currentNamespace = node->namespaceNode;
+		info->currentMethod = NULL;
+		CSProcessAttrsForClass(info, node, target);
+		info->currentClass = savedClass;
+		info->currentNamespace = savedNamespace;
+		info->currentMethod = savedMethod;
+	}
+
+#if IL_VERSION_MAJOR > 1
+	/* perform the semantic analysis for the generic type parameters */
+	if(node->typeFormals)
+	{
+		savedClass = info->currentClass;
+		savedNamespace = info->currentNamespace;
+		savedMethod = info->currentMethod;
+		info->currentClass = (ILNode *)node;
+		info->currentNamespace = node->namespaceNode;
+		info->currentMethod = NULL;
+		ILNode_SemAnalysis(node->typeFormals, info, &(node->typeFormals));
+		info->currentClass = savedClass;
+		info->currentNamespace = savedNamespace;
+		info->currentMethod = savedMethod;
+	}
+#endif /* IL_VERSION_MAJOR > 1 */
+
+	/* Perform semantic analysis on the node */
+	if((node->modifiers & CS_MODIFIER_UNSAFE) != 0)
+	{
+		CCUnsafeEnter(info, (ILNode *)node, "unsafe class declaration");
+	}
+	if(node->body)
+	{
+		savedClass = info->currentClass;
+		savedNamespace = info->currentNamespace;
+		savedMethod = info->currentMethod;
+		info->currentClass = (ILNode *)node;
+		info->currentNamespace = node->namespaceNode;
+		info->currentMethod = NULL;
+		value = ILNode_SemAnalysis(node->body, info, &(node->body));
+		info->currentClass = savedClass;
+		info->currentNamespace = savedNamespace;
+		info->currentMethod = savedMethod;
+	}
+
+#if IL_VERSION_MAJOR > 1
+	if(node->otherParts)
+	{
+		ILNode_SemAnalysis(node->otherParts, info, &(node->otherParts));
+	}
+	if(!(node->partialParent))
+	{
+#endif /* IL_VERSION_MAJOR > 1 */
+		savedClass = info->currentClass;
+		savedNamespace = info->currentNamespace;
+		savedMethod = info->currentMethod;
+		info->currentClass = (ILNode *)node;
+		info->currentNamespace = node->namespaceNode;
+		info->currentMethod = NULL;
+
+		if(node->initCtorsMethod)
+		{
+			/* Perform semantic analysis on the non-static initializers */
+			ILNode_SemAnalysis(node->initCtorsMethod, info,
+							   &(node->initCtorsMethod));
+		}
+
+		/* Create the static constructor */
+		HandleStaticCtor(info, node);
+
+		info->currentClass = savedClass;
+		info->currentNamespace = savedNamespace;
+		info->currentMethod = savedMethod;
+
+		if(node->classInfo && !ILClass_IsInterface(node->classInfo))
+		{
+			/* Check that the class implements all of its interfaces */
+			ILGenImplementsAllInterfaces(info, (ILNode *)node,
+										 node->classInfo,
+										 InterfaceErrorFunc,
+										 InterfaceProxyFunc);
+		}
+#if IL_VERSION_MAJOR > 1
+	}
+#endif /* IL_VERSION_MAJOR > 1 */
+
+	if((node->modifiers & CS_MODIFIER_UNSAFE) != 0)
+	{
+		CCUnsafeLeave(info);
+	}
+
+	/* We have finished processing this node */
+	node->visited = ILVisitMode_Done;
+	return CSSemValueDefault;
+}
+
+ILNode_Declaration_GatherStaticCtor(ILNode_ClassDefn),
+ILNode_Declaration_GatherStaticCtor(ILNode_ScopeChange)
+{
+	if (node->body) 
+	{
+		CSListGatherStaticCtor((ILNode_List *)node->body, ctor);
+	}
+}
+
+/*
+ * Perform semantic analysis for proxy declarations.
+ */
+ILNode_SemAnalysis(ILNode_ProxyDeclaration)
+{
+	/* Nothing to do here */
+	return CSSemValueDefault;
+}
+ILNode_Declaration_GatherStaticCtor(ILNode_ProxyDeclaration)
+{
+	/* Nothing to do here */
+}
+
+/*
+ * Perform semantic analysis for declaration scope changes.
+ */
+ILNode_SemAnalysis(ILNode_ScopeChange)
+{
+	CSSemValue value;
+	if (node->body)
+	{
+		ILScope *oldscope = info->currentScope;
+		info->currentScope = node->scope;
+		value = ILNode_SemAnalysis(node->body, info, &(node->body));
+		info->currentScope = oldscope;
+	}
+	else
+	{
+		CSSemSetRValue(value, ILType_Int32);
+	}
+	return value;
+}
+
+%{
+
+/*
+ * Attach a constant value to a field.
+ */
+static void AddConstantValue(ILGenInfo *info, ILField *field,
+							 ILEvalValue *evalValue)
+{
+	unsigned char constBuf[18];
+	int constBufLen;
+	int constElemType;
+	ILConstant *constant;
+	ILType *type;
+	ILMethod *ctor;
+	ILAttribute *attr;
+	int posn, wlen;
+	unsigned char *newStr;
+	unsigned char *tempStr;
+
+	/* Bail out if the field wasn't created properly */
+	if(!field)
+	{
+		return;
+	}
+
+	switch(evalValue->valueType)
+	{
+		case ILMachineType_Boolean:
+		{
+			constBuf[0] = (unsigned char)(evalValue->un.i4Value);
+			constBufLen = 1;
+			constElemType = IL_META_ELEMTYPE_BOOLEAN;
+		}
+		break;
+
+		case ILMachineType_Int8:
+		case ILMachineType_UInt8:
+		{
+			constBuf[0] = (unsigned char)(evalValue->un.i4Value);
+			constBufLen = 1;
+			constElemType = IL_META_ELEMTYPE_I1;
+		}
+		break;
+
+		case ILMachineType_Int16:
+		case ILMachineType_UInt16:
+		{
+			constBuf[0] = (unsigned char)(evalValue->un.i4Value);
+			constBuf[1] =
+				(unsigned char)(evalValue->un.i4Value >> 8);
+			constBufLen = 2;
+			constElemType = IL_META_ELEMTYPE_I2;
+		}
+		break;
+
+		case ILMachineType_Char:
+		{
+			constBuf[0] = (unsigned char)(evalValue->un.i4Value);
+			constBuf[1] =
+				(unsigned char)(evalValue->un.i4Value >> 8);
+			constBufLen = 2;
+			constElemType = IL_META_ELEMTYPE_CHAR;
+		}
+		break;
+
+		case ILMachineType_Int32:
+		case ILMachineType_UInt32:
+		case ILMachineType_NativeInt:
+		case ILMachineType_NativeUInt:
+		{
+			constBuf[0] = (unsigned char)(evalValue->un.i4Value);
+			constBuf[1] =
+				(unsigned char)(evalValue->un.i4Value >> 8);
+			constBuf[2] =
+				(unsigned char)(evalValue->un.i4Value >> 16);
+			constBuf[3] =
+				(unsigned char)(evalValue->un.i4Value >> 24);
+			constBufLen = 4;
+			constElemType = IL_META_ELEMTYPE_I4;
+		}
+		break;
+
+		case ILMachineType_Int64:
+		case ILMachineType_UInt64:
+		{
+			constBuf[0] = (unsigned char)(evalValue->un.i8Value);
+			constBuf[1] =
+				(unsigned char)(evalValue->un.i8Value >> 8);
+			constBuf[2] =
+				(unsigned char)(evalValue->un.i8Value >> 16);
+			constBuf[3] =
+				(unsigned char)(evalValue->un.i8Value >> 24);
+			constBuf[4] =
+				(unsigned char)(evalValue->un.i8Value >> 32);
+			constBuf[5] =
+				(unsigned char)(evalValue->un.i8Value >> 40);
+			constBuf[6] =
+				(unsigned char)(evalValue->un.i8Value >> 48);
+			constBuf[7] =
+				(unsigned char)(evalValue->un.i8Value >> 56);
+			constBufLen = 8;
+			constElemType = IL_META_ELEMTYPE_I8;
+		}
+		break;
+
+		case ILMachineType_Float32:
+		{
+			IL_WRITE_FLOAT(constBuf, evalValue->un.r4Value);
+			constBufLen = 4;
+			constElemType = IL_META_ELEMTYPE_R4;
+		}
+		break;
+
+		case ILMachineType_Float64:
+		case ILMachineType_NativeFloat:
+		{
+			IL_WRITE_DOUBLE(constBuf, evalValue->un.r8Value);
+			constBufLen = 8;
+			constElemType = IL_META_ELEMTYPE_R8;
+		}
+		break;
+
+		case ILMachineType_Decimal:
+		{
+			/* Attach "DecimalConstantAttribute" to the field */
+			static ILType * const decConstArgs[5] =
+				{ILType_UInt8, ILType_UInt8, ILType_UInt32,
+				 ILType_UInt32, ILType_UInt32};
+			type = ILFindNonSystemType(info, "DecimalConstantAttribute",
+									   "System.Runtime.CompilerServices");
+			if(type && ILType_IsClass(type))
+			{
+				ctor = ILResolveConstructor(info, ILType_ToClass(type),
+											ILField_Owner(field),
+											(ILType **)decConstArgs, 5);
+				if(ctor)
+				{
+					/* Build the attribute value for the constant */
+					constBuf[0] = 0x01;
+					constBuf[1] = 0x00;
+					constBuf[2] = (unsigned char)
+						(evalValue->un.decValue.flags >> 16);
+					constBuf[3] = (unsigned char)
+						(evalValue->un.decValue.flags >> 24);
+					IL_WRITE_UINT32(constBuf + 4, evalValue->un.decValue.high);
+					IL_WRITE_UINT32(constBuf + 8,
+								    evalValue->un.decValue.middle);
+					IL_WRITE_UINT32(constBuf + 12, evalValue->un.decValue.low);
+					constBuf[16] = 0x00;
+					constBuf[17] = 0x00;
+
+					/* Create and attach the attribute */
+					if((attr = ILAttributeCreate
+							(ILProgramItem_Image(field), 0)) == 0)
+					{
+						CCOutOfMemory();
+					}
+					ILAttributeSetType(attr, ILToProgramItem(ctor));
+					if(!ILAttributeSetValue(attr, constBuf, 18))
+					{
+						CCOutOfMemory();
+					}
+					ILProgramItemAddAttribute(ILToProgramItem(field), attr);
+				}
+			}
+			return;
+		}
+		break;
+
+		case ILMachineType_String:
+		{
+			/* Detect "null" string constants specially */
+			if(!(evalValue->un.strValue.str))
+			{
+				constBuf[0] = 0;
+				constBuf[1] = 0;
+				constBuf[2] = 0;
+				constBuf[3] = 0;
+				constBufLen = 4;
+				constElemType = IL_META_ELEMTYPE_CLASS;
+				break;
+			}
+
+			/* Determine the length of string in UTF-16 characters */
+			posn = 0;
+			wlen = 0;
+			while(posn < evalValue->un.strValue.len)
+			{
+				wlen += ILUTF16WriteChar
+					(0, ILUTF8ReadChar(evalValue->un.strValue.str,
+									   evalValue->un.strValue.len, &posn));
+			}
+
+			/* Allocate temporary storage for the UTF-16 version */
+			newStr = (unsigned char *)ILMalloc(wlen * 2 + 1);
+			if(!newStr)
+			{
+				CCOutOfMemory();
+			}
+
+			/* Convert the string from UTF-8 into UTF-16 */
+			posn = 0;
+			tempStr = newStr;
+			while(posn < evalValue->un.strValue.len)
+			{
+				tempStr += ILUTF16WriteCharAsBytes
+					(tempStr, ILUTF8ReadChar
+						(evalValue->un.strValue.str,
+					     evalValue->un.strValue.len, &posn));
+			}
+
+			/* Attach the constant to the field */
+			constant = ILConstantCreate(info->image, 0, (ILProgramItem *)field,
+										IL_META_ELEMTYPE_STRING);
+			if(!constant)
+			{
+				CCOutOfMemory();
+			}
+			if(!ILConstantSetValue(constant, newStr, wlen * 2))
+			{
+				CCOutOfMemory();
+			}
+			ILFree(newStr);
+			return;
+		}
+		break;
+
+		case ILMachineType_ObjectRef:
+		{
+			/* This is the "null" constant */
+			constBuf[0] = 0;
+			constBuf[1] = 0;
+			constBuf[2] = 0;
+			constBuf[3] = 0;
+			constBufLen = 4;
+			constElemType = IL_META_ELEMTYPE_CLASS;
+		}
+		break;
+
+		default:
+		{
+			constBuf[0] = 0;
+			constBufLen = 1;
+			constElemType = IL_META_ELEMTYPE_I1;
+		}
+		break;
+	}
+	constant = ILConstantCreate(info->image, 0, (ILProgramItem *)field,
+								constElemType);
+	if(!constant)
+	{
+		CCOutOfMemory();
+	}
+	if(!ILConstantSetValue(constant, constBuf, constBufLen))
+	{
+		CCOutOfMemory();
+	}
+}
+
+void CSAddInitCtor(ILGenInfo *info, ILNode *stmt)
+{
+	ILNode_ClassDefn *defn = (ILNode_ClassDefn *)(info->currentClass);
+	ILNode *bodyList;
+	if(defn && stmt)
+	{
+		CSSemValue value;
+		ILNode *savedMethod;
+
+	#if IL_VERSION_MAJOR > 1
+		if(defn->partialParent)
+		{
+			defn = defn->partialParent;
+		}
+	#endif /* IL_VERSION_MAJOR > 1 */
+		/* Construct the method declaration for ".init" if necessary.
+		   Note: the ".init" method is a pseudo method to collect up
+		   all non-static field initializers.  It isn't output into
+		   the final program.  Instead, its body is expanded inline
+		   into each constructor that requires field initialization */
+		if(!(defn->initCtorsMethod))
+		{
+			ILMethod *methodInfo;
+			ILType *signature;
+			bodyList = ILNode_Compound_create();
+			defn->initCtorsMethod =
+				ILNode_MethodDeclaration_create
+					(0, CS_MODIFIER_PRIVATE |
+						CS_MODIFIER_METHOD_CONSTRUCTOR,
+					 0 /* void */,
+					 ILQualIdentSimple(ILInternString(".init", 5).string),
+					 0 /* no type formals */,
+					 0 /* no parameters */,
+					 ILNode_NewScope_create(bodyList));
+			methodInfo = ILMethodCreate(defn->classInfo, 0, ".init",
+										IL_META_METHODDEF_PRIVATE |
+										IL_META_METHODDEF_HIDE_BY_SIG);
+			if(!methodInfo)
+			{
+				CCOutOfMemory();
+			}
+			ILMethodSetCallConv(methodInfo, IL_META_CALLCONV_HASTHIS);
+			signature = ILTypeCreateMethod(info->context, ILType_Void);
+			if(!signature)
+			{
+				CCOutOfMemory();
+			}
+			ILTypeSetCallConv(signature, IL_META_CALLCONV_HASTHIS);
+			ILMemberSetSignature((ILMember *)methodInfo, signature);
+			((ILNode_MethodDeclaration *)(defn->initCtorsMethod))
+					->methodInfo = methodInfo;
+		}
+		else
+		{
+			bodyList = ((ILNode_MethodDeclaration *)(defn->initCtorsMethod))
+							->body;
+			bodyList = ((ILNode_NewScope *)bodyList)->stmt;
+		}
+
+		/* Perform semantic analysis on the statement */
+		/*
+		 * FIXME: Allow statements to be semanalyzed without having a
+		 * current method.
+		 * We are using ine .init method for now.
+		 */
+		savedMethod = info->currentMethod;
+		info->currentMethod = defn->initCtorsMethod;
+		value = ILNode_SemAnalysis(stmt, info, &stmt);
+		info->currentMethod =  savedMethod;
+
+		/* Guard the statement from further semantic analysis */
+		stmt = ILNode_SemGuard_create(stmt, value);
+
+		/* Wrap the statement in a scope and add it to the body */
+		ILNode_List_Add(bodyList, ILNode_NewScope_create(stmt));
+	}
+}
+
+%}
+
+/*
+ * Perform semantic analysis for field declaration.
+ */
+ILNode_SemAnalysis(ILNode_FieldDeclaration)
+{
+	ILNode_ListIter iterator;
+	ILNode *decl;
+
+	/* Enter an unsafe context for the field if necessary */
+	if((node->modifiers & CS_MODIFIER_UNSAFE) != 0)
+	{
+		if((node->modifiers & CS_MODIFIER_FIELD_CONST) != 0)
+		{
+			CCUnsafeEnter(info, (ILNode *)node, "unsafe constant declaration");
+		}
+		else
+		{
+			CCUnsafeEnter(info, (ILNode *)node, "unsafe field declaration");
+		}
+	}
+
+	/* Warn if declaring the field with an unsafe type */
+	if(CSHasUnsafeType(node->type))
+	{
+		CCUnsafeTypeMessage(info, (ILNode *)node);
+	}
+
+	/* Verify the initializers */
+	ILNode_ListIter_Init(&iterator, node->fieldDeclarators);
+	while((decl = ILNode_ListIter_Next(&iterator)) != 0)
+	{
+		ILNode_SemAnalysis(decl, info, &decl);
+	}
+
+	/* Leave the unsafe context for the field */
+	if((node->modifiers & CS_MODIFIER_UNSAFE) != 0)
+	{
+		CCUnsafeLeave(info);
+	}
+
+	/* Fields don't really have a semantic value, so return the default */
+	return CSSemValueDefault;
+}
+
+ILNode_Declaration_GatherStaticCtor(ILNode_FieldDeclaration)
+{
+	if (node->fieldDeclarators) 
+	{
+		return CSListGatherStaticCtor
+							((ILNode_List *)node->fieldDeclarators, ctor);
+	}
+}
+
+ILNode_SemAnalysis(ILNode_FieldDeclarator)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	ILNode *savedMethod;
+	ILNode *initializer;
+
+	savedMethod=info->currentMethod;
+
+	/* Determine if we have already visited this node */
+	if(node->visited == ILVisitMode_Processing)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "circularity detected in field definition");
+		return CSSemValueDefault;
+	}
+	else if(node->visited == ILVisitMode_Done)
+	{
+		return CSSemValueDefault;
+	}
+	node->visited = ILVisitMode_Processing;
+
+	/* Process the field attributes */
+	if(node->owner && node->fieldInfo)
+	{
+		CSProcessAttrs(info, ILToProgramItem(node->fieldInfo),
+					   node->owner->attributes, IL_ATTRIBUTE_TARGET_FIELD);
+
+		/* Reset the attributes, in case there are multiple fields */
+		/* TODO: handle attrs for multiple fields in the same declaration */
+		node->owner->attributes = 0;
+	}
+
+	/* Skip the field if no initializer or ILField block */
+	if(!(node->initializer) || !(node->fieldInfo))
+	{
+		goto done;
+	}
+	
+	info->currentMethod=NULL;
+
+	/* Non-static fields are initialized differently */
+	if(node->owner &&
+	   (node->owner->modifiers & (CS_MODIFIER_STATIC | CS_MODIFIER_FIELD_CONST)) == 0)
+	{
+		/* non-static field initializers are not allowed in structs */
+		if(ILClassIsValueType(((ILNode_ClassDefn *)info->currentClass)->classInfo))
+		{
+			if (node->initializer != NULL)
+			{
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node), 
+							"Structs cannot have instance field initializers");
+
+				return CSSemValueDefault;
+			}
+		}
+
+		initializer = ILNode_Assign_create(node->name, node->initializer);
+		yysetfilename(initializer,yygetfilename(node));
+		yysetlinenum(initializer,yygetlinenum(node));
+		
+		CSAddInitCtor(info, initializer);
+		goto done;
+	}
+
+	/* If this is a constant, then evaluate the value */
+	if(node->owner && (node->owner->modifiers & CS_MODIFIER_FIELD_CONST) != 0)
+	{
+		/* Perform semantic analysis on the initializer value */
+		value = ILNode_SemAnalysis(node->initializer, info,
+								   &(node->initializer));
+		if(!CSSemIsValue(value))
+		{
+			CCErrorOnLine(yygetfilename(node->initializer),
+						  yygetlinenum(node->initializer),
+						  "initializer is not a value");
+			goto done;
+		}
+
+		/* Make sure that the value is compatible with the field's type */
+		if(!ILCoerce(info, node->initializer, &(node->initializer),
+					 CSSemGetType(value), ILField_Type(node->fieldInfo),1))
+		{
+			CCErrorOnLine(yygetfilename(node->initializer),
+						  yygetlinenum(node->initializer),
+			  			  "incompatible types in initialization: "
+			  					"no conversion from `%s' to `%s'",
+			  			  CSTypeToName(CSSemGetType(value)),
+						  CSTypeToName(ILField_Type(node->fieldInfo)));
+			goto done;
+		}
+
+		/* Check that the literal value is actually constant */
+		if(!ILNode_EvalConst(node->initializer, info, &evalValue) ||
+		   !ILGenCastConst(info, &evalValue, evalValue.valueType,
+                   ILTypeToMachineType(ILField_Type(node->fieldInfo))))
+		{
+			CCErrorOnLine(yygetfilename(node->initializer),
+						  yygetlinenum(node->initializer),
+						  "initializer is not constant");
+			goto done;
+		}
+
+		/* Decimal constants are stored in readonly fields
+		   which are computed at runtime.  We also add a
+		   "DecimalConstantAttribute" to tag the field so
+		   that the compiler can reload the value later */
+		if(evalValue.valueType == ILMachineType_Decimal)
+		{
+			ILMemberSetAttrs((ILMember *)(node->fieldInfo),
+							 IL_META_FIELDDEF_LITERAL |
+							 		IL_META_FIELDDEF_INIT_ONLY,
+					 		 IL_META_FIELDDEF_INIT_ONLY);
+			AddConstantValue(info, node->fieldInfo, &evalValue);
+		}
+		else
+		{
+			/* Record the constant value so the compiler can pick
+			   it up when the binary form of the code is reloaded */
+			AddConstantValue(info, node->fieldInfo, &evalValue);
+			goto done;
+		}
+
+		/* Guard the initializer from further semantic analysis */
+		node->initializer = ILNode_SemGuard_create(node->initializer, value);
+	}
+
+	initializer=ILNode_Assign_create(node->name, node->initializer);
+	yysetfilename(initializer,yygetfilename(node));
+	yysetlinenum(initializer,yygetlinenum(node));
+
+	node->staticCtor = ILNode_NewScope_create(initializer);
+
+done:
+	/* Mark the node as done and return */
+	info->currentMethod=savedMethod;
+	node->visited = ILVisitMode_Done;
+	return CSSemValueDefault;
+}
+
+ILNode_Declaration_GatherStaticCtor(ILNode_FieldDeclarator)
+{
+	ILNode_List_Add(ctor, node->staticCtor);
+}
+
+ILNode_SemAnalysis(ILNode_EventDeclaration)
+{
+	CSSemValue value = CSSemValueDefault;
+
+	/* Enter an unsafe context for the event field if necessary */
+	if((node->modifiers & CS_MODIFIER_UNSAFE) != 0)
+	{
+		CCUnsafeEnter(info, (ILNode *)node, "unsafe event declaration");
+	}
+
+	/* Warn if declaring the event field with an unsafe type */
+	if(CSHasUnsafeType(node->type))
+	{
+		CCUnsafeTypeMessage(info, (ILNode *)node);
+	}
+
+	/* Perform semantic analysis on each of the event declarators */
+	ILNode_SemAnalysis(node->eventDeclarators, info,
+					   &(node->eventDeclarators));
+
+	/* Leave the unsafe context for the event field */
+	if((node->modifiers & CS_MODIFIER_UNSAFE) != 0)
+	{
+		CCUnsafeLeave(info);
+	}
+
+	return value;
+}
+
+ILNode_SemAnalysis(ILNode_EventDeclarator)
+{
+	/* Process the event attributes */
+	if(node->backLink)
+	{
+		CSProcessAttrs(info, ILToProgramItem(node->eventInfo),
+					   node->backLink->attributes, IL_ATTRIBUTE_TARGET_EVENT);
+
+		/* Reset the attributes, in case there are multiple events */
+		/* TODO: handle attrs for multiple events in the same declaration */
+		node->backLink->attributes = 0;
+	}
+
+	/* Perform semantic analysis on the "add" and "remove" methods */
+	if(node->addAccessor)
+	{
+		ILNode_SemAnalysis(node->addAccessor, info, &(node->addAccessor));
+	}
+	if(node->removeAccessor)
+	{
+		ILNode_SemAnalysis(node->removeAccessor, info, &(node->removeAccessor));
+	}
+	return CSSemValueDefault;
+}
+
+ILNode_SemAnalysis(ILNode_MethodDeclaration)
+{
+	ILNode *savedMethod;
+	ILNode_NewScope *newScope;
+	ILScope *scope;
+	ILScope *savedScope;
+	unsigned long argNum;
+	unsigned long argIndex;
+	ILNode_ListIter iter;
+	ILNode_FormalParameter *param;
+	ILScopeData *data;
+	const char *name;
+	ILNode *errorNode;
+	ILType *returnType;
+
+	/* Determine if we have already visited this node */
+	if(node->visited == ILVisitMode_Processing)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "circularity detected in method definition");
+		return CSSemValueDefault;
+	}
+	else if(node->visited == ILVisitMode_Done)
+	{
+		return CSSemValueDefault;
+	}
+	node->visited = ILVisitMode_Processing;
+
+#if IL_VERSION_MAJOR > 1
+	/* perform the semantic analysis for the generic type parameters */
+	if(node->typeFormals)
+	{
+		ILNode_SemAnalysis(node->typeFormals, info, &(node->typeFormals));
+	}
+#endif /* IL_VERSION_MAJOR > 1 */
+
+	/* Process the attributes on the method */
+	if(ILMethod_IsConstructor(node->methodInfo) ||
+	   ILMethod_IsStaticConstructor(node->methodInfo))
+	{
+		CSProcessAttrs(info, ILToProgramItem(node->methodInfo),
+					   node->attributes, IL_ATTRIBUTE_TARGET_CONSTRUCTOR);
+
+		if (ILClassIsValueType(((ILNode_ClassDefn *)info->currentClass)->classInfo)
+										&& ILMethod_IsConstructor(node->methodInfo))
+		{
+			int numParams = ILTypeNumParams(ILMethod_Signature(ILToProgramItem(node->methodInfo)));
+
+			if(numParams == 0)
+			{
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						"Structs cannot contain explicit parameterless constructors");
+
+				return CSSemValueDefault;
+			}
+		}
+	}
+	else
+	{
+		CSProcessAttrs(info, ILToProgramItem(node->methodInfo),
+					   node->attributes, IL_ATTRIBUTE_TARGET_METHOD);
+	}
+
+	/* Record the current method that we are in */
+	savedMethod = info->currentMethod;
+	info->currentMethod = (ILNode *)node;
+
+	/* Enter an unsafe context for the method if necessary */
+	if((node->modifiers & CS_MODIFIER_UNSAFE) != 0)
+	{
+		CCUnsafeEnter(info, (ILNode *)node, "unsafe method declaration");
+	}
+
+	/* Warn if declaring the method with unsafe return or parameter types */
+	if(CSHasUnsafeType(node->type) || CSHasUnsafeType(node->params))
+	{
+		CCUnsafeTypeMessage(info, (ILNode *)node);
+	}
+
+	/* Get the method's local variable scope */
+	if(node->body && yykind(node->body) == yykindof(ILNode_NewScope))
+	{
+		newScope = (ILNode_NewScope *)(node->body);
+		if(!(newScope->scope))
+		{
+			newScope->scope = ILScopeCreate(info, info->currentScope);
+		}
+		scope = newScope->scope;
+	}
+	else
+	{
+		scope = ILScopeCreate(info, info->currentScope);
+	}
+
+	/* Declare the parameters into the method's local variable scope */
+	if((node->modifiers & CS_MODIFIER_STATIC) == 0)
+	{
+		/* Non-static parameters start at argument 1 */
+		argNum = 1;
+	}
+	else
+	{
+		/* Static parameters start at argument 0 */
+		argNum = 0;
+	}
+	argIndex = 1;
+	ILNode_ListIter_Init(&iter, node->params);
+	while((param = (ILNode_FormalParameter *)ILNode_ListIter_Next(&iter)) != 0)
+	{
+		if(param->pmod == ILParamMod_arglist)
+		{
+			++argNum;
+			++argIndex;
+			continue;
+		}
+		CSProcessAttrsForParam(info, node->methodInfo,
+							   argIndex, param->attributes);
+		name = ILQualIdentName(param->name, 0);
+		data = ILScopeLookup(scope, name, 0);
+		if(data)
+		{
+			CCErrorOnLine(yygetfilename(param->name),
+						  yygetlinenum(param->name),
+						  "`%s' is already declared in this scope", name);
+			errorNode = ILScopeDataGetNode(data);
+			if(errorNode)
+			{
+				CCErrorOnLine(yygetfilename(errorNode),
+							  yygetlinenum(errorNode),
+							  "previous declaration here");
+			}
+		}
+		else
+		{
+			ILScopeDeclareLocal(scope, name, argNum | CS_LOCAL_IS_ARG,
+								param->name);
+		}
+		++argNum;
+		++argIndex;
+	}
+
+	/* If the method is abstract, then the class must be too */
+	if((node->modifiers & CS_MODIFIER_ABSTRACT) != 0)
+	{
+		if(info->currentClass &&
+		   ((((ILNode_ClassDefn *)(info->currentClass))->modifiers &
+					CS_MODIFIER_ABSTRACT) == 0) &&
+			((((ILNode_ClassDefn *)(info->currentClass))->modifiers &
+					CS_MODIFIER_TYPE_MASK) != CS_MODIFIER_TYPE_INTERFACE))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "`abstract' used on a member in a non-abstract class");
+		}
+	}
+
+	/* Perform semantic analysis on the method body */
+	if(node->body)
+	{
+		if(CSMetadataOnly)
+		{
+			/* Replace the body with "empty", because we only want metadata */
+			if(yyisa(node->body, ILNode_NewScope))
+			{
+				((ILNode_NewScope *)(node->body))->stmt =
+					ILNode_Empty_create();
+			}
+			else
+			{
+				node->body = ILNode_Empty_create();
+			}
+		}
+		if((node->modifiers & CS_MODIFIER_ABSTRACT) != 0)
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "`abstract' cannot be used with a method body");
+		}
+		if((node->modifiers & CS_MODIFIER_EXTERN) != 0)
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "`extern' cannot be used with a method body");
+		}
+		savedScope = info->currentScope;
+		info->currentScope = scope;
+		ILNode_SemAnalysis(node->body, info, &(node->body));
+		info->currentScope = savedScope;
+	}
+	else if(((node->modifiers & (CS_MODIFIER_EXTERN | CS_MODIFIER_ABSTRACT)) == 0) &&
+			((node->modifiers & CS_MODIFIER_METHOD_TYPE_MASK) != CS_MODIFIER_METHOD_INTERFACE) &&
+			((node->modifiers & CS_MODIFIER_METHOD_TYPE_MASK) != CS_MODIFIER_METHOD_INTERFACE_ACCESSOR))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  "method with no body requires `abstract' or `extern'");
+	}
+
+	/* If the return type is not void, then make sure that the
+	   method ends in some kind of return statement */
+	returnType = ILTypeGetReturn(ILMethod_Signature(node->methodInfo));
+	if(returnType != ILType_Void && node->body)
+	{
+		if(!ILMethod_IsAbstract(node->methodInfo) &&
+		   ILMethod_IsIL(node->methodInfo))
+		{
+			if(!ILNodeEndsInFlowChange(node->body,info) && !CSMetadataOnly)
+			{
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+							  "control reaches end of non-void method");
+			}
+		}
+	}
+
+	/* If the "extern" flag is set, and this method is contained
+	   within the "<Module>" class, then suppress code generation.
+	   Such methods are imported from a foreign C module, and
+	   should not be generated from the C# application */
+	if((node->modifiers & CS_MODIFIER_EXTERN) != 0)
+	{
+		if(info->currentClass &&
+		   !strcmp(((ILNode_ClassDefn *)(info->currentClass))->name,
+				   "<Module>"))
+		{
+			node->suppressCodeGen = 1;
+		}
+	}
+
+	/* Leave the unsafe context for the method */
+	if((node->modifiers & CS_MODIFIER_UNSAFE) != 0)
+	{
+		CCUnsafeLeave(info);
+	}
+
+	/* Return to the previous method level */
+	info->currentMethod = savedMethod;
+
+	/* Finished visiting this node */
+	node->visited = ILVisitMode_Done;
+
+	/* Methods don't really have a semantic value, so return the default */
+	return CSSemValueDefault;
+}
+
+ILNode_SemAnalysis(ILNode_PropertyDeclaration)
+{
+	/* Determine if we have already visited this node */
+	if(node->visited == ILVisitMode_Processing)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "circularity detected in property definition");
+		return CSSemValueDefault;
+	}
+	else if(node->visited == ILVisitMode_Done)
+	{
+		return CSSemValueDefault;
+	}
+	node->visited = ILVisitMode_Processing;
+
+	/* Process attributes on the property */
+	CSProcessAttrs(info, ILToProgramItem(node->propertyInfo),
+				   node->attributes, IL_ATTRIBUTE_TARGET_PROPERTY);
+
+	/* Enter an unsafe context for the property if necessary */
+	if((node->modifiers & CS_MODIFIER_UNSAFE) != 0)
+	{
+		CCUnsafeEnter(info, (ILNode *)node, "unsafe property declaration");
+	}
+
+	/* Warn if declaring the property with an unsafe type */
+	if(CSHasUnsafeType(node->type))
+	{
+		CCUnsafeTypeMessage(info, (ILNode *)node);
+	}
+
+	/* Perform semantic analysis on the accessor bodies */
+	if(node->getAccessor)
+	{
+		ILNode_SemAnalysis(node->getAccessor, info, &(node->getAccessor));
+	}
+	if(node->setAccessor)
+	{
+		ILNode_SemAnalysis(node->setAccessor, info, &(node->setAccessor));
+	}
+
+	/* Leave the unsafe context for the property */
+	if((node->modifiers & CS_MODIFIER_UNSAFE) != 0)
+	{
+		CCUnsafeLeave(info);
+	}
+
+	/* Finished visiting this node */
+	node->visited = ILVisitMode_Done;
+	return CSSemValueDefault;
+}
+
+ILNode_SemAnalysis(ILNode_EnumMemberDeclaration)
+{
+	CSSemValue value;
+	ILEvalValue evalValue;
+	ILType *type;
+	ILMachineType machineType;
+	ILNode_ClassDefn *defn = ((ILNode_ClassDefn *)(info->currentClass));
+
+	/* Determine if we have already visited this node */
+	if(node->visited == ILVisitMode_Processing)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "circularity detected in enumeration member definition");
+		return CSSemValueDefault;
+	}
+	else if(node->visited == ILVisitMode_Done)
+	{
+		return CSSemValueDefault;
+	}
+	node->visited = ILVisitMode_Processing;
+
+	/* Process attributes on the enumerated value */
+	CSProcessAttrs(info, ILToProgramItem(node->fieldInfo),
+				   node->attributes, IL_ATTRIBUTE_TARGET_FIELD);
+
+	/* Determine the type of the enumeration */
+	type = ILClassToType(defn->classInfo);
+	machineType = ILTypeToMachineType(type);
+
+	/* Perform semantic analysis on the enum member value */
+	if(node->value)
+	{
+		/* An enumerated value has been supplied */
+		value = ILNode_SemAnalysis(node->value, info, &(node->value));
+		if(!CSSemIsValue(value))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "invalid enumerated value");
+			node->visited = ILVisitMode_Done;
+			return CSSemValueDefault;
+		}
+		else
+		{
+			/* Compute the constant value */
+			if(!ILNode_EvalConst(node->value, info, &evalValue) ||
+			   !ILGenCastConst(info, &evalValue, evalValue.valueType,
+	                   		   machineType))
+			{
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+							  "enumerated value is not constant");
+				node->visited = ILVisitMode_Done;
+				return CSSemValueDefault;
+			}
+
+			/* Set the constant value on the field definition */
+			AddConstantValue(info, node->fieldInfo, &evalValue);
+
+			/* Update the next enumerated value in sequence */
+			switch(machineType)
+			{
+				case ILMachineType_Int8:
+				case ILMachineType_UInt8:
+				case ILMachineType_Int16:
+				case ILMachineType_UInt16:
+				case ILMachineType_Int32:
+				{
+					defn->nextEnum = (ILUInt64)(ILInt64)(evalValue.un.i4Value);
+				}
+				break;
+
+				case ILMachineType_UInt32:
+				{
+					defn->nextEnum = (ILUInt64)(ILUInt32)(evalValue.un.i4Value);
+				}
+				break;
+
+				case ILMachineType_Int64:
+				{
+					defn->nextEnum = (ILUInt64)(evalValue.un.i8Value);
+				}
+				break;
+
+				case ILMachineType_UInt64:
+				{
+					defn->nextEnum = (ILUInt64)(evalValue.un.i8Value);
+				}
+				break;
+
+				default: break;
+			}
+			++(defn->nextEnum);
+		}
+	}
+	else
+	{
+		/* Use the next enumerated value in sequence */
+		evalValue.valueType = machineType;
+		switch(machineType)
+		{
+			case ILMachineType_Int8:
+			case ILMachineType_UInt8:
+			case ILMachineType_Int16:
+			case ILMachineType_UInt16:
+			case ILMachineType_Int32:
+			case ILMachineType_UInt32:
+			{
+				evalValue.un.i4Value = (ILInt32)(defn->nextEnum);
+			}
+			break;
+
+			case ILMachineType_Int64:
+			case ILMachineType_UInt64:
+			{
+				evalValue.un.i8Value = (ILInt64)(defn->nextEnum);
+			}
+			break;
+
+			default: break;
+		}
+		AddConstantValue(info, node->fieldInfo, &evalValue);
+		++(defn->nextEnum);
+	}
+
+	/* Finished visiting this node */
+	node->visited = ILVisitMode_Done;
+
+	return CSSemValueDefault;
+}
+
+ILNode_SemAnalysis(ILNode_DelegateMemberDeclaration)
+{
+	unsigned long argNum;
+	unsigned long argIndex;
+	ILNode_ListIter iter;
+	ILNode_FormalParameter *param;
+
+	/* Bail out if compiling to the JVM */
+	if(info->outputIsJava)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  "delegate definitions are not permitted with Java output");
+		return CSSemValueDefault;
+	}
+
+	/* Process attributes on the parameters */
+	argNum = 1;
+	argIndex = 1;
+	ILNode_ListIter_Init(&iter, node->params);
+	while((param = (ILNode_FormalParameter *)ILNode_ListIter_Next(&iter)) != 0)
+	{
+		if(param->pmod != ILParamMod_arglist)
+		{
+			CSProcessAttrsForParam(info, node->invokeMethod,
+							   	   argIndex, param->attributes);
+		}
+		++argNum;
+		++argIndex;
+	}
+	return CSSemValueDefault;
+}
+
+ILNode_SemAnalysis(ILNode_FormalParameter)
+{
+	/* TODO */
+	return CSSemValueDefault;
+}
+
+ILNode_SemAnalysis(ILNode_AttributeTree)
+{
+	/* TODO */
+	return CSSemValueDefault;
+}
+
+ILNode_SemAnalysis(ILNode_AttributeSection)
+{
+	/* TODO */
+	return CSSemValueDefault;
+}
+
+ILNode_SemAnalysis(ILNode_Attribute)
+{
+	/* TODO */
+	return CSSemValueDefault;
+}
+
+ILNode_SemAnalysis(ILNode_AttrArgs)
+{
+	/* TODO */
+	return CSSemValueDefault;
+}
+
+ILNode_SemAnalysis(ILNode_NamedArg)
+{
+	/* TODO */
+	return CSSemValueDefault;
+}
+
+ILNode_SemAnalysis(ILNode_DocComment)
+{
+	/* Nothing to do here */
+	return CSSemValueDefault;
+}
+
+ILNode_SemAnalysis(ILNode_StandaloneAttr)
+{
+	ILProgramItem *item;
+	ILNode *savedClass;
+	ILNode *savedNamespace;
+	ILNode *savedMethod;
+
+	/* Save the current context and enter the attribute's namespace */
+	savedClass = info->currentClass;
+	savedNamespace = info->currentNamespace;
+	savedMethod = info->currentMethod;
+	info->currentClass = 0;
+	info->currentNamespace = node->namespaceNode;
+	info->currentMethod = 0;
+
+	/* Perform semantic analysis on the attribute, relative to an assembly */
+	item = (ILProgramItem *)ILAssembly_FromToken
+				(CCCodeGen.image, IL_META_TOKEN_ASSEMBLY | 1);
+	CSProcessAttrs(info, item, node->attributes, IL_ATTRIBUTE_TARGET_ASSEMBLY);
+
+	/* Restore the previous context */
+	info->currentClass = savedClass;
+	info->currentNamespace = savedNamespace;
+	info->currentMethod = savedMethod;
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for generic parameters.
+ */
+ILNode_SemAnalysis(ILNode_GenericTypeParameter)
+{
+#if IL_VERSION_MAJOR > 1
+	if(node->visited == ILVisitMode_NotVisited)
+	{
+		ILUInt32 first = 1;
+		ILNode_ListIter iter;
+		ILNode *constraint;
+
+		node->visited = ILVisitMode_Processing;
+		ILNode_ListIter_Init(&iter, (ILNode *)node->typeConstraints);
+		while((constraint = ILNode_ListIter_Next(&iter)) != 0)
+		{
+			ILType *constraintType;
+
+			constraintType = CSSemType(constraint, info, &constraint);
+			if(constraintType)
+			{
+				ILClass *constraintClass = ILClassFromType(info->image, 0, constraintType, 0);
+
+				if(first)
+				{
+					if(!ILClass_IsInterface(constraintClass))
+					{
+						if(node->constraint & (IL_META_GENPARAM_CLASS_CONST |
+											   IL_META_GENPARAM_VALUETYPE_CONST))
+						{
+							CCErrorOnLine(yygetfilename(constraint), yygetlinenum(constraint),
+										  "either class or valuetype or a non interface class can be supplied");
+						}
+					}
+					first = 0;
+				}
+				else
+				{
+					if(!ILClass_IsInterface(constraintClass))
+					{
+						CCErrorOnLine(yygetfilename(constraint), yygetlinenum(constraint),
+									  "only one non interface class can be supplied");
+					}
+				}
+
+				/* Import the constraint class into the build image. */
+				constraintClass = ILClassImport(info->image, constraintClass);
+			}
+		}
+		/* Process attributes on the generic type parameter */
+		CSProcessAttrs(info, ILToProgramItem(node->genPar),
+					   node->attributes, IL_ATTRIBUTE_TARGET_GENERICPAR);
+
+		node->visited = ILVisitMode_Done;
+	}
+#endif /* IL_VERSION_MAJOR > 1 */
+	return CSSemValueDefault;
+}
+
+ILNode_SemAnalysis(ILNode_GenericTypeParameters)
+{
+#if IL_VERSION_MAJOR > 1
+	if(node->visited == ILVisitMode_NotVisited)
+	{
+		ILNode_ListIter iter;
+		ILNode *genPar;
+
+		node->visited = ILVisitMode_Processing;
+		ILNode_ListIter_Init(&iter, (ILNode *)node->typeParams);
+		while((genPar = ILNode_ListIter_Next(&iter)) != 0)
+		{
+			ILNode_SemAnalysis(genPar, info, &(genPar));
+		}
+		node->visited = ILVisitMode_Done;
+	}
+#endif /* IL_VERSION_MAJOR > 1 */
+	return CSSemValueDefault;
+}
+
+ILNode_Declaration_GatherStaticCtor(ILNode_EventDeclaration),
+ILNode_Declaration_GatherStaticCtor(ILNode_EventDeclarator),
+ILNode_Declaration_GatherStaticCtor(ILNode_MethodDeclaration),
+ILNode_Declaration_GatherStaticCtor(ILNode_PropertyDeclaration),
+ILNode_Declaration_GatherStaticCtor(ILNode_EnumMemberDeclaration),
+ILNode_Declaration_GatherStaticCtor(ILNode_DelegateMemberDeclaration),
+ILNode_Declaration_GatherStaticCtor(ILNode_FormalParameter),
+ILNode_Declaration_GatherStaticCtor(ILNode_AttributeTree),
+ILNode_Declaration_GatherStaticCtor(ILNode_AttributeSection),
+ILNode_Declaration_GatherStaticCtor(ILNode_Attribute),
+ILNode_Declaration_GatherStaticCtor(ILNode_AttrArgs),
+ILNode_Declaration_GatherStaticCtor(ILNode_NamedArg),
+ILNode_Declaration_GatherStaticCtor(ILNode_GenericTypeParameter),
+ILNode_Declaration_GatherStaticCtor(ILNode_GenericTypeParameters)
+{
+	return;
+}
+

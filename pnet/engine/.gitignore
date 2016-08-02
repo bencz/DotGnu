@@ -1,0 +1,15 @@
+Makefile
+Makefile.in
+.deps
+.libs
+ilrun
+ilrun_opt
+ilverify
+asmfix
+cvm_opt.s
+cvm_opt.s.tmp
+cvm_labels.h
+gen_marshal.c
+gen_marshal.h
+*.o
+*.a

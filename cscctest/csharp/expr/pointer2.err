@@ -1,0 +1,4 @@
+./pointer2.cs:21: warning: unsafe class declaration
+./pointer2.cs:28: no matching method for call to `t1(void *)'
+./pointer2.cs:32: incompatible types in assignment: no conversion from `void *' to `int *'
+./pointer2.cs:33: cannot cast from `double' to `void *'

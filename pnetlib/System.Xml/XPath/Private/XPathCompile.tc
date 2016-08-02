@@ -1,0 +1,201 @@
+/*
+ * XPathCompile.tc - compilation and tree rewriting for XPath 
+ *
+ * Copyright (C) 2004  Southern Storm Software, Pty Ltd.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/* TODO : Compile operation could be fixed up to rewrite the tree and stuff */
+%operation %virtual XPathResultType Compile(Expression node) = {XPathResultType.Error}
+
+/*Compile(Expression)
+{
+	return XPathResultType.Error;
+}*/
+
+Compile(UnaryExpression),
+Compile(BinaryExpression)
+{
+	return XPathResultType.Error;
+}
+
+
+Compile(NumberExpression),
+Compile(NegExpression),
+Compile(ArithmeticExpression)
+{
+	return XPathResultType.Number;
+}
+
+Compile(BooleanExpression),
+Compile(FilterExpression)
+{
+	return XPathResultType.Boolean;
+}
+
+Compile(LiteralExpression)
+{
+	return XPathResultType.String;
+}
+
+Compile(UnionExpression),
+Compile(NodeTest),
+Compile(PathExpression)
+{
+	return XPathResultType.NodeSet;
+}
+
+/* You would typically never call this thing */
+Compile(ArgumentList)
+{
+	XPathResultType type = node.expr.Compile();
+	for(ArgumentList tmp = node.next; tmp != null ; tmp = tmp.next)
+	{
+		if(type != node.expr.Compile())
+		{
+			type = XPathResultType.Any; // mixed args
+		}
+	}
+	return type;
+}
+
+Compile(FunctionCallExpression)
+{
+	throw new NotImplementedException("XSLT functions are not supported");
+}
+
+/* Nodeset Functions */
+Compile(XPathCountFunction)
+{
+	return XPathResultType.Number;
+}
+
+Compile(XPathIdFunction)
+{
+	return XPathResultType.Any; /* TODO */
+}
+
+Compile(XPathLastFunction)
+{
+	return XPathResultType.Number;
+}
+
+Compile(XPathLocalNameFunction)
+{
+	return XPathResultType.String;
+}
+
+Compile(XPathNameFunction)
+{
+	return XPathResultType.String;
+}
+Compile(XPathNamespaceUriFunction)
+{
+	return XPathResultType.String;
+}
+
+Compile(XPathPositionFunction)
+{
+	return XPathResultType.Number; /* TODO */
+}
+
+/* Boolean functions */
+Compile(XPathBooleanFunction)
+{
+	return XPathResultType.Boolean;
+}
+Compile(XPathTrueFunction)
+{
+	return XPathResultType.Boolean; 
+}
+Compile(XPathFalseFunction)
+{
+	return XPathResultType.Boolean;
+}
+
+Compile(XPathLangFunction)
+{
+	return XPathResultType.Boolean; /* TODO */
+}
+Compile(XPathNotFunction)
+{
+	return XPathResultType.Boolean; 
+}
+
+/* Number functions */
+
+Compile(XPathCeilingFunction)
+{
+	return XPathResultType.Any; /* TODO */
+}
+Compile(XPathFloorFunction)
+{
+	return XPathResultType.Any; /* TODO */
+}
+Compile(XPathNumberFunction)
+{
+	return XPathResultType.Any; /* TODO */
+}
+Compile(XPathRoundFunction)
+{
+	return XPathResultType.Any; /* TODO */
+}
+Compile(XPathSumFunction)
+{
+	return XPathResultType.Any; /* TODO */
+}
+
+/* String functions */
+Compile(XPathConcatFunction)
+{
+	return XPathResultType.String; /* TODO */
+}
+Compile(XPathContainsFunction)
+{
+	return XPathResultType.Any; /* TODO */
+}
+Compile(XPathNormalizeFunction)
+{
+	return XPathResultType.Any; /* TODO */
+}
+Compile(XPathStartsWithFunction)
+{
+	return XPathResultType.Any; /* TODO */
+}
+Compile(XPathStringFunction)
+{
+	return XPathResultType.Any; /* TODO */
+}
+Compile(XPathStringLengthFunction)
+{
+	return XPathResultType.Any; /* TODO */
+}
+Compile(XPathSubstringFunction)
+{
+	return XPathResultType.Any; /* TODO */
+}
+Compile(XPathSubstringAfterFunction)
+{
+	return XPathResultType.Any; /* TODO */
+}
+Compile(XPathSubstringBeforeFunction)
+{
+	return XPathResultType.Any; /* TODO */
+}
+Compile(XPathTranslateFunction)
+{
+	return XPathResultType.Any; /* TODO */
+}

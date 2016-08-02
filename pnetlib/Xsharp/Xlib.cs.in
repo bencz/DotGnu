@@ -1,0 +1,912 @@
+/*
+ * Xlib.cs - Native method interface for Xlib.
+ *
+ * Copyright (C) 2002, 2003  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+namespace Xsharp
+{
+
+using System;
+using System.Runtime.InteropServices;
+using Xsharp.Events;
+using Xsharp.Types;
+using OpenSystem.Platform;
+using OpenSystem.Platform.X11;
+
+internal sealed unsafe class Xlib
+{
+	// Declare Xlib types that may be different sizes on different platforms.
+	//
+	// Declaring these as enumerated types is a C# trick to get a new
+	// integer type of the correct size that is guaranteed to be marshalled
+	// to Xlib in the same way as the underlying integer type.
+
+	public enum Xint      : @X_int@ { Zero }
+	public enum Xuint     : @X_uint@ { Zero }
+	public enum Xlong     : @X_long@ { Zero }
+	public enum Xulong    : @X_ulong@ { Zero }
+
+	// Declare display-related external functions.
+
+	[DllImport("X11")]
+	extern public static XStatus XInitThreads();
+
+	[DllImport("X11")]
+	extern public static IntPtr XOpenDisplay(String display_name);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XCloseDisplay(IntPtr display);
+
+	[DllImport("X11")]
+	extern public static String XDisplayName(String str);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XScreenCount(IntPtr display);
+
+	[DllImport("X11")]
+	extern public static IntPtr XScreenOfDisplay(IntPtr display, @X_int@ scr);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XDefaultScreen(IntPtr display);
+
+	[DllImport("X11")]
+	extern public static String XDisplayString(IntPtr display);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XFlush(IntPtr display);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XSync(IntPtr display, XBool discard);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XBell(IntPtr display, @X_int@ percent);
+
+	[DllImport("X11")]
+	extern public static @X_long@ XMaxRequestSize(IntPtr display);
+
+	[DllImport("X11")]
+	extern public static IntPtr XSynchronize(IntPtr display, XBool onoff);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XDisplayHeight
+			(IntPtr display, @X_int@ screen_number);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XDisplayHeightMM
+			(IntPtr display, @X_int@ screen_number);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XDisplayWidth
+			(IntPtr display, @X_int@ screen_number);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XDisplayWidthMM
+			(IntPtr display, @X_int@ screen_number);
+
+	// Declare screen-related external functions.
+
+	[DllImport("X11")]
+	extern public static XWindow XRootWindowOfScreen(IntPtr screen);
+
+	[DllImport("X11")]
+	extern public static XPixel XBlackPixelOfScreen(IntPtr screen);
+
+	[DllImport("X11")]
+	extern public static XPixel XWhitePixelOfScreen(IntPtr screen);
+
+	[DllImport("X11")]
+	extern public static XColormap XDefaultColormapOfScreen(IntPtr screen);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XDefaultDepthOfScreen(IntPtr screen);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XWidthOfScreen(IntPtr screen);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XHeightOfScreen(IntPtr screen);
+
+	[DllImport("X11")]
+	extern public static IntPtr XDefaultVisualOfScreen(IntPtr screen);
+
+	// Declare window-related external functions.
+
+	[DllImport("X11")]
+	extern public static XWindow XCreateWindow
+			(IntPtr display, XWindow parent, @X_int@ x, @X_int@ y,
+		     @X_uint@ width, @X_uint@ height, @X_uint@ border_width,
+			 @X_int@ depth, @X_int@ c_class, IntPtr visual,
+			 @X_ulong@ value_mask, ref XSetWindowAttributes values);
+
+	[DllImport("X11")]
+	extern public static XWindow XCreateWindow
+			(IntPtr display, XWindow parent, @X_int@ x, @X_int@ y,
+		     @X_uint@ width, @X_uint@ height, @X_uint@ border_width,
+			 @X_int@ depth, @X_int@ c_class, IntPtr visual,
+			 @X_ulong@ value_mask, IntPtr values); // for values == null.
+
+	[DllImport("X11")]
+	extern public static @X_int@ XDestroyWindow(IntPtr display, XWindow w);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XMoveWindow
+			(IntPtr display, XWindow w, @X_int@ x, @X_int@ y);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XResizeWindow
+			(IntPtr display, XWindow w, @X_uint@ width, @X_uint@ height);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XMoveResizeWindow
+			(IntPtr display, XWindow w, @X_int@ x, @X_int@ y,
+			 @X_uint@ width, @X_uint@ height);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XConfigureWindow
+			(IntPtr display, XWindow w, @X_uint@ value_mask,
+			 ref XWindowChanges changes);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XMapWindow(IntPtr display, XWindow w);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XMapRaised(IntPtr display, XWindow w);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XUnmapWindow(IntPtr display, XWindow w);
+
+	[DllImport("X11")]
+	extern public static XStatus XWithdrawWindow
+			(IntPtr display, XWindow w, @X_int@ screen_number);
+
+	[DllImport("X11")]
+	extern public static XStatus XIconifyWindow
+			(IntPtr display, XWindow w, @X_int@ screen_number);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XReparentWindow
+			(IntPtr display, XWindow w, XWindow parent, @X_int@ x, @X_int@ y);
+
+	[DllImport("X11")]
+	extern public static XCursor XCreateFontCursor
+			(IntPtr display, @X_uint@ shape);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XDefineCursor
+			(IntPtr display, XWindow w, XCursor cursor);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XUndefineCursor(IntPtr display, XWindow w);
+
+	[DllImport("X11")]
+	extern public static XCursor XCreatePixmapCursor
+			(IntPtr display, XPixmap source, XPixmap mask,
+			 ref XColor foreground, ref XColor background,
+			 @X_uint@ x, @X_uint@ y);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XSetWindowBackground
+			(IntPtr display, XWindow w, XPixel background_pixel);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XSetWindowBackgroundPixmap
+			(IntPtr display, XWindow w, XPixmap background_pixmap);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XClearArea
+			(IntPtr display, XWindow w, @X_int@ x, @X_int@ y,
+			 @X_uint@ width, @X_uint@ height, XBool exposures);
+
+	[DllImport("X11")]
+	extern public static XStatus XGetGeometry
+			(IntPtr display, XDrawable d, out XWindow root_return,
+			 out Xint x_return, out Xint y_return,
+			 out Xuint width_return, out Xuint height_return,
+			 out Xuint border_width_return, out Xuint depth_return);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XGrabKeyboard
+			(IntPtr display, XWindow grab_window, XBool owner_events,
+			 @X_int@ pointer_mode, @X_int@ keyboard_mode, XTime time);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XGrabPointer
+			(IntPtr display, XWindow grab_window, XBool owner_events,
+			 @X_uint@ event_mask, @X_int@ pointer_mode, @X_int@ keyboard_mode,
+			 XWindow confine_to, XCursor cursor, XTime time);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XGrabButton
+			(IntPtr display, @X_uint@ button, @X_uint@ modifiers,
+			 XWindow grab_window, XBool owner_events,
+			 @X_uint@ event_mask, @X_int@ pointer_mode, @X_int@ keyboard_mode,
+			 XWindow confine_to, XCursor cursor);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XUngrabKeyboard(IntPtr display, XTime time);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XUngrabPointer(IntPtr display, XTime time);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XUngrabButton
+			(IntPtr display, @X_uint@ button, @X_uint@ modifiers,
+			 XWindow grab_window);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XAllowEvents
+			(IntPtr display, @X_int@ event_mode, XTime time);
+
+	// Declare pixmap-related external functions.
+
+	[DllImport("X11")]
+	extern public static XPixmap XCreatePixmap
+			(IntPtr display, XDrawable d, @X_uint@ width,
+			 @X_uint@ height, @X_uint@ depth);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XFreePixmap
+			(IntPtr display, XPixmap pixmap);
+
+	[DllImport("X11")]
+	extern public static XPixmap XCreateBitmapFromData
+			(IntPtr display, XDrawable drawable, byte[] data,
+			 @X_uint@ width, @X_uint@ height);
+
+	// Declare region-related external functions.
+
+	[DllImport("X11")]
+	extern public static IntPtr XCreateRegion();
+
+	[DllImport("X11")]
+	extern public static @X_int@ XDestroyRegion(IntPtr r);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XUnionRegion(IntPtr sra, IntPtr srb,
+											  IntPtr dr_return);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XUnionRectWithRegion
+			(ref XRectangle rectangle, IntPtr src, IntPtr dest);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XIntersectRegion(IntPtr sra, IntPtr srb,
+											      IntPtr dr_return);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XSubtractRegion(IntPtr sra, IntPtr srb,
+											     IntPtr dr_return);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XXorRegion(IntPtr sra, IntPtr srb,
+										    IntPtr dr_return);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XEmptyRegion(IntPtr r);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XEqualRegion(IntPtr r1, IntPtr r2);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XOffsetRegion
+			(IntPtr r, @X_int@ dx, @X_int@ dy);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XShrinkRegion
+			(IntPtr r, @X_int@ dx, @X_int@ dy);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XPointInRegion
+			(IntPtr r, @X_int@ x, @X_int@ y);
+
+	[DllImport("X11")]
+	extern public static IntPtr XPolygonRegion
+			(XPoint[] points, @X_int@ n, @X_int@ fill_rule);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XClipBox(IntPtr region, out XRectangle rect);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XRectInRegion
+			(IntPtr region, @X_int@ x, @X_int@ y,
+			 @X_uint@ width, @X_uint@ height);
+
+	// Declare event-related external functions.
+
+	[DllImport("X11")]
+	extern public static @X_int@ XNextEvent(IntPtr display, out XEvent xevent);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XEventsQueued(IntPtr display, @X_int@ mode);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XSelectInput(IntPtr display, XWindow w,
+											  @X_long@ mode);
+
+	[DllImport("X11")]
+	extern public static XStatus XSendEvent
+			(IntPtr display, XWindow w, XBool propagate,
+			 @X_long@ event_mask, ref XEvent event_send);
+
+	// Declare GC-related external functions.
+
+	[DllImport("X11")]
+	extern public static IntPtr XCreateGC(IntPtr display,
+										  XDrawable drawable,
+										  @X_ulong@ values_mask,
+										  ref XGCValues values);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XFreeGC(IntPtr display, IntPtr gc);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XChangeGC(IntPtr display, IntPtr gc,
+										   @X_ulong@ values_mask,
+										   ref XGCValues values);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XGetGCValues(IntPtr display, IntPtr gc,
+										      @X_ulong@ values_mask,
+										      out XGCValues values);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XSetForeground
+			(IntPtr display, IntPtr gc, XPixel foreground);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XSetBackground
+			(IntPtr display, IntPtr gc, XPixel background);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XSetFunction
+			(IntPtr display, IntPtr gc, @X_int@ function);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XSetSubwindowMode
+			(IntPtr display, IntPtr gc, @X_int@ subwindow_mode);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XSetFillStyle
+			(IntPtr display, IntPtr gc, @X_int@ fill_style);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XSetTile
+			(IntPtr display, IntPtr gc, XPixmap tile);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XSetStipple
+			(IntPtr display, IntPtr gc, XPixmap stipple);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XSetTSOrigin
+			(IntPtr display, IntPtr gc, @X_int@ ts_x_origin,
+			 @X_int@ ts_y_origin);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XSetRegion
+			(IntPtr display, IntPtr gc, IntPtr r);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XSetClipMask
+			(IntPtr display, IntPtr gc, XPixmap pixmap);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XSetClipOrigin
+			(IntPtr display, IntPtr gc, @X_int@ x, @X_int@ y);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XSetDashes
+			(IntPtr display, IntPtr gc, @X_int@ dash_offset,
+			 byte[] dash_list, @X_int@ n);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XDrawLine
+			(IntPtr display, XDrawable drawable, IntPtr gc,
+			 @X_int@ x1, @X_int@ y1, @X_int@ x2, @X_int@ y2);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XDrawLines
+			(IntPtr display, XDrawable drawable, IntPtr gc,
+			 XPoint[] points, @X_int@ npoints, @X_int@ mode);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XDrawPoint
+			(IntPtr display, XDrawable drawable, IntPtr gc,
+			 @X_int@ x, @X_int@ y);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XDrawPoints
+			(IntPtr display, XDrawable drawable, IntPtr gc,
+			 XPoint[] points, @X_int@ npoints, @X_int@ mode);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XDrawRectangle
+			(IntPtr display, XDrawable drawable, IntPtr gc,
+			 @X_int@ x, @X_int@ y, @X_int@ width, @X_int@ height);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XDrawRectangles
+			(IntPtr display, XDrawable drawable, IntPtr gc,
+			 XRectangle[] rectangles, @X_int@ nrectangles);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XDrawArc
+			(IntPtr display, XDrawable drawable, IntPtr gc,
+			 @X_int@ x, @X_int@ y, @X_int@ width, @X_int@ height,
+			 @X_int@ angle1, @X_int@ angle2);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XFillRectangle
+			(IntPtr display, XDrawable drawable, IntPtr gc,
+			 @X_int@ x, @X_int@ y, @X_int@ width, @X_int@ height);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XFillRectangles
+			(IntPtr display, XDrawable drawable, IntPtr gc,
+			 XRectangle[] rectangles, @X_int@ nrectangles);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XFillPolygon
+			(IntPtr display, XDrawable drawable, IntPtr gc,
+			 XPoint[] points, @X_int@ npoints,
+			 @X_int@ shape, @X_int@ mode);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XFillArc
+			(IntPtr display, XDrawable drawable, IntPtr gc,
+			 @X_int@ x, @X_int@ y, @X_int@ width, @X_int@ height,
+			 @X_int@ angle1, @X_int@ angle2);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XPutImage
+			(IntPtr display, XDrawable drawable, IntPtr gc,
+			 IntPtr image, @X_int@ src_x, @X_int@ src_y,
+			 @X_int@ dest_x, @X_int@ dest_y,
+			 @X_int@ width, @X_int@ height);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XCopyArea
+			(IntPtr display, XDrawable src, XDrawable dest,
+			 IntPtr gc, @X_int@ src_x, @X_int@ src_y,
+			 @X_uint@ width, @X_uint@ height,
+			 @X_int@ dest_x, @X_int@ dest_y);
+
+	// Declare window manager related external functions.
+
+	[DllImport("X11")]
+	extern public static @X_int@ XStoreName
+			(IntPtr display, XWindow w, String window_name);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XSetIconName
+			(IntPtr display, XWindow w, String window_name);
+
+	[DllImport("X11")]
+	extern public static XStatus XSetWMProtocols
+			(IntPtr display, XWindow w, XAtom[] protocols, @X_int@ count);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XReconfigureWMWindow
+			(IntPtr display, XWindow w, @X_int@ screen_number,
+			 @X_uint@ value_mask, ref XWindowChanges changes);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XSetTransientForHint
+			(IntPtr display, XWindow w, XWindow prop_window);
+
+	[DllImport("X11")]
+	extern public static XStatus XGetTransientForHint
+			(IntPtr display, XWindow w, out XWindow prop_window);
+
+	[DllImport("X11")]
+	extern public static void XSetWMNormalHints
+			(IntPtr display, XWindow w, ref XSizeHints hints);
+
+	[DllImport("X11")]
+	extern public static void XSetWMHints
+			(IntPtr display, XWindow w, ref XWMHints hints);
+
+	[DllImport("X11")]
+	extern public static void XSetClassHint
+			(IntPtr display, XWindow w, ref XClassHint class_hints);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XKillClient(IntPtr display, XID resource);
+
+	// Declare selection-related external functions.
+
+	[DllImport("X11")]
+	extern public static XWindow XGetSelectionOwner
+			(IntPtr display, XAtom selection);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XSetSelectionOwner
+			(IntPtr display, XAtom selection, XWindow owner, XTime time);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XConvertSelection
+			(IntPtr display, XAtom selection, XAtom target,
+			 XAtom property, XWindow requestor, XTime time);
+
+	// Declare color-related external functions.
+
+	[DllImport("X11")]
+	extern public static @X_int@ XAllocColor
+			(IntPtr display, XColormap colormap, ref XColor xcolor);
+
+	// Declare key-related and pointer-related external functions.
+
+	[DllImport("X11")]
+	extern public static @X_int@ XLookupString
+			(ref XKeyEvent xevent, IntPtr buffer, @X_int@ bytes_buffer,
+			 ref XKeySym keysym_return, IntPtr status_in_out);
+
+	[DllImport("X11")]
+	extern public static XKeySym XLookupKeysym
+			(ref XKeyEvent xevent, int index);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XGetPointerMapping
+			(IntPtr display, byte[] map_return, @X_int@ nmap);
+
+	// Declare atom-related external functions.
+
+	[DllImport("X11")]
+	extern public static XAtom XInternAtom
+			(IntPtr display, String name, XBool only_if_exists);
+
+	// Declare property-related external functions.
+
+	[DllImport("X11")]
+	extern public static @X_int@ XChangeProperty
+			(IntPtr display, XWindow w, XAtom property,
+			 XAtom type, @X_int@ format, @X_int@ mode,
+			 byte[] data, @X_int@ nelements);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XChangeProperty
+			(IntPtr display, XWindow w, XAtom property,
+			 XAtom type, @X_int@ format, @X_int@ mode,
+			 Xlong[] data, @X_int@ nelements);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XDeleteProperty
+			(IntPtr display, XWindow w, XAtom property);
+
+	[DllImport("X11")]
+	extern public static XStatus XGetWindowProperty
+			(IntPtr display, XWindow w, XAtom property,
+			 @X_long@ long_offset, @X_long@ long_length,
+			 XBool deleteProp, XAtom req_type,
+			 out XAtom actual_type_return,
+			 out Xlib.Xint actual_format_return,
+			 out Xlib.Xulong nitems_return,
+			 out Xlib.Xulong bytes_after_return,
+			 out IntPtr prop_return);
+
+	// Text property and string functions.
+
+	[DllImport("X11")]
+	extern public static @X_int@ XFree(IntPtr ptr);
+
+	[DllImport("X11")]
+	extern public static XStatus XStringListToTextProperty
+			(ref IntPtr argv, @X_int@ argc, ref XTextProperty textprop);
+
+	[DllImport("X11")]
+	extern public static XStatus XStringListToTextProperty
+			(IntPtr[] argv, @X_int@ argc, ref XTextProperty textprop);
+
+	[DllImport("X11")]
+	extern public static void XSetTextProperty
+			(IntPtr display, XWindow w, ref XTextProperty textProp,
+			 XAtom property);
+
+	[DllImport("X11")]
+	extern public static @X_int@ _XGetHostname(IntPtr buf, @X_int@ maxlen);
+
+	// Helper functions from "libXsharpSupport.so".
+
+	[DllImport("XsharpSupport")]
+	extern public static @X_int@ XSharpSupportPresent();
+
+	[DllImport("XsharpSupport")]
+	extern public static @X_int@ XNextEventWithTimeout
+			(IntPtr display, out XEvent xevent, @X_int@ timeout);
+
+	[DllImport("XsharpSupport")]
+	extern public static @X_int@ XSharpUseXft();
+
+	[DllImport("XsharpSupport")]
+	extern public static IntPtr XSharpCreateFontXft
+			(IntPtr display, String family, String fallbacks,
+			 @X_int@ pointSize, @X_int@ style);
+
+	[DllImport("XsharpSupport")]
+	extern public static void XSharpFreeFontXft
+			(IntPtr display, IntPtr fontSet);
+
+	[DllImport("XsharpSupport", CharSet=CharSet.Unicode)]
+	extern public static void XSharpDrawStringXft
+			(IntPtr display, XDrawable drawable, IntPtr gc,
+			 IntPtr fontSet, @X_int@ x, @X_int@ y,
+			 String str, @X_int@ style, IntPtr clipRegion,
+			 @X_ulong@ colorValue);
+
+	[DllImport("XsharpSupport", CharSet=CharSet.Unicode)]
+	extern public static void XSharpTextExtentsXft
+			(IntPtr display, IntPtr fontSet, String str,
+			 out XRectangle overall_ink_return,
+			 out XRectangle overall_logical_return);
+
+	[DllImport("XsharpSupport", CharSet=CharSet.Unicode)]
+	extern public static void XSharpFontExtentsXft
+			(IntPtr fontSet,
+			 out XRectangle max_ink_return,
+			 out XRectangle max_logical_return);
+
+	[DllImport("XsharpSupport")]
+	extern public static IntPtr XSharpCreateFontSet
+			(IntPtr display, String family, @X_int@ pointSize, @X_int@ style);
+
+	[DllImport("XsharpSupport")]
+	extern public static void XSharpFreeFontSet
+			(IntPtr display, IntPtr fontSet);
+
+	[DllImport("XsharpSupport")]
+	extern public static void XSharpDrawStringSet
+			(IntPtr display, XDrawable drawable, IntPtr gc,
+			 IntPtr fontSet, @X_int@ x, @X_int@ y,
+			 String str, @X_int@ style);
+
+	[DllImport("XsharpSupport")]
+	extern public static void XSharpTextExtentsSet
+			(IntPtr display, IntPtr fontSet, String str,
+			 out XRectangle overall_ink_return,
+			 out XRectangle overall_logical_return);
+
+	[DllImport("XsharpSupport")]
+	extern public static void XSharpFontExtentsSet
+			(IntPtr fontSet,
+			 out XRectangle max_ink_return,
+			 out XRectangle max_logical_return);
+
+	[DllImport("XsharpSupport")]
+	extern public static IntPtr XSharpCreateFontStruct
+			(IntPtr display, String family, @X_int@ pointSize, @X_int@ style);
+
+	[DllImport("XsharpSupport")]
+	extern public static void XSharpFreeFontStruct
+			(IntPtr display, IntPtr fontSet);
+
+	[DllImport("XsharpSupport")]
+	extern public static void XSharpDrawStringStruct
+			(IntPtr display, XDrawable drawable, IntPtr gc,
+			 IntPtr fontSet, @X_int@ x, @X_int@ y,
+			 [MarshalAs(UnmanagedType.Interface)] String str,
+			 @X_long@ offset, @X_long@ count, @X_int@ style);
+
+	[DllImport("XsharpSupport")]
+	extern public static void XSharpTextExtentsStruct
+			(IntPtr display, IntPtr fontSet,
+			 [MarshalAs(UnmanagedType.Interface)] String str,
+			 @X_long@ offset, @X_long@ count,
+			 out XRectangle overall_ink_return,
+			 out XRectangle overall_logical_return);
+
+	[DllImport("XsharpSupport")]
+	extern public static void XSharpFontExtentsStruct
+			(IntPtr fontSet,
+			 out XRectangle max_ink_return,
+			 out XRectangle max_logical_return);
+
+	[DllImport("XsharpSupport")]
+	extern public static IntPtr XSharpPCFCreateImage
+			(byte[] data, @X_ulong@ length);
+
+	[DllImport("XsharpSupport")]
+	extern public static void XSharpPCFDestroyImage(IntPtr fontImage);
+
+	[DllImport("XsharpSupport")]
+	extern public static IntPtr XSharpPCFCreate(IntPtr dpy, IntPtr fontImage);
+
+	[DllImport("XsharpSupport")]
+	extern public static void XSharpPCFDestroy(IntPtr dpy, IntPtr renderer);
+
+	[DllImport("XsharpSupport")]
+	extern public static void XSharpDrawStringPCF
+			(IntPtr display, XDrawable drawable, IntPtr gc,
+			 IntPtr fontSet, @X_int@ x, @X_int@ y,
+			 [MarshalAs(UnmanagedType.Interface)] String str,
+			 @X_long@ offset, @X_long@ count, @X_int@ style);
+
+	[DllImport("XsharpSupport")]
+	extern public static void XSharpTextExtentsPCF
+			(IntPtr display, IntPtr fontSet,
+			 [MarshalAs(UnmanagedType.Interface)] String str,
+			 @X_long@ offset, @X_long@ count,
+			 out XRectangle overall_ink_return,
+			 out XRectangle overall_logical_return);
+
+	[DllImport("XsharpSupport")]
+	extern public static void XSharpFontExtentsPCF
+			(IntPtr fontSet,
+			 out XRectangle max_ink_return,
+			 out XRectangle max_logical_return);
+
+	[DllImport("XsharpSupport")]
+	extern public static IntPtr XSharpGetResources(IntPtr dpy, XWindow w);
+
+	[DllImport("XsharpSupport")]
+	extern public static void XSharpFreeResources(IntPtr value);
+
+	[DllImport("XsharpSupport")]
+	extern public static @X_int@ XSharpGetRegionSize(IntPtr region);
+
+	[DllImport("XsharpSupport")]
+	extern public static void XSharpGetRegionRect
+			(IntPtr region, @X_int@ index, out XRectangle rect);
+
+	[DllImport("XsharpSupport")]
+	extern public static IntPtr XSharpCreateImageFromDIB
+			(IntPtr screen, @X_int@ width, @X_int@ height,
+			 @X_int@ stride, @X_int@ pixelFormat, byte[] data,
+			 @X_int@ isMask, XPixel[] palette);
+
+	[DllImport("XsharpSupport")]
+	extern public static void XSharpDestroyImage(IntPtr image);
+
+	[DllImport("XsharpSupport")]
+	extern public static void XSharpGetImageSize
+			(IntPtr image, out @X_int@ width, out @X_int@ height);
+
+	[DllImport("XsharpSupport")]
+	extern public static void XSharpSendClose
+			(IntPtr display, XWindow window);
+
+	[DllImport("XsharpSupport")]
+	extern public static void XSharpSendWakeup
+			(IntPtr display, XWindow window);
+
+	// Helper functions for creating and managing application groups.
+
+	[DllImport("Xext")]
+	extern public static XBool XagQueryVersion
+			(IntPtr display, out Xint major, out Xint minor);
+
+	[DllImport("Xext")]
+	extern public static XStatus XagCreateEmbeddedApplicationGroup
+			(IntPtr display, XVisualID root_visual, XColormap default_colormap,
+			 XPixel black_pixel, XPixel white_pixel, out XAppGroup app_group);
+
+	[DllImport("Xext")]
+	extern public static XStatus XagDestroyApplicationGroup
+			(IntPtr display, XAppGroup app_group);
+
+	// Helper functions for managing security tokens.
+
+	public enum XSecurityAuthorization : @X_ulong@ { Zero }
+
+	[DllImport("Xext")]
+	extern public static XBool XSecurityQueryExtension
+			(IntPtr display, out Xint major, out Xint minor);
+
+	[DllImport("Xext")]
+	extern public static Xauth *XSecurityAllocXauth();
+
+	[DllImport("Xext")]
+	extern public static void XSecurityFreeXauth(Xauth *auth);
+
+	[DllImport("Xext")]
+	extern public static Xauth *XSecurityGenerateAuthorization
+			(IntPtr dpy, Xauth *auth_in, @X_ulong@ valuemask,
+			 ref XSecurityAuthorizationAttributes attributes,
+			 out XSecurityAuthorization auth_id_return);
+
+	// Helper functions for double buffer handling.
+
+	public enum XdbeSwapAction : byte
+	{
+		Undefined		= 0,
+		Background		= 1,
+		Untouched		= 2,
+		Copied			= 3
+
+	}; // enum XdbeSwapAction
+
+	[StructLayout(LayoutKind.Sequential)]
+	public struct XdbeSwapInfo
+	{
+		public XWindow 			swap_window;
+		public XdbeSwapAction	swap_action;
+
+	}; // struct XdbeSwapInfo
+
+	[DllImport("Xext")]
+	extern public static XStatus XdbeQueryExtension
+			(IntPtr display, out Xint major, out Xint minor);
+
+	[DllImport("Xext")]
+	extern public static XDrawable XdbeAllocateBackBufferName
+			(IntPtr display, XWindow window, XdbeSwapAction swap_action);
+
+	[DllImport("Xext")]
+	extern public static XStatus XdbeDeallocateBackBufferName
+			(IntPtr display, XDrawable buffer);
+
+	[DllImport("Xext")]
+	extern public static XStatus XdbeSwapBuffers
+			(IntPtr display, ref XdbeSwapInfo swap_info, @X_int@ num_windows);
+
+	// Other functions.
+
+	[DllImport("X11")]
+	extern public static IntPtr XListFonts
+			(IntPtr display, String pattern, @X_int@ maxnames,
+			 out @X_int@ actualCountReturn);
+
+	[DllImport("X11")]
+	extern public static @X_int@ XFreeFontNames(IntPtr list);
+
+	// Wrap up the "XListFonts" function and make it friendlier.
+	public static String[] XListFonts(IntPtr display, String pattern)
+			{
+				// Get the full list of fonts.  We may have to use multiple
+				// requests if the maximum is reached on the first request.
+				@X_int@ actualCount;
+				int maxNames = 1000;
+				IntPtr names;
+				for(;;)
+				{
+					names = XListFonts
+						(display, pattern, (@X_int@)maxNames, out actualCount);
+					if(names == IntPtr.Zero)
+					{
+						return new String [0];
+					}
+					if(actualCount < maxNames)
+					{
+						break;
+					}
+					XFreeFontNames(names);
+					maxNames *= 2;
+				}
+
+				// Convert the font list into an array of C# strings.
+				int posn;	
+				int size = IntPtr.Size;
+				String[] result;
+				try
+				{
+					result = new String [(int)actualCount];
+					for(posn = 0; posn < actualCount; ++posn)
+					{
+						result[posn] = Marshal.PtrToStringAnsi
+							(Marshal.ReadIntPtr(names, posn * size));
+					}
+				}
+				finally
+				{
+					XFreeFontNames(names);
+				}
+				return result;
+			}
+
+} // class Xlib
+
+} // namespace Xsharp

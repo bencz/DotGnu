@@ -1,0 +1,41 @@
+#
+# NotSupp.txt - Resources for "Not Supported" messages.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+NotSupp_FixedSizeCollection=Operation not supported on fixed sized objects
+NotSupp_ReadOnly=Operation not supported on read-only objects
+NotSupp_NotArrayType=Type is not an array type
+NotSupp_NotGenericType=Type is not a generic type
+NotSupp_GetValueDirect=FieldInfo.GetValueDirect not supported, use GetValue instead
+NotSupp_SetValueDirect=FieldInfo.SetValueDirect not supported, use SetValue instead
+NotSupp_Remoting=Remoting is not supported
+NotSupp_Multicast=This delegate type does not support multicasting
+NotSupp_TypedRefEquals=Cannot test typed references for equality
+NotSupp_SetWaitHandle=Setting a wait handle is not supported
+NotSupp_CodePage=Code page {0} is not supported
+NotSupp_EncodingName=Encoding name `{0}' is not supported
+NotSupp_Builder=The requested operation is not supported on dynamic assemblies
+NotSupp_TypeCreated=The requested operation is not supported after the type has been created
+NotSupp_TypeNotCreated=The requested operation is not supported until the type has been created
+NotSupp_IPermissionUnion=Cannot union the supplied IPermission objects
+NotSupp_SetRemotingValue=Cannot set the specified remoting value
+NotSupp_SerializePointer=Cannot serialize pointer values
+NotSupp_SubClass=Implementation must be provided by subclasses
+NotSupp_DelAsyncProcMsg=Cannot use AsyncProcessMessage with asynchronous delegates
+NotSupp_MaxWaitHandles=Maximum number of wait handles has been exceeded
+NotSupp_SetAce=Cannot set access control elements in this list

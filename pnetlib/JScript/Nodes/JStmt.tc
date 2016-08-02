@@ -1,0 +1,558 @@
+/*
+ * JStmt.tc - Input file for "treecc" that defines JScript statment nodes.
+ *
+ * Copyright (C) 2003 Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+// Evaluate the empty statement.
+Eval(JEmpty)
+{
+	return Empty.Value;
+}
+
+// Evaluate a compound statement.
+Eval(JCompound)
+{
+	Object last = Empty.Value;
+	JCompound node = this;
+	do
+	{
+		if(node.stmt1 != null)
+		{
+			last = node.stmt1.Eval(engine);
+		}
+		if(node.stmt2 != null)
+		{
+			last = node.stmt2.Eval(engine);
+		}
+		if(node.stmt3 != null)
+		{
+			last = node.stmt3.Eval(engine);
+		}
+		if(node.stmt4 != null)
+		{
+			last = node.stmt4.Eval(engine);
+		}
+		node = node.next;
+	}
+	while(node != null);
+	return last;
+}
+
+// Evaluate an expression statement.
+Eval(JExprStmt)
+{
+	return expr.Eval(engine);
+}
+
+// Evaluate an "if" statement.
+Eval(JIf)
+{
+	Object value = condition.Eval(engine);
+	if(Convert.ToBoolean(value))
+	{
+		if(thenClause != null)
+		{
+			return thenClause.Eval(engine);
+		}
+	}
+	else
+	{
+		if(elseClause != null)
+		{
+			return elseClause.Eval(engine);
+		}
+	}
+	return Empty.Value;
+}
+
+// Evaluate a "while" statement.
+Eval(JWhile)
+{
+	Object result = Empty.Value;
+	Object temp;
+	try
+	{
+		while(Convert.ToBoolean(condition.Eval(engine)))
+		{
+			try
+			{
+				if(body != null)
+				{
+					temp = body.Eval(engine);
+					if(temp != Empty.Value)
+					{
+						result = temp;
+					}
+				}
+			}
+			catch(ContinueJumpOut cont)
+			{
+				// We received a "continue" from inside the "while" loop.
+				if(!Support.LabelMatch(cont.label, labels))
+				{
+					throw;
+				}
+			}
+		}
+	}
+	catch(BreakJumpOut brk)
+	{
+		// We received a "break" from inside the "while" loop.
+		if(!Support.LabelMatch(brk.label, labels))
+		{
+			throw;
+		}
+	}
+	return result;
+}
+
+// Evaluate a "do" statement.
+Eval(JDo)
+{
+	Object result = Empty.Value;
+	Object temp;
+	try
+	{
+		do
+		{
+			try
+			{
+				if(body != null)
+				{
+					temp = body.Eval(engine);
+					if(temp != Empty.Value)
+					{
+						result = temp;
+					}
+				}
+			}
+			catch(ContinueJumpOut cont)
+			{
+				// We received a "continue" from inside the "do" loop.
+				if(!Support.LabelMatch(cont.label, labels))
+				{
+					throw;
+				}
+			}
+		}
+		while(Convert.ToBoolean(condition.Eval(engine)));
+	}
+	catch(BreakJumpOut brk)
+	{
+		// We received a "break" from inside the "do" loop.
+		if(!Support.LabelMatch(brk.label, labels))
+		{
+			throw;
+		}
+	}
+	return result;
+}
+
+// Evaluate a "for" statement.
+Eval(JFor)
+{
+	Object result = Empty.Value;
+	Object temp;
+	if(init != null)
+	{
+		init.Eval(engine);
+	}
+	try
+	{
+		while(cond == null || Convert.ToBoolean(cond.Eval(engine)))
+		{
+			try
+			{
+				if(body != null)
+				{
+					temp = body.Eval(engine);
+					if(temp != Empty.Value)
+					{
+						result = temp;
+					}
+				}
+			}
+			catch(ContinueJumpOut cont)
+			{
+				// We received a "continue" from inside the "for" loop.
+				if(!Support.LabelMatch(cont.label, labels))
+				{
+					throw;
+				}
+			}
+			if(incr != null)
+			{
+				incr.Eval(engine);
+			}
+		}
+	}
+	catch(BreakJumpOut brk)
+	{
+		// We received a "break" from inside the "for" loop.
+		if(!Support.LabelMatch(brk.label, labels))
+		{
+			throw;
+		}
+	}
+	return result;
+}
+
+// Evaluate a "for-in" statement.
+Eval(JForIn)
+{
+	// Evaluate variable declarations, to make sure that the
+	// variable is properly declared into the current scope.
+	if(decl is JVarDecl)
+	{
+		decl.Eval(engine);
+	}
+
+	// Get the collection that we will be enumerating.
+	Object set = expr.Eval(engine);
+	IEnumerator e = ForIn.JScriptGetEnumerator(set);
+
+	// Loop over the collection.
+	Object result = Empty.Value;
+	Object data1, data2, temp;
+	try
+	{
+		while(e.MoveNext())
+		{
+			try
+			{
+				// Assign e.Current to the loop variable.
+				data1 = null;
+				data2 = null;
+				decl.Prepare(engine, ref data1, ref data2);
+				decl.Store(engine, data1, data2, e.Current);
+
+				// Execute the loop body.
+				if(body != null)
+				{
+					temp = body.Eval(engine);
+					if(temp != Empty.Value)
+					{
+						result = temp;
+					}
+				}
+			}
+			catch(ContinueJumpOut cont)
+			{
+				// We received a "continue" from inside the "for-in" loop.
+				if(!Support.LabelMatch(cont.label, labels))
+				{
+					throw;
+				}
+			}
+		}
+	}
+	catch(BreakJumpOut brk)
+	{
+		// We received a "break" from inside the "for-in" loop.
+		if(!Support.LabelMatch(brk.label, labels))
+		{
+			throw;
+		}
+	}
+	finally
+	{
+		if(e is IDisposable)
+		{
+			((IDisposable)e).Dispose();
+		}
+	}
+	return result;
+}
+
+// Evaluate a "switch" statement.
+Eval(JSwitch)
+{
+	Object value = expr.Eval(engine);
+	Object testValue;
+	Object result = Empty.Value;
+	JCompound node;
+	JNode child, defCase;
+	if(cases == null)
+	{
+		return result;
+	}
+	try
+	{
+		if(cases is JCase)
+		{
+			// Only has a single "case".
+			testValue = ((JCase)cases).expr.Eval(engine);
+			if(Equality.JScriptEquals(value, testValue))
+			{
+				result = ((JCase)cases).body.Eval(engine);
+			}
+		}
+		else if(cases is JDefault)
+		{
+			// Only has a "default" case, which we always execute.
+			result = ((JDefault)cases).body.Eval(engine);
+		}
+		else
+		{
+			// Search for an applicable case.
+			defCase = null;
+			node = (JCompound)cases;
+			do
+			{
+				if(node.stmt1 != null)
+				{
+					child = node.stmt1;
+					if(child is JCase)
+					{
+						testValue = ((JCase)child).expr.Eval(engine);
+						if(Equality.JScriptEquals(value, testValue))
+						{
+							return ((JCase)child).body.Eval(engine);
+						}
+					}
+					else
+					{
+						defCase = child;
+					}
+				}
+				if(node.stmt2 != null)
+				{
+					child = node.stmt2;
+					if(child is JCase)
+					{
+						testValue = ((JCase)child).expr.Eval(engine);
+						if(Equality.JScriptEquals(value, testValue))
+						{
+							return ((JCase)child).body.Eval(engine);
+						}
+					}
+					else
+					{
+						defCase = child;
+					}
+				}
+				if(node.stmt3 != null)
+				{
+					child = node.stmt3;
+					if(child is JCase)
+					{
+						testValue = ((JCase)child).expr.Eval(engine);
+						if(Equality.JScriptEquals(value, testValue))
+						{
+							return ((JCase)child).body.Eval(engine);
+						}
+					}
+					else
+					{
+						defCase = child;
+					}
+				}
+				if(node.stmt4 != null)
+				{
+					child = node.stmt4;
+					if(child is JCase)
+					{
+						testValue = ((JCase)child).expr.Eval(engine);
+						if(Equality.JScriptEquals(value, testValue))
+						{
+							return ((JCase)child).body.Eval(engine);
+						}
+					}
+					else
+					{
+						defCase = child;
+					}
+				}
+				node = node.next;
+			}
+			while(node != null);
+			if(defCase != null)
+			{
+				result = defCase.Eval(engine);
+			}
+		}
+	}
+	catch(BreakJumpOut brk)
+	{
+		// We received a "break" from inside the "switch" statement.
+		if(!Support.LabelMatch(brk.label, labels))
+		{
+			throw;
+		}
+	}
+	return result;
+}
+
+// Evaluate a "case" or "default" statement during fall-through execution.
+Eval(JCase),
+Eval(JDefault)
+{
+	return body.Eval(engine);
+}
+
+// Evaluate a "fall through" statement, which jumps to the next
+// case in a "switch" statement's body.
+Eval(JFallThrough)
+{
+	return stmt.Eval(engine);
+}
+
+// Evaluate a "continue" statement.
+Eval(JContinue)
+{
+	throw new ContinueJumpOut(label, context);
+}
+
+// Evaluate a "break" statement.
+Eval(JBreak)
+{
+	throw new BreakJumpOut(label, context);
+}
+
+// Evaluate a "return" statement, with no expression.
+Eval(JReturn)
+{
+	throw new ReturnJumpOut(null, context);
+}
+
+// Evaluate a "return" statement, with an expression.
+Eval(JReturnExpr)
+{
+	throw new ReturnJumpOut(expr.Eval(engine), context);
+}
+
+// Evaluate a "throw" statement.
+Eval(JThrow)
+{
+	throw Throw.JScriptThrow(expr.Eval(engine));
+}
+
+// Evaluate a "with" statement.
+Eval(JWith)
+{
+	Object result;
+
+	// Evaluate the expression to use inside the "with" block
+	// and push it onto the script object stack.
+	try
+	{
+		With.JScriptWith(expr.Eval(engine), engine);
+	}
+	catch(JScriptException e)
+	{
+		e.context = expr.context.MakeCopy();
+		throw e;
+	}
+
+	// Evaluate the body of the "with" block.
+	try
+	{
+		result = body.Eval(engine);
+	}
+	finally
+	{
+		engine.PopScriptObject();
+	}
+	return result;
+}
+
+// Evaluate a variable declaration statemnet.
+Eval(JVarDecl)
+{
+	// Get the current variable definition scope.
+	IActivationObject scope =
+		(IActivationObject)(engine.ScriptObjectStackTop());
+
+	// We can take a short-cut if the scope implements "IVariableAccess".
+	// This avoids creating unnecessary "FieldInfo" objects.
+	IVariableAccess varAccess = (scope as IVariableAccess);
+	if(varAccess != null)
+	{
+		if(initializer != null)
+		{
+			varAccess.SetVariable(name, initializer.Eval(engine));
+		}
+		else
+		{
+			varAccess.DeclareVariable(name);
+		}
+		return name;
+	}
+
+	// Get the field reference for the variable.
+	FieldInfo field = scope.GetLocalField(name);
+	if(field == null)
+	{
+		// Create a new field within the activation object with this name.
+		// TODO
+	}
+	if(initializer != null)
+	{
+		// Set the variable to the specified initializer value.
+		// TODO
+	}
+
+	// Return the name of the variable as the node's final value.
+	return name;
+}
+
+// Evaluate a "try" statement.
+Eval(JTry)
+{
+	Object result = Empty.Value;
+	try
+	{
+		if(body != null)
+		{
+			result = body.Eval(engine);
+		}
+	}
+	catch(JScriptException e)	// TODO: other exception types
+	{
+		if(catchName == null)
+		{
+			throw;
+		}
+		if(e.errorNumber == JSError.UncaughtException)
+		{
+			// Handle an object that was thrown by user JScript code.
+			// TODO: push a scope and add "catchName" to it
+			try
+			{
+				catchClause.Eval(engine);
+			}
+			finally
+			{
+				// TODO: pop the scope
+			}
+		}
+		else
+		{
+			// TODO: convert runtime engine errors.
+			throw;
+		}
+	}
+	finally
+	{
+		if(finallyClause != null)
+		{
+			finallyClause.Eval(engine);
+		}
+	}
+	return result;
+}

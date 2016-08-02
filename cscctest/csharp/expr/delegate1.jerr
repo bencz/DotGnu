@@ -1,0 +1,6 @@
+./delegate1.cs:27: delegate definitions are not permitted with Java output
+./delegate1.cs:30: delegate definitions are not permitted with Java output
+./delegate1.cs:51: delegate creation disallowed when compiling to Java bytecode
+./delegate1.cs:56: delegate creation disallowed when compiling to Java bytecode
+./delegate1.cs:61: delegate creation disallowed when compiling to Java bytecode
+./delegate1.cs:66: delegate creation disallowed when compiling to Java bytecode

@@ -1,0 +1,2095 @@
+/*
+ * cs_invoke.tc - Semantic analysis for method invocation.
+ *
+ * Copyright (C) 2001, 2008  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+%decls %{
+
+/*
+ * Convert a program item (method, property, or delegate)
+ * into a printable name, suitable for use in error messages.
+ */
+const char *CSItemToName(ILProgramItem *item);
+
+/*
+ * Information that is kept about an evaluated argument.
+ */
+typedef struct
+{
+	ILType	   *type;
+	ILNode     *node;
+	ILNode    **parent;
+	ILParameterModifier modifier;
+
+} CSEvalArg;
+
+/*
+ * Evaluate a list of arguments for a method invocation.
+ * Returns the number of arguments, or -1 on error.
+ */
+int CSEvalArguments(ILGenInfo *info, ILNode *argList,
+					ILNode **argListParent, CSEvalArg **args);
+
+/*
+ * Free an evaluated argument list.
+ */
+void CSEvalFreeArguments(CSEvalArg *args);
+
+/*
+ * Determine if a program item (method, property, or delegate)
+ * is a candidate for evaluation.  Returns 0 if not a candidate,
+ * 1 if a candidate in its normal form, and 2 if a candidate
+ * in its expanded form.
+ */
+int CSItemIsCandidate(ILGenInfo *info, ILProgramItem *item,
+					  CSEvalArg *args, int numArgs);
+
+/*
+ * Determine the best item candidate in a group.
+ * Returns NULL if none of the methods are "best".
+ */
+ILProgramItem *CSBestCandidate(ILGenInfo *info, void *group,
+						       CSEvalArg *args, int numArgs);
+
+/*
+ * Coerce the arguments and set up the final argument list.
+ * Returns the item's return type.
+ */
+ILType *CSItemCoerceArgs(ILGenInfo *info, ILProgramItem *item,
+						 CSEvalArg *args, int numArgs,
+						 ILNode **argListParent);
+
+/*
+ * Report an error message for a failed item signature match,
+ * listing the candidates for the call.
+ */
+void CSItemCandidateError(ILNode *node, const char *itemName, int isCtor,
+						  void *group, CSEvalArg *args, int numArgs);
+
+%}
+
+/*
+ * Perform semantic analysis for the argument list operator.
+ */
+ILNode_SemAnalysis(ILNode_ArgList)
+{
+	CSSemValue value1;
+	CSSemValue value2;
+	value1 = ILNode_SemAnalysis(node->expr1, info, &(node->expr1));
+	value2 = ILNode_SemAnalysis(node->expr2, info, &(node->expr2));
+	if(!CSSemIsValue(value1) || !CSSemIsValue(value2))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid operands to binary `,'");
+	}
+	return value2;
+}
+
+/*
+ * Perform semantic analysis for a vararg list expression.
+ */
+ILNode_SemAnalysis(ILNode_VarArgList)
+{
+	CSSemValue value;
+	ILNode_MethodDeclaration *decl;
+	ILMethod *method;
+
+	/* We cannot use "__arglist" when compiling to Java bytecode */
+	if(info->outputIsJava)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  "`__arglist' is disallowed when compiling to Java bytecode");
+	}
+
+	/* We can only use this inside "vararg" methods */
+	decl = ((ILNode_MethodDeclaration *)(info->currentMethod));
+	method = (decl ? decl->methodInfo : 0);
+	if(!method ||
+	   (ILMethodGetCallConv(method) & IL_META_CALLCONV_MASK)
+			!= IL_META_CALLCONV_VARARG)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "`__arglist' must be used inside a vararg method");
+	}
+
+	/* Construct the result type and return it */
+	CSSemSetRValue(value, ILFindSystemType(info, "RuntimeArgumentHandle"));
+	return value;
+}
+
+/*
+ * Perform semantic analysis for a vararg list expansion.
+ */
+ILNode_SemAnalysis(ILNode_VarArgExpand)
+{
+	/* This will only be called if the term "__arglist(values)"
+	   appeared in a context where it wasn't valid */
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+		  "`__arglist' cannot be used with arguments in this context");
+	return CSSemValueDefault;
+}
+
+ILNode_SemAnalysis(ILNode_Argument)
+{
+	CSSemValue value;
+	value = ILNode_SemAnalysis(node->expression, info, &(node->expression));
+	if(node->modifier == ILParamMod_out ||
+	   node->modifier == ILParamMod_ref)
+	{
+		if(!CSSemIsLValue(value) ||
+		   yyisa(node->expression, ILNode_LValueNoRef))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "invalid lvalue in `%s' argument",
+						  (node->modifier == ILParamMod_out
+						  		? "out" : "ref"));
+			if(CSSemIsRValue(value) || CSSemIsSValue(value))
+			{
+				CSSemSetLValue(value, CSSemGetType(value));
+			}
+			else
+			{
+				CSSemSetLValue(value, ILType_Int32);
+			}
+		}
+		if(info->outputIsJava)
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  "`%s' arguments not permitted when compiling to Java bytecode",
+			  (node->modifier == ILParamMod_out ? "out" : "ref"));
+		}
+	}
+	return value;
+}
+
+%{
+
+void CSItemCandidateError(ILNode *node, const char *itemName, int isCtor,
+						  void *group, CSEvalArg *args, int numArgs)
+{
+	unsigned long num;
+	ILProgramItem *item;
+	ILIntString str;
+	int argNum;
+
+	/* Report the item name and argument types */
+	if(itemName)
+	{
+		/* Construct a list of the argument types for the error */
+		str = ILInternString(itemName, -1);
+		str = ILInternAppendedString(str, ILInternString("(", 1));
+		for(argNum = 0; argNum < numArgs; ++argNum)
+		{
+			if(argNum != 0)
+			{
+				str = ILInternAppendedString(str, ILInternString(", ", 2));
+			}
+			if(args[argNum].modifier == ILParamMod_out)
+			{
+				str = ILInternAppendedString(str, ILInternString("out ", 4));
+			}
+			else if(args[argNum].modifier == ILParamMod_ref)
+			{
+				str = ILInternAppendedString(str, ILInternString("ref ", 4));
+			}
+			if(args[argNum].modifier != ILParamMod_arglist)
+			{
+				str = ILInternAppendedString
+					(str, ILInternString
+							((char *)CSTypeToName(args[argNum].type), -1));
+			}
+			else
+			{
+				str = ILInternAppendedString
+					(str, ILInternString("__arglist", 9));
+			}
+		}
+		str = ILInternAppendedString(str, ILInternString(")", 1));
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "no matching method for call to `%s'",
+					  str.string);
+	}
+	else if(isCtor == 2)
+	{
+		/* Don't know what the method name is */
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "no matching constructor for base class initialization");
+	}
+	else if(isCtor)
+	{
+		/* Don't know what the method name is */
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "no matching constructor");
+	}
+	else
+	{
+		/* Don't know what the method name is */
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "no matching method for call");
+	}
+
+	/* Report the candidates */
+	num = 0;
+	while((item = CSGetGroupMember(group, num)) != 0)
+	{
+		if(!num)
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "candidates are: %s", CSItemToName(item));
+		}
+		else
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "                %s", CSItemToName(item));
+		}
+		++num;
+	}
+}
+
+/*
+ * Make a call site signature from a method signature and
+ * a list of "__arglist" parameter types.
+ */
+static ILType *MakeCallSiteSig(ILGenInfo *info, ILType *methodSig,
+							   ILType *argTypes)
+{
+	unsigned long numParams;
+	unsigned long numMethodParams;
+	unsigned long paramNum;
+	ILType *signature;
+
+	/* Use the method's signature if there are no extra arguments */
+	numParams = ILTypeNumParams(argTypes);
+	if(!numParams)
+	{
+		return methodSig;
+	}
+
+	/* Create a new signature for the call site */
+	signature = ILTypeCreateMethod
+		(info->context, ILTypeGetReturnWithPrefixes(methodSig));
+	if(!signature)
+	{
+		CCOutOfMemory();
+	}
+	ILTypeSetCallConv(signature, ILType_CallConv(methodSig));
+	signature->kind__ |= IL_TYPE_COMPLEX_METHOD_SENTINEL;
+
+	/* Copy the method's current parameters to the call site */
+	numMethodParams = ILTypeNumParams(methodSig);
+	for(paramNum = 1; paramNum <= numMethodParams; ++paramNum)
+	{
+		if(!ILTypeAddParam(info->context, signature,
+						   ILTypeGetParamWithPrefixes(methodSig, paramNum)))
+		{
+			CCOutOfMemory();
+		}
+	}
+
+	/* Add a sentinel to the call site */
+	if(!ILTypeAddSentinel(info->context, signature))
+	{
+		CCOutOfMemory();
+	}
+
+	/* Add the types of the variable arguments to the call site */
+	for(paramNum = 1; paramNum <= numParams; ++paramNum)
+	{
+		if(!ILTypeAddParam(info->context, signature,
+						   ILTypeGetParamWithPrefixes(argTypes, paramNum)))
+		{
+			CCOutOfMemory();
+		}
+	}
+
+	/* The call site is ready */
+	return signature;
+}
+
+/*
+ * Reduce a method group to a set of candidates.
+ */
+static void ReduceMethodGroup(ILGenInfo *info, CSEvalArg *args,
+							  int numArgs, CSSemValue *method)
+{
+	unsigned long itemNum;
+	int candidateForm;
+	ILProgramItem *itemInfo;
+	ILMember *member;
+	ILClass *lowestOwner = 0;
+	ILClass *owner;
+
+	/* Remove methods that aren't candidates */
+	itemNum = 0;
+	while((itemInfo = CSGetGroupMember(CSSemGetGroup(*method), itemNum)) != 0)
+	{
+		candidateForm = CSItemIsCandidate(info, itemInfo, args, numArgs);
+		if(candidateForm)
+		{
+			CSSetGroupMemberForm(CSSemGetGroup(*method), itemNum,
+								 candidateForm);
+			++itemNum;
+			member = ILProgramItemToMember(itemInfo);
+			if(member)
+			{
+				owner = ILClassResolve(ILMember_Owner(member));
+				if(!lowestOwner)
+				{
+					lowestOwner = owner;
+				}
+				else if(CSIsBaseTypeFor(lowestOwner, owner))
+				{
+					lowestOwner = owner;
+				}
+			}
+		}
+		else
+		{
+			CSSemModifyGroup(*method, CSRemoveGroupMember
+								(CSSemGetGroup(*method), itemNum));
+		}
+	}
+
+	/* Remove candidates in base classes */
+	if(lowestOwner)
+	{
+		itemNum = 0;
+		while((itemInfo = CSGetGroupMember(CSSemGetGroup(*method), itemNum))
+					!= 0)
+		{
+			member = ILProgramItemToMember(itemInfo);
+			if(member)
+			{
+				owner = ILClassResolve(ILMember_Owner(member));
+				if(owner != lowestOwner)
+				{
+					CSSemModifyGroup(*method, CSRemoveGroupMember
+										(CSSemGetGroup(*method), itemNum));
+				}
+				else
+				{
+					++itemNum;
+				}
+			}
+			else
+			{
+				++itemNum;
+			}
+		}
+	}
+}
+
+%}
+
+/*
+ * Perform semantic analysis for a method invocation.
+ */
+ILNode_SemAnalysis(ILNode_InvocationExpression)
+{
+	CSSemValue value;
+	CSSemValue method;
+	ILProgramItem *itemInfo;
+	ILMethod *methodInfo;
+	ILType *retType;
+	CSEvalArg *args;
+	int numArgs;
+	unsigned long itemNum;
+	const char *itemName;
+	ILNode_MethodDeclaration *caller;
+	int isCtor = 0;
+	ILNode_MemberAccess *savedNode = NULL;
+	ILNode *savedChild1 = NULL;
+	ILNode *savedChild2 = NULL;
+	
+
+	/* Get the method name for later error reporting */
+	if(ILIsQualIdent(node->expr1))
+	{
+		itemName = ILQualIdentName(node->expr1, 0);
+	}
+	else if(yyisa(node->expr1, ILNode_MemberAccess))
+	{
+		/* wish we could clone the entire node :) */
+		savedNode = (ILNode_MemberAccess*)(node->expr1);
+		savedChild1 = savedNode->expr1;
+		savedChild2 = savedNode->expr2;
+		itemName = ILQualIdentName
+			(((ILNode_MemberAccess *)(node->expr1))->expr2, 0);
+	}
+	else if(yyisa(node->expr1, ILNode_ThisInit))
+	{
+		itemName = 0;
+		isCtor = 1;
+	}
+	else if(yyisa(node->expr1, ILNode_BaseInit))
+	{
+		itemName = 0;
+		isCtor = 2;
+	}
+	else
+	{
+		itemName = 0;
+	}
+
+	/* Perform semantic analysis on the method expression */
+	method = ILNode_SemAnalysis(node->expr1, info, &(node->expr1));
+	if(CSSemIsValue(method) && ILTypeIsDelegate(CSSemGetType(method)))
+	{
+		/* This is a delegate invocation: create a method group
+		   that contains the "Invoke" method as its only member */
+		void *group = CSCreateMethodGroup
+				(ILTypeGetDelegateMethod(CSSemGetType(method)));
+		CSSemSetMethodGroup(method, group);
+	}
+	else if(!CSSemIsMethodGroup(method))
+	{
+		CCErrorOnLine(yygetfilename(node->expr1), yygetlinenum(node->expr1),
+					  "called object is not a method or delegate");
+		return CSSemValueDefault;
+	}
+
+	/* Bail out if the method group is NULL.  This is used by "BaseInit"
+	   to indicate no parent constructor in "System.Object" */
+	if(CSSemGetGroup(method) == 0)
+	{
+		if(node->expr2)
+		{
+			/* Cannot use arguments on "System.Object"'s base initializer */
+			CCErrorOnLine(yygetfilename(node->expr2),
+						  yygetlinenum(node->expr2),
+						  "too many arguments to base type constructor");
+		}
+		return CSSemValueDefault;
+	}
+
+	/* Evaluate the arguments */
+	numArgs = CSEvalArguments(info, node->expr2, &(node->expr2), &args);
+	if(numArgs < 0)
+	{
+		return CSSemValueDefault;
+	}
+
+	/* Find the set of candidate methods */
+	ReduceMethodGroup(info, args, numArgs, &method);
+
+	/* If there are no candidates left, then bail out */
+	itemNum = 0;
+	itemInfo = CSGetGroupMember(CSSemGetGroup(method), itemNum);
+	if(!itemInfo && savedNode != NULL)
+	{
+		/* 
+		 * Note: if there are no candidates, and it is a member access
+		 * try checking if it is a static member invocation
+		 */
+		node->expr1 = (ILNode*)savedNode;
+		savedNode->expr1 = savedChild1;
+		savedNode->expr2 = savedChild2;
+
+		info->inSemStatic = -1;
+		method = ILNode_SemAnalysis(node->expr1,info, &(node->expr1)); 
+		info->inSemStatic = 0;
+
+		if(!CSSemIsMethodGroup(method))
+		{
+			CCErrorOnLine(yygetfilename(node->expr1), yygetlinenum(node->expr1),
+						  "called object is not a method or delegate");
+			return CSSemValueDefault;
+		}
+		if(CSSemGetGroup(method) == 0)
+		{
+			return CSSemValueDefault;
+		}
+		
+		/* Find the set of candidate methods */
+		ReduceMethodGroup(info, args, numArgs, &method);
+
+		itemInfo = CSGetGroupMember(CSSemGetGroup(method), 0);
+	}
+
+	/* if we get here *again* without an iteminfo,  we're actually
+		missing a method */
+
+	if(!itemInfo)
+	{
+		CSItemCandidateError((ILNode *)node, itemName, isCtor,
+						     CSSemGetGroup(method), args, numArgs);
+		CSEvalFreeArguments(args);
+		return CSSemValueDefault;
+	}
+
+	/* There are two or more candidates, then try to find the best one */
+	if(CSGetGroupMember(CSSemGetGroup(method), 1) != 0)
+	{
+		itemInfo = CSBestCandidate(info, CSSemGetGroup(method),
+								   args, numArgs);
+		if(!itemInfo)
+		{
+			CSItemCandidateError((ILNode *)node, itemName, isCtor,
+							     CSSemGetGroup(method), args, numArgs);
+			CSEvalFreeArguments(args);
+			return CSSemValueDefault;
+		}
+	}
+
+	/* Import the method into this image, and set it within the node */
+	methodInfo = (ILMethod *)itemInfo;
+	methodInfo = (ILMethod *)ILMemberImport
+						(info->image, (ILMember *)methodInfo);
+	node->methodInfo = methodInfo;
+	node->baseCall = CSSemIsBase(method);
+
+	/* Create a call site signature if we have vararg parameters */
+	if(numArgs > 0 && args[numArgs - 1].modifier == ILParamMod_arglist)
+	{
+		ILNode_Argument *arg = (ILNode_Argument *)(args[numArgs - 1].node);
+		ILNode_VarArgExpand *arglist =
+				((ILNode_VarArgExpand *)(arg->expression));
+		node->callSiteSig = MakeCallSiteSig
+			(info, ILMethod_Signature(methodInfo), arglist->varArgTypes);
+	}
+
+	/* Handle the "this" parameter if necessary */
+	if(!ILMethod_IsStatic(methodInfo))
+	{
+		node->thisExpr = node->expr1;
+		if(yyisa(node->thisExpr, ILNode_This) ||
+		   (yyisa(node->thisExpr, ILNode_MarkType) &&
+		    yyisa(((ILNode_MarkType *)(node->thisExpr))->expr, ILNode_This)))
+		{
+			caller = (ILNode_MethodDeclaration *)(info->currentMethod);
+			if(!caller || (caller->modifiers & CS_MODIFIER_STATIC) != 0)
+			{
+				/* Attempt to call an instance method using "this"
+				   from within a static method */
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "cannot access instance members in static methods");
+			}
+		}
+	}
+
+	/* Coerce the arguments and build the final argument list */
+	retType = CSItemCoerceArgs(info, ILToProgramItem(methodInfo),
+							   args, numArgs, &(node->expr2));
+	CSEvalFreeArguments(args);
+
+	/* The semantic value is the method's return type as an r-value */
+	if(retType == ILType_Void)
+	{
+		CSSemSetVoid(value);
+	}
+	else
+	{
+		CSSemSetRValue(value, retType);
+	}
+	return value;
+}
+
+%{
+
+/*
+ * Peform semantic analysis for the delegate creation variant
+ * of an object creation expression.
+ */
+CSSemValue DelegateCreationSem(ILGenInfo *info, ILNode *node,
+							   ILType *delegateType, ILNode *expr,
+							   ILNode **parent)
+{
+	CSSemValue result;
+	CSSemValue method;
+	unsigned long itemNum;
+	ILProgramItem *itemInfo;
+	ILMethod *firstMatch;
+	ILNode_MethodDeclaration *caller;
+	ILNode *newExpr;
+	ILNode *thisExpr;
+
+	/* The result is an r-value of type "delegateType" */
+	CSSemSetRValue(result, delegateType);
+
+	/* Perform semantic analysis on the expression to get the
+	   method group corresponding to the delegate instance */
+	newExpr = expr;
+	method = ILNode_SemAnalysis(expr, info, &newExpr);
+
+	if(CSSemIsValue(method) && ILTypeIsDelegate(CSSemGetType(method)))
+	{
+		/* This is a delegate variable: create a method group
+		   that contains the "Invoke" method as its only member */
+		void *group = CSCreateMethodGroup
+				(ILTypeGetDelegateMethod(CSSemGetType(method)));
+		CSSemSetMethodGroup(method, group);
+	}
+
+	if(!CSSemIsMethodGroup(method))
+	{
+		CCErrorOnLine(yygetfilename(expr), yygetlinenum(expr),
+		  			  "delegate expression does not refer to a method");
+		return result;
+	}
+
+	/* Find a match with the delegate's "Invoke" method */
+	itemNum = 0;
+	firstMatch = 0;
+	while((itemInfo = CSGetGroupMember(CSSemGetGroup(method), itemNum)) != 0)
+	{
+		if(ILTypeDelegateSignatureMatch(delegateType, itemInfo))
+		{
+			if(firstMatch)
+			{
+				/* We have two (or possibly more) matches for the delegate */
+				CCErrorOnLine(yygetfilename(expr), yygetlinenum(expr),
+	  			  "delegate expression supplies multiple candidates for `%s'",
+				  CSTypeToName(delegateType));
+				return result;
+			}
+			firstMatch = (ILMethod *)itemInfo;
+		}
+		++itemNum;
+	}
+	if(!firstMatch)
+	{
+		/* We weren't able to find a match for the delegate */
+		CCErrorOnLine(yygetfilename(expr), yygetlinenum(expr),
+  			  "delegate expression is not compatible with `%s'",
+			  CSTypeToName(delegateType));
+		return result;
+	}
+
+	/* Build the DelegateCreationExpression node */
+	if(ILMethod_IsStatic(firstMatch))
+	{
+		*parent = ILNode_DelegateCreationExpression_create
+			(ILType_ToClass(delegateType), 0, firstMatch);
+	}
+	else
+	{
+		if(yyisa(newExpr,ILNode_Argument))
+		{
+			thisExpr=((ILNode_Argument*)(newExpr))->expression;
+			if(yyisa(thisExpr, ILNode_This) ||
+		  	  (yyisa(thisExpr, ILNode_MarkType) &&
+			   yyisa(((ILNode_MarkType *)(thisExpr))->expr, ILNode_This)))
+			{
+				caller = (ILNode_MethodDeclaration *)(info->currentMethod);
+				if(!caller || 
+					(caller->modifiers & CS_MODIFIER_STATIC) != 0)
+				{
+					/* Attempt to call an instance method using "this"
+					   from within a static method */
+					CCErrorOnLine(yygetfilename(newExpr), yygetlinenum(newExpr),
+						  "cannot access instance members in static methods");
+				}
+			}
+		}
+		*parent = ILNode_DelegateCreationExpression_create
+			(ILType_ToClass(delegateType), newExpr, firstMatch);
+	}
+
+	/* Return the result to the caller */
+	return result;
+}
+
+%}
+
+/*
+ * Perform semantic analysis for an object creation expression.
+ */
+ILNode_SemAnalysis(ILNode_ObjectCreationExpression)
+{
+	CSSemValue value;
+	CSSemValue method;
+	ILProgramItem *itemInfo;
+	ILMethod *methodInfo;
+	ILType *objectType;
+	ILType *mainType;
+	ILClass *objectClass;
+	CSEvalArg *args;
+	int numArgs;
+	unsigned long itemNum;
+	int candidateForm;
+
+	/* Perform semantic analysis on the type */
+	objectType = CSSemTypeLiteral(node->type, info, &(node->type));
+
+	/* Set up the default return value */
+	CSSemSetRValue(value, objectType);
+
+	/* Get the main type, after stripping "with" parameters */
+	if(ILType_IsWith(objectType))
+	{
+		mainType = ILTypeGetWithMain(objectType);
+	}
+	else
+	{
+		mainType = objectType;
+	}
+
+	/* The type must be a delegate, a non-abstract class, or a value type */
+	if(ILTypeIsDelegate(objectType))
+	{
+		/* Delegate creation is not supported with Java output */
+		if(info->outputIsJava)
+		{
+			CCErrorOnLine(yygetfilename(node->type), yygetlinenum(node->type),
+			  			  "delegate creation disallowed when compiling to "
+						  "Java bytecode");
+			return value;
+		}
+
+		/* Delegate creation expressions must have a single argument */
+		if(!(node->argList) || yyisa(node->argList, ILNode_ArgList))
+		{
+			CCErrorOnLine(yygetfilename(node->type), yygetlinenum(node->type),
+			  			  "invalid delegate creation expression for `%s'",
+			  			  CSTypeToName(objectType));
+			return value;
+		}
+
+		/* Perform semantic analysis on the delegate creation */
+		return DelegateCreationSem(info, (ILNode *)node, objectType,
+								   node->argList, parent);
+	}
+	else if(ILType_IsClass(mainType))
+	{
+		objectClass = ILClassResolve(ILType_ToClass(mainType));
+		if(ILClass_IsInterface(objectClass))
+		{
+			CCErrorOnLine(yygetfilename(node->type), yygetlinenum(node->type),
+			  "cannot instantiate interface `%s' with the `new' operator",
+			  CSTypeToName(objectType));
+			return value;
+		}
+		else if(ILClass_IsAbstract(objectClass))
+		{
+			CCErrorOnLine(yygetfilename(node->type), yygetlinenum(node->type),
+			  "cannot instantiate abstract class `%s' with the `new' operator",
+			  CSTypeToName(objectType));
+			return value;
+		}
+	}
+	else if(ILTypeIsValue(mainType))
+	{
+		/* Check for the default constructor case */
+		if(!(node->argList))
+		{
+			/* Replace this node with a default constructor call */
+			*parent = ILNode_DefaultConstructor_create(0, objectType, 0);
+			yysetfilename(*parent, yygetfilename(node));
+			yysetlinenum(*parent, yygetlinenum(node));
+			return value;
+		}
+	}
+	else if(ILType_IsTypeParameter(objectType) ||
+			ILType_IsMethodParameter(objectType))
+	{
+		/* Can only use zero-argument constructors with generic parameters */
+		if(node->argList)
+		{
+			CCErrorOnLine(yygetfilename(node->type), yygetlinenum(node->type),
+				  		  "`%s' cannot be constructed with arguments",
+						  CSTypeToName(objectType));
+			return value;
+		}
+		*parent = ILNode_DefaultConstructor_create(0, objectType, 1);
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		return value;
+	}
+	else
+	{
+		CCErrorOnLine(yygetfilename(node->type), yygetlinenum(node->type),
+			  		  "`%s' is not a class or value type",
+					  CSTypeToName(objectType));
+		return value;
+	}
+
+	/* Get the list of accessible constructors for the type */
+	method = CSResolveConstructor(info, node->type, objectType);
+	if(!CSSemIsMethodGroup(method))
+	{
+		CCErrorOnLine(yygetfilename(node->type), yygetlinenum(node->type),
+					  "`%s' does not have an accessible constructor",
+					  CSTypeToName(objectType));
+		return value;
+	}
+
+	/* Evaluate the arguments */
+	numArgs = CSEvalArguments(info, node->argList, &(node->argList), &args);
+	if(numArgs < 0)
+	{
+		return value;
+	}
+
+	/* Find the set of candidate methods */
+	itemNum = 0;
+	while((itemInfo = CSGetGroupMember(CSSemGetGroup(method), itemNum)) != 0)
+	{
+		candidateForm = CSItemIsCandidate(info, itemInfo, args, numArgs);
+		if(candidateForm)
+		{
+			CSSetGroupMemberForm(CSSemGetGroup(method), itemNum,
+								 candidateForm);
+			++itemNum;
+		}
+		else
+		{
+			CSSemModifyGroup(method, CSRemoveGroupMember
+								(CSSemGetGroup(method), itemNum));
+		}
+	}
+
+	/* If there are no candidates left, then bail out */
+	itemNum = 0;
+	itemInfo = CSGetGroupMember(CSSemGetGroup(method), itemNum);
+	if(!itemInfo)
+	{
+		CSItemCandidateError((ILNode *)node, 0, 1,
+						     CSSemGetGroup(method), args, numArgs);
+		CSEvalFreeArguments(args);
+		return value;
+	}
+
+	/* There are two or more candidates, then try to find the best one */
+	if(CSGetGroupMember(CSSemGetGroup(method), 1) != 0)
+	{
+		itemInfo = CSBestCandidate(info, CSSemGetGroup(method),
+								   args, numArgs);
+		if(!itemInfo)
+		{
+			CSItemCandidateError((ILNode *)node, 0, 1,
+							     CSSemGetGroup(method), args, numArgs);
+			CSEvalFreeArguments(args);
+			return value;
+		}
+	}
+
+	/* Import the method into this image, and set it within the node */
+	methodInfo = (ILMethod *)itemInfo;
+	methodInfo = (ILMethod *)ILMemberImport
+						(info->image, (ILMember *)methodInfo);
+	node->methodInfo = methodInfo;
+
+	/* Create a call site signature if we have vararg parameters */
+	if(numArgs > 0 && args[numArgs - 1].modifier == ILParamMod_arglist)
+	{
+		ILNode_Argument *arg = (ILNode_Argument *)(args[numArgs - 1].node);
+		ILNode_VarArgExpand *arglist =
+				((ILNode_VarArgExpand *)(arg->expression));
+		node->callSiteSig = MakeCallSiteSig
+			(info, ILMethod_Signature(methodInfo), arglist->varArgTypes);
+	}
+
+	/* Coerce the arguments and build the final argument list */
+	CSItemCoerceArgs(info, ILToProgramItem(methodInfo),
+					 args, numArgs, &(node->argList));
+	CSEvalFreeArguments(args);
+
+	/* Return the final semantic value */
+	return value;
+}
+
+/*
+ * Perform semantic analysis for a delegate creation expression.
+ */
+ILNode_SemAnalysis(ILNode_DelegateCreationExpression)
+{
+	/* This is a dummy: it won't be called in practice */
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for a default constructor call.
+ */
+ILNode_SemAnalysis(ILNode_DefaultConstructor)
+{
+	ILEvalValue evalValue;
+	CSSemValue value;
+
+	/* Evaluate the type sub-expression */
+	node->type = CSSemType(node->expr, info, &(node->expr));
+
+	/* Perform constant evaluation */
+	if(ILTypeIsReference(node->type))
+	{
+		evalValue.valueType = ILMachineType_ObjectRef;
+		evalValue.un.oValue = 0;
+		CSSemSetConstant(value, node->type, evalValue);
+	}
+	else
+	{
+		evalValue.valueType = ILTypeToMachineType(node->type);
+		switch(evalValue.valueType)
+		{
+			case ILMachineType_Boolean:
+			case ILMachineType_Int8:
+			case ILMachineType_UInt8:
+			case ILMachineType_Int16:
+			case ILMachineType_UInt16:
+			case ILMachineType_Char:
+			case ILMachineType_Int32:
+			case ILMachineType_UInt32:
+			{
+				evalValue.un.i4Value = 0;
+			}
+			break;
+	
+			case ILMachineType_Int64:
+			case ILMachineType_UInt64:
+			{
+				evalValue.un.i8Value = 0;
+			}
+			break;
+	
+			case ILMachineType_Float32:
+			{
+				evalValue.un.r4Value = (ILFloat)0.0;
+			}
+			break;
+	
+			case ILMachineType_Float64:
+			{
+				evalValue.un.r8Value = (ILDouble)0.0;
+			}
+			break;
+	
+			case ILMachineType_Decimal:
+			{
+				ILDecimalFromInt32(&(evalValue.un.decValue), 0);
+			}
+			break;
+	
+			default:
+			{
+				CSSemSetRValue(value, node->type);
+				return value;
+			}
+			/* Not reached */
+		}
+		CSSemSetConstant(value, node->type, evalValue);
+	}
+
+	/* Return the final semantic value to the caller */
+	return value;
+}
+
+/*
+ * Perform semantic analysis for a reference to a base constructor.
+ */
+ILNode_SemAnalysis(ILNode_BaseInit)
+{
+	CSSemValue value;
+	ILClass *classInfo;
+	ILClass *parentInfo;
+
+	/* If we are compiling "System.Object", then we need to
+	   bail out with an empty method group.  This tells
+	   "InvocationExpression" to ignore the call */
+	classInfo = ((ILNode_ClassDefn *)(info->currentClass))->classInfo;
+	parentInfo = (classInfo ? ILClass_ParentClass(classInfo) : 0);
+	if(!parentInfo)
+	{
+		CSSemSetMethodGroup(value, 0);
+		return value;
+	}
+
+	/* If the current class is a value type, then bail out.
+	   We don't want to call the base class constructor
+	   in this case */
+	if(ILClassIsValueType(classInfo))
+	{
+		CSSemSetMethodGroup(value, 0);
+		return value;
+	}
+
+	/* Resolve the constructor within the base class */
+	CSSemSetRValue(value, ILType_FromClass(parentInfo));
+	value = CSResolveConstructor(info, (ILNode *)node, CSSemGetType(value));
+
+	/* Report an error if we could not find any accessible constructors */
+	if(!CSSemIsMethodGroup(value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "no accessible base class constructors");
+	}
+
+	/* Replace the current expression with "this" */
+	*parent = ILNode_This_create();
+	CSSemSetBase(value);
+	return value;
+}
+
+/*
+ * Perform semantic analysis for a reference to a "this" constructor.
+ */
+ILNode_SemAnalysis(ILNode_ThisInit)
+{
+	CSSemValue value;
+	ILClass *classInfo;
+
+	/* Resolve the constructor within the current class */
+	classInfo = ((ILNode_ClassDefn *)(info->currentClass))->classInfo;
+	CSSemSetRValue(value, ILType_FromClass(classInfo));
+	value = CSResolveConstructor(info, (ILNode *)node, CSSemGetType(value));
+
+	/* Replace the current expression with "this" */
+	*parent = ILNode_This_create();
+	CSSemSetBase(value);
+	return value;
+}
+
+/*
+ * Perform semantic analysis for a reference to a non-static initializer.
+ */
+ILNode_SemAnalysis(ILNode_NonStaticInit)
+{
+	/* Non-static initializer calls are always "void" statements */
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for argument array nodes.
+ */
+ILNode_SemAnalysis(ILNode_ArgArray)
+{
+	/* This will never be called */
+	return CSSemValueDefault;
+}
+
+%{
+
+/*
+ * Count the number of arguments in an ArgList.
+ */
+static unsigned CountArgList(ILNode *argList)
+{
+	unsigned count;
+	if(!argList)
+	{
+		return 0;
+	}
+	count = 1;
+	while(yyisa(argList, ILNode_ArgList))
+	{
+		++count;
+		argList = ((ILNode_ArgList *)argList)->expr1;
+	}
+	return count;
+}
+
+/*
+ * Get the parameter modifier for an argument.
+ */
+static ILParameterModifier GetParamModForArg(ILNode *arg)
+{
+	if(yyisa(arg, ILNode_Argument))
+	{
+		return ((ILNode_Argument *)arg)->modifier;
+	}
+	else
+	{
+		return ILParamMod_empty;
+	}
+}
+
+/*
+ * Perform semantic analysis on a vararg parameter list.
+ * Returns zero if an error occurred.
+ */
+static int VarArgElemSem(ILNode *node, ILGenInfo *info, ILType *signature)
+{
+	if(!node)
+	{
+		/* Empty vararg parameter list */
+		return 1;
+	}
+	else if(yyisa(node, ILNode_ArgList))
+	{
+		return VarArgElemSem(((ILNode_ArgList *)node)->expr1,
+							 info, signature) &		/* Deliberately not '&&' */
+			   VarArgElemSem(((ILNode_ArgList *)node)->expr2,
+			   				 info, signature);
+	}
+	else
+	{
+		ILNode_Argument *arg = (ILNode_Argument *)node;
+		CSSemValue value;
+		ILType *argType;
+		if(arg->modifier == ILParamMod_empty)
+		{
+			if(!CSSemExpectValue(arg->expression, info, &(arg->expression),
+								 &value))
+			{
+				CCErrorOnLine(yygetfilename(arg), yygetlinenum(arg),
+							  "invalid argument used with `__arglist'");
+				return 0;
+			}
+			argType = CSSemGetType(value);
+			if(argType == ILType_Null)
+			{
+				/* Replace the null type with "System.Object" */
+				argType = ILFindSystemType(info, "Object");
+			}
+			if(!ILTypeAddParam(info->context, signature, argType))
+			{
+				CCOutOfMemory();
+			}
+			return 1;
+		}
+		else
+		{
+			CCErrorOnLine(yygetfilename(arg), yygetlinenum(arg),
+						  "cannot use `%s' arguments with `__arglist'",
+						  ((arg->modifier == ILParamMod_ref) ? "ref" :
+						  ((arg->modifier == ILParamMod_out) ? "out"
+						  		: "__arglist")));
+			return 0;
+		}
+	}
+}
+
+/*
+ * Perform semantic analysis on a list of vararg parameters.
+ * Returns zero if an error occurred.
+ */
+static int VarArgSemAnalysis(ILNode_VarArgExpand *node, ILGenInfo *info)
+{
+	/* Create a fake method signature to hold the argument types */
+	node->varArgTypes = ILTypeCreateMethod(info->context, ILType_Void);
+	if(!(node->varArgTypes))
+	{
+		CCOutOfMemory();
+	}
+
+	/* Scan the argument list, performing semantic analysis on each element */
+	return VarArgElemSem(node->expr, info, node->varArgTypes);
+}
+
+int CSEvalArguments(ILGenInfo *info, ILNode *argList,
+					ILNode **argListParent, CSEvalArg **args)
+{
+	int argCount;
+	int argNum;
+	CSEvalArg *argArray;
+	ILNode *tempList;
+	ILNode **tempParent;
+	int tempNum;
+	int haveErrors;
+	CSSemValue value;
+
+	/* Get the number of arguments that have been supplied */
+	argCount = CountArgList(argList);
+
+	/* Bail out if there are no arguments */
+	if(!argCount)
+	{
+		*args = 0;
+		return 0;
+	}
+
+	/* Allocate an argument array */
+	argArray = (CSEvalArg *)ILMalloc(sizeof(CSEvalArg) * argCount);
+	if(!argArray)
+	{
+		CCOutOfMemory();
+	}
+
+	/* Perform semantic analysis on the arguments and fill the array */
+	haveErrors = 0;
+	for(argNum = 0; argNum < argCount; ++argNum)
+	{
+		/* Find the argument node and its parent */
+		tempList = argList;
+		tempParent = argListParent;
+		tempNum = argNum + 1;
+		while(tempNum < argCount)
+		{
+			tempParent = &(((ILNode_ArgList *)tempList)->expr1);
+			tempList = ((ILNode_ArgList *)tempList)->expr1;
+			++tempNum;
+		}
+		if(yyisa(tempList, ILNode_ArgList))
+		{
+			tempParent = &(((ILNode_ArgList *)tempList)->expr2);
+			tempList = ((ILNode_ArgList *)tempList)->expr2;
+		}
+
+		/* Populate the argument array element */
+		if(!yyisa(tempList, ILNode_Argument) ||
+		   !yyisa(((ILNode_Argument *)tempList)->expression,
+				  ILNode_VarArgExpand))
+		{
+			/* Ordinary argument */
+			value = ILNode_SemAnalysis(tempList, info, tempParent);
+			argArray[argNum].node = *tempParent;
+			argArray[argNum].parent = tempParent;
+			if(CSSemIsValue(value))
+			{
+				argArray[argNum].modifier = GetParamModForArg(tempList);
+				argArray[argNum].type = CSSemGetType(value);
+			}
+#if IL_VERSION_MAJOR > 1
+			else if(CSSemIsMethodGroup(value))
+			{
+				/*
+				 * This is an ugly hack to get a method group to the
+				 * eval value. This should be fixed later.
+				 */
+				argArray[argNum].modifier = ILParamMod_methodgroup;
+				argArray[argNum].type = (ILType *)CSSemGetGroup(value);
+			}
+#endif /* IL_VERSION_MAJOR > 1 */
+			else
+			{
+				argArray[argNum].type = ILType_Void;
+				CCErrorOnLine(yygetfilename(tempList),
+							  yygetlinenum(tempList),
+							  "invalid value for argument %u", argNum + 1);
+				haveErrors = 1;
+			}
+		}
+		else
+		{
+			/* Argument that has the form "__arglist(x, y, z, ...)" */
+			argArray[argNum].node = *tempParent;
+			argArray[argNum].parent = tempParent;
+			argArray[argNum].modifier = ILParamMod_arglist;
+
+			/* "__arglist" parameters must have the "empty" modifier */
+			if(((ILNode_Argument *)tempList)->modifier != ILParamMod_empty)
+			{
+				CCErrorOnLine(yygetfilename(tempList), yygetlinenum(tempList),
+					  "cannot use `ref' or `out' with `__arglist' arguments");
+				haveErrors = 1;
+			}
+
+			/* "__arglist" must be the last argument */
+			if((argNum + 1) != argCount)
+			{
+				CCErrorOnLine(yygetfilename(tempList), yygetlinenum(tempList),
+					  		  "`__arglist' must be the last argument");
+				haveErrors = 1;
+			}
+
+			/* Perform semantic analysis on the "__arglist" values */
+			if(!VarArgSemAnalysis
+					(((ILNode_VarArgExpand *)
+						(((ILNode_Argument *)tempList)->expression)), info))
+			{
+				haveErrors = 1;
+			}
+		}
+	}
+
+	/* Report either an error, or the argument count */
+	if(haveErrors)
+	{
+		ILFree(argArray);
+		*args = 0;
+		return -1;
+	}
+	else
+	{
+		*args = argArray;
+		return argCount;
+	}
+}
+
+void CSEvalFreeArguments(CSEvalArg *args)
+{
+	if(args)
+	{
+		ILFree(args);
+	}
+}
+
+/*
+ * Get the "Invoke" method associated with a delegate class.
+ */
+static ILMethod *GetDelegateInvoke(ILClass *info)
+{
+	return ILTypeGetDelegateMethod(ILType_FromClass(info));
+}
+
+/*
+ * Get the type and modifier information associated with
+ * an item parameter.  The first parameter is 0.  Returns
+ * ILType_Invalid if the parameter index is invalid.
+ */
+static ILType *GetItemParamType(ILProgramItem *item, ILType *signature,
+								int paramNum, ILParameterModifier *paramMod)
+{
+	int numParams = ILGenNumUsableParams(signature);
+	int firstParam;
+	ILType *paramType;
+	ILMethod *method;
+	ILClass *classInfo;
+	ILProperty *property;
+
+	/* If we have an "explicit this" method, then we need to
+	   adjust for the first parameter, which is always "this" */
+	if((ILType_CallConv(signature) & IL_META_CALLCONV_HASTHIS) != 0 &&
+	   (ILType_CallConv(signature) & IL_META_CALLCONV_EXPLICITTHIS) != 0 &&
+	   numParams > 0)
+	{
+		firstParam = 2;
+	}
+	else
+	{
+		firstParam = 1;
+	}
+
+	/* Bail out if the parameter number is out of range */
+	if(paramNum > (numParams - firstParam))
+	{
+		return ILType_Invalid;
+	}
+
+	/* Get the parameter type information and return it */
+	if((method = ILProgramItemToMethod(item)) != 0)
+	{
+		*paramMod = ILGenGetParamInfo(method, signature, paramNum + firstParam,
+									  &paramType);
+	}
+	else if((classInfo = ILProgramItemToClass(item)) != 0)
+	{
+		/* Get the delegate method.  If there is none, then use
+		   the information in the signature */
+		method = GetDelegateInvoke(classInfo);
+		*paramMod = ILGenGetParamInfo
+				(method, signature, paramNum + firstParam, &paramType);
+	}
+	else if((property=ILProgramItemToProperty(item))!=0)
+	{
+		/* To handle the rare case of a variable params indexer
+		 * NOTE: get_ and set_ methods have the same sig , right ? */	
+		 if((method=ILProperty_Getter(property))!=0)
+		 {
+			*paramMod = ILGenGetParamInfo(method, signature, 
+										paramNum + firstParam,&paramType);
+		 }
+		 else if((method=ILProperty_Setter(property))!=0)
+		 {
+			*paramMod = ILGenGetParamInfo(method, signature, 
+										paramNum + firstParam,&paramType);
+		 }
+		 else /* just for that rare case */
+		 {
+			*paramMod = ILGenGetParamInfo
+						(0, signature, paramNum + firstParam, &paramType);
+		 }
+	}
+	else
+	{
+		/* Probably an indexer property: use the signature */
+		*paramMod = ILGenGetParamInfo
+				(0, signature, paramNum + firstParam, &paramType);
+	}
+	return paramType;
+}
+
+/*
+ * Get the type information associated with an item parameter,
+ * given that its expansion form is known.
+ */
+static ILType *GetItemExpandedType(ILProgramItem *item, ILType *signature,
+								   int form, int paramNum,
+								   ILParameterModifier *paramMod)
+{
+	ILType *paramType;
+	paramType = GetItemParamType(item, signature, paramNum, paramMod);
+	if(paramType == ILType_Invalid)
+	{
+		return ILType_Invalid;
+	}
+	else if(*paramMod == ILParamMod_params)
+	{
+		if(form == 2)
+		{
+			/* We are using the "params" array in its expanded form */
+			return paramType;
+		}
+		else
+		{
+			/* We are using the "params" array in its array form */
+			return ILTypeGetParam(signature, ILTypeNumParams(signature));
+		}
+	}
+	return paramType;
+}
+
+/*
+ * Get the element type of a single-dimensional array,
+ * or return ILType_Invalid if not such as array.
+ */
+static ILType *GetArrayElemType(ILType *type)
+{
+	if(type != 0 && ILType_IsComplex(type) &&
+	   ILType_Kind(type) == IL_TYPE_COMPLEX_ARRAY)
+	{
+		return ILType_ElemType(type);
+	}
+	else
+	{
+		return ILType_Invalid;
+	}
+}
+
+/*
+ * Get the signature of a program item (method, property, or delegate).
+ */
+static ILType *GetItemSignature(ILProgramItem *item)
+{
+	ILMethod *method;
+	ILProperty *property;
+	ILClass *classInfo;
+	ILEvent *event;
+
+	/* Determine what kind of item we are dealing with */
+	if((method = ILProgramItemToMethod(item)) != 0)
+	{
+		return ILMethod_Signature(method);
+	}
+	else if((property = ILProgramItemToProperty(item)) != 0)
+	{
+		return ILProperty_Signature(property);
+	}
+	else if((classInfo = ILProgramItemToClass(item)) != 0)
+	{
+		/* Look for the "Invoke" method within the delegate */
+		method = GetDelegateInvoke(classInfo);
+		if(method)
+		{
+			return ILMethod_Signature(method);
+		}
+	}
+	else if((event = ILProgramItemToEvent(item)) != 0)
+	{
+		return ILEvent_Type(event);
+	}
+	
+	/* If we get here, then we do not know how to obtain the signature */
+	return 0;
+}
+
+int CSItemIsCandidate(ILGenInfo *info, ILProgramItem *item,
+					  CSEvalArg *args, int numArgs)
+{
+	ILType *signature = GetItemSignature(item);
+	int argNum, paramNum;
+	ILParameterModifier paramMod;
+	ILType *paramType;
+	ILType *elemType;
+	int matchParams;
+
+	/* If the item does not have a signature, then bail out */
+	if(!signature)
+	{
+		return 0;
+	}
+
+	/* Scan through the parameters looking for a match */
+	paramNum = 0;
+	matchParams = 0;
+	for(argNum = 0; argNum < numArgs; ++argNum)
+	{
+		paramType = GetItemParamType(item, signature, paramNum, &paramMod);
+		if(paramType == ILType_Invalid)
+		{
+			/* Too many arguments were supplied */
+			return 0;
+		}
+		else if(paramMod == ILParamMod_params)
+		{
+			if(args[argNum].modifier != ILParamMod_empty)
+			{
+				return 0;
+			}
+			if(matchParams)
+			{
+				/* We already started matching as an element type,
+				   so we must keep matching as an element type */
+				if(!ILCanCoerce(info, args[argNum].type, paramType,1))
+				{
+					return 0;
+				}
+			}
+			else
+			{
+				/* The match can either be as an array, or as an element type */			
+				elemType = GetArrayElemType(args[argNum].type);
+				if((argNum == (numArgs-1)) && elemType != ILType_Invalid &&
+				   ILCanCoerce(info, elemType, paramType,1))
+				{
+					/* Matched as an array */
+					++paramNum;
+				}
+				else if(!ILCanCoerce(info, args[argNum].type, paramType,1))
+				{
+					if(args[argNum].type==ILType_Null)
+					{
+						/* Matched as a null array */
+						++paramNum;
+					}
+					else
+					{
+						/* Could not match as an array or as an element */
+						return 0;
+					}
+				}
+				else
+				{
+					/* Match everything else as an element */
+					matchParams = 1;
+				}
+			}
+		}
+		else if(paramMod != args[argNum].modifier)
+		{
+#if IL_VERSION_MAJOR > 1
+			if((args[argNum].modifier == ILParamMod_methodgroup) &&
+			   (paramMod == ILParamMod_empty))
+			{
+				/* Check if the method should be casted to a delegate */
+				if(!CSCastMethod(info, args[argNum].node, args[argNum].parent,
+								 (void *)(args[argNum].type), paramType, 0))
+				{
+					return 0;
+				}
+				++paramNum;
+			}
+			else
+#endif /* IL_VERSION_MAJOR > 1 */
+			{
+				/* Incorrect modifiers */
+				return 0;
+			}
+		}
+		else if(paramMod == ILParamMod_empty)
+		{
+			/* Match anything that can coerce to the parameter type */
+			if (!ILCanCoerceNode(info, args[argNum].node, 
+									args[argNum].type, paramType,1))
+			{
+				return 0;
+			}
+			++paramNum;
+		}
+		else if(paramMod != ILParamMod_arglist)
+		{
+			/* The type match must be exact for "ref" and "out" parameters */
+			if(!ILTypeIdentical(args[argNum].type, paramType))
+			{
+				return 0;
+			}
+			++paramNum;
+		}
+		else
+		{
+			/* Variable argument lists match as-is */
+			++paramNum;
+		}
+	}
+
+	/* Get the next parameter type, which must either be
+	   a "params" array, or the end of the parameter list */
+	paramType = GetItemParamType(item, signature, paramNum, &paramMod);
+	if(paramType == ILType_Invalid)
+	{
+		/* The candidate was matched in its normal form */
+		return 1;
+	}
+	else if(paramMod == ILParamMod_params)
+	{
+		/* The candidate was matched in its expanded form */
+		return 2;
+	}
+	else
+	{
+		/* The candidate did not match */
+		return 0;
+	}
+}
+
+/*
+ * Determine which of two items is better than the other one.
+ * Returns IL_BETTER_T1 if "item1" is better, or IL_BETTER_T2
+ * if "item2" is better, or IL_BETTER_NEITHER if neither is better.
+ */
+static int BetterItem(ILGenInfo *info,
+					  ILProgramItem *item1, int form1,
+					  ILProgramItem *item2, int form2,
+					  CSEvalArg *args, int numArgs)
+{
+	ILType *signature1 = GetItemSignature(item1);
+	ILType *signature2 = GetItemSignature(item2);
+	int argNum;
+	int paramNum1;
+	int paramNum2;
+	ILParameterModifier paramMod1;
+	ILParameterModifier paramMod2;
+	ILType *type1;
+	ILType *type2;
+	ILType *atype;
+	int better, betterTest;
+
+	/* Compare the argument types */
+	paramNum1 = 0;
+	paramNum2 = 0;
+	better = IL_BETTER_NEITHER;
+	for(argNum = 0; argNum < numArgs; ++argNum)
+	{
+		/* Get the types of the two parameters and the argument */
+		type1 = GetItemExpandedType(item1, signature1,
+									form1, paramNum1++, &paramMod1);
+		type2 = GetItemExpandedType(item2, signature2,
+									form2, paramNum2++, &paramMod2);
+		atype = args[argNum].type;
+
+		/* Skip the argument if "out", "ref", or "arglist", because such
+		   arguments must always be identical, so neither can be better */
+		if(paramMod1 == ILParamMod_out || paramMod1 == ILParamMod_ref ||
+		   paramMod1 == ILParamMod_arglist ||
+		   paramMod2 == ILParamMod_out || paramMod2 == ILParamMod_ref ||
+		   paramMod2 == ILParamMod_arglist)
+		{
+			continue;
+		}
+
+		/* Determine which is the better coercion */
+		betterTest = ILBetterConversion(info, args[argNum].type, type1, type2);
+		if(betterTest == IL_BETTER_T1)
+		{
+			if(better == IL_BETTER_T2)
+			{
+				/* The first item is better in this parameter,
+				   but worse in others */
+				better = -1;
+			}
+			else if(better != -1)
+			{
+				/* The first item is better so far */
+				better = IL_BETTER_T1;
+			}
+		}
+		else if(betterTest == IL_BETTER_T2)
+		{
+			if(better == IL_BETTER_T1)
+			{
+				/* The second item is better in this parameter,
+				   but worse in others */
+				better = -1;
+			}
+			else if(better != -1)
+			{
+				/* The second item is better so far */
+				better = IL_BETTER_T2;
+			}
+		}
+
+		/* Back up and revisit "params" parameters within expanded forms */
+		if(paramMod1 == ILParamMod_params)
+		{
+			--paramNum1;
+		}
+		if(paramMod2 == ILParamMod_params)
+		{
+			--paramNum2;
+		}
+	}
+
+	/* Return the result to the caller */
+	if(better != -1)
+	{
+		return better;
+	}
+	else
+	{
+		return IL_BETTER_NEITHER;
+	}
+}
+
+ILProgramItem *CSBestCandidate(ILGenInfo *info, void *group,
+						       CSEvalArg *args, int numArgs)
+{
+	unsigned long itemNum = 1;
+	ILProgramItem *bestItem = CSGetGroupMember(group, 0);
+	ILProgramItem *testItem;
+	int better;
+	int form1 = CSGetGroupMemberForm(group, 0);
+	int form2;
+	int sawBetter = 0;
+	while((testItem = CSGetGroupMember(group, itemNum)) != 0)
+	{
+		form2 = CSGetGroupMemberForm(group, itemNum);
+		better = BetterItem(info, bestItem, form1, testItem,
+							form2, args, numArgs);
+		if(better == IL_BETTER_T1)
+		{
+			sawBetter = 1;
+		}
+		else if(better == IL_BETTER_T2)
+		{
+			bestItem = testItem;
+			sawBetter = 1;
+		}
+		else if(better == IL_BETTER_NEITHER && (form1 == 2 && form2 != 2))
+		{
+			/* We've found an item that is just as applicable as
+			   a previous one.  However, the previous one involved
+			   "params" and this one doesn't.  So use this one */
+			bestItem = testItem;
+			sawBetter = 1;
+		}
+		else if(better == IL_BETTER_NEITHER && (form1 != 2 && form2 == 2))
+		{
+			/* We've found an item that is just as applicable as
+			   a previous one.  However, this one involved "params"
+			   and the previous one didn't.  So use the previous one */
+			sawBetter = 1;
+		}
+		++itemNum;
+	}
+	if(sawBetter)
+	{
+		return bestItem;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+ILType *CSItemCoerceArgs(ILGenInfo *info, ILProgramItem *item,
+						 CSEvalArg *args, int numArgs,
+						 ILNode **argListParent)
+{
+	ILType *signature = GetItemSignature(item);
+	int argNum, argNum2, paramNum;
+	ILParameterModifier paramMod;
+	ILType *paramType;
+	ILType *elemType;
+	ILNode *argList;
+	ILNode *argArray;
+
+	/* Coerce the fixed parameters */
+	paramNum = 0;
+	for(argNum = 0; argNum < numArgs; ++argNum)
+	{
+		paramType = GetItemParamType(item, signature, paramNum, &paramMod);
+		if(paramMod == ILParamMod_params)
+		{
+			break;
+		}
+		else if(paramMod != ILParamMod_ref && paramMod != ILParamMod_out &&
+		        paramMod != ILParamMod_arglist)
+		{
+			ILCoerce(info, args[argNum].node,
+					 args[argNum].parent, args[argNum].type, paramType,0);
+		}
+		++paramNum;
+	}
+
+	/* Coerce the remaining "params" parameters */
+	paramType = GetItemParamType(item, signature, paramNum, &paramMod);
+	if(paramType != ILType_Invalid && paramMod == ILParamMod_params)
+	{
+		/* Determine how to repack the arguments */
+		if(argNum < numArgs)
+		{
+			elemType = GetArrayElemType(args[argNum].type);
+			if((argNum == (numArgs-1)) && elemType != ILType_Invalid &&
+			   ILCanCoerce(info, elemType, paramType,1))
+			{
+				/* Pass the argument as an array */
+				paramType = ILTypeGetParam
+					(signature, ILTypeNumParams(signature));
+				ILCoerce(info, args[argNum].node,
+						 args[argNum].parent, args[argNum].type, paramType,0);
+				argArray = 0;
+			}
+			/* Note: ILCanCoerce can be used to handle stuff intelligently
+			   here but that's not what MS CSC does */
+			else if(args[argNum].type==ILType_Null) 
+			{
+				/* Matched as a null array */
+				argArray = 0;
+			}
+			else
+			{
+				/* Coerce the remaining arguments to the element type */
+				for(argNum2 = argNum; argNum2 < numArgs; ++argNum2)
+				{
+					ILCoerce(info, args[argNum2].node,
+							 args[argNum2].parent, args[argNum2].type,
+							 paramType,0);
+				}
+
+				/* Build an array that contains the remaining arguments */
+				argArray = 0;
+				for(argNum2 = argNum; argNum2 < numArgs; ++argNum2)
+				{
+					if(argArray)
+					{
+						argArray = ILNode_ArgList_create
+										(argArray, *(args[argNum2].parent));
+					}
+					else
+					{
+						argArray = *(args[argNum2].parent);
+					}
+				}
+				argArray = ILNode_ArgArray_create
+								(paramType, numArgs - argNum, argArray);
+			}
+		}
+		else
+		{
+			/* No extra arguments, so create an empty array */
+			argArray = ILNode_ArgArray_create(paramType, 0, 0);
+		}
+
+		/* Build a new argument list if necessary */
+		if(argArray)
+		{
+			argList = 0;
+			for(argNum2 = 0; argNum2 < argNum; ++argNum2)
+			{
+				if(argList)
+				{
+					argList = ILNode_ArgList_create
+									(argList, *(args[argNum2].parent));
+				}
+				else
+				{
+					argList = *(args[argNum2].parent);
+				}
+			}
+			if(argList)
+			{
+				argList = ILNode_ArgList_create(argList, argArray);
+			}
+			else
+			{
+				argList = argArray;
+			}
+			*argListParent = argList;
+		}
+	}
+
+	/* Return the item's return type to the caller */
+	return ILTypeGetReturn(signature);
+}
+
+const char *CSItemToName(ILProgramItem *item)
+{
+	ILType *signature = GetItemSignature(item);
+	const char *name;
+	ILIntString str;
+	ILType *type;
+	ILParameterModifier paramMod;
+	unsigned numParams;
+	unsigned param;
+	int kind;
+	ILMethod *method;
+	ILProperty *property;
+	ILClass *classInfo;
+	ILClass *owner;
+	ILEvent *event;
+
+	/* Get the name of the item, and find an underlying method */
+	if((method = ILProgramItemToMethod(item)) != 0)
+	{
+		name = ILMethod_Name(method);
+		kind = IL_META_MEMBERKIND_METHOD;
+		owner = ILMethod_Owner(method);
+	}
+	else if((property = ILProgramItemToProperty(item)) != 0)
+	{
+		name = ILProperty_Name(property);
+		kind = IL_META_MEMBERKIND_PROPERTY;
+		method = ILProperty_Getter(property);
+		if(!method)
+		{
+			method = ILProperty_Setter(property);
+		}
+		owner = ILProperty_Owner(property);
+	}
+	else if((classInfo = ILProgramItemToClass(item)) != 0)
+	{
+		name = ILClass_Name(classInfo);
+		kind = 0;
+		method = GetDelegateInvoke(classInfo);
+		owner = classInfo;
+	}
+	else if((event = ILProgramItemToEvent(item)) != 0)
+	{
+		name = ILEvent_Name(event);
+		kind = IL_META_MEMBERKIND_EVENT;
+		method = 0;
+		owner = ILEvent_Owner(event);
+	}
+	else
+	{
+		name = "unknown";
+		kind = IL_META_MEMBERKIND_METHOD;
+		method = 0;
+		owner = 0;
+	}
+
+	/* Put "static" or "virtual" on the front if necessary */
+	if(method && ILMethod_IsStatic(method))
+	{
+		str = ILInternString("static ", 7);
+	}
+	else if(method && ILMethod_IsVirtual(method))
+	{
+		str = ILInternString("virtual ", 8);
+	}
+	else
+	{
+		str = ILInternString("", 0);
+	}
+
+	/* Get the type of the class that contains the method */
+	if((type = ILClassGetSynType(owner)) == 0)
+	{
+		type = (owner ? ILType_FromClass(owner) : 0);
+	}
+
+	/* add the "event" if it is an event */
+	if(kind == IL_META_MEMBERKIND_EVENT)
+	{
+		str = ILInternAppendedString(str, ILInternString("event ", 6));
+
+		/* Convert the event type into a string */
+		str = ILInternAppendedString
+				(str, ILInternString((char *)CSTypeToName
+										(signature), -1));
+		str = ILInternAppendedString(str, ILInternString(" ", 1));
+		
+		/* Append the class name to the string */
+		str = ILInternAppendedString
+				(str, ILInternString((char *)CSTypeToName(type), -1));
+
+		/* Append a dot to the string */
+		str = ILInternAppendedString(str, ILInternString(".", 1));
+
+		/* Append the event name to the string */
+		str = ILInternAppendedString(str, ILInternString((char *)name, -1));
+		
+		/* return final string to caller */
+		return str.string;
+		
+	}
+	/* The formatting is slightly different for constructors */
+	else if(!strcmp(name, ".ctor") || !strcmp(name, ".cctor"))
+	{
+		/* Append the class name to the string */
+		str = ILInternAppendedString
+				(str, ILInternString((char *)CSTypeToName(type), -1));	
+	}
+	else
+	{
+		/* Convert the return type into a string */
+		str = ILInternAppendedString
+				(str, ILInternString((char *)CSTypeToName
+										(ILTypeGetReturn(signature)), -1));
+		str = ILInternAppendedString(str, ILInternString(" ", 1));
+
+		/* Append the class name to the string */
+		str = ILInternAppendedString
+				(str, ILInternString((char *)CSTypeToName(type), -1));
+
+		/* Don't add the method name for delegates */
+		if(kind != 0)
+		{
+			/* Append a dot to the string */
+			str = ILInternAppendedString(str, ILInternString(".", 1));
+
+			/* Append the method name to the string */
+			str = ILInternAppendedString(str, ILInternString((char *)name, -1));
+		}
+	}
+
+	/* Add the parameter types to the string */
+	if(kind == IL_META_MEMBERKIND_PROPERTY)
+	{
+		str = ILInternAppendedString(str, ILInternString("[", 1));
+	}
+	else 
+	{
+		str = ILInternAppendedString(str, ILInternString("(", 1));
+	}
+	numParams = ILGenNumUsableParams(signature);
+	for(param = 1; param <= numParams; ++param)
+	{
+		if(method && kind != IL_META_MEMBERKIND_PROPERTY)
+		{
+			/* Use method information to resolve the parameter */
+			paramMod = ILGenGetParamInfo(method, signature, param, &type);
+		}
+		else
+		{
+			/* Don't use method information to resolve the parameter */
+			paramMod = ILGenGetParamInfo(0, signature, param, &type);
+		}
+		if(param != 1)
+		{
+			str = ILInternAppendedString(str, ILInternString(", ", 2));
+		}
+		if(paramMod == ILParamMod_out)
+		{
+			str = ILInternAppendedString(str, ILInternString("out ", 4));
+		}
+		else if(paramMod == ILParamMod_ref)
+		{
+			str = ILInternAppendedString(str, ILInternString("ref ", 4));
+		}
+		else if(paramMod == ILParamMod_params)
+		{
+			str = ILInternAppendedString(str, ILInternString("params ", 7));
+		}
+		if(paramMod != ILParamMod_arglist)
+		{
+			str = ILInternAppendedString
+					(str, ILInternString((char *)CSTypeToName(type), -1));
+			if(paramMod == ILParamMod_params)
+			{
+				str = ILInternAppendedString(str, ILInternString("[]", 2));
+			}
+		}
+		else
+		{
+			str = ILInternAppendedString(str, ILInternString("__arglist", 9));
+		}
+	}
+	if(kind == IL_META_MEMBERKIND_PROPERTY)
+	{
+		str = ILInternAppendedString(str, ILInternString("]", 1));
+	}
+	else
+	{
+		str = ILInternAppendedString(str, ILInternString(")", 1));
+	}
+
+	/* Return the final string to the caller */
+	return str.string;
+}
+
+%}
+

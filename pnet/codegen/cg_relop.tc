@@ -1,0 +1,1424 @@
+%output "cg_relop.c"
+
+%{
+/*
+ * cg_relop.tc - Relational operator nodes.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <codegen/cg_nodes.h>
+
+/*
+ * Determine a common type for relational operators.
+ */
+static ILMachineType Relational_CommonType(ILGenInfo *info,
+										   ILMachineType type1,
+										   ILMachineType type2)
+{
+	if(type1 == ILMachineType_ObjectRef || type2 == ILMachineType_ObjectRef ||
+	   type1 == ILMachineType_String || type2 == ILMachineType_String)
+	{
+		return ILMachineType_ObjectRef;
+	}
+	else
+	{
+		return ILCommonType(info, type1, type2, 0);
+	}
+}
+
+%}
+
+/*
+ * Apply a relational operator to two values on the stack
+ * that have been coerced to a common type.
+ */
+%operation void ILRelational_ApplyOp(ILGenInfo *info,
+								     [ILNode_Relational *node],
+								     [ILMachineType commonType])
+
+/*
+ * Apply a relational operator to two values on the stack
+ * that have been coerced to a common type, and jump to
+ * a label if true.
+ */
+%operation void ILRelational_ThenOp(ILGenInfo *info,
+								    [ILNode_Relational *node],
+								    [ILMachineType commonType],
+									ILLabel *label)
+
+/*
+ * Apply a relational operator to two values on the stack
+ * that have been coerced to a common type, and jump to
+ * a label if false.
+ */
+%operation void ILRelational_ElseOp(ILGenInfo *info,
+								    [ILNode_Relational *node],
+								    [ILMachineType commonType],
+									ILLabel *label)
+
+/*
+ * Evaluate a relational operator on two constant values.
+ */
+%operation int ILRelational_EvalOp(ILGenInfo *info,
+								   [ILNode_Relational *node],
+								   [ILMachineType commonType],
+								   ILEvalValue *value1,
+								   ILEvalValue *value2) = {0}
+
+/*
+ * Get the type of a relational operator.
+ */
+ILNode_GetType(ILNode_Relational)
+{
+	return ILMachineType_Boolean;
+}
+
+/*
+ * Generate discard code for a relational operator.
+ */
+ILNode_GenDiscard(ILNode_Relational)
+{
+	ILNode_GenDiscard(node->expr1, info);
+	ILNode_GenDiscard(node->expr2, info);
+}
+
+/*
+ * Generate value code for a relational operator.
+ */
+ILNode_GenValue(ILNode_Relational)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+
+	/* Determine the common type to use */
+	type1 = ILNode_GetType(node->expr1, info);
+	type2 = ILNode_GetType(node->expr2, info);
+	commonType = Relational_CommonType(info, type1, type2);
+
+	/* Generate code for the sub-expressions */
+	ILGenCast(info, ILNode_GenValue(node->expr1, info), commonType);
+	ILGenCast(info, ILNode_GenValue(node->expr2, info), commonType);
+
+	/* Compare the values */
+	ILRelational_ApplyOp(info, node, commonType);
+	ILGenAdjust(info, -1);
+
+	/* The result type is always boolean */
+	return ILMachineType_Boolean;
+}
+
+/*
+ * Generate "then" code for a relational operator.
+ */
+ILNode_GenThen(ILNode_Relational)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+
+	/* Determine the common type to use */
+	type1 = ILNode_GetType(node->expr1, info);
+	type2 = ILNode_GetType(node->expr2, info);
+	commonType = Relational_CommonType(info, type1, type2);
+
+	/* Generate code for the sub-expressions */
+	ILGenCast(info, ILNode_GenValue(node->expr1, info), commonType);
+	ILGenCast(info, ILNode_GenValue(node->expr2, info), commonType);
+
+	/* Compare the values and jump */
+	ILRelational_ThenOp(info, node, commonType, label);
+	ILGenAdjust(info, -2);
+}
+
+/*
+ * Generate "else" code for a relational operator.
+ */
+ILNode_GenElse(ILNode_Relational)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+
+	/* Determine the common type to use */
+	type1 = ILNode_GetType(node->expr1, info);
+	type2 = ILNode_GetType(node->expr2, info);
+	commonType = Relational_CommonType(info, type1, type2);
+
+	/* Generate code for the sub-expressions */
+	ILGenCast(info, ILNode_GenValue(node->expr1, info), commonType);
+	ILGenCast(info, ILNode_GenValue(node->expr2, info), commonType);
+
+	/* Compare the values and jump */
+	ILRelational_ElseOp(info, node, commonType, label);
+	ILGenAdjust(info, -2);
+}
+
+/*
+ * Evaluate the constant value for a relational operator.
+ */
+ILNode_EvalConst(ILNode_Relational)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+	ILEvalValue value2;
+
+	/* Determine the common type to use */
+	type1 = ILNode_GetType(node->expr1, info);
+	type2 = ILNode_GetType(node->expr2, info);
+	commonType = Relational_CommonType(info, type1, type2);
+
+	/* Evaluate the sub-expressions and cast to the common type */
+	if(!ILNode_EvalConst(node->expr1, info, value) ||
+	   !ILGenCastConst(info, value, value->valueType, commonType))
+	{
+		return 0;
+	}
+	if(!ILNode_EvalConst(node->expr2, info, &value2) ||
+	   !ILGenCastConst(info, &value2, value2.valueType, commonType))
+	{
+		return 0;
+	}
+
+	/* Compare the values */
+	if(!ILRelational_EvalOp(info, node, commonType, value, &value2))
+	{
+		return 0;
+	}
+
+	/* The result type is always boolean */
+	value->valueType = ILMachineType_Boolean;
+	return 1;
+}
+
+/*
+ * Apply the equality operator to two values on the stack.
+ */
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_Boolean),
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_Int8),
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_UInt8),
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_Int16),
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_UInt16),
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_Char),
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_Int32),
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_UInt32),
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_Int64),
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_UInt64),
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_NativeInt),
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_NativeUInt),
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_ObjectRef),
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_UnmanagedPtr),
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_ManagedPtr),
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_TransientPtr),
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_ManagedValue)
+{
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CEQ);
+}
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_Float32),
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_Float64),
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_NativeFloat)
+{
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CEQ);
+}
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.Decimal::op_Equality"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+}
+ILRelational_ApplyOp(ILNode_Eq, ILMachineType_String)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.String::op_Equality"
+			"(class [.library]System.String, class [.library]System.String)");
+}
+
+/*
+ * Apply the inequality operator to two values on the stack.
+ */
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_Boolean),
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_Int8),
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_UInt8),
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_Int16),
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_UInt16),
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_Char),
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_Int32),
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_UInt32),
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_Int64),
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_UInt64),
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_NativeInt),
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_NativeUInt),
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_ObjectRef),
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_UnmanagedPtr),
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_ManagedPtr),
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_TransientPtr),
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_ManagedValue)
+{
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CEQ);
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenSimple(info, IL_OP_XOR);
+}
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_Float32),
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_Float64),
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_NativeFloat)
+{
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CEQ);
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenSimple(info, IL_OP_XOR);
+}
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.Decimal::op_Inequality"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+}
+ILRelational_ApplyOp(ILNode_Ne, ILMachineType_String)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.String::op_Inequality"
+			"(class [.library]System.String, class [.library]System.String)");
+}
+
+/*
+ * Apply the less than operator to two values on the stack.
+ */
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_Boolean),
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_Int8),
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_Int16),
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_Int32),
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_Int64),
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_NativeInt),
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_String),
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_ObjectRef),
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_UnmanagedPtr),
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_ManagedPtr),
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_TransientPtr),
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_ManagedValue)
+{
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CLT);
+}
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_UInt8),
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_UInt16),
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_Char),
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_UInt32),
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_UInt64),
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_NativeUInt)
+{
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CLT_UN);
+}
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_Float32),
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_Float64),
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_NativeFloat)
+{
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CLT);
+}
+ILRelational_ApplyOp(ILNode_Lt, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.Decimal::op_LessThan"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+}
+
+/*
+ * Apply the less than or equal operator to two values on the stack.
+ */
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_Boolean),
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_Int8),
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_Int16),
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_Int32),
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_Int64),
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_NativeInt),
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_String),
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_ObjectRef),
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_UnmanagedPtr),
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_ManagedPtr),
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_TransientPtr),
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_ManagedValue)
+{
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CGT);
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenSimple(info, IL_OP_XOR);
+}
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_UInt8),
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_UInt16),
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_Char),
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_UInt32),
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_UInt64),
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_NativeUInt)
+{
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CGT_UN);
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenSimple(info, IL_OP_XOR);
+}
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_Float32),
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_Float64),
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_NativeFloat)
+{
+	/*
+	 * Note: We have to use the unsigned/unordered version here so that
+	 * NaN values are handled correctly (return false)
+	 */
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CGT_UN);
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenSimple(info, IL_OP_XOR);
+}
+ILRelational_ApplyOp(ILNode_Le, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.Decimal::op_LessThanOrEqual"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+}
+
+/*
+ * Apply the greater than operator to two values on the stack.
+ */
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_Boolean),
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_Int8),
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_Int16),
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_Int32),
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_Int64),
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_NativeInt),
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_String),
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_ObjectRef),
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_UnmanagedPtr),
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_ManagedPtr),
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_TransientPtr),
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_ManagedValue)
+{
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CGT);
+}
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_UInt8),
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_UInt16),
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_Char),
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_UInt32),
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_UInt64),
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_NativeUInt)
+{
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CGT_UN);
+}
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_Float32),
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_Float64),
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_NativeFloat)
+{
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CGT);
+}
+ILRelational_ApplyOp(ILNode_Gt, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.Decimal::op_GreaterThan"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+}
+
+/*
+ * Apply the greater than or equal operator to two values on the stack.
+ */
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_Boolean),
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_Int8),
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_Int16),
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_Int32),
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_Int64),
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_NativeInt),
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_String),
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_ObjectRef),
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_UnmanagedPtr),
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_ManagedPtr),
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_TransientPtr),
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_ManagedValue)
+{
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CLT);
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenSimple(info, IL_OP_XOR);
+}
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_UInt8),
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_UInt16),
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_Char),
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_UInt32),
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_UInt64),
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_NativeUInt)
+{
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CLT_UN);
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenSimple(info, IL_OP_XOR);
+}
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_Float32),
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_Float64),
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_NativeFloat)
+{
+	/*
+	 * Note: We have to use the unsigned/unordered version here so that
+	 * NaN values are handled correctly (return false)
+	 */
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CLT_UN);
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenSimple(info, IL_OP_XOR);
+}
+ILRelational_ApplyOp(ILNode_Ge, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.Decimal::op_GreaterThanOrEqual"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+}
+
+/*
+ * Generate "then" code for the equality operator.
+ */
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_Boolean),
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_Int8),
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_UInt8),
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_Int16),
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_UInt16),
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_Char),
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_Int32),
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_UInt32),
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_Int64),
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_UInt64),
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_NativeInt),
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_NativeUInt),
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_ObjectRef),
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_UnmanagedPtr),
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_ManagedPtr),
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_TransientPtr),
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_ManagedValue),
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_Float32),
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_Float64),
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_NativeFloat)
+{
+	ILGenJump(info, IL_OP_BEQ, label);
+}
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.Decimal::op_Equality"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+	ILGenJump(info, IL_OP_BRTRUE, label);
+}
+ILRelational_ThenOp(ILNode_Eq, ILMachineType_String)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.String::op_Equality"
+			"(class [.library]System.String, class [.library]System.String)");
+	ILGenJump(info, IL_OP_BRTRUE, label);
+}
+
+/*
+ * Generate "then" code for the inequality operator.
+ */
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_Boolean),
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_Int8),
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_UInt8),
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_Int16),
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_UInt16),
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_Char),
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_Int32),
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_UInt32),
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_Int64),
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_UInt64),
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_NativeInt),
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_NativeUInt),
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_ObjectRef),
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_UnmanagedPtr),
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_ManagedPtr),
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_TransientPtr),
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_ManagedValue),
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_Float32),
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_Float64),
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_NativeFloat)
+{
+	ILGenJump(info, IL_OP_BNE_UN, label);
+}
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.Decimal::op_Inequality"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+	ILGenJump(info, IL_OP_BRTRUE, label);
+}
+ILRelational_ThenOp(ILNode_Ne, ILMachineType_String)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.String::op_Inequality"
+			"(class [.library]System.String, class [.library]System.String)");
+	ILGenJump(info, IL_OP_BRTRUE, label);
+}
+
+/*
+ * Generate "then" code for the less than operator.
+ */
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_Boolean),
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_Int8),
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_Int16),
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_Int32),
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_Int64),
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_NativeInt),
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_String),
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_ObjectRef),
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_UnmanagedPtr),
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_ManagedPtr),
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_TransientPtr),
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_ManagedValue),
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_Float32),
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_Float64),
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_NativeFloat)
+{
+	ILGenJump(info, IL_OP_BLT, label);
+}
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_UInt8),
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_UInt16),
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_Char),
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_UInt32),
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_UInt64),
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_NativeUInt)
+{
+	ILGenJump(info, IL_OP_BLT_UN, label);
+}
+ILRelational_ThenOp(ILNode_Lt, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.Decimal::op_LessThan"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+	ILGenJump(info, IL_OP_BRTRUE, label);
+}
+
+/*
+ * Generate "then" code for the less than or equal operator.
+ */
+ILRelational_ThenOp(ILNode_Le, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILRelational_ThenOp(ILNode_Le, ILMachineType_Boolean),
+ILRelational_ThenOp(ILNode_Le, ILMachineType_Int8),
+ILRelational_ThenOp(ILNode_Le, ILMachineType_Int16),
+ILRelational_ThenOp(ILNode_Le, ILMachineType_Int32),
+ILRelational_ThenOp(ILNode_Le, ILMachineType_Int64),
+ILRelational_ThenOp(ILNode_Le, ILMachineType_NativeInt),
+ILRelational_ThenOp(ILNode_Le, ILMachineType_String),
+ILRelational_ThenOp(ILNode_Le, ILMachineType_ObjectRef),
+ILRelational_ThenOp(ILNode_Le, ILMachineType_UnmanagedPtr),
+ILRelational_ThenOp(ILNode_Le, ILMachineType_ManagedPtr),
+ILRelational_ThenOp(ILNode_Le, ILMachineType_TransientPtr),
+ILRelational_ThenOp(ILNode_Le, ILMachineType_ManagedValue),
+ILRelational_ThenOp(ILNode_Le, ILMachineType_Float32),
+ILRelational_ThenOp(ILNode_Le, ILMachineType_Float64),
+ILRelational_ThenOp(ILNode_Le, ILMachineType_NativeFloat)
+{
+	ILGenJump(info, IL_OP_BLE, label);
+}
+ILRelational_ThenOp(ILNode_Le, ILMachineType_UInt8),
+ILRelational_ThenOp(ILNode_Le, ILMachineType_UInt16),
+ILRelational_ThenOp(ILNode_Le, ILMachineType_Char),
+ILRelational_ThenOp(ILNode_Le, ILMachineType_UInt32),
+ILRelational_ThenOp(ILNode_Le, ILMachineType_UInt64),
+ILRelational_ThenOp(ILNode_Le, ILMachineType_NativeUInt)
+{
+	ILGenJump(info, IL_OP_BLE_UN, label);
+}
+ILRelational_ThenOp(ILNode_Le, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.Decimal::op_LessThanOrEqual"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+	ILGenJump(info, IL_OP_BRTRUE, label);
+}
+
+/*
+ * Generate "then" code for the greater than operator.
+ */
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_Boolean),
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_Int8),
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_Int16),
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_Int32),
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_Int64),
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_NativeInt),
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_String),
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_ObjectRef),
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_UnmanagedPtr),
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_ManagedPtr),
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_TransientPtr),
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_ManagedValue),
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_Float32),
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_Float64),
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_NativeFloat)
+{
+	ILGenJump(info, IL_OP_BGT, label);
+}
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_UInt8),
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_UInt16),
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_Char),
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_UInt32),
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_UInt64),
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_NativeUInt)
+{
+	ILGenJump(info, IL_OP_BGT_UN, label);
+}
+ILRelational_ThenOp(ILNode_Gt, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.Decimal::op_GreaterThan"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+	ILGenJump(info, IL_OP_BRTRUE, label);
+}
+
+/*
+ * Generate "then" code for the greater than or equal operator.
+ */
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_Boolean),
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_Int8),
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_Int16),
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_Int32),
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_Int64),
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_NativeInt),
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_String),
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_ObjectRef),
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_UnmanagedPtr),
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_ManagedPtr),
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_TransientPtr),
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_ManagedValue),
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_Float32),
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_Float64),
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_NativeFloat)
+{
+	ILGenJump(info, IL_OP_BGE, label);
+}
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_UInt8),
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_UInt16),
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_Char),
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_UInt32),
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_UInt64),
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_NativeUInt)
+{
+	ILGenJump(info, IL_OP_BGE_UN, label);
+}
+ILRelational_ThenOp(ILNode_Ge, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.Decimal::op_GreaterThanOrEqual"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+	ILGenJump(info, IL_OP_BRTRUE, label);
+}
+
+/*
+ * Generate "else" code for the equality operator.
+ */
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_Boolean),
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_Int8),
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_UInt8),
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_Int16),
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_UInt16),
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_Char),
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_Int32),
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_UInt32),
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_Int64),
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_UInt64),
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_NativeInt),
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_NativeUInt),
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_ObjectRef),
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_UnmanagedPtr),
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_ManagedPtr),
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_TransientPtr),
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_ManagedValue),
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_Float32),
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_Float64),
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_NativeFloat)
+{
+	ILGenJump(info, IL_OP_BNE_UN, label);
+}
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.Decimal::op_Equality"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+	ILGenJump(info, IL_OP_BRFALSE, label);
+}
+ILRelational_ElseOp(ILNode_Eq, ILMachineType_String)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.String::op_Equality"
+			"(class [.library]System.String, class [.library]System.String)");
+	ILGenJump(info, IL_OP_BRFALSE, label);
+}
+
+/*
+ * Generate "else" code for the inequality operator.
+ */
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_Boolean),
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_Int8),
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_UInt8),
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_Int16),
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_UInt16),
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_Char),
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_Int32),
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_UInt32),
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_Int64),
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_UInt64),
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_NativeInt),
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_NativeUInt),
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_ObjectRef),
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_UnmanagedPtr),
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_ManagedPtr),
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_TransientPtr),
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_ManagedValue),
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_Float32),
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_Float64),
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_NativeFloat)
+{
+	ILGenJump(info, IL_OP_BEQ, label);
+}
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.Decimal::op_Inequality"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+	ILGenJump(info, IL_OP_BRFALSE, label);
+}
+ILRelational_ElseOp(ILNode_Ne, ILMachineType_String)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.String::op_Inequality"
+			"(class [.library]System.String, class [.library]System.String)");
+	ILGenJump(info, IL_OP_BRFALSE, label);
+}
+
+/*
+ * Generate "else" code for the less than operator.
+ */
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_Boolean),
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_Int8),
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_Int16),
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_Int32),
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_Int64),
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_NativeInt),
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_String),
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_ObjectRef),
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_UnmanagedPtr),
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_ManagedPtr),
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_TransientPtr),
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_ManagedValue)
+{
+	ILGenJump(info, IL_OP_BGE, label);
+}
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_Float32),
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_Float64),
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_NativeFloat)
+{
+	/*
+	 * Note: We have to use the unsigned/unordered version here so that
+	 * NaN values are handled correctly (return true)
+	 */
+	ILGenJump(info, IL_OP_BGE_UN, label);
+}
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_UInt8),
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_UInt16),
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_Char),
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_UInt32),
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_UInt64),
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_NativeUInt)
+{
+	ILGenJump(info, IL_OP_BGE_UN, label);
+}
+ILRelational_ElseOp(ILNode_Lt, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.Decimal::op_LessThan"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+	ILGenJump(info, IL_OP_BRFALSE, label);
+}
+
+/*
+ * Generate "else" code for the less than or equal operator.
+ */
+ILRelational_ElseOp(ILNode_Le, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILRelational_ElseOp(ILNode_Le, ILMachineType_Boolean),
+ILRelational_ElseOp(ILNode_Le, ILMachineType_Int8),
+ILRelational_ElseOp(ILNode_Le, ILMachineType_Int16),
+ILRelational_ElseOp(ILNode_Le, ILMachineType_Int32),
+ILRelational_ElseOp(ILNode_Le, ILMachineType_Int64),
+ILRelational_ElseOp(ILNode_Le, ILMachineType_NativeInt),
+ILRelational_ElseOp(ILNode_Le, ILMachineType_String),
+ILRelational_ElseOp(ILNode_Le, ILMachineType_ObjectRef),
+ILRelational_ElseOp(ILNode_Le, ILMachineType_UnmanagedPtr),
+ILRelational_ElseOp(ILNode_Le, ILMachineType_ManagedPtr),
+ILRelational_ElseOp(ILNode_Le, ILMachineType_TransientPtr),
+ILRelational_ElseOp(ILNode_Le, ILMachineType_ManagedValue)
+{
+	ILGenJump(info, IL_OP_BGT, label);
+}
+
+ILRelational_ElseOp(ILNode_Le, ILMachineType_Float32),
+ILRelational_ElseOp(ILNode_Le, ILMachineType_Float64),
+ILRelational_ElseOp(ILNode_Le, ILMachineType_NativeFloat)
+{
+	/*
+	 * Note: We have to use the unsigned/unordered version here so that
+	 * NaN values are handled correctly (return true)
+	 */
+	ILGenJump(info, IL_OP_BGT_UN, label);
+}
+
+ILRelational_ElseOp(ILNode_Le, ILMachineType_UInt8),
+ILRelational_ElseOp(ILNode_Le, ILMachineType_UInt16),
+ILRelational_ElseOp(ILNode_Le, ILMachineType_Char),
+ILRelational_ElseOp(ILNode_Le, ILMachineType_UInt32),
+ILRelational_ElseOp(ILNode_Le, ILMachineType_UInt64),
+ILRelational_ElseOp(ILNode_Le, ILMachineType_NativeUInt)
+{
+	ILGenJump(info, IL_OP_BGT_UN, label);
+}
+ILRelational_ElseOp(ILNode_Le, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.Decimal::op_LessThanOrEqual"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+	ILGenJump(info, IL_OP_BRFALSE, label);
+}
+
+/*
+ * Generate "else" code for the greater than operator.
+ */
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_Boolean),
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_Int8),
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_Int16),
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_Int32),
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_Int64),
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_NativeInt),
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_String),
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_ObjectRef),
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_UnmanagedPtr),
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_ManagedPtr),
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_TransientPtr),
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_ManagedValue)
+{
+	ILGenJump(info, IL_OP_BLE, label);
+}
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_Float32),
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_Float64),
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_NativeFloat)
+{
+	/*
+	 * Note: We have to use the unsigned/unordered version here so that
+	 * NaN values are handled correctly (return true)
+	 */
+	ILGenJump(info, IL_OP_BLE_UN, label);
+}
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_UInt8),
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_UInt16),
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_Char),
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_UInt32),
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_UInt64),
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_NativeUInt)
+{
+	ILGenJump(info, IL_OP_BLE_UN, label);
+}
+ILRelational_ElseOp(ILNode_Gt, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.Decimal::op_GreaterThan"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+	ILGenJump(info, IL_OP_BRFALSE, label);
+}
+
+/*
+ * Generate "else" code for the greater than or equal operator.
+ */
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_Boolean),
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_Int8),
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_Int16),
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_Int32),
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_Int64),
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_NativeInt),
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_String),
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_ObjectRef),
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_UnmanagedPtr),
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_ManagedPtr),
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_TransientPtr),
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_ManagedValue)
+{
+	ILGenJump(info, IL_OP_BLT, label);
+}
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_Float32),
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_Float64),
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_NativeFloat)
+{
+	/*
+	 * Note: We have to use the unsigned/unordered version here so that
+	 * NaN values are handled correctly (return true)
+	 */
+	ILGenJump(info, IL_OP_BLT_UN, label);
+}
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_UInt8),
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_UInt16),
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_Char),
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_UInt32),
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_UInt64),
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_NativeUInt)
+{
+	ILGenJump(info, IL_OP_BLT_UN, label);
+}
+ILRelational_ElseOp(ILNode_Ge, ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"bool [.library]System.Decimal::op_GreaterThanOrEqual"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+	ILGenJump(info, IL_OP_BRFALSE, label);
+}
+
+/*
+ * Evaluate the equality operator for various types.
+ */
+ILRelational_EvalOp(ILNode_Eq, ILMachineType_Boolean),
+ILRelational_EvalOp(ILNode_Eq, ILMachineType_Int8),
+ILRelational_EvalOp(ILNode_Eq, ILMachineType_UInt8),
+ILRelational_EvalOp(ILNode_Eq, ILMachineType_Int16),
+ILRelational_EvalOp(ILNode_Eq, ILMachineType_UInt16),
+ILRelational_EvalOp(ILNode_Eq, ILMachineType_Char),
+ILRelational_EvalOp(ILNode_Eq, ILMachineType_Int32),
+ILRelational_EvalOp(ILNode_Eq, ILMachineType_UInt32),
+ILRelational_EvalOp(ILNode_Eq, ILMachineType_NativeInt),
+ILRelational_EvalOp(ILNode_Eq, ILMachineType_NativeUInt)
+{
+	value1->un.i4Value = (value1->un.i4Value == value2->un.i4Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Eq, ILMachineType_Int64),
+ILRelational_EvalOp(ILNode_Eq, ILMachineType_UInt64)
+{
+	value1->un.i4Value = (value1->un.i8Value == value2->un.i8Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Eq, ILMachineType_Float32)
+{
+	value1->un.i4Value = (value1->un.r4Value == value2->un.r4Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Eq, ILMachineType_Float64),
+ILRelational_EvalOp(ILNode_Eq, ILMachineType_NativeFloat)
+{
+	value1->un.i4Value = (value1->un.r8Value == value2->un.r8Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Eq, ILMachineType_Decimal)
+{
+	value1->un.i4Value = (ILDecimalCmp(&(value1->un.decValue),
+									   &(value2->un.decValue)) == 0);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Eq, ILMachineType_ObjectRef)
+{
+	/* Compare two object ref constants, which will
+	   always be "null", and hence equal */
+	value1->un.i4Value = 1;
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Eq, ILMachineType)
+{
+	return 0;
+}
+
+/*
+ * Evaluate the inequality operator for various types.
+ */
+ILRelational_EvalOp(ILNode_Ne, ILMachineType_Boolean),
+ILRelational_EvalOp(ILNode_Ne, ILMachineType_Int8),
+ILRelational_EvalOp(ILNode_Ne, ILMachineType_UInt8),
+ILRelational_EvalOp(ILNode_Ne, ILMachineType_Int16),
+ILRelational_EvalOp(ILNode_Ne, ILMachineType_UInt16),
+ILRelational_EvalOp(ILNode_Ne, ILMachineType_Char),
+ILRelational_EvalOp(ILNode_Ne, ILMachineType_Int32),
+ILRelational_EvalOp(ILNode_Ne, ILMachineType_UInt32),
+ILRelational_EvalOp(ILNode_Ne, ILMachineType_NativeInt),
+ILRelational_EvalOp(ILNode_Ne, ILMachineType_NativeUInt)
+{
+	value1->un.i4Value = (value1->un.i4Value != value2->un.i4Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Ne, ILMachineType_Int64),
+ILRelational_EvalOp(ILNode_Ne, ILMachineType_UInt64)
+{
+	value1->un.i4Value = (value1->un.i8Value != value2->un.i8Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Ne, ILMachineType_Float32)
+{
+	value1->un.i4Value = (value1->un.r4Value != value2->un.r4Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Ne, ILMachineType_Float64),
+ILRelational_EvalOp(ILNode_Ne, ILMachineType_NativeFloat)
+{
+	value1->un.i4Value = (value1->un.r8Value != value2->un.r8Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Ne, ILMachineType_Decimal)
+{
+	value1->un.i4Value = (ILDecimalCmp(&(value1->un.decValue),
+									   &(value2->un.decValue)) != 0);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Ne, ILMachineType_ObjectRef)
+{
+	/* Compare two object ref constants, which will
+	   always be "null", and hence equal */
+	value1->un.i4Value = 0;
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Ne, ILMachineType)
+{
+	return 0;
+}
+
+/*
+ * Evaluate the less than operator for various types.
+ */
+ILRelational_EvalOp(ILNode_Lt, ILMachineType_Boolean),
+ILRelational_EvalOp(ILNode_Lt, ILMachineType_Int8),
+ILRelational_EvalOp(ILNode_Lt, ILMachineType_Int16),
+ILRelational_EvalOp(ILNode_Lt, ILMachineType_Int32),
+ILRelational_EvalOp(ILNode_Lt, ILMachineType_NativeInt)
+{
+	value1->un.i4Value = (value1->un.i4Value < value2->un.i4Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Lt, ILMachineType_UInt8),
+ILRelational_EvalOp(ILNode_Lt, ILMachineType_UInt16),
+ILRelational_EvalOp(ILNode_Lt, ILMachineType_Char),
+ILRelational_EvalOp(ILNode_Lt, ILMachineType_UInt32),
+ILRelational_EvalOp(ILNode_Lt, ILMachineType_NativeUInt)
+{
+	value1->un.i4Value =
+		(((ILUInt32)(value1->un.i4Value)) <
+		 ((ILUInt32)(value2->un.i4Value)));
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Lt, ILMachineType_Int64)
+{
+	value1->un.i4Value = (value1->un.i8Value < value2->un.i8Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Lt, ILMachineType_UInt64)
+{
+	value1->un.i4Value =
+		(((ILUInt64)(value1->un.i8Value)) <
+		 ((ILUInt64)(value2->un.i8Value)));
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Lt, ILMachineType_Float32)
+{
+	value1->un.i4Value = (value1->un.r4Value < value2->un.r4Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Lt, ILMachineType_Float64),
+ILRelational_EvalOp(ILNode_Lt, ILMachineType_NativeFloat)
+{
+	value1->un.i4Value = (value1->un.r8Value < value2->un.r8Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Lt, ILMachineType_Decimal)
+{
+	value1->un.i4Value = (ILDecimalCmp(&(value1->un.decValue),
+									   &(value2->un.decValue)) < 0);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Lt, ILMachineType_ObjectRef)
+{
+	/* Compare two object ref constants, which will
+	   always be "null", and hence equal */
+	value1->un.i4Value = 0;
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Lt, ILMachineType)
+{
+	return 0;
+}
+
+/*
+ * Evaluate the less than or equal operator for various types.
+ */
+ILRelational_EvalOp(ILNode_Le, ILMachineType_Boolean),
+ILRelational_EvalOp(ILNode_Le, ILMachineType_Int8),
+ILRelational_EvalOp(ILNode_Le, ILMachineType_Int16),
+ILRelational_EvalOp(ILNode_Le, ILMachineType_Int32),
+ILRelational_EvalOp(ILNode_Le, ILMachineType_NativeInt)
+{
+	value1->un.i4Value = (value1->un.i4Value <= value2->un.i4Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Le, ILMachineType_UInt8),
+ILRelational_EvalOp(ILNode_Le, ILMachineType_UInt16),
+ILRelational_EvalOp(ILNode_Le, ILMachineType_Char),
+ILRelational_EvalOp(ILNode_Le, ILMachineType_UInt32),
+ILRelational_EvalOp(ILNode_Le, ILMachineType_NativeUInt)
+{
+	value1->un.i4Value =
+		(((ILUInt32)(value1->un.i4Value)) <=
+		 ((ILUInt32)(value2->un.i4Value)));
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Le, ILMachineType_Int64)
+{
+	value1->un.i4Value = (value1->un.i8Value <= value2->un.i8Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Le, ILMachineType_UInt64)
+{
+	value1->un.i4Value =
+		(((ILUInt64)(value1->un.i8Value)) <=
+		 ((ILUInt64)(value2->un.i8Value)));
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Le, ILMachineType_Float32)
+{
+	value1->un.i4Value = (value1->un.r4Value <= value2->un.r4Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Le, ILMachineType_Float64),
+ILRelational_EvalOp(ILNode_Le, ILMachineType_NativeFloat)
+{
+	value1->un.i4Value = (value1->un.r8Value <= value2->un.r8Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Le, ILMachineType_Decimal)
+{
+	value1->un.i4Value = (ILDecimalCmp(&(value1->un.decValue),
+									   &(value2->un.decValue)) <= 0);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Le, ILMachineType_ObjectRef)
+{
+	/* Compare two object ref constants, which will
+	   always be "null", and hence equal */
+	value1->un.i4Value = 1;
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Le, ILMachineType)
+{
+	return 0;
+}
+
+/*
+ * Evaluate the greater than operator for various types.
+ */
+ILRelational_EvalOp(ILNode_Gt, ILMachineType_Boolean),
+ILRelational_EvalOp(ILNode_Gt, ILMachineType_Int8),
+ILRelational_EvalOp(ILNode_Gt, ILMachineType_Int16),
+ILRelational_EvalOp(ILNode_Gt, ILMachineType_Int32),
+ILRelational_EvalOp(ILNode_Gt, ILMachineType_NativeInt)
+{
+	value1->un.i4Value = (value1->un.i4Value > value2->un.i4Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Gt, ILMachineType_UInt8),
+ILRelational_EvalOp(ILNode_Gt, ILMachineType_UInt16),
+ILRelational_EvalOp(ILNode_Gt, ILMachineType_Char),
+ILRelational_EvalOp(ILNode_Gt, ILMachineType_UInt32),
+ILRelational_EvalOp(ILNode_Gt, ILMachineType_NativeUInt)
+{
+	value1->un.i4Value =
+		(((ILUInt32)(value1->un.i4Value)) >
+		 ((ILUInt32)(value2->un.i4Value)));
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Gt, ILMachineType_Int64)
+{
+	value1->un.i4Value = (value1->un.i8Value > value2->un.i8Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Gt, ILMachineType_UInt64)
+{
+	value1->un.i4Value =
+		(((ILUInt64)(value1->un.i8Value)) >
+		 ((ILUInt64)(value2->un.i8Value)));
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Gt, ILMachineType_Float32)
+{
+	value1->un.i4Value = (value1->un.r4Value > value2->un.r4Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Gt, ILMachineType_Float64),
+ILRelational_EvalOp(ILNode_Gt, ILMachineType_NativeFloat)
+{
+	value1->un.i4Value = (value1->un.r8Value > value2->un.r8Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Gt, ILMachineType_Decimal)
+{
+	value1->un.i4Value = (ILDecimalCmp(&(value1->un.decValue),
+									   &(value2->un.decValue)) > 0);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Gt, ILMachineType_ObjectRef)
+{
+	/* Compare two object ref constants, which will
+	   always be "null", and hence equal */
+	value1->un.i4Value = 0;
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Gt, ILMachineType)
+{
+	return 0;
+}
+
+/*
+ * Evaluate the greater than or equal operator for various types.
+ */
+ILRelational_EvalOp(ILNode_Ge, ILMachineType_Boolean),
+ILRelational_EvalOp(ILNode_Ge, ILMachineType_Int8),
+ILRelational_EvalOp(ILNode_Ge, ILMachineType_Int16),
+ILRelational_EvalOp(ILNode_Ge, ILMachineType_Int32),
+ILRelational_EvalOp(ILNode_Ge, ILMachineType_NativeInt)
+{
+	value1->un.i4Value = (value1->un.i4Value >= value2->un.i4Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Ge, ILMachineType_UInt8),
+ILRelational_EvalOp(ILNode_Ge, ILMachineType_UInt16),
+ILRelational_EvalOp(ILNode_Ge, ILMachineType_Char),
+ILRelational_EvalOp(ILNode_Ge, ILMachineType_UInt32),
+ILRelational_EvalOp(ILNode_Ge, ILMachineType_NativeUInt)
+{
+	value1->un.i4Value =
+		(((ILUInt32)(value1->un.i4Value)) >=
+		 ((ILUInt32)(value2->un.i4Value)));
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Ge, ILMachineType_Int64)
+{
+	value1->un.i4Value = (value1->un.i8Value >= value2->un.i8Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Ge, ILMachineType_UInt64)
+{
+	value1->un.i4Value =
+		(((ILUInt64)(value1->un.i8Value)) >=
+		 ((ILUInt64)(value2->un.i8Value)));
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Ge, ILMachineType_Float32)
+{
+	value1->un.i4Value = (value1->un.r4Value >= value2->un.r4Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Ge, ILMachineType_Float64),
+ILRelational_EvalOp(ILNode_Ge, ILMachineType_NativeFloat)
+{
+	value1->un.i4Value = (value1->un.r8Value >= value2->un.r8Value);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Ge, ILMachineType_Decimal)
+{
+	value1->un.i4Value = (ILDecimalCmp(&(value1->un.decValue),
+									   &(value2->un.decValue)) >= 0);
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Ge, ILMachineType_ObjectRef)
+{
+	/* Compare two object ref constants, which will
+	   always be "null", and hence equal */
+	value1->un.i4Value = 1;
+	return 1;
+}
+ILRelational_EvalOp(ILNode_Ge, ILMachineType)
+{
+	return 0;
+}

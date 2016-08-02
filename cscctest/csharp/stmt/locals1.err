@@ -1,0 +1,1 @@
+./locals1.cs:30: incompatible types in return: no conversion from `System.Decimal' to `int'

@@ -1,0 +1,42 @@
+#
+# Invalid.txt - Resources for invalid operation messages.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Invalid_CollectionModified=The collection has been modified
+Invalid_BadEnumeratorPosition=The enumerator is not positioned on an element
+Invalid_UnderlyingModified=The underlying collection has been modified
+Invalid_WriteOnce=The value can only be set once
+Invalid_GCHandleNotPinned=The specified GC handle has not been pinned
+Invalid_GCHandleNotInit=The specified GC handle has not been initialized
+Invalid_GCHandleInvalid=The specified GC handle is not valid
+Invalid_ReadOnly=The requested operation is invalid on read-only objects
+Invalid_EmptyQueue=The requested operation is invalid on an empty queue
+Invalid_EmptyStack=The requested operation is invalid on an empty stack
+Invalid_EntryNotInAssembly=Entry point method is not in the specified assembly
+Invalid_PermissionXml=Invalid XML data for permission definition
+Invalid_PermissionSetName=Invalid name for a permission set
+Invalid_RWLock=Invalid read/write lock operation
+Invalid_RemoteRegistry=Access to remote registry denied
+Invalid_IsolatedCurrentSize=The current size of this isolated storage object is not available
+Invalid_IsolatedQuota=Isolated storage quota is not specified
+Invalid_ContextFrozen=The context is already frozen
+Invalid_PropertyClash=There is already a context property with the specified name
+Invalid_ModifyLease=Modifying a lease that is not in the initial state
+Invalid_ResourceNotString=The specified resource is not a string
+Invalid_ResourceReaderClosed=The resource reader has already been closed
+Invalid_ResourceWriterClosed=The resource writer has already been closed

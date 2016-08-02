@@ -1,0 +1,7 @@
+Makefile
+Makefile.in
+sampleX11
+.libs
+*.lo
+*.o
+.deps

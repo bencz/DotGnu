@@ -1,0 +1,6 @@
+pnet-libc (0.6.8-1) unstable; urgency=low
+
+  * Initial release built from pnetC
+
+ -- Russell Stuart <russell-debian@stuart.id.au>  Thu,  2 Sep 2004 07:02:47 +1000
+

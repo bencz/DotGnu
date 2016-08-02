@@ -1,0 +1,170 @@
+.\" Copyright (c) 2001 Southern Storm Software, Pty Ltd.
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.TH ilasm 1 "6 September 2001" "Southern Storm Software" "Portable.NET Development Tools"
+.SH NAME
+ilasm \- the Intermediate Language (IL) assembler
+.SH SYNOPSIS
+\fBilasm\fR [ options ] \fIinput.il\fR ...
+.SH DESCRIPTION
+.B Ilasm
+converts Intermediate Language (IL) assembly code input
+into an IL object file (.obj), an IL executable (.exe),
+or an IL dynamic link library (.dll).  The Texinfo documentation
+for \fBilasm\fR describes the assembly code syntax.
+
+You normally won't need to invoke \fBilasm\fR directly, because it is
+invoked automatically by the \fBcscc\fR(1) compiler.  However, if you
+are building your own compiler for the Portable.NET platform, then you
+may need to invoke this program.
+
+\fBIlasm\fR reads the supplied input files, assembles them, and writes
+the output to the file specified by the `-o' option, or to a default
+filename derived from the name of the first input file.  If any
+of the input filenames are `-', then the standard input stream will
+be used.  If `-' is specified multiple times, then standard input
+will be parsed only once.
+
+Specifying multiple input files is exactly the same as specifying
+one input file which is the concatenation of all of the files.
+Only one output file is created.  \fBIlasm\fR must be invoked multiple
+times to assemble multiple input files into multiple output files.
+.SH OPTIONS
+.TP
+.B \-o FILE, \-\-output FILE
+Specify the name of the file to write the assembler output to.  The
+default is "input.EXT" where "EXT" is one of "obj", "exe", or "dll",
+depending on the value of the
+.B \-\-format
+option.  If there are multiple input files, then the name of the output
+file is based on the name of the first input file.  If the first
+input file is `-', then the output is written to standard output.
+If FILE is `-', then the output is written to standard output.
+.TP
+.B \-j, \-\-format obj
+Write a ".obj" file as output, instead of an executable or dynamic
+link library.  This is the default value.
+.TP
+.B \-e, \-\-format exe
+Write an executable file as output, instead of a ".obj" file or dynamic
+link library.
+.TP
+.B \-d, \-\-format dll
+Write a dynamic link library file as output, instead of a ".obj" file or
+executable.
+.TP
+.B \-g, \-\-debug
+Enable the generation of debug symbol information to the output file.
+.TP
+.B \-n, \-\-no\-debug
+Disable the generation of debug symbol information to the output file.
+This is the default value.
+.TP
+.B \-s, \-fshort\-insns
+Always use the shortest version of an instruction when creating the
+output.  Some instructions have multiple versions.  e.g. "br" and "br.s"
+for long and short versions of the branch instruction.  The assembler
+will attempt to "squash" the instructions to occupy as little space
+as possible.  This is the default value.
+
+When this option is in force, the compiler does not need to concern
+itself with choosing the most compact form of an instruction, because
+the assembler will do the work.  Long instructions will be converted
+into shorter versions whenever possible, and short instructions will
+be converted into longer versions if required.  Compiler code generators
+can therefore be much simpler.
+.TP
+.B \-l, \-fno\-short\-insns
+Always use the stated version of an instruction when creating the output.
+For example, "br" will always generate a 5-byte branch instruction,
+and "br.s" will always generate a 2-byte branch instruction.  If the
+branch is too long, then using "br.s" will result in an error.
+
+The only reason to use this is to ensure that the form of instruction
+that is output by the \fBildasm\fR(1) disassembler is the same as the
+form of instruction that was input to \fBilasm\fR.  This may be helpful
+when attempting to diagnose compiler problems.
+.TP
+.B \-L NAME, \-fstdlib\-name=NAME
+Change the name of the standard library to NAME.  The default
+value is "mscorlib".
+.TP
+.B \-J, \-mjvm
+Assemble to JVM bytecode instead of IL.
+.TP
+.B \-3, \-m32bit\-only
+Tag the output file so that it can only be executed on 32-bit platforms.
+.TP
+.B \-c, \-mcui\-subsystem
+Tag the output file so that it can run within the command-line subsystem
+under Windows.  This is the default.
+.TP
+.B \-G, \-mgui\-subsystem
+Tag the output file so that it can run within the GUI subsystem
+under Windows.
+.TP
+.B \-\-help
+Print a usage message for the \fBilasm\fR program.
+.TP
+.B \-v, \-\-version
+Print the version of the \fBilasm\fR program.
+.TP
+.B \-\-
+Marks the end of the command-line options, and the beginning of
+the input filenames.  You may need to use this if your filename
+begins with '-'.  e.g. "ilasm -- -input.il".  This is not needed
+if the input is stdin: "ilasm -" is perfectly valid.
+.SH "OWNERSHIP OF OUTPUT"
+The source code for
+.B ilasm
+is covered by the GNU General Public License (GPL).  Any modifications to
+the source must be redistributed under the terms of the GPL.
+
+There is a special exception for the output of the assembler.  If you use
+\fBilasm\fR to assemble your own program, then you also own the object file,
+executable, or dynamic link library that is output.  You may redistribute
+the output in any way you see fit.  This does not give you ownership over
+\fBilasm\fR itself: only the output.
+
+Authors of non-free software can use \fBilasm\fR to assemble their programs,
+without being forced to release their source code.  However, if authors of
+non-free software modify \fBilasm\fR and then assemble their program with
+the modified version, they must redistribute their modifications to
+\fBilasm\fR under the terms of the GPL.
+
+Contact the authors if you have any questions on the ownership of
+your programs when \fBilasm\fR is used to assemble them.
+.SH "AUTHOR"
+Written by Southern Storm Software, Pty Ltd.
+
+http://www.southern-storm.com.au/
+.SH "SEE ALSO"
+ildasm(1), cscc(1)
+.SH "DIAGNOSTICS"
+Exit status is 1 if an error occurred while processing the input.
+Otherwise the exit status is 0.
+.SH "BUGS"
+The parser is fairly unforgiving of errors and will bail out at the
+first sign of trouble.  This is not expected to be a problem because
+\fBilasm\fR will normally be processing the output of a compiler
+such as \fBcscc\fR(1).  Compilers are presumed to be aware of how to
+generate correct IL assembly code.
+
+\fBIlasm\fR uses the host's native C types `float' and `double' to
+handle floating point numbers.  If the host does not have a strict
+IEEE floating point implementation, then the values of floating point
+constants may not be exactly what was expected.  The problem can be
+avoided by using the raw bit forms, which are guaranteed to produce exact
+IEEE-compliant values.

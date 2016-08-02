@@ -1,0 +1,943 @@
+%output "cg_assign.c"
+
+%{
+/*
+ * cg_assign.tc - Assignment operator nodes.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <codegen/cg_nodes.h>
+%}
+
+/*
+ * Apply an increment operator to the value on the stack.
+ */
+%operation %inline void ILIncrement_ApplyOp(ILGenInfo *info,
+								 			[ILMachineType commonType])
+
+/*
+ * Apply a decrement operator to the value on the stack.
+ */
+%operation %inline void ILDecrement_ApplyOp(ILGenInfo *info,
+								 			[ILMachineType commonType])
+
+/*
+ * Get the type associated with an assignment expression.
+ */
+ILNode_GetType(ILNode_Assign)
+{
+	return ILNode_GetType(node->expr1, info);
+}
+
+/*
+ * Get the type associated with an arithmetic assignment expression.
+ */
+ILNode_GetType(ILNode_AssignExpression)
+{
+	return ILNode_GetType(node->lvalue,info);
+}
+
+/*
+ * Get the type associated with an increment or decrement expression.
+ */
+ILNode_GetType(ILNode_PreInc),
+ILNode_GetType(ILNode_PreDec),
+ILNode_GetType(ILNode_PostInc),
+ILNode_GetType(ILNode_PostDec),
+ILNode_GetType(ILNode_PreIncPtr),
+ILNode_GetType(ILNode_PreDecPtr),
+ILNode_GetType(ILNode_PostIncPtr),
+ILNode_GetType(ILNode_PostDecPtr)
+{
+	return ILNode_GetType(node->expr, info);
+}
+
+/*
+ * Get the type associated with a user increment or decrement expression.
+ */
+ILNode_GetType(ILNode_UserPreInc),
+ILNode_GetType(ILNode_UserPreDec),
+ILNode_GetType(ILNode_UserPostInc),
+ILNode_GetType(ILNode_UserPostDec)
+{
+	return node->type;
+}
+
+/*
+ * Generate discard code for an assignment expression.
+ */
+ILNode_GenDiscard(ILNode_Assign)
+{
+	ILMachineType finalType;
+	void *data1, *data2;
+
+	/* Prepare the l-value for a later store operation */
+	finalType = ILNode_Prepare(node->expr1, info, &data1, &data2);
+
+	/* Evaluate the second sub-expression and cast to the final type */
+	ILGenCast(info, ILNode_GenValue(node->expr2, info), finalType);
+
+	/* Store the value into the destination */
+	ILNode_Store(node->expr1, info, 0, data1, data2);
+}
+
+%{
+
+/*
+ *  Common generation code for ILNode_AssignExpression
+ */
+static ILMachineType AssignCommon(ILNode_AssignExpression *node, 
+								  ILGenInfo *info,
+						          int leave)
+{
+	ILMachineType finalType;
+	void *data1, *data2;
+	ILNode_BinaryExpression *bnode = (ILNode_BinaryExpression *)(node->assign);
+
+	/* Get and prepare the l-value for a later store operation */
+	finalType = ILNode_GetAndPrepare(node->lvalue, info, 0, &data1, &data2);
+
+	/* Perform the operation */
+	if(yyisa(bnode, ILNode_Concat))
+	{
+		if(finalType == ILMachineType_String &&
+		   ILNode_GetType(bnode->expr2, info) == ILMachineType_String)
+		{
+			ILGenCast(info, ILNode_GenValue(bnode->expr2, info),
+					  ILMachineType_String);
+			ILGenCallByName(info,
+			  "class [.library]System.String [.library]System.String::Concat"
+					"(class [.library]System.String, "
+					 "class [.library]System.String)");
+			ILGenAdjust(info, -1);
+		}
+		else
+		{
+			ILGenCast(info, ILNode_GenValue(bnode->expr2, info),
+					  ILMachineType_ObjectRef);
+			ILGenCallByName(info,
+			  "class [.library]System.String [.library]System.String::Concat"
+					"(class [.library]System.Object, "
+					 "class [.library]System.Object)");
+			ILGenAdjust(info, -1);
+		}
+		ILGenCast(info, ILMachineType_String, finalType);
+	}
+	else if(yyisa(bnode, ILNode_DelegateAdd))
+	{
+		ILGenCast(info, ILNode_GenValue(bnode->expr2, info),
+				  ILMachineType_ObjectRef);
+		ILGenCallByName(info,
+		  "class [.library]System.Delegate [.library]System.Delegate::Combine"
+				"(class [.library]System.Delegate, "
+				 "class [.library]System.Delegate)");
+		ILGenAdjust(info, -1);
+		ILGenClassToken(info, IL_OP_CASTCLASS,
+				((ILNode_DelegateAdd *)bnode)->delegateClass);
+		ILGenCast(info, ILMachineType_ObjectRef, finalType);
+	}
+	else if(yyisa(bnode, ILNode_DelegateSub))
+	{
+		ILGenCast(info, ILNode_GenValue(bnode->expr2, info),
+				  ILMachineType_ObjectRef);
+		ILGenCallByName(info,
+		  "class [.library]System.Delegate [.library]System.Delegate::Remove"
+				"(class [.library]System.Delegate, "
+				 "class [.library]System.Delegate)");
+		ILGenAdjust(info, -1);
+		ILGenClassToken(info, IL_OP_CASTCLASS,
+				((ILNode_DelegateSub *)bnode)->delegateClass);
+		ILGenCast(info, ILMachineType_ObjectRef, finalType);
+	}
+	else
+	{
+		/* Evaluate the second sub-expression and cast to the final type */
+		ILGenCast(info, ILNode_GenValue(node->assign, info), finalType);
+	}
+
+	/* Store the value into the destination */
+	ILNode_Store(node->lvalue, info, leave, data1, data2);
+	return finalType;
+}
+
+%}
+
+/*
+ * Generate discard code for an arithmetic assignment expression.
+ */
+ILNode_GenDiscard(ILNode_AssignExpression)
+{
+	AssignCommon(node, info, 0);
+}
+
+/*
+ * Generate value code for an assignment expression.
+ */
+ILNode_GenValue(ILNode_Assign)
+{
+	ILMachineType finalType;
+	void *data1, *data2;
+
+	/* Prepare the l-value for a later store operation */
+	finalType = ILNode_Prepare(node->expr1, info, &data1, &data2);
+
+	/* Evaluate the second sub-expression and cast to the final type */
+	ILGenCast(info, ILNode_GenValue(node->expr2, info), finalType);
+
+	/* Store the value into the destination */
+	ILNode_Store(node->expr1, info, 1, data1, data2);
+
+	/* Return the final type to the caller */
+	return finalType;
+}
+
+/*
+ * Generate value code for an arithmetic assignment expression.
+ */
+ILNode_GenValue(ILNode_AssignExpression)
+{
+	return AssignCommon(node, info, 1);
+}
+
+/*
+ * Generate discard code for a pre or post increment.
+ */
+ILNode_GenDiscard(ILNode_PreInc),
+ILNode_GenDiscard(ILNode_PostInc)
+{
+	ILMachineType finalType;
+	ILMachineType commonType;
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	finalType = ILNode_GetAndPrepare(node->expr, info, 0, &data1, &data2);
+
+	/* Determine the common type for the operation.  We use
+	   "int8" as the type of the "1" constant to be added */
+	commonType = ILCommonType(info, finalType, ILMachineType_Int8, 0);
+
+	/* Cast the first sub-expression to the common type */
+	ILGenCast(info, finalType, commonType);
+
+	/* Increment the value on the top of the stack */
+	ILIncrement_ApplyOp(info, commonType);
+
+	/* Convert the common type back into the final type */
+	ILGenCast(info, commonType, finalType);
+
+	/* Store the value into the destination */
+	ILNode_Store(node->expr, info, 0, data1, data2);
+}
+
+/*
+ * Generate discard code for a pre or post decrement.
+ */
+ILNode_GenDiscard(ILNode_PreDec),
+ILNode_GenDiscard(ILNode_PostDec)
+{
+	ILMachineType finalType;
+	ILMachineType commonType;
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	finalType = ILNode_GetAndPrepare(node->expr, info, 0, &data1, &data2);
+
+	/* Determine the common type for the operation.  We use
+	   "int8" as the type of the "1" constant to be subtracted */
+	commonType = ILCommonType(info, finalType, ILMachineType_Int8, 0);
+
+	/* Cast the first sub-expression to the common type */
+	ILGenCast(info, finalType, commonType);
+
+	/* Decrement the value on the top of the stack */
+	ILDecrement_ApplyOp(info, commonType);
+
+	/* Convert the common type back into the final type */
+	ILGenCast(info, commonType, finalType);
+
+	/* Store the value into the destination */
+	ILNode_Store(node->expr, info, 0, data1, data2);
+}
+
+/*
+ * Generate discard code for a user increment or decrement.
+ */
+ILNode_GenDiscard(ILNode_UserPreInc),
+ILNode_GenDiscard(ILNode_UserPostInc),
+ILNode_GenDiscard(ILNode_UserPreDec),
+ILNode_GenDiscard(ILNode_UserPostDec)
+{
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	ILNode_GetAndPrepare(node->expr, info, 0, &data1, &data2);
+
+	/* Increment or decrement the value on the top of the stack */
+	ILGenCallByMethod(info, node->method);
+
+	/* Store the value into the destination */
+	ILNode_Store(node->expr, info, 0, data1, data2);
+}
+
+/*
+ * Generate discard code for a pointer-based pre or post increment.
+ */
+ILNode_GenDiscard(ILNode_PreIncPtr),
+ILNode_GenDiscard(ILNode_PostIncPtr)
+{
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	ILNode_GetAndPrepare(node->expr, info, 0, &data1, &data2);
+
+	/* Increment the value on the top of the stack */
+	if(node->size != IL_MAX_UINT32)
+	{
+		ILGenUIntNative(info, node->size);
+		ILGenAdjust(info, 1);
+	}
+	else if(node->sizeNode)
+	{
+		ILNode_GenValue(node->sizeNode, info);
+		ILGenSimple(info, IL_OP_CONV_U);
+	}
+	ILGenSimple(info, IL_OP_ADD);
+	ILGenAdjust(info, -1);
+
+	/* Store the value into the destination */
+	ILNode_Store(node->expr, info, 0, data1, data2);
+}
+
+/*
+ * Generate discard code for a pointer-based pre or post decrement.
+ */
+ILNode_GenDiscard(ILNode_PreDecPtr),
+ILNode_GenDiscard(ILNode_PostDecPtr)
+{
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	ILNode_GetAndPrepare(node->expr, info, 0, &data1, &data2);
+
+	/* Increment the value on the top of the stack */
+	if(node->size != IL_MAX_UINT32)
+	{
+		ILGenUIntNative(info, node->size);
+		ILGenAdjust(info, 1);
+	}
+	else if(node->sizeNode)
+	{
+		ILNode_GenValue(node->sizeNode, info);
+		ILGenSimple(info, IL_OP_CONV_U);
+	}
+	ILGenSimple(info, IL_OP_SUB);
+	ILGenAdjust(info, -1);
+
+	/* Store the value into the destination */
+	ILNode_Store(node->expr, info, 0, data1, data2);
+}
+
+/*
+ * Generate value code for a pre increment.
+ */
+ILNode_GenValue(ILNode_PreInc)
+{
+	ILMachineType finalType;
+	ILMachineType commonType;
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	finalType = ILNode_GetAndPrepare(node->expr, info, 0, &data1, &data2);
+
+	/* Determine the common type for the operation.  We use
+	   "int8" as the type of the "1" constant to be added */
+	commonType = ILCommonType(info, finalType, ILMachineType_Int8, 0);
+
+	/* Cast the first sub-expression to the common type */
+	ILGenCast(info, finalType, commonType);
+
+	/* Increment the value on the top of the stack */
+	ILIncrement_ApplyOp(info, commonType);
+
+	/* Convert the common type back into the final type */
+	ILGenCast(info, commonType, finalType);
+
+	/* Store the value into the destination */
+	ILNode_Store(node->expr, info, 1, data1, data2);
+
+	/* Return the final type to the caller */
+	return finalType;
+}
+
+/*
+ * Generate value code for a post increment.
+ */
+ILNode_GenValue(ILNode_PostInc)
+{
+	ILMachineType finalType;
+	ILMachineType commonType;
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	finalType = ILNode_GetAndPrepare(node->expr, info, 1, &data1, &data2);
+
+	/* Determine the common type for the operation.  We use
+	   "int8" as the type of the "1" constant to be added */
+	commonType = ILCommonType(info, finalType, ILMachineType_Int8, 0);
+
+	/* Cast the first sub-expression to the common type */
+	ILGenCast(info, finalType, commonType);
+
+	/* Increment the value on the top of the stack */
+	ILIncrement_ApplyOp(info, commonType);
+
+	/* Convert the common type back into the final type */
+	ILGenCast(info, commonType, finalType);
+
+	/* Store the value into the destination */
+	ILNode_Store(node->expr, info, 0, data1, data2);
+
+	/* Return the final type to the caller */
+	return finalType;
+}
+
+/*
+ * Generate value code for a pre decrement.
+ */
+ILNode_GenValue(ILNode_PreDec)
+{
+	ILMachineType finalType;
+	ILMachineType commonType;
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	finalType = ILNode_GetAndPrepare(node->expr, info, 0, &data1, &data2);
+
+	/* Determine the common type for the operation.  We use
+	   "int8" as the type of the "1" constant to be subtracted */
+	commonType = ILCommonType(info, finalType, ILMachineType_Int8, 0);
+
+	/* Cast the first sub-expression to the common type */
+	ILGenCast(info, finalType, commonType);
+
+	/* Increment the value on the top of the stack */
+	ILDecrement_ApplyOp(info, commonType);
+
+	/* Convert the common type back into the final type */
+	ILGenCast(info, commonType, finalType);
+
+	/* Store the value into the destination */
+	ILNode_Store(node->expr, info, 1, data1, data2);
+
+	/* Return the final type to the caller */
+	return finalType;
+}
+
+/*
+ * Generate value code for a post decrement.
+ */
+ILNode_GenValue(ILNode_PostDec)
+{
+	ILMachineType finalType;
+	ILMachineType commonType;
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	finalType = ILNode_GetAndPrepare(node->expr, info, 1, &data1, &data2);
+
+	/* Determine the common type for the operation.  We use
+	   "int8" as the type of the "1" constant to be subtracted */
+	commonType = ILCommonType(info, finalType, ILMachineType_Int8, 0);
+
+	/* Cast the first sub-expression to the common type */
+	ILGenCast(info, finalType, commonType);
+
+	/* Increment the value on the top of the stack */
+	ILDecrement_ApplyOp(info, commonType);
+
+	/* Convert the common type back into the final type */
+	ILGenCast(info, commonType, finalType);
+
+	/* Store the value into the destination */
+	ILNode_Store(node->expr, info, 0, data1, data2);
+
+	/* Return the final type to the caller */
+	return finalType;
+}
+
+/*
+ * Generate value code for a user pre increment or decrement.
+ */
+ILNode_GenValue(ILNode_UserPreInc),
+ILNode_GenValue(ILNode_UserPreDec)
+{
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	ILNode_GetAndPrepare(node->expr, info, 0, &data1, &data2);
+
+	/* Increment or decrement the value on the top of the stack */
+	ILGenCallByMethod(info, node->method);
+
+	/* Store the value into the destination */
+	ILNode_Store(node->expr, info, 1, data1, data2);
+
+	/* Return the final type to the caller */
+	return node->type;
+}
+
+/*
+ * Generate value code for a user post increment or decrement.
+ */
+ILNode_GenValue(ILNode_UserPostInc),
+ILNode_GenValue(ILNode_UserPostDec)
+{
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	ILNode_GetAndPrepare(node->expr, info, 1, &data1, &data2);
+
+	/* Increment or decrement the value on the top of the stack */
+	ILGenCallByMethod(info, node->method);
+
+	/* Store the value into the destination */
+	ILNode_Store(node->expr, info, 0, data1, data2);
+
+	/* Return the final type to the caller */
+	return node->type;
+}
+
+/*
+ * Generate value code for a pointer-based pre increment.
+ */
+ILNode_GenValue(ILNode_PreIncPtr)
+{
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	ILNode_GetAndPrepare(node->expr, info, 0, &data1, &data2);
+
+	/* Increment the value on the top of the stack */
+	if(node->size != IL_MAX_UINT32)
+	{
+		ILGenUIntNative(info, node->size);
+		ILGenAdjust(info, 1);
+	}
+	else if(node->sizeNode)
+	{
+		ILNode_GenValue(node->sizeNode, info);
+		ILGenSimple(info, IL_OP_CONV_U);
+	}
+	ILGenSimple(info, IL_OP_ADD);
+	ILGenAdjust(info, -1);
+
+	/* Store the value into the destination */
+	ILNode_Store(node->expr, info, 1, data1, data2);
+
+	/* Return the final type to the caller */
+	return ILMachineType_UnmanagedPtr;
+}
+
+/*
+ * Generate value code for a pointer-based post increment.
+ */
+ILNode_GenValue(ILNode_PostIncPtr)
+{
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	ILNode_GetAndPrepare(node->expr, info, 1, &data1, &data2);
+
+	/* Increment the value on the top of the stack */
+	if(node->size != IL_MAX_UINT32)
+	{
+		ILGenUIntNative(info, node->size);
+		ILGenAdjust(info, 1);
+	}
+	else if(node->sizeNode)
+	{
+		ILNode_GenValue(node->sizeNode, info);
+		ILGenSimple(info, IL_OP_CONV_U);
+	}
+	ILGenSimple(info, IL_OP_ADD);
+	ILGenAdjust(info, -1);
+
+	/* Store the value into the destination */
+	ILNode_Store(node->expr, info, 0, data1, data2);
+
+	/* Return the final type to the caller */
+	return ILMachineType_UnmanagedPtr;
+}
+
+/*
+ * Generate value code for a pointer-based pre decrement.
+ */
+ILNode_GenValue(ILNode_PreDecPtr)
+{
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	ILNode_GetAndPrepare(node->expr, info, 0, &data1, &data2);
+
+	/* Increment the value on the top of the stack */
+	if(node->size != IL_MAX_UINT32)
+	{
+		ILGenUIntNative(info, node->size);
+		ILGenAdjust(info, 1);
+	}
+	else if(node->sizeNode)
+	{
+		ILNode_GenValue(node->sizeNode, info);
+		ILGenSimple(info, IL_OP_CONV_U);
+	}
+	ILGenSimple(info, IL_OP_SUB);
+	ILGenAdjust(info, -1);
+
+	/* Store the value into the destination */
+	ILNode_Store(node->expr, info, 1, data1, data2);
+
+	/* Return the final type to the caller */
+	return ILMachineType_UnmanagedPtr;
+}
+
+/*
+ * Generate value code for a pointer-based post decrement.
+ */
+ILNode_GenValue(ILNode_PostDecPtr)
+{
+	void *data1, *data2;
+
+	/* Get and prepare the l-value for a later store operation */
+	ILNode_GetAndPrepare(node->expr, info, 1, &data1, &data2);
+
+	/* Increment the value on the top of the stack */
+	if(node->size != IL_MAX_UINT32)
+	{
+		ILGenUIntNative(info, node->size);
+		ILGenAdjust(info, 1);
+	}
+	else
+	{
+		ILNode_GenValue(node->sizeNode, info);
+		ILGenSimple(info, IL_OP_CONV_U);
+	}
+	ILGenSimple(info, IL_OP_SUB);
+	ILGenAdjust(info, -1);
+
+	/* Store the value into the destination */
+	ILNode_Store(node->expr, info, 0, data1, data2);
+
+	/* Return the final type to the caller */
+	return ILMachineType_UnmanagedPtr;
+}
+
+/*
+ * Apply the increment operator to various types.
+ */
+ILIncrement_ApplyOp(ILMachineType_Int8)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenSimple(info, IL_OP_ADD);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I1);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I1);
+	}
+	ILGenExtend(info, 1);
+}
+ILIncrement_ApplyOp(ILMachineType_UInt8)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenSimple(info, IL_OP_ADD);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U1_UN);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U1);
+	}
+	ILGenExtend(info, 1);
+}
+ILIncrement_ApplyOp(ILMachineType_Int16)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenSimple(info, IL_OP_ADD);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I2);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I2);
+	}
+	ILGenExtend(info, 1);
+}
+ILIncrement_ApplyOp(ILMachineType_UInt16),
+ILIncrement_ApplyOp(ILMachineType_Char)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenSimple(info, IL_OP_ADD);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U2_UN);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U2);
+	}
+	ILGenExtend(info, 1);
+}
+ILIncrement_ApplyOp(ILMachineType_Int32),
+ILIncrement_ApplyOp(ILMachineType_NativeInt)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_ADD_OVF);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_ADD);
+	}
+	ILGenExtend(info, 1);
+}
+ILIncrement_ApplyOp(ILMachineType_UInt32),
+ILIncrement_ApplyOp(ILMachineType_NativeUInt),
+ILIncrement_ApplyOp(ILMachineType_UnmanagedPtr)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_ADD_OVF_UN);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_ADD);
+	}
+	ILGenExtend(info, 1);
+}
+ILIncrement_ApplyOp(ILMachineType_Int64)
+{
+	ILGenInt64(info, 1);
+	ILGenAdjust(info, 1);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_ADD_OVF);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_ADD);
+	}
+	ILGenAdjust(info, -1);
+}
+ILIncrement_ApplyOp(ILMachineType_UInt64)
+{
+	ILGenUInt64(info, 1);
+	ILGenAdjust(info, 1);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_ADD_OVF_UN);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_ADD);
+	}
+	ILGenAdjust(info, -1);
+}
+ILIncrement_ApplyOp(ILMachineType_Float32)
+{
+	ILGenLoadFloat32(info, (ILFloat)1.0);
+	ILGenSimple(info, IL_OP_ADD);
+	ILGenExtend(info, 1);
+}
+ILIncrement_ApplyOp(ILMachineType_Float64),
+ILIncrement_ApplyOp(ILMachineType_NativeFloat)
+{
+	ILGenLoadFloat64(info, (ILDouble)1.0);
+	ILGenSimple(info, IL_OP_ADD);
+	ILGenExtend(info, 1);
+}
+ILIncrement_ApplyOp(ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"valuetype [.library]System.Decimal "
+			"[.library]System.Decimal::op_Increment"
+			"(valuetype [.library]System.Decimal)");
+}
+ILIncrement_ApplyOp(ILMachineType_Void),
+ILIncrement_ApplyOp(ILMachineType_Boolean),
+ILIncrement_ApplyOp(ILMachineType_String),
+ILIncrement_ApplyOp(ILMachineType_ObjectRef),
+ILIncrement_ApplyOp(ILMachineType_ManagedPtr),
+ILIncrement_ApplyOp(ILMachineType_TransientPtr),
+ILIncrement_ApplyOp(ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+}
+
+/*
+ * Apply the decrement operator to various types.
+ */
+ILDecrement_ApplyOp(ILMachineType_Int8)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenSimple(info, IL_OP_SUB);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I1);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I1);
+	}
+	ILGenExtend(info, 1);
+}
+ILDecrement_ApplyOp(ILMachineType_UInt8)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenSimple(info, IL_OP_SUB);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U1_UN);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U1);
+	}
+	ILGenExtend(info, 1);
+}
+ILDecrement_ApplyOp(ILMachineType_Int16)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenSimple(info, IL_OP_SUB);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I2);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I2);
+	}
+	ILGenExtend(info, 1);
+}
+ILDecrement_ApplyOp(ILMachineType_UInt16),
+ILDecrement_ApplyOp(ILMachineType_Char)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenSimple(info, IL_OP_SUB);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U2_UN);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U2);
+	}
+	ILGenExtend(info, 1);
+}
+ILDecrement_ApplyOp(ILMachineType_Int32),
+ILDecrement_ApplyOp(ILMachineType_NativeInt)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_SUB_OVF);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_SUB);
+	}
+	ILGenExtend(info, 1);
+}
+ILDecrement_ApplyOp(ILMachineType_UInt32),
+ILDecrement_ApplyOp(ILMachineType_NativeUInt),
+ILDecrement_ApplyOp(ILMachineType_UnmanagedPtr)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_SUB_OVF_UN);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_SUB);
+	}
+	ILGenExtend(info, 1);
+}
+ILDecrement_ApplyOp(ILMachineType_Int64)
+{
+	ILGenInt64(info, 1);
+	ILGenAdjust(info, 1);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_SUB_OVF);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_SUB);
+	}
+	ILGenAdjust(info, -1);
+}
+ILDecrement_ApplyOp(ILMachineType_UInt64)
+{
+	ILGenUInt64(info, 1);
+	ILGenAdjust(info, 1);
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_SUB_OVF_UN);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_SUB);
+	}
+	ILGenAdjust(info, -1);
+}
+ILDecrement_ApplyOp(ILMachineType_Float32)
+{
+	ILGenLoadFloat32(info, (ILFloat)1.0);
+	ILGenSimple(info, IL_OP_SUB);
+	ILGenExtend(info, 1);
+}
+ILDecrement_ApplyOp(ILMachineType_Float64),
+ILDecrement_ApplyOp(ILMachineType_NativeFloat)
+{
+	ILGenLoadFloat64(info, (ILDouble)1.0);
+	ILGenSimple(info, IL_OP_SUB);
+	ILGenExtend(info, 1);
+}
+ILDecrement_ApplyOp(ILMachineType_Decimal)
+{
+	ILGenCallByName(info,
+		"valuetype [.library]System.Decimal "
+			"[.library]System.Decimal::op_Decrement"
+			"(valuetype System.Decimal)");
+}
+ILDecrement_ApplyOp(ILMachineType_Void),
+ILDecrement_ApplyOp(ILMachineType_Boolean),
+ILDecrement_ApplyOp(ILMachineType_String),
+ILDecrement_ApplyOp(ILMachineType_ObjectRef),
+ILDecrement_ApplyOp(ILMachineType_ManagedPtr),
+ILDecrement_ApplyOp(ILMachineType_TransientPtr),
+ILDecrement_ApplyOp(ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+}

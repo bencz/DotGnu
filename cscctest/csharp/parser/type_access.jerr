@@ -1,0 +1,31 @@
+./type_access.cs:39: `private' modifier is not permitted on non-nested types
+./type_access.cs:40: `protected' modifier is not permitted on non-nested types
+./type_access.cs:41: `new' modifier is not permitted on non-nested types
+./type_access.cs:44: cannot use both `public' and `private'
+./type_access.cs:45: cannot use both `public' and `protected'
+./type_access.cs:46: cannot use both `public' and `internal'
+./type_access.cs:47: cannot use both `internal' and `private'
+./type_access.cs:48: cannot use both `internal' and `protected'
+./type_access.cs:51: cannot use both `public' and `private'
+./type_access.cs:52: cannot use both `public' and `protected'
+./type_access.cs:53: cannot use both `public' and `internal'
+./type_access.cs:54: cannot use both `private' and `internal'
+./type_access.cs:55: cannot use both `private' and `protected'
+./type_access.cs:59: `static' cannot be used in this context
+./type_access.cs:60: `readonly' cannot be used in this context
+./type_access.cs:61: `virtual' cannot be used in this context
+./type_access.cs:62: `override' cannot be used in this context
+./type_access.cs:63: `extern' cannot be used in this context
+./type_access.cs:66: `static' cannot be used in this context
+./type_access.cs:67: `readonly' cannot be used in this context
+./type_access.cs:68: `virtual' cannot be used in this context
+./type_access.cs:69: `override' cannot be used in this context
+./type_access.cs:70: `extern' cannot be used in this context
+./type_access.cs:74: `public' specified multiple times
+./type_access.cs:75: `internal' specified multiple times
+./type_access.cs:76: `abstract' specified multiple times
+./type_access.cs:77: `sealed' specified multiple times
+./type_access.cs:78: `sealed' specified multiple times
+./type_access.cs:78: `sealed' specified multiple times
+./type_access.cs:81: unsafe class declaration not permitted with Java output
+./type_access.cs:84: unsafe class declaration not permitted with Java output

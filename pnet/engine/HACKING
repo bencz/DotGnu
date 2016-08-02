@@ -1,0 +1,344 @@
+Introduction
+------------
+
+This is the HACKING file for the Portable.NET runtime engine.
+It describes the basic architecture, how you can get started
+on the development side, and provides a road map to interesting
+parts of the engine.
+
+Architecture
+------------
+
+The Portable.NET engine is split into five main parts: loading,
+verification, coding, CVM interpreter, and class library support.
+
+The loading process takes an IL application (usually a ".exe"),
+and converts into into the internal representation that can be
+manipulated by the engine.  Most of the heavy-lifting work is
+done by the code in the "image" directory, which is shared with
+the C# compiler, assembler, disassembler, and other tools.
+
+"ILExecProcessLoadImage" or "ILExecProcessLoadFile" are typically
+used to load an image into the engine, ready for execution.
+
+The second step occurs when methods are executed.  The IL
+bytecode for a method is analysed to ensure that all relevant
+correctness and security conditions are satisfied.  This is
+done in "_ILVerify", which is split across the various
+"verify*.c" files.
+
+As the method is being analysed by the verifier, callbacks are
+made to a "coder".  This translates the IL into more efficient
+execution formats such as CVM or native machine code.  Currently,
+the only coder in the system is "ILCVMCoder", which is implemented
+in the "cvmc*.c" files.  The file "include/il_coder.h" defines
+the coder API, for people who are interested in writing a native
+code JIT.
+
+Once the coder has completed its work, the translated code is
+stored in the method cache (method_cache.c) so that it does not
+need to be re-translated the next time the method is invoked.
+
+The Converted Virtual Machine (CVM) is one example of a coder.
+It is a highly-efficient bytecode execution format, which can be
+tuned to the particulars of individual platforms.  The CVM
+interpreter can be found in the "_ILCVMInterpreter" function
+in "cvm*.c".
+
+CVM is designed to be highly efficient for direct interpretation.
+It is not intended to be a standalone execution format.  It borrows
+concepts from both the JVM and IL bytecode formats, together with
+specific optimisations for common cases.  There are no "quick"
+opcodes in JVM style - opcode substitution is done in the coder,
+not in the interpreter.  By the time the CVM interpreter sees the
+code, all opcodes are "quick".
+
+The CVM instruction set is documented using XML tags in the engine
+source code (cvm*.c).  A HTML version can normally be found in
+"doc/cvmdoc" (assuming that you have Python on your system),
+or on the Portable.NET Web site:
+
+    http://www.southern-storm.com.au/doc/cvm/index.html
+
+The last part of the engine is the class library support routines,
+which are found in the (lib*.c) source files.  These provide
+implementations of "internalcall" methods that are needed by the
+pnetlib C# class library.  See "Internal calls" below for more
+information.
+
+A quick tour of executing "Hello World"
+---------------------------------------
+
+This section describes the steps that are undertaken to execute
+the following C# application:
+
+    using System;
+
+    class Hello
+    {
+        public static void Main(String[] args)
+        {
+            Console.WriteLine("Hello World!");
+            Console.WriteLine("Hello World Again!");
+        }
+    }
+
+The following is what the IL code for this method looks like:
+
+    .method public static hidebysig
+        void Main(class System.String[] args) cil managed 
+    {
+        .entrypoint
+        .maxstack  8
+        ldstr  "Hello World!"
+        call   void System.Console::WriteLine(class System.String)
+        ldstr  "Hello World Again!"
+        call   void System.Console::WriteLine(class System.String)
+        ret
+    }
+
+An "execution process" is created in "main" (ilrun.c) to hold all
+information about an executing application.  After loading the
+application into the process and initialising the system, control
+is eventually passed to the "CallMethod" function (call.c).
+
+This pushes the arguments onto the CVM stack ("args" in this case),
+and then activates the coder by calling "_ILConvertMethod" (convert.c)
+for "Hello::Main".
+
+If the method had already been translated previously, then
+"_ILConvertMethod" would retrieve the original translation from
+the method cache and return.  Since this is the first time that
+"Main" has been called, we don't have a cached original.
+
+"_ILConvertMethod" now calls "_ILVerify", passing it the IL bytecode
+for the method.  The verifier processes each instruction in turn,
+validating that the correct types of values are provided on the
+stack and that all of the IL-related security conditions are satisfied.
+
+The first instruction is "ldstr".  The verifier (verify_const.c)
+checks that the supplied string is valid, and that there is
+sufficient space on the stack for one item.  It then calls the
+coder to inform it that a string has been loaded, and then it
+updates its internal stack state for subsequent instructions.
+
+The coder function, in this case "CVMCoder_StringConstant"
+(cvmc_const.c) outputs the necessary CVM instructions to effect
+a string load.  These CVM instructions are written to the method
+cache (method_cache.c).
+
+The second instruction, "call", is handled in a similar manner.
+The CVMCoder_CallMethod function (cvmc_call.c) outputs a CVM
+"call_extern" instruction for the "Console.WriteLine" method.
+This CVM instruction means "call an external method that we
+may not have translated yet".
+
+The process continues with the other instructions, until control
+eventually returns back to "_ILConvertMethod", and then back to
+"CallMethod".
+
+Now that we have the CVM version of the method, we call into the
+function "_ILCVMInterpreter" (cvm.c) to execute its code.  Execution
+then proceeds in the manner of a normal switch-loop interpreter.
+
+When execution reaches the "call_extern" instruction (cvm_call.c),
+the engine notices that "Console.WriteLine" has not yet been
+translated.  So it calls out to "_ILConvertMethod" and creates
+the CVM verion of that method.  And so on.
+
+When control returns back to "Hello::Main", it will push the
+"Hello World Again!" string onto the stack and once again call
+"Console.WriteLine" with a "call_extern" instruction.  However,
+this time we already have a CVM translation and so it isn't
+necessary to call "_ILConvertMethod".
+
+This process continues for as long as is necessary to execute
+all of the application's code.  Control eventually returns to
+"main" (ilrun.c) and the engine exits.
+
+Optimising and extending the CVM interpreter
+--------------------------------------------
+
+The CVM interpreter can be optimised in two ways: processor
+specific optimisations and new instructions.
+
+The first is demonstrated by the register definitions at the
+top of "cvm.c".  If common interpreter variables such as "pc",
+"stacktop", and "frame", are placed into registers, it can
+considerably speed up the engine.
+
+The second way to optimise the interpreter is to adjust the CVM
+instruction sequence that is generated by the CVM coder for common
+IL input sequences.  For example, there are optimised instructions
+for loading local variables of integer and pointer types, but no
+optimised instructions for loading floating-point types.
+
+One way to speed up floating-point code might be to introduce new
+instructions for loading and storing such local variables.  The
+instructions would be added to the instruction set (cvm.h and
+cvm_dasm.c), and then to the interpreter itself (cvm_var.c).  Once
+this has been done, the coder is modified (cvmc_var.c) to recognise
+floating-point types and output the new instructions.
+
+Internal calls
+--------------
+
+From the programmer's point of view, the easiest way to start work
+on the Portable.NET engine is to implement "internalcall" methods.
+These are methods that are built into the engine to implement system
+facilities such as Strings, Files, Sockets, Threads, etc.
+
+Suppose we wish to implement the file close operation, which is
+declared in the "Platform.FileMethods" class as follows:
+
+    [MethodImpl(MethodImplOptions.InternalCall)]
+    extern public static bool Close(IntPtr handle); 
+
+The "IntPtr" type here refers to "an integer the same size as a
+native pointer".  This is the C# way to declare that our method
+takes a C pointer value as a parameter.
+
+This "internalcall" method is hooked into the engine using the
+file "int_table.c".  This file is generated using the "mkint.sh"
+script and declares all of the "internalcall" methods that are
+exported by pnetlib.  In our case, "int_table.c" indicates that
+"Platform.FileMethods.Close" is mapped to a C function called
+"_IL_FileMethods_Close".
+
+Now we have to implement the "internalcall" method, which we
+do in the appropriate "lib_*.c" file; "lib_file.c" in this case:
+
+    ILBool _IL_FileMethods_Close(ILExecThread *thread, ILNativeInt handle)
+    {
+        return (ILBool)(ILSysIOClose((ILSysIOHandle)handle));
+    }
+
+The "ILSysIOClose" function does the actual work of closing the file
+and returns a boolean result.  For system-related methods, we always
+implement them in the "support" directory using a generic function.
+We try to avoid calling the underlying "libc" directly, because
+that would make the code harder to port to new platforms.
+
+We note that the C# "IntPtr" type has been mapped to "ILNativeInt"
+in our example.  The following table describes other C# types and
+their C counterparts:
+
+    bool            ILBool
+    sbyte           ILInt8
+    byte            ILUInt8
+    short           ILInt16
+    ushort          ILUInt16
+    char            ILUInt16
+    int             ILInt32
+    uint            ILUInt32
+    long            ILInt64
+    ulong           ILUInt64
+    float           ILFloat
+    double          ILDouble
+    object          ILObject *
+    string          ILString *
+    ValueType       void *
+    decimal         ILDecimal *
+    ElemType[]      System_Array *
+
+Value types are passed as pointer to the value, rather than on
+the stack.  Enumerated types are passed as their underlying type.
+Most enumerated types have an underlying type of "int" (ILInt32).
+
+If you are in doubt as to what C type to use, then consult the
+"int_proto.h" file, which is automatically generated from the
+definitions in "pnetlib".
+
+When designing an "internalcall" method, it is usually best to
+pass values to the engine as primitive parameters, rather than
+as objects that need to be unpacked by the engine.  That is why
+the file methods are passed an "IntPtr" handle, instead of a
+"FileStream" object.  The less unpacking that needs to be done
+by the engine, the easier your job will be.
+
+If you are looking for an "internalcall" to work on, then grep
+the "lib_*.c" files for "TODO".  There's lots of stuff to do.
+
+Debug modes
+-----------
+
+There are several debug modes in the engine that can be activated
+for tracking down difficult bugs and for profiling the engine's
+performance.  These modes are turned off by default because they
+seriously degrade system performance when enabled.
+
+CVM Instruction Dump
+
+    This debug mode is activated by defining "IL_DUMP_CVM" at the
+    top of "cvm_config.h" and then rebuilding the engine.  It dumps
+    out every CVM instruction that is executed by the engine.
+
+    This mode dumps a huge amount of information to stdout, and is
+    mostly of use to people wishing to discover why CVM isn't
+    working correctly.  Sometimes this is due to the coder
+    outputting the wrong instruction sequence for some IL bytecode,
+    and other times it may be due to bugs in the instruction set
+    implementation.
+
+Verifier Error Dump
+
+    Sometimes you will get "MissingMethodException" on a method
+    that isn't actually missing.  Defining "IL_VERIFY_DEBUG" at
+    the top of "verify.c" will display all verification errors
+    that occurred.  This may indicate a bug in the verifier,
+    compiler, or assembler.
+
+    This debug mode may print nothing at all, in which case the
+    "MissingMethodException" may be due to a bug in the coder
+    or the interpreter.  You'll need the "CVM Instruction Dump"
+    to debug those kinds of problems.
+
+CVM Instruction Profiling
+
+    If you define "IL_PROFILE_CVM_INSNS" at the top of
+    "cvm_config.h", it will keep a count of the number of times
+    each CVM instruction is used while executing an application.
+    If you run the application with "ilrun -I name.exe", it will
+    dump out the counts before exiting.
+
+    This can be useful to determine which CVM instructions are
+    used more often than others, to focus on those areas of the
+    engine that may need optimisation.
+
+    Note: different applications will have different instruction
+    profiles, and so there isn't any "best" way to determine
+    which instructions are candidates for optimisation.
+
+Method Call Profiling
+
+    If you define "IL_PROFILE_CVM_METHODS" at the top of
+    "cvm_config.h", it will keep a count of the number of times
+    each method is called while executing an application.  If you
+    run the application with "ilrun -M name.exe", it will dump
+    out the counts before exiting.
+
+    This can be useful to determine which areas of pnetlib or
+    an application may be candidates for optimisation.
+
+    Sometimes this can also be useful to determine if a method
+    should be inlined ("GetInlineMethodType" in verify_call.c)
+    to improve its performance.
+
+    Note: as with instruction profiling, different applications
+    will produce different method profiles.
+
+Variable Usage Profiling
+
+    If you define "IL_PROFILE_CVM_VAR_USAGE" at the top of
+    "cvm_config.h", it will keep a count of the number of times
+    that variables 0 through 255 are loaded or stored while
+    executing an application.  If you run the application with
+    "ilrun -V name.exe", it will dump out the counts before
+    exiting.
+
+    This can be useful to determine if certain variables are
+    used more frequently than others, and hence may be a
+    candidate for a new variable access instruction.
+
+    Note: as with instruction profiling, different applications
+    will produce different variable usage profiles.

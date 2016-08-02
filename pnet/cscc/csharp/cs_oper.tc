@@ -1,0 +1,2860 @@
+/*
+ * cs_oper.tc - Semantic analysis for C# operators.
+ *
+ * Copyright (C) 2001, 2002, 2009  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+%{
+
+/*
+ * Look for a user-specified binary operator of a particular name.
+ */
+static ILMethod *FindUserBinaryOperator(ILGenInfo *info, const char *name,
+										CSSemValue *arg1, ILNode *arg1Node,
+										CSSemValue *arg2, ILNode *arg2Node)
+{
+	ILMethod *method;
+	ILType *arg1Type = CSSemGetType(*arg1);
+	ILType *arg2Type = CSSemGetType(*arg2);
+	ILClass *arg1Class = ILTypeToClass(info, arg1Type);
+	ILClass *arg2Class = ILTypeToClass(info, arg2Type);
+
+	/* Try looking in the first type */
+	if(arg1Class)
+	{
+		method = ILResolveBinaryOperator(info, arg1Class, name,
+										 arg1Type, arg1Node,
+										 arg2Type, arg2Node);
+		if(method)
+		{
+			return method;
+		}
+	}
+
+	/* Try looking in the second type */
+	if(arg2Class)
+	{
+		method = ILResolveBinaryOperator(info, arg2Class, name,
+										 arg1Type, arg1Node,
+										 arg2Type, arg2Node);
+		if(method)
+		{
+			return method;
+		}
+	}
+
+	/* The operator does not exist */
+	return 0;
+}
+
+/* 
+ * process UserBinaryOperator
+ */
+static void ApplyUserBinaryOperator(ILGenInfo *info, ILMethod *method,
+									ILNode_BinaryExpression *node,
+									ILNode **parent,CSSemValue *value1,
+									CSSemValue *value2)
+{
+	ILType *returnType;
+	ILType *sig;
+	ILType *argType1, *argType2;
+	
+	method = (ILMethod *)ILMemberImport(info->image, (ILMember *)method);
+	if(!method)
+	{
+		CCOutOfMemory();
+		return; /* fall back */
+	}
+	
+	sig= ILMethod_Signature(method);
+	
+	returnType = ILTypeGetReturn(sig);
+	
+	/* NOTE: this is valid even for non-static operators */
+	argType1=ILTypeGetParam(sig,1); 
+	argType2=ILTypeGetParam(sig,2);
+	
+	if(ILCanCoerce(info,CSSemGetType(*value1),argType1,1))
+	{
+		ILCoerce(info,node->expr1,
+					&(node->expr1),
+					CSSemGetType(*value1),
+					argType1,1);
+		/* CSSemSetRValue(*value1, argType1); *//* not needed */
+	}
+	if(ILCanCoerce(info,CSSemGetType(*value2),argType2,1))
+	{
+		ILCoerce(info,node->expr2,
+					&(node->expr2),
+					CSSemGetType(*value2),
+					argType2,1);
+		CSSemSetRValue(*value2, argType2);
+	}
+	*parent = ILNode_UserBinaryOp_create
+						(((ILNode_BinaryExpression*)(node))->expr1, 
+						((ILNode_BinaryExpression*)(node))->expr2,
+						 ILTypeToMachineType(returnType), method);
+	yysetfilename(*parent, yygetfilename(node));
+	yysetlinenum(*parent, yygetlinenum(node));
+	CSSemSetRValue(*value1, returnType);
+}
+
+/*
+ * Perform constant evaluation on an operator node.
+ */
+static void EvalOperator(ILGenInfo *info, ILNode *node,
+					     ILNode **parent, CSSemValue *result)
+{
+	ILEvalValue evalValue;
+	if(ILNode_EvalConst(node, info, &evalValue))
+	{
+		CSSemSetConstant(*result, CSSemGetType(*result), evalValue);
+		CSSemReplaceWithConstant(parent, *result);
+	}
+}
+
+/*
+ * Determine if a semantic value is zero.  Used to support
+ * implicit coercions from zero to enumerated types.
+ */
+static int IsEnumZero(CSSemValue *value)
+{
+	ILEvalValue *evalValue = CSSemGetConstant(*value);
+	if(evalValue)
+	{
+		switch(evalValue->valueType)
+		{
+			case ILMachineType_Int8:
+			case ILMachineType_UInt8:
+			case ILMachineType_Int16:
+			case ILMachineType_UInt16:
+			case ILMachineType_Int32:
+				return (evalValue->un.i4Value == 0);
+
+			default: break;
+		}
+	}
+	return 0;
+}
+
+/*
+ * Convert a type into one of "int", "uint", "long", or "ulong".
+ */
+static ILType *ToNumericType(ILGenInfo *info, ILType *fromType)
+{
+	if(ILCanCoerce(info, fromType, ILType_Int32, 0))
+	{
+		return ILType_Int32;
+	}
+	else if(ILCanCoerce(info, fromType, ILType_UInt32, 0))
+	{
+		return ILType_UInt32;
+	}
+	else if(ILCanCoerce(info, fromType, ILType_Int64, 0))
+	{
+		return ILType_Int64;
+	}
+	else if(ILCanCoerce(info, fromType, ILType_UInt64, 0))
+	{
+		return ILType_UInt64;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+/*
+ * Common semantic analysis function for binary arithmetic operators.
+ */
+static CSSemValue BinarySem(ILGenInfo *info, ILNode_BinaryExpression *node,
+					        ILNode **parent, const ILOperator *table,
+					        const char *name, const char *errorName,
+							int canCoerce)
+{
+	const ILOperator *oper;
+	ILMethod *method;
+	CSSemValue value1;
+	CSSemValue value2;
+	ILType *resultType;
+
+	/* Perform semantic analysis on the arguments */
+	value1 = ILNode_SemAnalysis(node->expr1, info, &(node->expr1));
+	value2 = ILNode_SemAnalysis(node->expr2, info, &(node->expr2));
+
+	/* The two arguments must be values */
+	if(!CSSemIsValue(value1) || !CSSemIsValue(value2))
+	{
+		goto error;
+	}
+
+	/* try constant coercion before operator lookup */
+	if(canCoerce && ILCanCoerceNodeKind(info,node->expr1,CSSemGetType(value1),
+			CSSemGetType(value2),IL_CONVERT_CONSTANT,1))
+	{
+		ILCoerceKind(info,node->expr1,&(node->expr1),CSSemGetType(value1),
+			CSSemGetType(value2),IL_CONVERT_CONSTANT,1);
+		CSSemSetRValue(value1,CSSemGetType(value2));
+	}
+	else if(canCoerce && 
+			ILCanCoerceNodeKind(info,node->expr2,CSSemGetType(value2),
+				CSSemGetType(value1),IL_CONVERT_CONSTANT,1))
+	{
+		ILCoerceKind(info,node->expr2,&(node->expr2),CSSemGetType(value2),
+			CSSemGetType(value1),IL_CONVERT_CONSTANT,1);
+		CSSemSetRValue(value2,CSSemGetType(value1));
+	}
+
+	/* Look for a builtin operator */
+	oper = ILFindBinaryOperator(table, CSSemGetType(value1),
+								CSSemGetType(value2), &resultType,
+								IsEnumZero(&value1), IsEnumZero(&value2));
+	if(oper)
+	{
+		ILApplyBinaryOperator(info, (ILNode *)node, parent, oper);
+		if(resultType)
+		{
+			CSSemSetRValue(value1, resultType);
+		}
+		else
+		{
+			CSSemSetRValue(value1, ILFindSystemType(info, "Decimal"));
+		}
+		EvalOperator(info, *parent, parent, &value1);
+		return value1;
+	}
+
+	/* Check for binary operations involving pointers */
+	if(ILType_IsPointer(CSSemGetType(value1)) &&
+	   ILType_IsPointer(CSSemGetType(value2)))
+	{
+		if(table == ILOp_Lt || table == ILOp_Le ||
+		   table == ILOp_Gt || table == ILOp_Ge)
+		{
+			/* Compare two pointers */
+			CSSemSetRValue(value1, ILType_Boolean);
+			return value1;
+		}
+	}
+
+	/* Look for a user-specified operator */
+	method = FindUserBinaryOperator(info, name, &(value1), node->expr1,
+									&(value2), node->expr2);
+	if(method)
+	{
+		ApplyUserBinaryOperator(info,method,(ILNode_BinaryExpression*)node,
+								parent,&(value1),&(value2));
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		return value1;
+	}
+	
+	if(!canCoerce)
+	{
+		goto error;
+	}
+
+	/* As a last resort try coercion */
+	if(ILCanCoerceNode(info, node->expr1, CSSemGetType(value1),
+					   CSSemGetType(value2),1))
+	{
+		ILCoerce(info, node->expr1, &(node->expr1), CSSemGetType(value1),
+				 CSSemGetType(value2),1);
+		CSSemSetRValue(value1, CSSemGetType(value2));
+	}
+	else if(ILCanCoerceNode(info, node->expr2, CSSemGetType(value2),
+					   CSSemGetType(value1),1))
+	{
+		ILCoerce(info, node->expr2, &(node->expr2), CSSemGetType(value2),
+				 CSSemGetType(value1),1);
+		CSSemSetRValue(value2, CSSemGetType(value1));
+	}
+	/* Look for a builtin operator */
+	oper = ILFindBinaryOperator(table, CSSemGetType(value1),
+								CSSemGetType(value2), &resultType,
+								IsEnumZero(&value1), IsEnumZero(&value2));
+	if(oper)
+	{
+		ILApplyBinaryOperator(info, (ILNode *)node, parent, oper);
+		if(resultType)
+		{
+			CSSemSetRValue(value1, resultType);
+		}
+		else
+		{
+			CSSemSetRValue(value1, ILFindSystemType(info, "Decimal"));
+		}
+		EvalOperator(info, *parent, parent, &value1);
+		return value1;
+	}
+
+	/* Could not find a suitable operator */
+error:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "invalid operands to binary `%s'", errorName);
+	CSSemSetRValue(value1, ILType_Int32);
+	return value1;
+}
+
+/*
+ * Look for a user-specified unary operator of a particular name.
+ */
+static ILMethod *FindUserUnaryOperator(ILGenInfo *info, const char *name,
+									   CSSemValue *arg, ILNode *argNode)
+{
+	ILMethod *method;
+	ILType *argType = CSSemGetType(*arg);
+	ILClass *argClass = ILTypeToClass(info, argType);
+
+	if(argClass)
+	{
+		method = ILResolveUnaryOperator(info, argClass, name, argType, argNode);
+		if(method)
+		{
+			return method;
+		}
+	}
+
+	/* The operator does not exist */
+	return 0;
+}
+
+/*
+ * Common semantic analysis function for unary arithmetic operators.
+ */
+static CSSemValue UnarySem(ILGenInfo *info, ILNode_UnaryExpression *node,
+					 	   ILNode **parent, const ILOperator *table,
+						   const char *name, const char *errorName)
+{
+	const ILOperator *oper;
+	ILMethod *method;
+	ILType *returnType;
+	CSSemValue value;
+	ILType *resultType;
+
+	/* Perform semantic analysis on the argument */
+	value = ILNode_SemAnalysis(node->expr, info, &(node->expr));
+
+	/* The argument must be a value */
+	if(!CSSemIsValue(value))
+	{
+		goto error;
+	}
+
+	/* Look for a builtin operator */
+	oper = ILFindUnaryOperator(table, CSSemGetType(value), &resultType);
+	if(oper)
+	{
+		ILApplyUnaryOperator(info, (ILNode *)node, parent, oper);
+		if(resultType)
+		{
+			CSSemSetRValue(value, resultType);
+		}
+		else
+		{
+			CSSemSetRValue(value, ILFindSystemType(info, "Decimal"));
+		}
+		EvalOperator(info, *parent, parent, &value);
+		return value;
+	}
+
+	/* Look for a user-specified operator */
+	method = FindUserUnaryOperator(info, name, &(value), node->expr);
+	if(method)
+	{
+		method = (ILMethod *)ILMemberImport(info->image, (ILMember *)method);
+		if(!method)
+		{
+			CCOutOfMemory();
+		}
+		returnType = ILTypeGetReturn(ILMethod_Signature(method));
+		*parent = ILNode_UserUnaryOp_create
+						(node->expr, ILTypeToMachineType(returnType), method);
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		CSSemSetRValue(value, returnType);
+		return value;
+	}
+
+	/* Could not find a suitable operator */
+error:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "invalid operands to unary `%s'", errorName);
+	CSSemSetRValue(value, ILType_Int32);
+	return value;
+}
+
+/*
+ * Create a SizeOf node for the given type.
+ */
+static ILNode *CreateSizeOf(ILGenInfo *info, ILType *type)
+{
+	ILNode_SizeOf *sizeNode;
+
+	sizeNode = (ILNode_SizeOf *)ILNode_SizeOf_create(0);
+	sizeNode->type = type;
+	sizeNode->size = GetPrimitiveTypeSize(type);
+
+	return (ILNode *)sizeNode;
+}
+
+/*
+ * Create an expression for arthmetic involving a pointer type and a
+ * numeric type.
+ */
+static ILNode *PointerDelta(ILGenInfo *info, ILType *refType, ILNode *numNode,
+							ILType *numType, ILType *resultType)
+{
+	ILNode *sizeNode;
+	ILNode *resultNode;
+	CSSemValue value;
+	ILMachineType machineType;
+
+	if(resultType == ILType_UInt32 || resultType == ILType_UInt64)
+	{
+		machineType = ILMachineType_NativeUInt;
+	}
+	else
+	{
+		machineType = ILMachineType_NativeInt;
+	}
+
+	if(refType == ILType_Void)
+	{
+		CCErrorOnLine(yygetfilename(numNode), yygetlinenum(numNode),
+					  "`void *' cannot be used for arithmetic operations");
+		refType = ILType_UInt8;
+	}
+	sizeNode = CreateSizeOf(info, refType);
+	sizeNode = ILNode_CastSimple_create(sizeNode, machineType);
+	numNode = ILNode_CastSimple_create(numNode, machineType);
+
+	resultNode = ILNode_Mul_create(numNode, sizeNode);
+	yysetfilename(resultNode, yygetfilename(numNode));
+	yysetlinenum(resultNode, yygetlinenum(numNode));
+	
+	/* Perform constant propagation if possible */
+	CSSemSetRValue(value, resultType);
+	EvalOperator(info, resultNode, &resultNode, &value);
+
+	return resultNode;
+}
+
+/*
+ * Perform an add or sub of a numeric type to a pointer.
+ */
+static void PointerOp(ILGenInfo *info, ILNode **parent,
+					  ILNode **pointerNode, ILType *pointerType,
+					  ILNode **numNode, ILType *numType,
+					  ILType *resultType)
+{
+	CSSemValue value;
+	ILType *elemType;
+
+	elemType = ILTypeStripPrefixes(ILType_Ref(pointerType));
+	ILCoerce(info, *pointerNode, pointerNode, pointerType, resultType, 0);
+	*numNode = PointerDelta(info, elemType, *numNode, numType, resultType);
+
+	CSSemSetRValue(value, resultType);
+	EvalOperator(info, *parent, parent, &value);
+}
+
+%}
+
+/*
+ * Perform semantic analysis for the addition operator.
+ */
+ILNode_SemAnalysis(ILNode_Add)
+{
+	const ILOperator *oper;
+	ILMethod *method;
+	CSSemValue value1;
+	CSSemValue value2;
+	ILType *resultType;
+
+	/* Perform semantic analysis on the arguments */
+	value1 = ILNode_SemAnalysis(node->expr1, info, &(node->expr1));
+	value2 = ILNode_SemAnalysis(node->expr2, info, &(node->expr2));
+
+	/* The two arguments must be values */
+	if(!CSSemIsValue(value1) || !CSSemIsValue(value2))
+	{
+		goto error;
+	}
+
+	/* try constant coercion first */
+	if(ILCanCoerceNodeKind(info,node->expr1,CSSemGetType(value1),
+			CSSemGetType(value2),IL_CONVERT_CONSTANT,1))
+	{
+		ILCoerceKind(info,node->expr1,&(node->expr1),CSSemGetType(value1),
+			CSSemGetType(value2),IL_CONVERT_CONSTANT,1);
+		CSSemSetRValue(value1,CSSemGetType(value2));
+	}
+	else if(ILCanCoerceNodeKind(info,node->expr2,CSSemGetType(value2),
+			CSSemGetType(value1),IL_CONVERT_CONSTANT,1))
+	{
+		ILCoerceKind(info,node->expr2,&(node->expr2),CSSemGetType(value2),
+			CSSemGetType(value1),IL_CONVERT_CONSTANT,1);
+		CSSemSetRValue(value2,CSSemGetType(value1));
+	}
+	
+	/* Look for a builtin operator */
+	oper = ILFindBinaryOperator
+				(ILOp_Add, CSSemGetType(value1),
+				 CSSemGetType(value2), &resultType,
+				 IsEnumZero(&value1), IsEnumZero(&value2));
+	if(oper)
+	{
+		ILApplyBinaryOperator(info, (ILNode *)node, parent, oper);
+		if(resultType)
+		{
+			CSSemSetRValue(value1, resultType);
+		}
+		else
+		{
+			CSSemSetRValue(value1, ILFindSystemType(info, "Decimal"));
+		}
+		EvalOperator(info, *parent, parent, &value1);
+		return value1;
+	} 
+	/* Look for a user-specified operator */
+	method = FindUserBinaryOperator(info, "op_Addition",
+									&(value1), node->expr1,
+									&(value2), node->expr2);
+	if(method)
+	{
+		ApplyUserBinaryOperator(info,method,(ILNode_BinaryExpression*)node,
+								parent,&(value1),&(value2));
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		return value1;
+	}
+
+	/* If one of the arguments is a string, then perform concatenation */
+	if(ILTypeIsStringClass(CSSemGetType(value1)) ||
+	   ILTypeIsStringClass(CSSemGetType(value2)))
+	{
+		if(!ILTypeIsStringClass(CSSemGetType(value1)))
+		{
+			/* Convert the first argument into "ObjectRef" */
+			ILCast(info, node->expr1, &(node->expr1), CSSemGetType(value1),
+				   ILFindSystemType(info, "Object"),1);
+		}
+		if(!ILTypeIsStringClass(CSSemGetType(value2)))
+		{
+			/* Convert the second argument into "ObjectRef" */
+			ILCast(info, node->expr2, &(node->expr2), CSSemGetType(value2),
+				   ILFindSystemType(info, "Object"),1);
+		}
+		*parent = ILNode_Concat_create(node->expr1, node->expr2);
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		CSSemSetRValue(value1, ILFindSystemType(info, "String"));
+		EvalOperator(info, *parent, parent, &value1);
+		return value1;
+	}
+
+	/* If both arguments are delegates of the same type,
+	   then perform delegate combination */
+	if(ILTypeIsDelegate(CSSemGetType(value1)) &&
+       ILTypeIsDelegate(CSSemGetType(value2)) &&
+	   ILTypeIdentical(CSSemGetType(value1), CSSemGetType(value2)))
+	{
+		*parent = ILNode_DelegateAdd_create
+			(node->expr1, node->expr2, ILType_ToClass(CSSemGetType(value1)));
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		return value1;
+	}
+
+	/* Check for binary operations involving pointers */
+	if(ILType_IsPointer(CSSemGetType(value1)))
+	{
+		resultType = ToNumericType(info, CSSemGetType(value2));
+		if(resultType)
+		{
+			if(resultType == ILType_UInt32 || resultType == ILType_UInt64)
+			{
+				resultType = ILType_UInt;
+			}
+			else
+			{
+				resultType = ILType_Int;
+			}
+			PointerOp(info, parent, &(node->expr1), CSSemGetType(value1),
+					  &(node->expr2), CSSemGetType(value2), resultType);
+			CSSemSetRValue(value1, CSSemGetType(value1));
+			return value1;
+		}
+	}
+	else if(ILType_IsPointer(CSSemGetType(value2)))
+	{
+		resultType = ToNumericType(info, CSSemGetType(value1));
+		if(resultType)
+		{
+			if(resultType == ILType_UInt32 || resultType == ILType_UInt64)
+			{
+				resultType = ILType_UInt;
+			}
+			else
+			{
+				resultType = ILType_Int;
+			}
+			PointerOp(info, parent, &(node->expr2), CSSemGetType(value2),
+					  &(node->expr1), CSSemGetType(value1), resultType);
+			CSSemSetRValue(value2, CSSemGetType(value2));
+			return value2;
+		}
+	}
+
+	/* As a last measure , try coercing the nodes */
+	if(ILCanCoerceNode(info, node->expr1, CSSemGetType(value1),
+					   CSSemGetType(value2),1))
+	{
+		ILCoerce(info, node->expr1, &(node->expr1), CSSemGetType(value1),
+				 CSSemGetType(value2),1);
+		CSSemSetRValue(value1, CSSemGetType(value2));
+	}
+	else if(ILCanCoerceNode(info, node->expr2, CSSemGetType(value2),
+					   CSSemGetType(value1),1))
+	{
+		ILCoerce(info, node->expr2, &(node->expr2), CSSemGetType(value2),
+				 CSSemGetType(value1),1);
+		CSSemSetRValue(value2, CSSemGetType(value1));
+	}
+
+	/* Look for a builtin operator again */
+	oper = ILFindBinaryOperator
+				(ILOp_Add, CSSemGetType(value1),
+				 CSSemGetType(value2), &resultType,
+				 IsEnumZero(&value1), IsEnumZero(&value2));
+	if(oper)
+	{
+		ILApplyBinaryOperator(info, (ILNode *)node, parent, oper);
+		if(resultType)
+		{
+			CSSemSetRValue(value1, resultType);
+		}
+		else
+		{
+			CSSemSetRValue(value1, ILFindSystemType(info, "Decimal"));
+		}
+		EvalOperator(info, *parent, parent, &value1);
+		return value1;
+	} 
+
+	/* Could not find a suitable operator */
+error:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "invalid operands to binary `+'");
+	CSSemSetRValue(value1, ILType_Int32);
+	return value1;
+}
+
+/*
+ * Perform semantic analysis for the subtraction operator.
+ */
+ILNode_SemAnalysis(ILNode_Sub)
+{
+	const ILOperator *oper;
+	ILMethod *method;
+	CSSemValue value1;
+	CSSemValue value2;
+	ILType *resultType;
+	ILType *elemType;
+
+	/* Perform semantic analysis on the arguments */
+	value1 = ILNode_SemAnalysis(node->expr1, info, &(node->expr1));
+	value2 = ILNode_SemAnalysis(node->expr2, info, &(node->expr2));
+
+	/* The two arguments must be values */
+	if(!CSSemIsValue(value1) || !CSSemIsValue(value2))
+	{
+		goto error;
+	}
+
+	/* try constant coercion first */
+	if(ILCanCoerceNodeKind(info,node->expr1,CSSemGetType(value1),
+			CSSemGetType(value2),IL_CONVERT_CONSTANT,1))
+	{
+		ILCoerceKind(info,node->expr1,&(node->expr1),CSSemGetType(value1),
+			CSSemGetType(value2),IL_CONVERT_CONSTANT,1);
+		CSSemSetRValue(value1,CSSemGetType(value2));
+	}
+	else if(ILCanCoerceNodeKind(info,node->expr2,CSSemGetType(value2),
+			CSSemGetType(value1),IL_CONVERT_CONSTANT,1))
+	{
+		ILCoerceKind(info,node->expr2,&(node->expr2),CSSemGetType(value2),
+			CSSemGetType(value1),IL_CONVERT_CONSTANT,1);
+		CSSemSetRValue(value2,CSSemGetType(value1));
+	}
+
+	/* Look for a builtin operator */
+	oper = ILFindBinaryOperator
+				(ILOp_Sub, CSSemGetType(value1),
+				 CSSemGetType(value2), &resultType,
+				 IsEnumZero(&value1), IsEnumZero(&value2));
+	if(oper)
+	{
+		ILApplyBinaryOperator(info, (ILNode *)node, parent, oper);
+		if(resultType)
+		{
+			CSSemSetRValue(value1, resultType);
+		}
+		else
+		{
+			CSSemSetRValue(value1, ILFindSystemType(info, "Decimal"));
+		}
+		EvalOperator(info, *parent, parent, &value1);
+		return value1;
+	}
+
+	/* Look for a user-specified operator */
+	method = FindUserBinaryOperator(info, "op_Subtraction",
+									&(value1), node->expr1,
+									&(value2), node->expr2);
+	if(method)
+	{
+		ApplyUserBinaryOperator(info,method,(ILNode_BinaryExpression*)node,
+								parent,&(value1),&(value2));
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		return value1;
+	}
+
+	/* If both arguments are delegates of the same type,
+	   then perform delegate removal */
+	if(ILTypeIsDelegate(CSSemGetType(value1)) &&
+	   ILTypeIsDelegate(CSSemGetType(value2)) &&
+	   ILTypeIdentical(CSSemGetType(value1), CSSemGetType(value2)))
+	{
+		*parent = ILNode_DelegateSub_create
+			(node->expr1, node->expr2, ILType_ToClass(CSSemGetType(value1)));
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		return value1;
+	}
+
+	/* Check for binary operations involving pointers */
+	if(ILType_IsPointer(CSSemGetType(value1)) &&
+	   ILType_IsPointer(CSSemGetType(value2)))
+	{
+		if(ILTypeIdentical(ILType_Ref(CSSemGetType(value1)),
+						   ILType_Ref(CSSemGetType(value2))))
+		{
+			ILNode *sizeNode;
+
+			/* Subtract two pointers of the same type */
+			elemType = ILTypeStripPrefixes
+				(ILType_Ref(CSSemGetType(value1)));
+			sizeNode = CreateSizeOf(info, elemType);
+			*parent = ILNode_CastSimple_create
+				((ILNode *)node, ILMachineType_Int64);
+			*parent = ILNode_Div_create
+				(*parent, ILNode_CastSimple_create
+					(sizeNode, ILMachineType_Int64));
+			yysetfilename(*parent, yygetfilename(node));
+			yysetlinenum(*parent, yygetlinenum(node));
+			CSSemSetRValue(value1, ILType_Int64);
+			return value1;
+		}
+	}
+	else if(ILType_IsPointer(CSSemGetType(value1)))
+	{
+		resultType = ToNumericType(info, CSSemGetType(value2));
+		if(resultType)
+		{
+			if(resultType == ILType_UInt32 || resultType == ILType_UInt64)
+			{
+				resultType = ILType_UInt;
+			}
+			else
+			{
+				resultType = ILType_Int;
+			}
+			PointerOp(info, parent, &(node->expr1), CSSemGetType(value1),
+					  &(node->expr2), CSSemGetType(value2), resultType);
+			CSSemSetRValue(value1, CSSemGetType(value1));
+			return value1;
+		}
+	}
+
+	/* As a last measure try coercing the types*/
+	if(ILCanCoerceNode(info, node->expr1, CSSemGetType(value1),
+					   CSSemGetType(value2),1))
+	{
+		ILCoerce(info, node->expr1, &(node->expr1), CSSemGetType(value1),
+				 CSSemGetType(value2),1);
+		CSSemSetRValue(value1, CSSemGetType(value2));
+	}
+	else if(ILCanCoerceNode(info, node->expr2, CSSemGetType(value2),
+					   CSSemGetType(value1),1))
+	{
+		ILCoerce(info, node->expr2, &(node->expr2), CSSemGetType(value2),
+				 CSSemGetType(value1),1);
+		CSSemSetRValue(value2, CSSemGetType(value1));
+	}
+
+	/* Look for a builtin operator */
+	oper = ILFindBinaryOperator
+				(ILOp_Add, CSSemGetType(value1),
+				 CSSemGetType(value2), &resultType,
+				 IsEnumZero(&value1), IsEnumZero(&value2));
+	if(oper)
+	{
+		ILApplyBinaryOperator(info, (ILNode *)node, parent, oper);
+		if(resultType)
+		{
+			CSSemSetRValue(value1, resultType);
+		}
+		else
+		{
+			CSSemSetRValue(value1, ILFindSystemType(info, "Decimal"));
+		}
+		EvalOperator(info, *parent, parent, &value1);
+		return value1;
+	} 
+
+	/* Could not find a suitable operator */
+error:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "invalid operands to binary `-'");
+	CSSemSetRValue(value1, ILType_Int32);
+	return value1;
+}
+
+/*
+ * Perform semantic analysis for the multiplication operator.
+ */
+ILNode_SemAnalysis(ILNode_Mul)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Mul, "op_Multiply", "*",1);
+}
+
+/*
+ * Perform semantic analysis for the division operator.
+ */
+ILNode_SemAnalysis(ILNode_Div)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Div, "op_Division", "/",1);
+}
+
+/*
+ * Perform semantic analysis for the remainder operator.
+ */
+ILNode_SemAnalysis(ILNode_Rem)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Rem, "op_Modulus", "%",1);
+}
+
+/*
+ * Perform semantic analysis for the negation operator.
+ */
+ILNode_SemAnalysis(ILNode_Neg)
+{
+	return UnarySem(info, (ILNode_UnaryExpression *)node,
+					parent, ILOp_Neg, "op_UnaryNegation", "-");
+}
+
+/*
+ * Perform semantic analysis for the "unary +" operator.
+ */
+ILNode_SemAnalysis(ILNode_UnaryPlus)
+{
+	return UnarySem(info, (ILNode_UnaryExpression *)node,
+				  	parent, ILOp_UnaryPlus, "op_UnaryPlus", "+");
+}
+
+/*
+ * Perform semantic analysis for the bitwise AND operator.
+ */
+ILNode_SemAnalysis(ILNode_And)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_And, "op_BitwiseAnd", "&",1);
+}
+
+/*
+ * Perform semantic analysis for the bitwise XOR operator.
+ */
+ILNode_SemAnalysis(ILNode_Xor)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Xor, "op_ExclusiveOr", "^",1);
+}
+
+/*
+ * Perform semantic analysis for the bitwise OR operator.
+ */
+ILNode_SemAnalysis(ILNode_Or)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Or, "op_BitwiseOr", "|",1);
+}
+
+/*
+ * Perform semantic analysis for the bitwise NOT operator.
+ */
+ILNode_SemAnalysis(ILNode_Not)
+{
+	return UnarySem(info, (ILNode_UnaryExpression *)node, parent, ILOp_Not,
+					"op_OnesComplement", "~");
+}
+
+/*
+ * Perform semantic analysis for the left shift operator.
+ */
+ILNode_SemAnalysis(ILNode_Shl)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Shl, "op_LeftShift", "<<",0);
+}
+
+/*
+ * Perform semantic analysis for the right shift operator.
+ */
+ILNode_SemAnalysis(ILNode_Shr)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Shr, "op_RightShift", ">>",0);
+}
+
+/*
+ * Perform semantic analysis for the unsigned right shift operator.
+ */
+ILNode_SemAnalysis(ILNode_UShr)
+{
+	/* C# doesn't actually have an unsigned right shift, but we
+	   still need to include this case for completeness sake */
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Shr, "op_RightShift", ">>",0);
+}
+
+%{
+
+/*
+ * Coerce the elements of an array initializer to a common type.
+ */
+static void CoerceArrayInit(ILGenInfo *info, ILNode *expr,
+							ILNode **parent, ILType *type)
+{
+	ILNode_ListIter iter;
+	ILNode *node;
+	CSSemValue value;
+
+	if(yyisa(expr, ILNode_ArrayInit))
+	{
+		/* Recursively visit all array elements */
+		ILNode_ListIter_Init(&iter, ((ILNode_ArrayInit *)expr)->expr);
+		while((node = ILNode_ListIter_Next(&iter)) != 0)
+		{
+			CoerceArrayInit(info, node, iter.last, type);
+		}
+	}
+	else
+	{
+		/* This is a normal array element */ 
+
+		/*  Do semantic analysis on expr. Note expr and *parent
+			are equivalent at this point, but *parent may be
+			updated during semantic analysis.  Therefore, we must 
+			subsequently coerce *parent instead of expr. */
+		if(!CSSemExpectValue(expr, info, parent, &value))
+		{
+			CCErrorOnLine(yygetfilename(expr), yygetlinenum(expr),
+						  _("invalid array initializer element"));
+		}
+		else if(!ILCanCoerceNode(info, *parent, CSSemGetType(value), type,1))
+		{
+			CCErrorOnLine(yygetfilename(expr), yygetlinenum(expr),
+			  _("incompatible types in initializer: no conversion "
+			  		"from `%s' to `%s'"),
+			  CSTypeToName(CSSemGetType(value)), CSTypeToName(type));
+		}
+		else
+		{
+			ILCoerce(info, *parent, parent, CSSemGetType(value), type,1);
+		}
+	}
+}
+
+%}
+
+/*
+ * Perform semantic analysis for the assignment operator.
+ */
+ILNode_SemAnalysis(ILNode_Assign)
+{
+	CSSemValue value1;
+	CSSemValue value2;
+
+	/* Perform semantic analysis on the lvalue */
+	value1 = ILNode_SemAnalysis(node->expr1, info, &(node->expr1));
+	if(!CSSemIsLValue(value1) && !CSSemIsSValue(value1))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid lvalue in assignment");
+		if(!CSSemIsRValue(value1))
+		{
+			CSSemSetRValue(value1, ILType_Int32);
+		}
+		return value1;
+	}
+
+	/* Check for array initializers in the assigned expression */
+	if(yyisa(node->expr2, ILNode_ArrayInit))
+	{
+		/* Make sure that the destination type is an array */
+		if(!ILType_IsArray(CSSemGetType(value1)))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  "array initializer assigned to non-array destination");
+			CSSemSetRValue(value1, CSSemGetType(value1));
+			return value1;
+		}
+
+		/* Check the shape of the array initializer */
+		if(!ILArrayInitShapeOK(info, node->expr2, CSSemGetType(value1)))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  "incorrect pattern of elements in array initializer");
+			CSSemSetRValue(value1, CSSemGetType(value1));
+			return value1;
+		}
+
+		/* Coerce all initializer members to the element type */
+		CoerceArrayInit(info, node->expr2, &(node->expr2),
+					    ILTypeGetElemType(CSSemGetType(value1)));
+		CSSemSetRValue(value1, CSSemGetType(value1));
+		return value1;
+	}
+	
+	/* Perform semantic analysis and coercion on the rvalue */
+	if(!CSSemExpectValue(node->expr2, info, &(node->expr2), &value2) ||
+	   !ILCanCoerceNode(info, node->expr2, CSSemGetType(value2),
+						CSSemGetType(value1),1))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+		  "incompatible types in assignment: no conversion from `%s' to `%s'",
+		  CSTypeToName(CSSemGetType(value2)),
+		  CSTypeToName(CSSemGetType(value1)));
+		CSSemSetRValue(value1, CSSemGetType(value1));
+		return value1;
+	}
+	/* Insert coercion nodes to convert the rvalue appropriately */
+	ILCoerce(info, node->expr2, &(node->expr2),
+			 CSSemGetType(value2), CSSemGetType(value1),1);
+
+	/* Check if this is an assignment to a value type (struct) */
+	if(!info->outputIsJava && ILType_IsValueType(CSSemGetType(value1)) &&
+	   !ILTypeIsEnum(CSSemGetType(value1)))
+	{
+		ILNode *expr = 0;
+
+		/* Check if we can get a reference to the assignment target */
+		if(yyisa(node->expr1, ILNode_LValue) &&
+		   !yyisa(node->expr1, ILNode_LValueNoRef))
+		{
+			expr = node->expr1;
+		}
+		if(expr)
+		{
+			if(yyisa(node->expr2, ILNode_DefaultConstructor))
+			{
+				*parent = ILNode_RefInit_create(expr, CSSemGetType(value1));
+			}
+			else if(yyisa(node->expr2, ILNode_ObjectCreationExpression))
+			{
+				ILNode_RefValueTypeCreationExpression *newNode;
+				ILNode_ObjectCreationExpression *createExpr;
+
+				createExpr = (ILNode_ObjectCreationExpression *)(node->expr2);
+				newNode = (ILNode_RefValueTypeCreationExpression *)
+							ILNode_RefValueTypeCreationExpression_create
+								(expr, CSSemGetType(value1));
+				newNode->argList = createExpr->argList;
+				newNode->methodInfo = createExpr->methodInfo;
+				newNode->callSiteSig = createExpr->callSiteSig;
+
+				*parent = (ILNode *)newNode;
+			}
+		}
+	}
+
+	/* Convert value1 into an rvalue and return its type */
+	CSSemSetRValue(value1, CSSemGetType(value1));
+	return value1;
+}
+
+/*
+ * semantic analysis for a reference initialization.
+ */
+ILNode_SemAnalysis(ILNode_RefInit)
+{
+	/*
+	 * This node is created during semanalyzing an assignment.
+	 * So it will never be semanalyzed directly.
+	 */
+	return CSSemValueDefault;
+}
+
+/*
+ * semantic analysis for a value type constructor call with the reference
+ * passed as argument 1 and emitted like a normal method call.
+ */
+ILNode_SemAnalysis(ILNode_RefValueTypeCreationExpression)
+{
+	/*
+	 * This node is created during semanalyzing an assignment.
+	 * So it will never be semanalyzed directly.
+	 */
+	return CSSemValueDefault;
+}
+
+%{
+
+/*
+ * Common semantic analysis for operation-based assignment operators.
+ */
+static CSSemValue AssignSem(ILGenInfo *info, 
+                            ILNode_AssignExpression *anode,
+					        ILNode **assignParent,
+							const ILOperator *table, const char *name,
+							const char *errorName)
+{
+	/*  Re-jigger arguments from the original version  */
+	ILNode_BinaryExpression *node = (ILNode_BinaryExpression *)anode->assign;
+	ILNode **parent = &(anode->assign);
+	const ILOperator *oper;
+	ILMethod *method;
+	CSSemValue value1;
+	CSSemValue value2;
+	ILType *resultType;
+
+	/* Perform semantic analysis on the arguments */
+	value1 = ILNode_SemAnalysis(node->expr1, info, &(node->expr1));
+	anode->lvalue = node->expr1;  /* Preserve lvalue for later */
+	value2 = ILNode_SemAnalysis(node->expr2, info, &(node->expr2));
+
+	/* The first argument must be an event or an lvalue */
+	if(CSSemIsEvent(value1) &&
+	   (yyisa(node, ILNode_Add) || yyisa(node, ILNode_Sub)))
+	{
+		/* Extract the add or remove method from the event */
+		if(yyisa(node, ILNode_Add))
+		{
+			method = ILEvent_AddOn(CSSemGetEvent(value1));
+		}
+		else
+		{
+			method = ILEvent_RemoveOn(CSSemGetEvent(value1));
+		}
+
+		resultType = ILTypeGetParam(ILMethod_Signature(method), 1); 
+		
+		if(!ILTypeAssignCompatible(info->image, resultType, CSSemGetType(value2)))
+		{
+			if(yyisa(node, ILNode_Add))
+			{
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					_("incompatible types in event addition: "
+						"'%s' to '%s'"), 
+					CSTypeToName(CSSemGetType(value2)), CSTypeToName(resultType));
+			}
+			else 
+			{
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					_("incompatible types in event removal: "
+						"'%s' from '%s'"), 
+					CSTypeToName(CSSemGetType(value2)), CSTypeToName(resultType));
+			}
+			return CSSemValueDefault;
+		}
+
+		/* Create the new node and replace "assignParent" with it */
+		if(ILMethod_IsStatic(method))
+		{
+			*assignParent = ILNode_EventAddOrRemove_create
+					(0, node->expr2, method);
+			yysetfilename(*assignParent, yygetfilename(node));
+			yysetlinenum(*assignParent, yygetlinenum(node));
+		}
+		else
+		{
+			*assignParent = ILNode_EventAddOrRemove_create
+					(node->expr1, node->expr2, method);
+			yysetfilename(*assignParent, yygetfilename(node));
+			yysetlinenum(*assignParent, yygetlinenum(node));
+		}
+
+		/* When an event is used with assignment, the whole assignment
+		   is treated as a statement rather than an expression */
+		return CSSemValueDefault;
+	}
+	else if(!CSSemIsLValue(value1))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid lvalue in assignment");
+		if(!CSSemIsRValue(value1))
+		{
+			CSSemSetRValue(value1, ILType_Int32);
+		}
+		return value1;
+	}
+
+#if IL_VERSION_MAJOR > 1
+	if(CSSemIsMethodGroup(value2))
+	{
+		if(!CSCastMethod(info, node->expr2, &(node->expr2),
+						 CSSemGetGroup(value2), CSSemGetType(value1), 1))
+		{
+			goto error;
+		}
+		CSSemSetRValue(value2, CSSemGetType(value1));
+	}
+	else
+#endif /* IL_VERSION_MAJOR > 1 */
+	if(!CSSemIsValue(value2))
+	{
+		goto error;
+	}
+
+	/* Replace node->expr1 with an empty expression, so that it
+	   doesn't double-evaluate during code generation */
+	node->expr1 = ILNode_EmptyExpr_create
+			(ILTypeToMachineType(CSSemGetType(value1)));
+
+	/* Look for a builtin operator */
+	oper = ILFindBinaryOperator(table, CSSemGetType(value1),
+								CSSemGetType(value2), &resultType,
+								IsEnumZero(&value1), IsEnumZero(&value2));
+	if(oper)
+	{
+		ILApplyBinaryOperator(info, (ILNode *)node, parent, oper);
+		if(resultType)
+		{
+			CSSemSetRValue(value1, resultType);
+		}
+		else
+		{
+			CSSemSetRValue(value1, ILFindSystemType(info, "Decimal"));
+		}
+		return value1;
+	}
+
+	/* Look for a user-specified operator */
+	method = FindUserBinaryOperator(info, name, &(value1), node->expr1,
+									&(value2), node->expr2);
+
+	if(method)
+	{
+		ApplyUserBinaryOperator(info,method,(ILNode_BinaryExpression*)node,
+								parent,&(value1),&(value2));
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		return value1;
+	}
+
+	/* Should we be performing string concatenation? */
+	if(ILTypeIsStringClass(CSSemGetType(value1)) && yyisa(node, ILNode_Add))
+	{
+		if(!ILTypeIsStringClass(CSSemGetType(value2)))
+		{
+			/* Convert the second argument into "ObjectRef" */
+			ILCast(info, node->expr2, &(node->expr2), CSSemGetType(value2),
+				   ILFindSystemType(info, "Object"),1);
+		}
+		*parent = ILNode_Concat_create(node->expr1, node->expr2);
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		CSSemSetRValue(value1, CSSemGetType(value1));
+		return value1;
+	}
+	else if(ILTypeIsStringClass(CSSemGetType(value2)) && yyisa(node, ILNode_Add))
+	{
+		if(!ILTypeIsStringClass(CSSemGetType(value1)))
+		{
+			/* Convert the first argument into "ObjectRef" */
+			/* Note: this will be an EmptyExpr , but will cast properly */
+			ILCast(info, node->expr1, &(node->expr1), CSSemGetType(value1),
+				   ILFindSystemType(info, "Object"),1);
+		}
+		*parent = ILNode_Concat_create(node->expr1, node->expr2);
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		CSSemSetRValue(value1, CSSemGetType(value1));
+		return value1;
+	}
+
+	/* Should we be performing delegate combination or removal? */
+	if(ILTypeIsDelegate(CSSemGetType(value1)))
+	{
+		if(yyisa(node, ILNode_Add) &&
+		   ILTypeIdentical(CSSemGetType(value1), CSSemGetType(value2)))
+		{
+			*parent = ILNode_DelegateAdd_create
+				(node->expr1, node->expr2,
+				 ILType_ToClass(CSSemGetType(value1)));
+			yysetfilename(*parent, yygetfilename(node));
+			yysetlinenum(*parent, yygetlinenum(node));
+			CSSemSetRValue(value1, CSSemGetType(value1));
+			return value1;
+		}
+		else if(yyisa(node, ILNode_Sub) &&
+		        ILTypeIdentical(CSSemGetType(value1), CSSemGetType(value2)))
+		{
+			*parent = ILNode_DelegateSub_create
+				(node->expr1, node->expr2,
+				 ILType_ToClass(CSSemGetType(value1)));
+			yysetfilename(*parent, yygetfilename(node));
+			yysetlinenum(*parent, yygetlinenum(node));
+			CSSemSetRValue(value1, CSSemGetType(value1));
+			return value1;
+		}
+	}
+
+	/* Is this a pointer expression? */
+	if(ILType_IsPointer(CSSemGetType(value1)) &&
+	   (yyisa(node, ILNode_Add) || yyisa(node, ILNode_Sub)))
+	{
+		ILType *resultType;
+
+		resultType = ToNumericType(info, CSSemGetType(value2));
+		if(resultType)
+		{
+			if(resultType == ILType_UInt32 || resultType == ILType_UInt64)
+			{
+				resultType = ILType_UInt;
+			}
+			else
+			{
+				resultType = ILType_Int;
+			}
+			PointerOp(info, parent, &(node->expr1), CSSemGetType(value1),
+					  &(node->expr2), CSSemGetType(value2), resultType);
+			CSSemSetRValue(value1, CSSemGetType(value1));
+			return value1;
+		}
+	}
+
+	/* Try again, this time coercing value2's type to value1's type */
+	if (ILCanCoerceNode(info, node->expr2, 
+						CSSemGetType(value2), CSSemGetType(value1),1))
+	{
+		ILCoerce(info, node->expr2, &(node->expr2),
+						CSSemGetType(value2), CSSemGetType(value1),1);
+		CSSemSetRValue(value2, CSSemGetType(value1));
+		return value1;
+	}
+
+	/* Could not find a suitable operator */
+error:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "invalid operands to binary `%s'", errorName);
+	if(CSSemIsLValue(value1))
+	{
+		CSSemSetRValue(value1, CSSemGetType(value1));
+	}
+	else
+	{
+		CSSemSetRValue(value1, ILType_Int32);
+	}
+	return value1;
+}
+
+%}
+
+/*
+ * Perform semantic analysis for the addition assignment operator.
+ */
+ILNode_SemAnalysis(ILNode_AssignAdd)
+{
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_Add, "op_Addition", "+");
+}
+
+/*
+ * Perform semantic analysis for the subtraction assignment operator.
+ */
+ILNode_SemAnalysis(ILNode_AssignSub)
+{
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_Sub, "op_Subtraction", "-");
+}
+
+/*
+ * Perform semantic analysis for the multiplication assignment operator.
+ */
+ILNode_SemAnalysis(ILNode_AssignMul)
+{
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_Mul, "op_Multiply", "*");
+}
+
+/*
+ * Perform semantic analysis for the division assignment operator.
+ */
+ILNode_SemAnalysis(ILNode_AssignDiv)
+{
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_Div, "op_Division", "/");
+}
+
+/*
+ * Perform semantic analysis for the remainder assignment operator.
+ */
+ILNode_SemAnalysis(ILNode_AssignRem)
+{
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_Rem, "op_Modulus", "%");
+}
+
+/*
+ * Perform semantic analysis for the bitwise AND assignment operator.
+ */
+ILNode_SemAnalysis(ILNode_AssignAnd)
+{
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_And, "op_BitwiseAnd", "&");
+}
+
+/*
+ * Perform semantic analysis for the bitwise XOR assignment operator.
+ */
+ILNode_SemAnalysis(ILNode_AssignXor)
+{
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_Xor, "op_ExclusiveOr", "^");
+}
+
+/*
+ * Perform semantic analysis for the bitwise OR assignment operator.
+ */
+ILNode_SemAnalysis(ILNode_AssignOr)
+{
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_Or, "op_BitwiseOr", "|");
+}
+
+/*
+ * Perform semantic analysis for the left shift assignment operator.
+ */
+ILNode_SemAnalysis(ILNode_AssignShl)
+{
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_Shl, "op_LeftShift", "<<");
+}
+
+/*
+ * Perform semantic analysis for the right shift assignment operator.
+ */
+ILNode_SemAnalysis(ILNode_AssignShr)
+{
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_Shr, "op_RightShift", ">>");
+}
+
+/*
+ * Perform semantic analysis for the unsigned right shift assignment operator.
+ */
+ILNode_SemAnalysis(ILNode_AssignUShr)
+{
+	/* C# does not have an unsigned right shift, so use the signed version */
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_Shr, "op_RightShift", ">>");
+}
+
+%{
+
+/*
+ * Perform semantic analysis for increment or decrement operators.
+ */
+static CSSemValue IncOrDecSem(ILGenInfo *info, ILNode_UnaryExpression *node,
+							  ILNode **parent, const char *opName,
+							  const char *errorName,
+							  ILNode *(*createFunc)
+							  		(ILNode *expr, ILMethod *method,
+									 ILMachineType type),
+							  ILNode *(*createPtrFunc)
+							  		(ILNode *expr, ILUInt32 size,
+									 ILNode *sizeNode))
+{
+	ILMethod *method;
+	CSSemValue value;
+	ILMachineType machineType;
+
+	/* Perform semantic analysis on the argument, which must be an lvalue */
+	value = ILNode_SemAnalysis(node->expr, info, &(node->expr));
+	if(!CSSemIsLValue(value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid lvalue in increment");
+		if(!CSSemIsRValue(value))
+		{
+			CSSemSetRValue(value, ILType_Int32);
+		}
+		return value;
+	}
+
+	/* The final result will be an rvalue */
+	CSSemSetRValue(value, CSSemGetType(value));
+
+	/* Can we use the builtin version of the operator? */
+	machineType = ILTypeToMachineType(CSSemGetType(value));
+	switch(machineType)
+	{
+		case ILMachineType_Int8:
+		case ILMachineType_UInt8:
+		case ILMachineType_Int16:
+		case ILMachineType_UInt16:
+		case ILMachineType_Char:
+		case ILMachineType_Int32:
+		case ILMachineType_UInt32:
+		case ILMachineType_Int64:
+		case ILMachineType_UInt64:
+		case ILMachineType_Float32:
+		case ILMachineType_Float64:
+		case ILMachineType_Decimal:
+		{
+			/* Semantic analysis is finished: the code generator
+			   has enough information to do the rest */
+			return value;
+		}
+		/* Not reached */
+
+		case ILMachineType_NativeInt:
+		case ILMachineType_NativeUInt:
+		case ILMachineType_UnmanagedPtr:
+		{
+			/* Check for pointer types */
+			if(ILType_IsPointer(CSSemGetType(value)))
+			{
+				ILType *elemType =
+					ILTypeStripPrefixes(ILType_Ref(CSSemGetType(value)));
+				if(elemType != ILType_Void)
+				{
+					ILNode *sizeNode;
+
+					sizeNode = CreateSizeOf(info, elemType);
+					*parent = (*createPtrFunc)
+						(node->expr, GetPrimitiveTypeSize(elemType), sizeNode);
+					return value;
+				}
+			}
+		}
+		break;
+
+		default: break;
+	}
+
+	/* Look for an appropriate operator */
+	method = FindUserUnaryOperator(info, opName, &(value), node->expr);
+	if(!method)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid operands to unary `%s'", errorName);
+	}
+	else
+	{
+		*parent = (*createFunc)(node->expr, method, machineType);
+	}
+
+	/* Done */
+	return value;
+}
+
+%}
+
+/*
+ * Perform semantic analysis for the pre-increment operator.
+ */
+ILNode_SemAnalysis(ILNode_PreInc)
+{
+	return IncOrDecSem(info, (ILNode_UnaryExpression *)node, parent,
+					   "op_Increment", "++", ILNode_UserPreInc_create,
+					   ILNode_PreIncPtr_create);
+}
+
+/*
+ * Perform semantic analysis for the pre-decrement operator.
+ */
+ILNode_SemAnalysis(ILNode_PreDec)
+{
+	return IncOrDecSem(info, (ILNode_UnaryExpression *)node, parent,
+					   "op_Decrement", "--", ILNode_UserPreDec_create,
+					   ILNode_PreDecPtr_create);
+}
+
+/*
+ * Perform semantic analysis for the post-increment operator.
+ */
+ILNode_SemAnalysis(ILNode_PostInc)
+{
+	return IncOrDecSem(info, (ILNode_UnaryExpression *)node, parent,
+					   "op_Increment", "++", ILNode_UserPostInc_create,
+					   ILNode_PostIncPtr_create);
+}
+
+/*
+ * Perform semantic analysis for the post-decrement operator.
+ */
+ILNode_SemAnalysis(ILNode_PostDec)
+{
+	return IncOrDecSem(info, (ILNode_UnaryExpression *)node, parent,
+					   "op_Decrement", "--", ILNode_UserPostDec_create,
+					   ILNode_PostDecPtr_create);
+}
+
+/*
+ * Perform semantic analysis for the "ToBool" operator.
+ */
+ILNode_SemAnalysis(ILNode_ToBool)
+{
+	CSSemValue value;
+	ILClass *classInfo;
+	ILMethod *trueMethod;
+	ILMethod *falseMethod;
+
+	/* Perform semantic analysis on the value */
+	if(!CSSemExpectValue(node->expr, info, &(node->expr), &value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid boolean expression");
+		CSSemSetRValue(value, ILType_Boolean);
+		return value;
+	}
+
+	/* If the type is boolean, then we are done */
+	if(CSSemGetType(value) == ILType_Boolean)
+	{
+		return value;
+	}
+
+	if(ILCanCoerceNode(info,node->expr,CSSemGetType(value), ILType_Boolean,0))
+	{
+		ILCoerce(info,node->expr,&(node->expr),CSSemGetType(value),
+					ILType_Boolean,0);
+		CSSemSetRValue(value,ILType_Boolean);
+		return value;
+	}
+
+	/* We need a class or a value type if not boolean */
+	if(!ILType_IsValueType(CSSemGetType(value)) &&
+	   !ILType_IsClass(CSSemGetType(value)))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "no conversion from `%s' to `bool'",
+					  CSTypeToName(CSSemGetType(value)));
+		CSSemSetRValue(value, ILType_Boolean);
+		return value;
+	}
+
+	/* See if we have the "true" and "false" operators.  The C#
+	   standard requires that both operators be present in the
+	   class, but we are a little more forgiving than that: if
+	   only one of the operators is present, we can synthesise
+	   the other one */
+	classInfo = ILType_ToClass(CSSemGetType(value));
+	trueMethod = ILResolveConversionOperator
+					(info, classInfo, "op_True", CSSemGetType(value),
+					 ILType_Boolean);
+	falseMethod = ILResolveConversionOperator
+					(info, classInfo, "op_False", CSSemGetType(value),
+					 ILType_Boolean);
+	if(!trueMethod && !falseMethod)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "no conversion from `%s' to `bool'",
+					  CSTypeToName(CSSemGetType(value)));
+		CSSemSetRValue(value, ILType_Boolean);
+		return value;
+	}
+
+	/* Import the "true" and "false" operators into this image */
+	if(trueMethod)
+	{
+		trueMethod = (ILMethod *)ILMemberImport
+							(info->image, (ILMember *)trueMethod);
+		if(!trueMethod)
+		{
+			CCOutOfMemory();
+		}
+	}
+	if(falseMethod)
+	{
+		falseMethod = (ILMethod *)ILMemberImport
+							(info->image, (ILMember *)falseMethod);
+		if(!falseMethod)
+		{
+			CCOutOfMemory();
+		}
+	}
+
+	/* Set the methods within the node for the code generator to use later */
+	node->trueMethod = trueMethod;
+	node->falseMethod = falseMethod;
+
+	/* Return the final value to the caller */
+	CSSemSetRValue(value, ILType_Boolean);
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the "ToConst" operator.
+ */
+ILNode_SemAnalysis(ILNode_ToConst)
+{
+	CSSemValue value;
+
+	/* Perform semantic analysis on the sub-expression */
+	value = ILNode_SemAnalysis(node->expr, info, &(node->expr));
+
+	/* Determine if the sub-expression evaluates to a constant */
+	if(!CSSemIsConstant(value) || CSSemIsDynConstant(value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "constant value required");
+		if(!CSSemIsValue(value))
+		{
+			CSSemSetDynConstant(value, ILType_Int32);
+		}
+		else
+		{
+			CSSemSetDynConstant(value, CSSemGetType(value));
+		}
+	}
+
+	/* Return the semantic information to the caller */
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the "ToAttrConst" operator.
+ */
+ILNode_SemAnalysis(ILNode_ToAttrConst)
+{
+	CSSemValue value;
+	ILNode_TypeOf *typeofNode;
+	int savedState=info->inAttrArg;
+
+	info->inAttrArg = -1;
+
+	/* Special case: types can be used as attribute constants */
+	if(yyisa(node->expr, ILNode_TypeOf))
+	{
+		/* Get the semantic value for the typeof sub-expression */
+		typeofNode = (ILNode_TypeOf *)(node->expr);
+		value = ILNode_SemAnalysisType
+			(typeofNode->expr, info, &(typeofNode->expr));
+
+		/* Check that the argument is of the correct kind */
+		if(CSSemIsType(value))
+		{
+			if(ILType_IsPrimitive(CSSemGetType(value)))
+			{
+				typeofNode->type = ILType_FromClass
+					(ILTypeToClass(info, CSSemGetType(value)));
+			}
+			else
+			{
+				typeofNode->type = CSSemGetType(value);
+			}
+		}
+		else
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "invalid argument to `typeof' operator");
+			typeofNode->type = ILFindSystemType(info, "Int32");
+		}
+		CSSemSetType(value, typeofNode->type);
+		goto cleanup;
+	}
+
+	/* Perform semantic analysis on the sub-expression */
+	value = ILNode_SemAnalysis(node->expr, info, &(node->expr));
+
+	/* Types can be used as constants in attributes */
+	if(CSSemIsType(value))
+	{
+		goto cleanup;
+	}
+
+	/* Determine if the sub-expression evaluates to a constant */
+	if(!CSSemIsConstant(value) || CSSemIsDynConstant(value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "constant value required");
+		if(!CSSemIsValue(value))
+		{
+			CSSemSetDynConstant(value, ILType_Int32);
+		}
+		else
+		{
+			CSSemSetDynConstant(value, CSSemGetType(value));
+		}
+	}
+
+cleanup:
+	info->inAttrArg=savedState;
+
+	/* Return the semantic information to the caller */
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the logical NOT operator.
+ */
+ILNode_SemAnalysis(ILNode_LogicalNot)
+{
+	CSSemValue value;
+	ILMethod *method;
+	ILType *returnType;
+
+	/* Perform semantic analysis on the argument value */
+	if(!CSSemExpectValue(node->expr, info, &(node->expr), &value))
+	{
+	error:
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid operand to unary `!'");
+		CSSemSetRValue(value, ILType_Boolean);
+		return value;
+	}
+
+	/* If the type is not boolean, we need to look for an operator */
+	if(CSSemGetType(value) != ILType_Boolean)
+	{
+		method = FindUserUnaryOperator(info, "op_LogicalNot",
+									   &(value), node->expr);
+		if(method)
+		{
+			returnType = ILTypeGetReturn(ILMethod_Signature(method));
+			*parent = ILNode_UserUnaryOp_create
+						(node->expr, ILTypeToMachineType(returnType), method);
+			yysetfilename(*parent, yygetfilename(node));
+			yysetlinenum(*parent, yygetlinenum(node));
+			CSSemSetRValue(value, returnType);
+			return value;
+		}
+		else
+		{
+			goto error;
+		}
+	}
+
+	/* Builtin "!" operator: the result is always boolean */
+	CSSemSetRValue(value, ILType_Boolean);
+	EvalOperator(info, *parent, parent, &value);
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the logical AND operator.
+ */
+ILNode_SemAnalysis(ILNode_LogicalAnd)
+{
+	CSSemValue value1;
+	CSSemValue value2;
+	ILMethod *method1;
+	ILMethod *method2;
+	ILMethod *method3;
+
+	/* Perform semantic analysis on the arguments */
+	if(!CSSemExpectValue(node->expr1, info, &(node->expr1), &value1) ||
+	   !CSSemExpectValue(node->expr2, info, &(node->expr2), &value2))
+	{
+		goto error;
+	}
+
+	/* Find a user-defined operator, if any */
+	if(CSSemGetType(value1) == CSSemGetType(value2) &&
+	   (ILType_IsValueType(CSSemGetType(value1)) ||
+	    ILType_IsClass(CSSemGetType(value1))))
+	{
+		method1 = FindUserBinaryOperator
+					(info, "op_BitwiseAnd", &(value1), node->expr1,
+					 &(value1), node->expr2);
+		method2 = ILResolveConversionOperator
+					(info, ILType_ToClass(CSSemGetType(value1)), "op_True",
+					 CSSemGetType(value1), ILType_Boolean);
+		method3 = ILResolveConversionOperator
+					(info, ILType_ToClass(CSSemGetType(value1)), "op_False",
+					 CSSemGetType(value1), ILType_Boolean);
+		if(method1 && (method2 || method3))
+		{
+			method1 = (ILMethod *)ILMemberImport
+						(info->image, (ILMember *)method1);
+			if(!method1)
+			{
+				CCOutOfMemory();
+			}
+			if(method2)
+			{
+				method2 = (ILMethod *)ILMemberImport
+							(info->image, (ILMember *)method2);
+				if(!method2)
+				{
+					CCOutOfMemory();
+				}
+			}
+			if(method3)
+			{
+				method3 = (ILMethod *)ILMemberImport
+							(info->image, (ILMember *)method3);
+				if(!method3)
+				{
+					CCOutOfMemory();
+				}
+			}
+			*parent = ILNode_UserLogicalAnd_create
+						(node->expr1, node->expr2, method1, method2, method3);
+			yysetfilename(*parent, yygetfilename(node));
+			yysetlinenum(*parent, yygetlinenum(node));
+			CSSemSetRValue(value1, ILType_Boolean);
+			return value1;
+		}
+	}
+
+	/* We must have boolean arguments at this point */
+	if(!ILCanCoerceNode(info, node->expr1, CSSemGetType(value1),
+						ILType_Boolean,1) ||
+	   !ILCanCoerceNode(info, node->expr2, CSSemGetType(value2),
+	   					ILType_Boolean,1))
+	{
+		goto error;
+	}
+
+	/* Coerce the two arguments to `bool' */
+	ILCoerce(info, node->expr1, &(node->expr1),
+			 CSSemGetType(value1), ILType_Boolean,1);
+	ILCoerce(info, node->expr2, &(node->expr2),
+			 CSSemGetType(value2), ILType_Boolean,1);
+
+	/* The result is boolean */
+	CSSemSetRValue(value1, ILType_Boolean);
+	EvalOperator(info, *parent, parent, &value1);
+	return value1;
+
+	/* Report an argument error */
+error:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "invalid operands to binary `&&'");
+	CSSemSetRValue(value1, ILType_Boolean);
+	return value1;
+}
+
+/*
+ * Perform semantic analysis for the logical OR operator.
+ */
+ILNode_SemAnalysis(ILNode_LogicalOr)
+{
+	CSSemValue value1;
+	CSSemValue value2;
+	ILMethod *method1;
+	ILMethod *method2;
+	ILMethod *method3;
+
+	/* Perform semantic analysis on the arguments */
+	if(!CSSemExpectValue(node->expr1, info, &(node->expr1), &value1) ||
+	   !CSSemExpectValue(node->expr2, info, &(node->expr2), &value2))
+	{
+		goto error;
+	}
+
+	/* Find a user-defined operator, if any */
+	if(CSSemGetType(value1) == CSSemGetType(value2) &&
+	   (ILType_IsValueType(CSSemGetType(value1)) ||
+	    ILType_IsClass(CSSemGetType(value1))))
+	{
+		method1 = FindUserBinaryOperator
+					(info, "op_BitwiseOr", &(value1), node->expr1,
+					 &(value1), node->expr2);
+		method2 = ILResolveConversionOperator
+					(info, ILType_ToClass(CSSemGetType(value1)), "op_True",
+					 CSSemGetType(value1), ILType_Boolean);
+		method3 = ILResolveConversionOperator
+					(info, ILType_ToClass(CSSemGetType(value1)), "op_False",
+					 CSSemGetType(value1), ILType_Boolean);
+		if(method1 && (method2 || method3))
+		{
+			method1 = (ILMethod *)ILMemberImport
+						(info->image, (ILMember *)method1);
+			if(!method1)
+			{
+				CCOutOfMemory();
+			}
+			if(method2)
+			{
+				method2 = (ILMethod *)ILMemberImport
+							(info->image, (ILMember *)method2);
+				if(!method2)
+				{
+					CCOutOfMemory();
+				}
+			}
+			if(method3)
+			{
+				method3 = (ILMethod *)ILMemberImport
+							(info->image, (ILMember *)method3);
+				if(!method3)
+				{
+					CCOutOfMemory();
+				}
+			}
+			*parent = ILNode_UserLogicalOr_create
+						(node->expr1, node->expr2, method1, method2, method3);
+			yysetfilename(*parent, yygetfilename(node));
+			yysetlinenum(*parent, yygetlinenum(node));
+			CSSemSetRValue(value1, ILType_Boolean);
+			return value1;
+		}
+	}
+
+	/* We must have boolean arguments at this point */
+	if(!ILCanCoerceNode(info, node->expr1, CSSemGetType(value1),
+						ILType_Boolean,1) ||
+	   !ILCanCoerceNode(info, node->expr2, CSSemGetType(value2),
+	   					ILType_Boolean,1))
+	{
+		goto error;
+	}
+
+	/* Coerce the two arguments to `bool' */
+	ILCoerce(info, node->expr1, &(node->expr1),
+			 CSSemGetType(value1), ILType_Boolean,1);
+	ILCoerce(info, node->expr2, &(node->expr2),
+			 CSSemGetType(value2), ILType_Boolean,1);
+
+	/* The result is boolean */
+	CSSemSetRValue(value1, ILType_Boolean);
+	EvalOperator(info, *parent, parent, &value1);
+	return value1;
+
+	/* Report an argument error */
+error:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "invalid operands to binary `||'");
+	CSSemSetRValue(value1, ILType_Boolean);
+	return value1;
+}
+
+%{
+
+/*
+ * Perform semantic analysis for the equality or inequality operators.
+ */
+static CSSemValue EqualitySem(ILGenInfo *info, ILNode_BinaryExpression *node,
+							  ILNode **parent, const ILOperator *table,
+							  const char *name, const char *errorName)
+{
+	const ILOperator *oper;
+	ILMethod *method;
+	CSSemValue value1;
+	CSSemValue value2;
+	ILType *resultType;
+
+	/* Perform semantic analysis on the arguments */
+	value1 = ILNode_SemAnalysis(node->expr1, info, &(node->expr1));
+	value2 = ILNode_SemAnalysis(node->expr2, info, &(node->expr2));
+
+	/* The two arguments must be values */
+	if(!CSSemIsValue(value1) || !CSSemIsValue(value2))
+	{
+		goto error;
+	}
+
+	/* Look for a builtin operator */
+	oper = ILFindBinaryOperator(table, CSSemGetType(value1),
+								CSSemGetType(value2), &resultType,
+								IsEnumZero(&value1), IsEnumZero(&value2));
+	if(oper)
+	{
+		ILApplyBinaryOperator(info, (ILNode *)node, parent, oper);
+		CSSemSetRValue(value1, ILType_Boolean);
+		EvalOperator(info, *parent, parent, &value1);
+		return value1;
+	}
+
+	/* If one of the arguments is a string and the other is null,
+	   then the code generator knows how to handle the operation */
+	if(ILTypeIsStringClass(CSSemGetType(value1)))
+	{
+		if(CSSemGetType(value2) == ILType_Null)
+		{
+			if(table == ILOp_Eq)
+			{
+				*parent = ILNode_IsNull_create(node->expr1);
+			}
+			else
+			{
+				*parent = ILNode_IsNonNull_create(node->expr1);
+			}
+			yysetfilename(*parent, yygetfilename(node));
+			yysetlinenum(*parent, yygetlinenum(node));
+			CSSemSetRValue(value1, ILType_Boolean);
+			return value1;
+		}
+	}
+	else if(CSSemGetType(value1) == ILType_Null &&
+			ILTypeIsStringClass(CSSemGetType(value2)))
+	{
+		if(table == ILOp_Eq)
+		{
+			*parent = ILNode_IsNull_create(node->expr2);
+		}
+		else
+		{
+			*parent = ILNode_IsNonNull_create(node->expr2);
+		}
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		CSSemSetRValue(value1, ILType_Boolean);
+		return value1;
+	}
+
+	/* If one of the arguments is a pointer and the other is null,
+	   then the code generator knows how to handle the operation */
+	if(ILType_IsPointer(CSSemGetType(value1)))
+	{
+		if(CSSemGetType(value2) == ILType_Null)
+		{
+			if(table == ILOp_Eq)
+			{
+				*parent = ILNode_IsNull_create(node->expr1);
+			}
+			else
+			{
+				*parent = ILNode_IsNonNull_create(node->expr1);
+			}
+			yysetfilename(*parent, yygetfilename(node));
+			yysetlinenum(*parent, yygetlinenum(node));
+			CSSemSetRValue(value1, ILType_Boolean);
+			return value1;
+		}
+	}
+	else if(CSSemGetType(value1) == ILType_Null &&
+			ILType_IsPointer(CSSemGetType(value2)))
+	{
+		if(table == ILOp_Eq)
+		{
+			*parent = ILNode_IsNull_create(node->expr2);
+		}
+		else
+		{
+			*parent = ILNode_IsNonNull_create(node->expr2);
+		}
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		CSSemSetRValue(value1, ILType_Boolean);
+		return value1;
+	}
+
+	/* If the two arguments are pointers, we can use the builtin logic */
+	if(ILType_IsPointer(CSSemGetType(value1)) &&
+	   ILType_IsPointer(CSSemGetType(value2)))
+	{
+		CSSemSetRValue(value1, ILType_Boolean);
+		return value1;
+	}
+
+	/* If the two types are IntPtr, then we take a shortcut, avoiding
+	   the call to the user-defined operators in "IntPtr" */
+	if(CSSemGetType(value1) == ILType_Int &&
+	   CSSemGetType(value2) == ILType_Int)
+	{
+		CSSemSetRValue(value1, ILType_Boolean);
+		return value1;
+	}
+
+	/* Look for a user-specified operator */
+	method = FindUserBinaryOperator(info, name, &(value1), node->expr1,
+									&(value2), node->expr2);
+	if(method)
+	{
+		ApplyUserBinaryOperator(info,method,(ILNode_BinaryExpression*)node,
+								parent,&(value1),&(value2));
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		return value1;
+	}
+
+	/* If both arguments are object references, then we can compare them
+	   using the built-in code generator logic */
+	if(CSSemGetType(value1) != ILType_Null &&
+	   ILTypeIsReference(CSSemGetType(value1)))
+	{
+		if(CSSemGetType(value2) == ILType_Null)
+		{
+			if(table == ILOp_Eq)
+			{
+				*parent = ILNode_IsNull_create(node->expr1);
+			}
+			else
+			{
+				*parent = ILNode_IsNonNull_create(node->expr1);
+			}
+			yysetfilename(*parent, yygetfilename(node));
+			yysetlinenum(*parent, yygetlinenum(node));
+			CSSemSetRValue(value1, ILType_Boolean);
+			return value1;
+		}
+		else if(ILTypeIsReference(CSSemGetType(value2)))
+		{
+			if(ILCanCoerceNode(info, node->expr1, CSSemGetType(value1),
+							   CSSemGetType(value2),1) ||
+			   ILCanCoerceNode(info, node->expr2, CSSemGetType(value2),
+			   				   CSSemGetType(value1),1))
+			{
+				CSSemSetRValue(value1, ILType_Boolean);
+				return value1;
+			}
+		}
+	}
+	else if(CSSemGetType(value1) == ILType_Null &&
+			ILTypeIsReference(CSSemGetType(value2)))
+	{
+		if(table == ILOp_Eq)
+		{
+			*parent = ILNode_IsNull_create(node->expr2);
+		}
+		else
+		{
+			*parent = ILNode_IsNonNull_create(node->expr2);
+		}
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		CSSemSetRValue(value1, ILType_Boolean);
+		return value1;
+	}
+
+	/* Try coercion as a last resort */
+	if(ILCanCoerceNode(info, node->expr1, CSSemGetType(value1),
+					   CSSemGetType(value2),1))
+	{
+		ILCoerce(info, node->expr1, &(node->expr1), CSSemGetType(value1),
+				 CSSemGetType(value2),1);
+		CSSemSetRValue(value1, CSSemGetType(value2));
+	}
+	else if(ILCanCoerceNode(info, node->expr2, CSSemGetType(value2),
+					   CSSemGetType(value1),1))
+	{
+		ILCoerce(info, node->expr2, &(node->expr2), CSSemGetType(value2),
+				 CSSemGetType(value1),1);
+		CSSemSetRValue(value2, CSSemGetType(value1) );
+	}
+
+	/* Look for a builtin operator */
+	oper = ILFindBinaryOperator(table, CSSemGetType(value1),
+								CSSemGetType(value2), &resultType,
+								IsEnumZero(&value1), IsEnumZero(&value2));
+	if(oper)
+	{
+		ILApplyBinaryOperator(info, (ILNode *)node, parent, oper);
+		CSSemSetRValue(value1, ILType_Boolean);
+		EvalOperator(info, *parent, parent, &value1);
+		return value1;
+	}
+	
+	/* Look for a user-specified operator */
+	method = FindUserBinaryOperator(info, name, &(value1), node->expr1,
+									&(value2), node->expr2);
+	if(method)
+	{
+		ApplyUserBinaryOperator(info,method,(ILNode_BinaryExpression*)node,
+								parent,&(value1),&(value2));
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		return value1;
+	}
+
+	/* Could not find a suitable operator */
+error:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "invalid operands to binary `%s'", errorName);
+	CSSemSetRValue(value1, ILType_Int32);
+	return value1;
+}
+
+%}
+
+/*
+ * Perform semantic analysis for the equality operator.
+ */
+ILNode_SemAnalysis(ILNode_Eq)
+{
+	return EqualitySem(info, (ILNode_BinaryExpression *)node, parent,
+					   ILOp_Eq, "op_Equality", "==");
+}
+
+/*
+ * Perform semantic analysis for the inequality operator.
+ */
+ILNode_SemAnalysis(ILNode_Ne)
+{
+	return EqualitySem(info, (ILNode_BinaryExpression *)node, parent,
+					   ILOp_Ne, "op_Inequality", "!=");
+}
+
+/*
+ * Perform semantic analysis for the less than operator.
+ */
+ILNode_SemAnalysis(ILNode_Lt)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Lt, "op_LessThan", "<",1);
+}
+
+/*
+ * Perform semantic analysis for the less than or equal to operator.
+ */
+ILNode_SemAnalysis(ILNode_Le)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Le, "op_LessThanOrEqual", "<=",1);
+}
+
+/*
+ * Perform semantic analysis for the greater than operator.
+ */
+ILNode_SemAnalysis(ILNode_Gt)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Gt, "op_GreaterThan", ">",1);
+}
+
+/*
+ * Perform semantic analysis for the greater than or equal to operator.
+ */
+ILNode_SemAnalysis(ILNode_Ge)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Ge, "op_GreaterThanOrEqual", ">=",1);
+}
+
+/*
+ * Perform semantic analysis for the pointer dereference operator.
+ */
+ILNode_SemAnalysis(ILNode_Deref)
+{
+	CSSemValue value;
+	ILType *type;
+	CCUnsafeMessage(info, (ILNode *)node, "unsafe pointer dereference");
+	value=ILNode_SemAnalysis(node->expr,info,&(node->expr));
+	if(!CSSemIsValue(value) || !CSSemGetType(value))
+	{
+		CCErrorOnLine(yygetfilename(node->expr),yygetlinenum(node->expr),
+				"invalid argument for dereference operator");
+		CSSemSetLValue(value,ILType_Int32);
+		return value;
+	}
+	type=CSSemGetType(value);
+	if(ILType_IsPointer(type) && ILType_Ref(type) != ILType_Void)
+	{
+		node->elemType = ILType_Ref(type);
+		CSSemSetLValue(value, node->elemType);
+		return value;
+	}
+	else
+	{
+		CCErrorOnLine(yygetfilename(node->expr),yygetlinenum(node->expr),
+			"cannot dereference '%s'",CSTypeToName(CSSemGetType(value)));
+	}
+	CSSemSetLValue(value, ILType_Int32);
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the "address of" operator.
+ */
+ILNode_SemAnalysis(ILNode_AddressOf)
+{
+	CSSemValue value;
+	CCUnsafeMessage(info, (ILNode *)node, "unsafe address operator");
+	value=ILNode_SemAnalysis(node->expr,info,&(node->expr));
+	if(!CSSemIsValue(value))
+	{
+		CCErrorOnLine(yygetfilename(node->expr),yygetlinenum(node->expr),
+				"invalid argument for address operator");
+		CSSemSetRValue(value,ILType_Int32);
+		return value;
+	}
+	if(yyisa(node->expr, ILNode_Deref))
+	{
+		/* If the argument is a pointer dereference, then remove the
+		   extra layer and use the pointer directly as the address */
+		*parent = ((ILNode_Deref *)(node->expr))->expr;
+	}
+	else if(!yyisa(node->expr, ILNode_LValue) ||
+			yyisa(node->expr, ILNode_LValueNoRef))
+	{
+		CCErrorOnLine(yygetfilename(node->expr),yygetlinenum(node->expr),
+					  "cannot get address of expression");
+	}
+	CSSemSetRValue(value,ILTypeCreateRef(info->context,
+							IL_TYPE_COMPLEX_PTR,
+							CSSemGetType(value)));
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the conditional operator.
+ *
+ * Note: we assume that the condition has been wrapped in
+ * a "ToBool" node to take care of the semantic analysis
+ * for the boolean cast.
+ */
+ILNode_SemAnalysis(ILNode_Conditional)
+{
+	CSSemValue value1;
+	CSSemValue value2;
+
+	/* Perform semantic analysis on the boolean condition */
+	ILNode_SemAnalysis(node->expr1, info, &(node->expr1));
+
+	/* Perform semantic analysis on the "then" and "else" clauses */
+	if(!CSSemExpectValue(node->expr2, info, &(node->expr2), &value1) ||
+	   !CSSemExpectValue(node->expr3, info, &(node->expr3), &value2))
+	{
+		goto error;
+	}
+
+	/* If the types are the same, then we are done */
+	if(ILTypeIdentical(CSSemGetType(value1), CSSemGetType(value2)))
+	{
+		CSSemSetRValue(value1, CSSemGetType(value1));
+		EvalOperator(info, *parent, parent, &value1);
+		return value1;
+	}
+
+	/* Determine which of the types is the result type */
+	if(ILCanCoerceNode(info, node->expr2, CSSemGetType(value1),
+					   CSSemGetType(value2),1) &&
+	   !ILCanCoerceNode(info, node->expr3, CSSemGetType(value2),
+	   					CSSemGetType(value1),1))
+	{
+		ILCoerce(info, node->expr2, &(node->expr2), CSSemGetType(value1),
+				 CSSemGetType(value2),1);
+		CSSemSetRValue(value2, CSSemGetType(value2));
+		EvalOperator(info, *parent, parent, &value2);
+		return value2;
+	}
+	else if(ILCanCoerceNode(info, node->expr3, CSSemGetType(value2),
+							CSSemGetType(value1),1) &&
+	        !ILCanCoerceNode(info, node->expr2, CSSemGetType(value1),
+							 CSSemGetType(value2),1))
+	{
+		ILCoerce(info, node->expr3, &(node->expr3), CSSemGetType(value2),
+				 CSSemGetType(value1),1);
+		CSSemSetRValue(value1, CSSemGetType(value1));
+		EvalOperator(info, *parent, parent, &value1);
+		return value1;
+	}
+
+	/* Report an error with the arguments to "?:" */
+error:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "invalid operands to ternary `?:'");
+	CSSemSetRValue(value1, ILType_Int32);
+	return value1;
+}
+
+/*
+ * Perform semantic analysis for the "as is" operator.
+ */
+ILNode_SemAnalysis(ILNode_AsIs)
+{
+	return ILNode_SemAnalysis(node->expr, info, &(node->expr));
+}
+
+/*
+ * Perform semantic analysis for a global namespace adjustment.
+ */
+ILNode_SemAnalysis(ILNode_GlobalNamespace)
+{
+	ILNode *savedNamespace = info->currentNamespace;
+	ILNode_Namespace *ns = (ILNode_Namespace *)savedNamespace;
+	CSSemValue value;
+	while(ns != 0 && ns->enclosing != 0)
+	{
+		ns = ns->enclosing;
+	}
+	info->currentNamespace = (ILNode *)ns;
+	value = ILNode_SemAnalysis(node->expr, info, &(node->expr));
+	info->currentNamespace = savedNamespace;
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the comma operator.
+ */
+ILNode_SemAnalysis(ILNode_Comma)
+{
+	CSSemValue value1;
+	CSSemValue value2;
+	value1 = ILNode_SemAnalysis(node->expr1, info, &(node->expr1));
+	value2 = ILNode_SemAnalysis(node->expr2, info, &(node->expr2));
+	if(!CSSemIsValue(value1) || !CSSemIsValue(value2))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid operands to binary `,'");
+	}
+	return value2;
+}
+
+/*
+ * Perform semantic analysis for the "as untyped" operator.
+ */
+ILNode_SemAnalysis(ILNode_AsUntyped)
+{
+	CSSemValue value;
+	CSSemValue result;
+	ILType *type;
+	ILClass *classInfo;
+
+	/* Perform semantic analysis on the two arguments */
+	if(!CSSemExpectValue(node->expr1, info, &(node->expr1), &value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid operands to binary `as'");
+		CSSemSetRValue(value, ILFindSystemType(info, "Object"));
+	}
+	type = CSSemType(node->expr2, info, &(node->expr2));
+
+	/* The type must be an object reference type */
+	if(!ILTypeIsReference(type))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "reference type required");
+		type = ILFindSystemType(info, "Object");
+	}
+
+	/* Create the result semantic value */
+	CSSemSetRValue(result, type);
+
+	/* Determine if there is an implicit reference or boxing coercion */
+	if(ILCoerceKind(info, node->expr1, &(node->expr1),
+					CSSemGetType(value), type,
+					IL_CONVERT_REFERENCE | IL_CONVERT_BOXING,1))
+	{
+		*parent = node->expr1;
+		return result;
+	}
+
+	/* Determine if there is an explicit reference conversion */
+	classInfo = ILGetExplicitConv(info, CSSemGetType(value), type,
+								  IL_CONVERT_REFERENCE);
+	if(classInfo != 0)
+	{
+		*parent = ILNode_As_create(node->expr1, classInfo, 0);
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		return result;
+	}
+
+	/* Report an error for the conversion */
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+		  		  "no conversion from `%s' to `%s'",
+		  		  CSTypeToName(CSSemGetType(value)), CSTypeToName(type));
+	return result;
+}
+
+/*
+ * Perform semantic analysis for the "is untyped" operator.
+ */
+ILNode_SemAnalysis(ILNode_IsUntyped)
+{
+	CSSemValue value;
+	CSSemValue result;
+	ILType *type;
+	ILClass *classInfo;
+
+	/* Perform semantic analysis on the two arguments */
+	if(!CSSemExpectValue(node->expr1, info, &(node->expr1), &value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid operands to binary `is'");
+		CSSemSetRValue(value, ILFindSystemType(info, "Object"));
+	}
+	type = CSSemType(node->expr2, info, &(node->expr2));
+
+	/* Create the result semantic value */
+	CSSemSetRValue(result, ILType_Boolean);
+
+	/* Determine if there is an implicit reference or boxing coercion */
+	if(ILCanCoerceKind(info, CSSemGetType(value), type,
+					   IL_CONVERT_REFERENCE | IL_CONVERT_BOXING,1))
+	{
+		if(ILTypeIsReference(CSSemGetType(value)))
+		{
+			/* Reference types: test the expression against null */
+			CCWarningOnLine(yygetfilename(node), yygetlinenum(node),
+				    "`is' expression is equivalent to a test against `null'");
+			*parent = ILNode_Ne_create(node->expr1, ILNode_Null_create());
+		}
+		else
+		{
+			/* Value types: the result is always true, but we should
+			   still evaluate the expression for its side-effects */
+			CCWarningOnLine(yygetfilename(node), yygetlinenum(node),
+						    "`is' expression is always true");
+			*parent = ILNode_Comma_create(node->expr1, ILNode_True_create());
+		}
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		return result;
+	}
+
+	/* Determine if there is an explicit reference or unboxing conversion */
+	classInfo = ILGetExplicitConv(info, CSSemGetType(value), type,
+								  IL_CONVERT_REFERENCE | IL_CONVERT_UNBOXING);
+	if(classInfo != 0)
+	{
+		*parent = ILNode_Is_create(node->expr1, classInfo, 0);
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		return result;
+	}
+
+	/* The result will always be "false", but we should still
+	   evaluate the expression for its side-effects */
+	CCWarningOnLine(yygetfilename(node), yygetlinenum(node),
+		  		    "`is' expression is always false");
+	*parent = ILNode_Comma_create(node->expr1, ILNode_False_create());
+	return result;
+}
+
+/*
+ * Perform semantic analysis for the "error" node.
+ */
+ILNode_SemAnalysis(ILNode_Error)
+{
+	return CSSemValueError;
+}
+
+/*
+ * Perform semantic analysis for the "overflow" operator.
+ */
+ILNode_SemAnalysis(ILNode_Overflow)
+{
+	CSSemValue value;
+	int overflow = info->overflowInsns;
+	int changed = info->overflowChanged;
+	info->overflowInsns = -1;
+	info->overflowChanged = -1;
+	value = ILNode_SemAnalysis(node->expr, info, &(node->expr));
+	info->overflowInsns = overflow;
+	info->overflowChanged = changed;
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the "no overflow" operator.
+ */
+ILNode_SemAnalysis(ILNode_NoOverflow)
+{
+	CSSemValue value;
+	int overflow = info->overflowInsns;
+	int changed = info->overflowChanged;
+	info->overflowInsns = 0;
+	info->overflowChanged = -1;
+	value = ILNode_SemAnalysis(node->expr, info, &(node->expr));
+	info->overflowInsns = overflow;
+	info->overflowChanged = changed;
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the "pedantic" operator.
+ */
+ILNode_SemAnalysis(ILNode_Pedantic)
+{
+	CSSemValue value;
+	int pedantic = info->pedanticArith;
+	info->pedanticArith = -1;
+	value = ILNode_SemAnalysis(node->expr, info, &(node->expr));
+	info->pedanticArith = pedantic;
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the "no pedantic" operator.
+ */
+ILNode_SemAnalysis(ILNode_NoPedantic)
+{
+	CSSemValue value;
+	int pedantic = info->pedanticArith;
+	info->pedanticArith = 0;
+	value = ILNode_SemAnalysis(node->expr, info, &(node->expr));
+	info->pedanticArith = pedantic;
+	return value;
+}
+
+/*
+ * The following nodes are inserted into the tree during
+ * semantic analysis to handle special code generation cases.
+ * Their semantic analysis routines won't actually be called.
+ */
+
+/*
+ * Perform semantic analysis for the concatenation operator.
+ */
+ILNode_SemAnalysis(ILNode_Concat)
+{
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for delegate operators.
+ */
+ILNode_SemAnalysis(ILNode_DelegateAdd),
+ILNode_SemAnalysis(ILNode_DelegateSub)
+{
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for user-defined binary operators.
+ */
+ILNode_SemAnalysis(ILNode_UserBinaryOp)
+{
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for user-defined unary operators.
+ */
+ILNode_SemAnalysis(ILNode_UserUnaryOp)
+{
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for user-defined conversion operators.
+ */
+ILNode_SemAnalysis(ILNode_UserConversion)
+{
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "box" operator.
+ */
+ILNode_SemAnalysis(ILNode_Box)
+{
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "unbox" operator.
+ */
+ILNode_SemAnalysis(ILNode_Unbox)
+{
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the low-level cast operators.
+ */
+ILNode_SemAnalysis(ILNode_CastSimple)
+{
+	return CSSemValueDefault;
+}
+ILNode_SemAnalysis(ILNode_CastType)
+{
+	return CSSemValueDefault;
+}
+ILNode_SemAnalysis(ILNode_CastStringToCharPtr)
+{
+	return CSSemValueDefault;
+}
+ILNode_SemAnalysis(ILNode_CastArrayToElementPtr)
+{
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the user-defined logical AND operator.
+ */
+ILNode_SemAnalysis(ILNode_UserLogicalAnd)
+{
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the user-defined logical OR operator.
+ */
+ILNode_SemAnalysis(ILNode_UserLogicalOr)
+{
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for user-defined increments and decrements.
+ */
+ILNode_SemAnalysis(ILNode_UserPreInc),
+ILNode_SemAnalysis(ILNode_UserPreDec),
+ILNode_SemAnalysis(ILNode_UserPostInc),
+ILNode_SemAnalysis(ILNode_UserPostDec)
+{
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for pointer-based increments and decrements.
+ */
+ILNode_SemAnalysis(ILNode_PreIncPtr),
+ILNode_SemAnalysis(ILNode_PreDecPtr),
+ILNode_SemAnalysis(ILNode_PostIncPtr),
+ILNode_SemAnalysis(ILNode_PostDecPtr)
+{
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "as" operator.
+ */
+ILNode_SemAnalysis(ILNode_As)
+{
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "is" operator.
+ */
+ILNode_SemAnalysis(ILNode_Is)
+{
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "is null" and "is not null" operators.
+ */
+ILNode_SemAnalysis(ILNode_IsNull),
+ILNode_SemAnalysis(ILNode_IsNonNull)
+{
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the array length operator.
+ */
+ILNode_SemAnalysis(ILNode_ArrayLength)
+{
+	return CSSemValueDefault;
+}

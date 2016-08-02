@@ -1,0 +1,161 @@
+<?xml version="1.0"?>
+<project name="compat" default="all">
+	<target name="all">
+
+		<!-- Build the Microsoft.VisualC.dll library -->
+		<compile output="Microsoft.VisualC.dll"
+				 target="library"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="${CONFIG_DEBUG_LINES}"
+				 install="true"
+				 installasdefault="${INSTALL_AS_DEFAULT}">
+
+			<sources>
+				<file name="VisualC.cs"/>
+			</sources>
+
+			<references>
+				<file name="../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-fassembly-version=${SECONDARY_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=ms"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the cscompmgd.dll library -->
+		<compile output="cscompmgd.dll"
+				 target="library"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="${CONFIG_DEBUG_LINES}"
+				 install="true"
+				 installasdefault="${INSTALL_AS_DEFAULT}">
+
+			<sources>
+				<file name="CSharpCompiler.cs"/>
+			</sources>
+
+			<references>
+				<file name="../System/first/System.dll"/>
+				<file name="../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<file name="../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-fassembly-version=${SECONDARY_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=ms"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the Microsoft.Vsa.dll library -->
+		<compile output="Microsoft.Vsa.dll"
+				 target="library"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="${CONFIG_DEBUG_LINES}"
+				 install="true"
+				 installasdefault="${INSTALL_AS_DEFAULT}">
+
+			<sources>
+				<file name="Vsa.cs"/>
+			</sources>
+
+			<references>
+				<file name="../System/first/System.dll"/>
+				<file name="../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<file name="../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-fassembly-version=${SECONDARY_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=ms"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the Accessibility.dll library -->
+		<compile output="Accessibility.dll"
+				 target="library"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="${CONFIG_DEBUG_LINES}"
+				 install="true"
+				 installasdefault="${INSTALL_AS_DEFAULT}">
+
+			<sources>
+				<file name="Accessibility.cs"/>
+			</sources>
+
+			<references>
+				<file name="../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=ms"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the sysglobl.dll library -->
+		<compile output="sysglobl.dll"
+				 target="library"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="${CONFIG_DEBUG_LINES}"
+				 install="true"
+				 installasdefault="${INSTALL_AS_DEFAULT}">
+
+			<sources>
+				<file name="sysglobl.cs"/>
+			</sources>
+
+			<references>
+				<file name="../System.Xml/System.Xml.dll"/>
+				<file name="../System/System.dll"/>
+				<file name="../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<file name="../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=ms"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+	</target>
+</project>

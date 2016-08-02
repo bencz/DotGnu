@@ -1,0 +1,4 @@
+./using_alias3.cs:37: `B' is defined ambiguously because an alias exists with the same name
+./using_alias3.cs:38: `A' is defined ambiguously because an alias exists with the same name
+./using_alias3.cs:38: `B' is not a member of the type `N3.A'
+./using_alias3.cs:38: invalid base type

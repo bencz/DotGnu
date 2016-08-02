@@ -1,0 +1,34 @@
+line 3: %node toplevel no_parent 6
+line 4: %node expression toplevel 6
+line 5: %node binary expression 2
+line 6: %node unary expression 2
+line 7: %node intnum expression 0
+line 8: %node plus binary 0
+line 9: %node minus binary 0
+line 10: %node multiply binary 0
+line 11: %node divide binary 0
+line 12: %node negate unary 0
+line 13: %node power binary 0
+line 14: %node expression2 no_parent 6
+line 17: %operation void op 1
+line 17: %param expression * e 1
+line 17: %virtual expression op
+line 19: %case binary op
+line 24: %case unary op
+parse6.tst:30: operation `op2' is not declared
+parse6.tst:35: node type `notdeclared' is not declared
+parse6.tst:40: type name expected
+line 40: %case power op
+parse6.tst:45: incorrect number of triggers for operation
+parse6.tst:17: operation declared here
+parse6.tst:49: incorrect number of triggers for operation
+parse6.tst:17: operation declared here
+parse6.tst:54: node type `expression2' does not inherit from `expression'
+parse6.tst:17: operation declared here
+parse6.tst:58: node type `toplevel' does not inherit from `expression'
+parse6.tst:17: operation declared here
+line 63: %case minus op
+parse6.tst:64: `,' expected
+line 64: %case plus op
+parse6.tst:65: code block expected
+parse6.tst:17: node type `intnum' is not handled in operation `op'

@@ -1,0 +1,40 @@
+Portable.NET
+------------
+
+The goal of this project is to build a suite of Free Software tools
+to build and execute .NET applications, including a C# compiler,
+assembler, disassembler, and runtime engine.  The initial target
+platform is GNU/Linux, with other platforms to follow in the future.
+
+The product is available under the terms of the GNU General Public
+License.  The latest version of the product can be downloaded
+from the following Web site:
+
+    http://www.southern-storm.com.au/portable_net.html
+
+When you have downloaded a version of the product, it can be unpacked
+and built in the usual manner:
+
+    $ zcat pnet-VERSION.tar.gz | tar xvf -
+    $ cd pnet-VERSION
+    $ ./configure
+    $ make
+
+If you would like some assistance building the code or you are having
+problems, then run the Portable.NET Mad Cow diagnostic utility, which
+will walk you through it one step at a time:
+
+	$ cd pnet-VERSION
+	$ ./madcow
+
+This script dumps out a "madcow.log" file which can help the Portable.NET
+developers diagnose any build problems that you may be having.
+
+See the HACKING file in this directory for more information on
+building and contributing to Portable.NET.
+
+The Portable.NET FAQ can be found on our Web site, or in the "doc"
+subdirectory of this distribution.
+
+We welcome feedback on this product.  E-mail your comments to
+"rweather@southern-storm.com.au".

@@ -1,0 +1,280 @@
+
+Internals of the JScript implementation
+---------------------------------------
+
+This file describes the internals of the JScript implementation for those
+who wish to hack on it.
+
+The internals are designed around the terminology of ECMAScript 3.  A copy
+of the specification can be obtained from the ECMA ftp site:
+
+	ftp://ftp.ecma.ch/ecma-st/Ecma-262.pdf
+
+We will refer to section numbers in ECMA-262 below.  A copy of that spec
+is essential reading.
+
+[We will update this document with information on the ECMAScript 4 and
+JScript extensions in the future]
+
+Parser
+------
+
+The JScript parsing code can be found in the "JScript/Parser" directory.
+The two important classes are JSScanner and JSParser.
+
+The JSScanner class converts input source text into tokens for use
+by the parsing routines.  The bulk of the work is done in the method
+JSScanner.GetNextToken().  Tokens are returned as Context objects
+from the JSScanner.GetTokenContext() method.
+
+Context's contain the token code (a JSToken value), and the start and
+end positions of the token in the source text (for error reporting).
+Context's are also used to pass in the initial source text to be parsed,
+in the constructor.
+
+The JSParser class implements an LL(1) recursive descent grammar for
+the JScript language.  The two main entry points are JSParser.Parse()
+and JSParser.ParseEvalBody(), used for programs and "eval" blocks.
+
+JSParser contains a large number of methods for the non-terminals in
+the language grammar.  The methods are usually named after the
+corresponding non-terminal in the grammar.  e.g. the "PrimaryExpression"
+non-terminal is parsed by the method JSParser.PrimaryExpression().
+
+As with most LL(1) parsers, on entry to a method, the parser can assume
+that the next token in the input stream has already been fetched.  The
+method must consume all tokens for the construct and return a JNode
+object for the corresponding abstract syntax tree node.
+
+Syntax errors in the parser are handled by calling JSParser.SyntaxError().
+This method throws an exception to process the error.  The exception may
+be caught at a higher level to do error-recovery, or it may pass all the
+way up to JSParser.ParseSource(), where the parser will bail out.
+
+Tips:
+
+1. If there is a problem recognising identifiers, numbers, strings, etc,
+in the source text, then the scanner is probably the best place to start.
+
+2. If there is a problem recognising syntactic constructs, or correct
+ordering of items, then the parser is probably where you should look.
+
+References:
+
+Section 7, "Lexical Conventions", in ECMA-262 describes the token rules.
+
+Sections 11 to 14, "Expressions", "Statements", "Function Definition",
+and "Program", in ECMA-262 describe the language syntax.
+
+Abstract Syntax Tree
+--------------------
+
+This implementation uses treecc to do the heavy lifting on the abstract
+syntax tree system.  The tree nodes are defined in "JScript/Nodes/JNode.tc",
+with operation cases in the other *.tc files in "JScript/Nodes".  Some
+familiarity with treecc is assumed.
+
+The following describes the main node operations:
+
+	Eval
+		Determines the value of a node in the current execution context.
+		e.g. JConstant nodes expand to their constant values, JAdd nodes
+		expand to the addition of their arguments, etc.  Information
+		about the current execution context is provided by the VsaEngine
+		instance that is passed in as a parameter.
+
+		In ECMA-262, when the spec talks about evaluating a construct,
+		and then obtaining its value with "GetValue(X)" or "Result(N)",
+		then "Eval" is the corresponding implementation.
+
+	Prepare
+		Prepares to store a value to an l-value.  The l-value is
+		represented by the current node.  This operation returns
+		two data values that are later supplied to "Store" to provide
+		context information.
+
+		In ECMA-262, when the spec talks about returning a value of type
+		"Reference", then "Prepare" is the corresponding operation.
+		The "data1" and "data2" return values can be used to store
+		the "base object" and "property name" described by the spec.
+
+	GetAndPrepare
+		Same as "Prepare", but also returns the current value that
+		was stored in the l-value.  This is used to implement operators
+		such as "+=", "*=", "--", etc, that fetch the current value,
+		modify it, and then store the result back.
+
+	Store
+		Store a value into a location that was previously prepared with
+		"Prepare" or "GetAndPrepare".
+
+Tips:
+
+1. Most node types only need "Eval".  The other operations ("Prepare",
+"GetAndPrepare", and "Store") are already stubbed out so you don't need
+to override them unless absolutely necessary.
+
+2. Adding a new processor for the abstract syntax tree is easy.  For
+example, you may want to add an "Emit" operation to compile to IL.
+
+3. If the behaviour of "Prepare", "GetAndPrepare", and "Store" seems
+mysterious, then look at the "Eval" code for "JAssign" and "JAssignOp".
+That shows how they are used in practice.
+
+References:
+
+Treecc home page - http://www.southern-storm.com.au/treecc.html
+
+Sections 11 to 14 of ECMA-262 describe the evaluation behaviour of
+each non-terminal in the language grammar.
+
+Handling break, continue, return, and throw
+-------------------------------------------
+
+In section 12 of ECMA-262, the specification describes the semantic value
+of statements as "completions".  A completion is a three part value
+consisting of a type, a value, and an identifier.
+
+We don't use completions in this implementation.  We instead handle the
+semantic completion types in "Eval" as follows:
+
+	normal
+		Control returns from "Eval" with the statement's value.
+		The value may be "Empty.Value" if the statement is "void".
+
+	break
+		The "BreakJumpOut" exception is thrown, with the optional
+		break label identifier as an argument.  This is caught by
+		loop and switch statements at the appropriate scope level
+		and exectution continues from there.
+
+	continue
+		The "ContinueJumpOut" exception is thrown and caught in a
+		similar manner to "break".
+
+	return
+		The "ReturnJumpOut" exception is thrown, with the optional
+		return value as an argument.  This is caught at the outermost
+		level of a function evaluation to return the value to the
+		caller.
+	
+	throw
+		The "JScriptException" exception is thrown, with the thrown
+		value as an argument.
+
+Using exceptions for completions simplifies the evaluation engine
+considerably.  If a "BreakJumpOut" or "ContinueJumpOut" exception
+reaches the outer scope level of a function, an error will be reported.
+
+Tips:
+
+1. See the "Eval" operation cases for "JBreak", "JContinue", etc for more
+details on how completions are implemented in terms of exceptions.
+
+Type and object handling
+------------------------
+
+Section 8 of ECMA-262 describes the base types of the ECMAScript language.
+These are implemented in the following manner:
+
+	Undefined
+		The ECMAScript "undefined" value is the same as the C# "null" value.
+
+	Null
+		The ECMAScript "null" value is "System.DBNull.Value".  When compiled
+		in ECMA_COMPAT mode, it uses "Microsoft.JScript.DBNull.Value" instead.
+
+	Boolean
+		The boolean values are the same as the C# "true" and "false" values,
+		instances of the "System.Boolean" type.
+
+	String
+		ECMAScript strings are instances of the C# "System.String" type.
+
+	Number
+		ECMAScript numbers are instances of the C# "double" type.  In
+		special cases, "int" and "uint" may also be used, normally as
+		the output of the ECMAScript "ToInt32" and "ToUInt32" functions.
+
+	Object
+		ECMAScript objects are normally instances of "ScriptObject".
+		Various classes inherit from "ScriptObject" to provide specialist
+		functionality: "JSObject", "ScriptFunction", "ObjectPrototype", etc.
+
+Section 8.6.2 defines a number of internal properties and methods, which
+we implement as follows:
+
+	[[Prototype]]
+		"ScriptObject.GetParent()" retrieves an object's prototype.
+		The name, GetParent, is used for backwards-compatibility.
+
+	[[Class]]
+		"ScriptObject.Class" retrieves an object's class.  This normally
+		returns something like "Object" or "Function".
+
+	[[Value]]
+		This property is handled internally in classes that need it,
+		such as "Boolean", "Number", etc.  There is no actual C# property
+		or method associated with it.
+
+	[[Get]]
+		"ScriptObject.Get()" retrieves the value of an object property.
+		The special-purpose "GetIndex()" method is used to quickly access
+		the elements of array objects, but is otherwise identical to "Get()".
+
+	[[Put]]
+		"ScriptObject.Put()" sets the value of an object property.  The
+		special-purpose "PutIndex()" method is used for quick access
+		to arrays, but is otherwise identical to "Put()".
+
+	[[CanPut]]
+		"ScriptObject.CanPut()" determines if it is possible to put a
+		particular property on an object.  Returns false if the property
+		is read-only.
+
+	[[HasProperty]]
+		"ScriptObject.HasProperty()" determines if an object or one of
+		its prototypes has a particular property.
+
+	[[Delete]]
+		"ScriptObject.Delete()" deletes a particular property from
+		an object.
+
+	[[DefaultValue]]
+		"ScriptObject.DefaultValue" returns the default value for an
+		object, which is normally a primitive value such as a string.
+
+	[[Construct]]
+		"ScriptFunction.Construct()" uses the current object as a constructor
+		to create a new object.
+
+	[[Call]]
+		"ScriptFunction.Call()" uses the current object as a function
+		to be called.
+
+	[[HasInstance]]
+		"ScriptFunction.HasInstance()" is used for testing function instances.
+
+	[[Scope]]
+		???
+
+	[[Match]]
+		???
+
+Section 9 of ECMA-262 defines conversion operators for converting between
+various types.  These are found in the "Convert" class inside the file
+"JScript/Execute/Convert.cs":
+
+	ToPrimitive, ToBoolean, ToNumber, ToInteger, ToInt32, ToUInt32,
+	ToUInt16, ToString, ToObject
+
+References:
+
+Section 8, "Types", ECMA-262 describes the types and their operations.
+
+Section 9, "Type Conversion", ECMA-262 describes the type conversions.
+
+Builtin JScript classes
+-----------------------
+
+TODO

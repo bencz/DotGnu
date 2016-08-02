@@ -1,0 +1,3073 @@
+/*
+ * c_oper.tc - Operator handling for C.
+ *
+ * Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+%{
+
+/*
+ * Construct a boolean constant node.
+ */
+static ILNode *CreateBoolConstant(ILNode *cloneFrom, ILInt32 value)
+{
+	ILNode *node;
+	if(value)
+	{
+		node = ILNode_True_create();
+	}
+	else
+	{
+		node = ILNode_False_create();
+	}
+	CGenCloneLine(node, cloneFrom);
+	return node;
+}
+
+/*
+ * Construct a boolean constant semantic value.
+ */
+static CSemValue CreateBoolValue(ILInt32 value)
+{
+	ILEvalValue eval;
+	CSemValue result;
+	eval.valueType = ILMachineType_Int32;
+	eval.un.i4Value = value;
+	CSemSetConstant(result, ILType_Boolean, eval);
+	return result;
+}
+
+/*
+ * Construct a constant node from a compile-time constant.
+ * If it isn't possible to construct a node, return "origNode".
+ */
+static ILNode *CreateConstantNode(ILNode *cloneFrom, ILNode *origNode,
+								  ILEvalValue *evalValue)
+{
+	ILNode *node = 0;
+	switch(evalValue->valueType)
+	{
+		case ILMachineType_Boolean:
+		{
+			node = CreateBoolConstant(cloneFrom, evalValue->un.i4Value);
+		}
+		break;
+
+		case ILMachineType_Int8:
+		{
+			if(evalValue->un.i4Value >= 0)
+			{
+				node = ILNode_Int8_create
+					((ILUInt64)(evalValue->un.i4Value), 0, 1);
+			}
+			else
+			{
+				node = ILNode_Int8_create
+					((ILUInt64)(-((ILInt64)(evalValue->un.i4Value))), 1, 1);
+			}
+		}
+		break;
+
+		case ILMachineType_UInt8:
+		{
+			node = ILNode_UInt8_create
+				((ILUInt64)(evalValue->un.i4Value), 0, 0);
+		}
+		break;
+
+		case ILMachineType_Int16:
+		{
+			if(evalValue->un.i4Value >= 0)
+			{
+				node = ILNode_Int16_create
+					((ILUInt64)(evalValue->un.i4Value), 0, 1);
+			}
+			else
+			{
+				node = ILNode_Int16_create
+					((ILUInt64)(-((ILInt64)(evalValue->un.i4Value))), 1, 1);
+			}
+		}
+		break;
+
+		case ILMachineType_UInt16:
+		{
+			node = ILNode_UInt16_create
+				((ILUInt64)(evalValue->un.i4Value), 0, 0);
+		}
+		break;
+
+		case ILMachineType_Char:
+		{
+			node = ILNode_Char_create
+				((ILUInt64)(evalValue->un.i4Value), 0, 0);
+		}
+		break;
+
+		case ILMachineType_Int32:
+		{
+			if(evalValue->un.i4Value >= 0)
+			{
+				node = ILNode_Int32_create
+					((ILUInt64)(evalValue->un.i4Value), 0, 1);
+			}
+			else
+			{
+				node = ILNode_Int32_create
+					((ILUInt64)(-((ILInt64)(evalValue->un.i4Value))), 1, 1);
+			}
+		}
+		break;
+
+		case ILMachineType_UInt32:
+		{
+			node = ILNode_UInt32_create
+				((ILUInt64)(ILUInt32)(evalValue->un.i4Value), 0, 0);
+		}
+		break;
+
+		case ILMachineType_Int64:
+		{
+			if(evalValue->un.i4Value >= 0)
+			{
+				node = ILNode_Int64_create
+					((ILUInt64)(evalValue->un.i8Value), 0, 1);
+			}
+			else
+			{
+				node = ILNode_Int64_create
+					((ILUInt64)(-(evalValue->un.i8Value)), 1, 1);
+			}
+		}
+		break;
+
+		case ILMachineType_UInt64:
+		{
+			node = ILNode_UInt64_create
+				((ILUInt64)(evalValue->un.i8Value), 0, 0);
+		}
+		break;
+
+		case ILMachineType_NativeInt:
+		{
+			if(evalValue->un.i4Value >= 0)
+			{
+				node = ILNode_Int_create
+					((ILUInt64)(evalValue->un.i4Value), 0, 1);
+			}
+			else
+			{
+				node = ILNode_Int_create
+					((ILUInt64)(-((ILInt64)(evalValue->un.i4Value))), 1, 1);
+			}
+		}
+		break;
+
+		case ILMachineType_NativeUInt:
+		{
+			node = ILNode_UInt_create
+				((ILUInt64)(ILUInt32)(evalValue->un.i4Value), 0, 0);
+		}
+		break;
+
+		case ILMachineType_UnmanagedPtr:
+		{
+			if(evalValue->un.i4Value >= 0)
+			{
+				node = ILNode_CastSimple_create(ILNode_Int_create
+					((ILUInt64)(evalValue->un.i4Value), 0, 1),
+					ILMachineType_UnmanagedPtr);
+			}
+			else
+			{
+				node = ILNode_CastSimple_create(ILNode_Int_create
+					((ILUInt64)(-((ILInt64)(evalValue->un.i4Value))), 1, 1),
+					ILMachineType_UnmanagedPtr);
+			}
+		}
+		break;
+
+		case ILMachineType_Float32:
+		{
+			node = ILNode_Float32_create(evalValue->un.r4Value);
+		}
+		break;
+
+		case ILMachineType_Float64:
+		{
+			node = ILNode_Float64_create(evalValue->un.r8Value);
+		}
+		break;
+
+		case ILMachineType_NativeFloat:
+		{
+			node = ILNode_Float_create(evalValue->un.r8Value);
+		}
+		break;
+
+		default: break;
+	}
+	if(node)
+	{
+		CGenCloneLine(node, cloneFrom);
+		return node;
+	}
+	else
+	{
+		return cloneFrom;
+	}
+}
+
+%}
+
+/*
+ * Perform semantic analysis for the logical NOT operator.
+ */
+ILNode_CSemAnalysis(ILNode_LogicalNot)
+{
+	CSemValue value;
+	ILEvalValue *evalValue;
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	if((evalValue = CSemGetConstant(value)) != 0 &&
+	   ILGenCastConst(info, evalValue, evalValue->valueType,
+	   				  ILMachineType_Boolean))
+	{
+		/* Replace this node with either "true" or "false" */
+		*parent = CreateBoolConstant(node->expr, evalValue->un.i4Value);
+		return CreateBoolValue(evalValue->un.i4Value);
+	}
+	return CSemValueBool;
+}
+
+/*
+ * Perform semantic analysis for the logical AND operator.
+ */
+ILNode_CSemAnalysis(ILNode_LogicalAnd)
+{
+	CSemValue value1;
+	CSemValue value2;
+	ILEvalValue *evalValue1;
+	ILEvalValue *evalValue2;
+
+	/* Perform semantic analysis on the two arguments */
+	value1 = ILNode_CSemAnalysis(node->expr1, info, &(node->expr1), stmtLevel);
+	value2 = ILNode_CSemAnalysis(node->expr2, info, &(node->expr2), stmtLevel);
+
+	/* Perform constant evaluation */
+	evalValue1 = CSemGetConstant(value1);
+	if(evalValue1)
+	{
+		if(!ILGenCastConst(info, evalValue1, evalValue1->valueType,
+	   				  	   ILMachineType_Boolean))
+		{
+			evalValue1 = 0;
+		}
+	}
+	evalValue2 = CSemGetConstant(value2);
+	if(evalValue1)
+	{
+		if(!ILGenCastConst(info, evalValue1, evalValue1->valueType,
+	   				  	   ILMachineType_Boolean))
+		{
+			evalValue1 = 0;
+		}
+	}
+	if(evalValue1 && evalValue2)
+	{
+		/* Both arguments are boolean constants */
+		if(evalValue1->un.i4Value && evalValue2->un.i4Value)
+		{
+			*parent = CreateBoolConstant((ILNode *)node, 1);
+			return CreateBoolValue(1);
+		}
+		else
+		{
+			*parent = CreateBoolConstant((ILNode *)node, 0);
+			return CreateBoolValue(0);
+		}
+	}
+	else if(evalValue1)
+	{
+		/* The first argument is a boolean constant */
+		if(evalValue1->un.i4Value)
+		{
+			/* The whole expression evaluates to the second argument */
+			*parent = ILNode_ToBool_create(node->expr2);
+			CGenCloneLine(*parent, node->expr2);
+		}
+		else
+		{
+			/* The whole expression evaluates to false */
+			*parent = CreateBoolConstant((ILNode *)node, 0);
+			return CreateBoolValue(0);
+		}
+	}
+	else if(evalValue2)
+	{
+		/* The second argument is a boolean constant */
+		if(evalValue2->un.i4Value)
+		{
+			/* The whole expression evaluates to the first argument */
+			*parent = ILNode_ToBool_create(node->expr1);
+			CGenCloneLine(*parent, node->expr1);
+		}
+		else
+		{
+			/* Evaluate side effects in the first expression and return false */
+			*parent = ILNode_Comma_create(node->expr1,
+										  CreateBoolConstant(node->expr2, 0));
+			CGenCloneLine(*parent, (ILNode *)node);
+		}
+	}
+
+	/* The result is always boolean */
+	return CSemValueBool;
+}
+
+/*
+ * Perform semantic analysis for the logical OR operator.
+ */
+ILNode_CSemAnalysis(ILNode_LogicalOr)
+{
+	CSemValue value1;
+	CSemValue value2;
+	ILEvalValue *evalValue1;
+	ILEvalValue *evalValue2;
+
+	/* Perform semantic analysis on the two arguments */
+	value1 = ILNode_CSemAnalysis(node->expr1, info, &(node->expr1), stmtLevel);
+	value2 = ILNode_CSemAnalysis(node->expr2, info, &(node->expr2), stmtLevel);
+
+	/* Perform constant evaluation */
+	evalValue1 = CSemGetConstant(value1);
+	if(evalValue1)
+	{
+		if(!ILGenCastConst(info, evalValue1, evalValue1->valueType,
+	   				  	   ILMachineType_Boolean))
+		{
+			evalValue1 = 0;
+		}
+	}
+	evalValue2 = CSemGetConstant(value2);
+	if(evalValue1)
+	{
+		if(!ILGenCastConst(info, evalValue1, evalValue1->valueType,
+	   				  	   ILMachineType_Boolean))
+		{
+			evalValue1 = 0;
+		}
+	}
+	if(evalValue1 && evalValue2)
+	{
+		/* Both arguments are boolean constants */
+		if(evalValue1->un.i4Value || evalValue2->un.i4Value)
+		{
+			*parent = CreateBoolConstant((ILNode *)node, 1);
+			return CreateBoolValue(1);
+		}
+		else
+		{
+			*parent = CreateBoolConstant((ILNode *)node, 0);
+			return CreateBoolValue(0);
+		}
+	}
+	else if(evalValue1)
+	{
+		/* The first argument is a boolean constant */
+		if(evalValue1->un.i4Value)
+		{
+			/* The whole expression evaluates to true */
+			*parent = CreateBoolConstant((ILNode *)node, 1);
+			return CreateBoolValue(1);
+		}
+		else
+		{
+			/* The whole expression evaluates to the second argument */
+			*parent = ILNode_ToBool_create(node->expr2);
+			CGenCloneLine(*parent, node->expr2);
+		}
+	}
+	else if(evalValue2)
+	{
+		/* The second argument is a boolean constant */
+		if(evalValue2->un.i4Value)
+		{
+			/* Evaluate side effects in the first expression and return true */
+			*parent = ILNode_Comma_create(node->expr1,
+										  CreateBoolConstant(node->expr2, 1));
+			CGenCloneLine(*parent, (ILNode *)node);
+		}
+		else
+		{
+			/* The whole expression evaluates to the first argument */
+			*parent = ILNode_ToBool_create(node->expr1);
+			CGenCloneLine(*parent, node->expr1);
+		}
+	}
+
+	/* The result is always boolean */
+	return CSemValueBool;
+}
+
+%{
+
+/*
+ * Determine if a machine type is numeric or integer.
+ */
+#define	IsNumericMachineType(type)	\
+			((type) >= ILMachineType_Boolean && \
+			 (type) <= ILMachineType_NativeFloat)
+#define	IsIntegerMachineType(type)	\
+			((type) >= ILMachineType_Boolean && \
+			 (type) <= ILMachineType_NativeUInt)
+#define	IsSmallIntegerMachineType(type)	\
+			((type) >= ILMachineType_Boolean && \
+			 (type) <= ILMachineType_Int32)
+
+/*
+ * Determine if a machine type is a signed integer type.
+ */
+static int IsSignedMachineType(ILMachineType type)
+{
+	return (type == ILMachineType_Int8 ||
+			type == ILMachineType_Int16 ||
+			type == ILMachineType_Int32 ||
+			type == ILMachineType_Int64);
+}
+
+/*
+ * Multiply a node by a pointer element type size.
+ */
+static ILNode *MulPtrSize(ILNode *node, CSemValue value, ILType *elemType)
+{
+	ILEvalValue *evalValue = CSemGetConstant(value);
+	ILNode *newNode;
+	ILInt64 totalSize;
+	CTypeLayoutInfo layout;
+	CTypeGetLayoutInfo(elemType, &layout);
+	if(layout.category == C_TYPECAT_FIXED)
+	{
+		/* The size is constant, so try to compute at compile time */
+		if(layout.size == 0)
+		{
+			newNode = ILNode_Int_create(0, 0, 0);
+			CGenCloneLine(newNode, node);
+			return newNode;
+		}
+		else if(layout.size == 1)
+		{
+			return node;
+		}
+		if(evalValue && IsSmallIntegerMachineType(evalValue->valueType))
+		{
+			totalSize = ((ILInt64)(layout.size)) *
+						((ILInt64)(evalValue->un.i4Value));
+			if(totalSize >= (ILInt64)IL_MIN_INT32 &&
+			   totalSize <= (ILInt64)IL_MAX_INT32)
+			{
+				if(totalSize >= 0)
+				{
+					newNode = ILNode_Int_create((ILUInt64)totalSize, 0, 1);
+				}
+				else
+				{
+					newNode = ILNode_Int_create
+						((ILUInt64)(-totalSize), 1, 1);
+				}
+				CGenCloneLine(newNode, node);
+				return newNode;
+			}
+		}
+		if(layout.size == 2)
+		{
+			newNode = ILNode_Shl_create
+				(node, ILNode_Int32_create(1, 0, 1));
+		}
+		else if(layout.size == 4)
+		{
+			newNode = ILNode_Shl_create
+				(node, ILNode_Int32_create(2, 0, 1));
+		}
+		else if(layout.size == 8)
+		{
+			newNode = ILNode_Shl_create
+				(node, ILNode_Int32_create(3, 0, 1));
+		}
+		else
+		{
+			newNode = ILNode_Mul_create
+				(node, ILNode_UInt32_create((ILUInt64)layout.size, 0, 1));
+		}
+	}
+	else
+	{
+		/* The size is dynamic: check for the simple 0 case */
+		if(evalValue && IsSmallIntegerMachineType(evalValue->valueType))
+		{
+			if(evalValue->un.i4Value == 0)
+			{
+				newNode = ILNode_Int_create(0, 0, 0);
+				CGenCloneLine(newNode, node);
+				return newNode;
+			}
+		}
+		newNode = ILNode_Mul_create(node, ILNode_SizeOfType_create(elemType));
+	}
+	CGenCloneLine(newNode, node);
+	return newNode;
+}
+
+/*
+ * Divide a pointer difference by an element size.
+ */
+static ILNode *DivPtrSize(ILNode *node, ILType *elemType)
+{
+	ILNode *newNode;
+	CTypeLayoutInfo layout;
+	CTypeGetLayoutInfo(elemType, &layout);
+	if(layout.category == C_TYPECAT_FIXED)
+	{
+		if(layout.size == 1)
+		{
+			return node;
+		}
+		else if(layout.size == 2)
+		{
+			newNode = ILNode_Shr_create
+				(node, ILNode_Int32_create(1, 0, 1));
+		}
+		else if(layout.size == 4)
+		{
+			newNode = ILNode_Shr_create
+				(node, ILNode_Int32_create(2, 0, 1));
+		}
+		else if(layout.size == 8)
+		{
+			newNode = ILNode_Shr_create
+				(node, ILNode_Int32_create(3, 0, 1));
+		}
+		else
+		{
+			newNode = ILNode_Div_create
+				(node, ILNode_Int_create((ILInt64)(layout.size), 0, 1));
+		}
+	}
+	else
+	{
+		newNode = ILNode_Div_create(node, ILNode_SizeOfType_create(elemType));
+	}
+	CGenCloneLine(newNode, node);
+	return newNode;
+}
+
+/*
+ * Determine a common type for binary operators.
+ */
+static ILMachineType CommonBinaryType(ILGenInfo *info,
+									  ILMachineType type1,
+									  ILMachineType type2)
+{
+	ILMachineType common;
+
+	/* Determine a common type using the codegen inference algorithm */
+	common = ILCommonType(info, type1, type2, 0);
+
+	/* Widen the common type to the natural type for the operation */
+	switch(common)
+	{
+		case ILMachineType_Boolean:
+		case ILMachineType_Int8:
+		case ILMachineType_UInt8:
+		case ILMachineType_Int16:
+		case ILMachineType_UInt16:
+		case ILMachineType_Char:
+		{
+			common = ILMachineType_Int32;
+		}
+		break;
+
+		case ILMachineType_Float32:
+		{
+			common = ILMachineType_Float64;
+		}
+		break;
+
+		default: break;
+	}
+
+	/* Return the common type to the caller */
+	return common;
+}
+
+/*
+ * Binary operator kinds.
+ */
+#define	C_BINARY_ADD		0
+#define	C_BINARY_SUB		1
+#define	C_BINARY_REM		2
+#define	C_BINARY_NUMERIC	3
+#define	C_BINARY_BITWISE	4
+#define	C_BINARY_SHIFT		5
+
+/*
+ * Perform semantic analysis for a binary operator.
+ */
+static CSemValue BinarySem(ILGenInfo *info, ILNode_BinaryExpression *node,
+						   ILNode **parent, int stmtLevel,
+						   const char *name, int opkind)
+{
+	CSemValue value1;
+	CSemValue value2;
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType common1;
+	ILMachineType common2;
+	ILNode *temp;
+	ILType *elemType;
+	ILType *elemType2;
+	ILType *finalType = ILType_Invalid;
+	ILEvalValue evalValue;
+
+	/* Perform semantic analysis on the two arguments, and
+	   check that they are both r-values */
+	value1 = ILNode_CSemAnalysis(node->expr1, info, &(node->expr1), stmtLevel);
+	value2 = ILNode_CSemAnalysis(node->expr2, info, &(node->expr2), 0);
+	if(!CSemIsRValue(value1) || !CSemIsRValue(value2))
+	{
+		/* Pass error conditions up, but otherwise ignore the problem.
+		   We've already reported the error at the lower level */
+		if(CSemIsError(value1) || CSemIsError(value2))
+		{
+			return CSemValueError;
+		}
+		goto invalid;
+	}
+
+	/* Find a common type to use for the operation */
+	type1 = ILTypeToMachineType(CSemGetType(value1));
+	type2 = ILTypeToMachineType(CSemGetType(value2));
+	if(opkind == C_BINARY_SHIFT)
+	{
+		/* Shift operator that can only support integer operands */
+		if(IsIntegerMachineType(type1) && IsIntegerMachineType(type2))
+		{
+			common1 = CommonBinaryType(info, type1, type1);
+			common2 = ILMachineType_Int32;
+		}
+		else
+		{
+			goto invalid;
+		}
+	}
+	else if(opkind == C_BINARY_BITWISE || opkind == C_BINARY_REM)
+	{
+		/* Operator that can only support integer operands */
+		if(IsIntegerMachineType(type1) && IsIntegerMachineType(type2))
+		{
+			common1 = common2 = CommonBinaryType(info, type1, type2);
+		}
+		else
+		{
+			goto invalid;
+		}
+	}
+	else
+	{
+		/* The operator can support all numeric operands */
+		if(IsNumericMachineType(type1) && IsNumericMachineType(type2))
+		{
+			common1 = common2 = CommonBinaryType(info, type1, type2);
+		}
+		else if(opkind == C_BINARY_ADD)
+		{
+			if(type1 == ILMachineType_UnmanagedPtr &&
+			   IsIntegerMachineType(type2))
+			{
+				/* Add pointer and integer */
+				elemType = CTypeGetPtrRef(CSemGetType(value1));
+				node->expr2 = MulPtrSize(node->expr2, value2, elemType);
+				if(IsSignedMachineType(type2))
+				{
+					common1 = common2 = ILMachineType_NativeInt;
+				}
+				else
+				{
+					common1 = common2 = ILMachineType_NativeUInt;
+				}
+				finalType = CSemGetType(value1);
+			}
+			else if(type2 == ILMachineType_UnmanagedPtr &&
+			        IsIntegerMachineType(type1))
+			{
+				/* Add integer and pointer */
+				elemType = CTypeGetPtrRef(CSemGetType(value2));
+				node->expr1 = MulPtrSize(node->expr1, value1, elemType);
+				if(IsSignedMachineType(type1))
+				{
+					common1 = common2 = ILMachineType_NativeInt;
+				}
+				else
+				{
+					common1 = common2 = ILMachineType_NativeUInt;
+				}
+				finalType = CSemGetType(value2);
+			}
+			else
+			{
+				goto invalid;
+			}
+		}
+		else if(opkind == C_BINARY_SUB)
+		{
+			if(type1 == ILMachineType_UnmanagedPtr &&
+			   IsIntegerMachineType(type2))
+			{
+				/* Subtract pointer and integer */
+				elemType = CTypeGetPtrRef(CSemGetType(value1));
+				node->expr2 = MulPtrSize(node->expr2, value2, elemType);
+				if(IsSignedMachineType(type2))
+				{
+					common1 = common2 = ILMachineType_NativeInt;
+				}
+				else
+				{
+					common1 = common2 = ILMachineType_NativeUInt;
+				}
+				finalType = CSemGetType(value1);
+			}
+			else if(type1 == ILMachineType_UnmanagedPtr &&
+			        type2 == ILMachineType_UnmanagedPtr)
+			{
+				/* Subtract pointer and pointer */
+				elemType = ILTypeStripPrefixes
+					(CTypeGetPtrRef(CSemGetType(value1)));
+				elemType2 = ILTypeStripPrefixes
+					(CTypeGetPtrRef(CSemGetType(value2)));
+				if(!CTypeIsIdentical(elemType, elemType2))
+				{
+					goto invalid;
+				}
+				temp = ILNode_CastSimple_create
+					(node->expr1, ILMachineType_NativeInt);
+				CGenCloneLine(temp, node->expr1);
+				node->expr1 = temp;
+				temp = ILNode_CastSimple_create
+					(node->expr2, ILMachineType_NativeInt);
+				CGenCloneLine(temp, node->expr2);
+				node->expr2 = temp;
+				*parent = DivPtrSize((ILNode *)node, elemType);
+				*parent = ILNode_CastSimple_create
+					(*parent, ILMachineType_NativeInt);
+				CGenCloneLine(*parent, (ILNode *)node);
+				CSemSetRValue(value1, ILType_Int);
+				return value1;
+			}
+			else
+			{
+				goto invalid;
+			}
+		}
+		else
+		{
+			goto invalid;
+		}
+	}
+
+	/* Cast the arguments to their final types */
+	if(common1 != type1)
+	{
+		temp = ILNode_CastSimple_create(node->expr1, common1);
+		CGenCloneLine(temp, node->expr1);
+		node->expr1 = temp;
+	}
+	if(common2 != type2)
+	{
+		temp = ILNode_CastSimple_create(node->expr2, common2);
+		CGenCloneLine(temp, node->expr2);
+		node->expr2 = temp;
+	}
+	if(finalType == ILType_Invalid)
+	{
+		/* Simple numeric calculation */
+		finalType = ILValueTypeToType(info, common1);
+		CSemSetRValue(value1, finalType);
+	}
+	else
+	{
+		/* Pointer calculation */
+		*parent = ILNode_CastSimple_create
+			((ILNode *)node, ILMachineType_UnmanagedPtr);
+		CSemSetRValue(value1, finalType);
+	}
+
+	/* Attempt to perform constant evaluation on the entire expression */
+	if(ILNode_EvalConst(*parent, info, &evalValue))
+	{
+		*parent = CreateConstantNode((ILNode *)node, *parent, &evalValue);
+		CSemSetConstant(value1, finalType, evalValue);
+	}
+
+	/* Return the type of the entire expression */
+	return value1;
+
+	/* Report an invalid operands error and bail out */
+invalid:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  _("invalid operands to binary `%s'"), name);
+	return CSemValueError;
+}
+
+/*
+ * Perform semantic analysis for binary operator assignment.
+ */
+static CSemValue AssignSem(ILGenInfo *info, ILNode *anode,
+						   ILNode_BinaryExpression *node,
+						   ILNode **parent, const char *name, int opkind)
+{
+	CSemValue value1;
+	CSemValue value2;
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType common1;
+	ILMachineType common2;
+	ILNode *temp;
+	ILType *elemType;
+
+	/* Perform semantic analysis on the two arguments, and check
+	   that the first is an l-value and second an r-value */
+	value1 = ILNode_CSemAnalysis(node->expr1, info, &(node->expr1), 0);
+	value2 = ILNode_CSemAnalysis(node->expr2, info, &(node->expr2), 0);
+	if(!CSemIsLValue(value1))
+	{
+		if(!CSemIsError(value1))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("invalid lvalue in assignment"));
+		}
+		if(!CSemIsRValue(value2) && !CSemIsError(value2))
+		{
+			goto invalid;
+		}
+		return CSemValueError;
+	}
+	if(!CSemIsRValue(value2))
+	{
+		/* Pass error conditions up, but otherwise ignore the problem.
+		   We've already reported the error at the lower level */
+		if(CSemIsError(value2))
+		{
+			return CSemValueError;
+		}
+		goto invalid;
+	}
+
+	/* Find a common type to use for the operation */
+	type1 = ILTypeToMachineType(CSemGetType(value1));
+	type2 = ILTypeToMachineType(CSemGetType(value2));
+	if(opkind == C_BINARY_SHIFT)
+	{
+		/* Shift operator that can only support integer operands */
+		if(IsIntegerMachineType(type1) && IsIntegerMachineType(type2))
+		{
+			common1 = CommonBinaryType(info, type1, type1);
+			common2 = ILMachineType_Int32;
+		}
+		else
+		{
+			goto invalid;
+		}
+	}
+	else if(opkind == C_BINARY_BITWISE || opkind == C_BINARY_REM)
+	{
+		/* Operator that can only support integer operands */
+		if(IsIntegerMachineType(type1) && IsIntegerMachineType(type2))
+		{
+			common1 = common2 = CommonBinaryType(info, type1, type2);
+		}
+		else
+		{
+			goto invalid;
+		}
+	}
+	else
+	{
+		/* The operator can support all numeric operands */
+		if(IsNumericMachineType(type1) && IsNumericMachineType(type2))
+		{
+			common1 = common2 = CommonBinaryType(info, type1, type2);
+		}
+		else if(opkind == C_BINARY_ADD)
+		{
+			if(type1 == ILMachineType_UnmanagedPtr &&
+			   IsIntegerMachineType(type2))
+			{
+				/* Add pointer and integer */
+				elemType = CTypeGetPtrRef(CSemGetType(value1));
+				node->expr2 = MulPtrSize(node->expr2, value2, elemType);
+				if(IsSignedMachineType(type2))
+				{
+					common2 = ILMachineType_NativeInt;
+				}
+				else
+				{
+					common2 = ILMachineType_NativeUInt;
+				}
+				common1 = type1;
+			}
+			else
+			{
+				goto invalid;
+			}
+		}
+		else if(opkind == C_BINARY_SUB)
+		{
+			if(type1 == ILMachineType_UnmanagedPtr &&
+			   IsIntegerMachineType(type2))
+			{
+				/* Subtract pointer and integer */
+				elemType = CTypeGetPtrRef(CSemGetType(value1));
+				node->expr2 = MulPtrSize(node->expr2, value2, elemType);
+				if(IsSignedMachineType(type2))
+				{
+					common2 = ILMachineType_NativeInt;
+				}
+				else
+				{
+					common2 = ILMachineType_NativeUInt;
+				}
+				common1 = type1;
+			}
+			else
+			{
+				goto invalid;
+			}
+		}
+		else
+		{
+			goto invalid;
+		}
+	}
+
+	/* Re-arrange the node a little for the code generator */
+	((ILNode_AssignExpression *)anode)->lvalue = node->expr1;
+	temp = ILNode_EmptyExpr_create(type1);
+	CGenCloneLine(temp, node->expr1);
+	node->expr1 = temp;
+
+	/* Cast the arguments to their final types and return */
+	if(common1 != type1)
+	{
+		temp = ILNode_CastSimple_create(node->expr1, common1);
+		CGenCloneLine(temp, node->expr1);
+		node->expr1 = temp;
+	}
+	if(common2 != type2)
+	{
+		temp = ILNode_CastSimple_create(node->expr2, common2);
+		CGenCloneLine(temp, node->expr2);
+		node->expr2 = temp;
+	}
+	CSemSetRValue(value1, CSemGetType(value1));
+	return value1;
+
+	/* Report an invalid operands error and bail out */
+invalid:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  _("invalid operands to binary `%s'"), name);
+	return CSemValueError;
+}
+
+/*
+ * Perform semantic analysis for increment or decrement expressions.
+ */
+static CSemValue IncOrDecSem(ILGenInfo *info, ILNode_UnaryExpression *node,
+						     ILNode **parent, const char *name)
+{
+	CSemValue value;
+	ILMachineType type;
+	ILType *elemType;
+	ILNode *newNode;
+	CTypeLayoutInfo layout;
+	ILNode *sizeNode;
+
+	/* Perform semantic analysis on the l-value argument */
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), 0);
+	if(!CSemIsLValue(value))
+	{
+		if(!CSemIsError(value))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("invalid lvalue in %s"), name);
+		}
+		return CSemValueError;
+	}
+
+	/* Check that the type is incrementable or decrementale */
+	type = ILTypeToMachineType(CSemGetType(value));
+	switch(type)
+	{
+		case ILMachineType_Int8:
+		case ILMachineType_UInt8:
+		case ILMachineType_Int16:
+		case ILMachineType_UInt16:
+		case ILMachineType_Char:
+		case ILMachineType_Int32:
+		case ILMachineType_UInt32:
+		case ILMachineType_Int64:
+		case ILMachineType_UInt64:
+		case ILMachineType_NativeInt:
+		case ILMachineType_NativeUInt:
+		case ILMachineType_Float32:
+		case ILMachineType_Float64:
+		case ILMachineType_NativeFloat:		break;
+
+		case ILMachineType_UnmanagedPtr:
+		{
+			elemType = CTypeGetPtrRef(CSemGetType(value));
+			CTypeGetLayoutInfo(elemType, &layout);
+			if(layout.category == C_TYPECAT_FIXED)
+			{
+				sizeNode = 0;
+			}
+			else
+			{
+				sizeNode = ILNode_SizeOfType_create(elemType);
+			}
+			if(yyisa(node, ILNode_PreInc))
+			{
+				newNode = ILNode_PreIncPtr_create
+					(node->expr, layout.size, sizeNode);
+			}
+			else if(yyisa(node, ILNode_PreDec))
+			{
+				newNode = ILNode_PreDecPtr_create
+					(node->expr, layout.size, sizeNode);
+			}
+			else if(yyisa(node, ILNode_PostInc))
+			{
+				newNode = ILNode_PostIncPtr_create
+					(node->expr, layout.size, sizeNode);
+			}
+			else
+			{
+				newNode = ILNode_PostDecPtr_create
+					(node->expr, layout.size, sizeNode);
+			}
+			CGenCloneLine(newNode, (ILNode *)node);
+			*parent = newNode;
+		}
+		break;
+
+		default:
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("wrong type argument to %s"), name);
+			return CSemValueError;
+		}
+		/* Not reached */
+	}
+
+	/* Convert the l-value into and r-value and return */
+	CSemSetRValue(value, CSemGetType(value));
+	return value;
+}
+
+/*
+ * Perform semantic analysis for a relational operator.
+ */
+static CSemValue RelationalSem(ILGenInfo *info, ILNode_BinaryExpression *node,
+						       ILNode **parent, int stmtLevel,
+						       const char *name)
+{
+	CSemValue value1;
+	CSemValue value2;
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType common;
+	ILType *elemType;
+	ILType *elemType2;
+	ILNode *temp;
+	ILEvalValue evalValue;
+
+	/* Perform semantic analysis on the two arguments, and
+	   check that they are both r-values */
+	value1 = ILNode_CSemAnalysis(node->expr1, info, &(node->expr1), stmtLevel);
+	value2 = ILNode_CSemAnalysis(node->expr2, info, &(node->expr2), 0);
+	if(!CSemIsRValue(value1) || !CSemIsRValue(value2))
+	{
+		/* Pass error conditions up, but otherwise ignore the problem.
+		   We've already reported the error at the lower level */
+		if(CSemIsError(value1) || CSemIsError(value2))
+		{
+			return CSemValueBool;
+		}
+		goto invalid;
+	}
+
+	/* Find a common type to use for the operation */
+	type1 = ILTypeToMachineType(CSemGetType(value1));
+	if(type1 == ILMachineType_String)
+	{
+		type1 = ILMachineType_ObjectRef;
+	}
+	type2 = ILTypeToMachineType(CSemGetType(value2));
+	if(type2 == ILMachineType_String)
+	{
+		type2 = ILMachineType_ObjectRef;
+	}
+	if(IsNumericMachineType(type1) && IsNumericMachineType(type2))
+	{
+		/* Compare numeric values */
+		common = CommonBinaryType(info, type1, type2);
+	}
+	else if(type1 == ILMachineType_UnmanagedPtr &&
+			type2 == ILMachineType_UnmanagedPtr)
+	{
+		/* Compare pointer values */
+		elemType = ILTypeStripPrefixes(CTypeGetPtrRef(CSemGetType(value1)));
+		elemType2 = ILTypeStripPrefixes(CTypeGetPtrRef(CSemGetType(value2)));
+		if(elemType != ILType_Void && elemType2 != ILType_Void &&
+		   !ILTypeIdentical(elemType, elemType2))
+		{
+			CCWarningOnLine(yygetfilename(node), yygetlinenum(node),
+				_("comparison of distinct pointer types lacks a cast"));
+		}
+		common = ILMachineType_UnmanagedPtr;
+	}
+	else if(type1 == ILMachineType_UnmanagedPtr && IsIntegerMachineType(type2))
+	{
+		/* Compare pointer and integer */
+		if(CSemIsZero(value2))
+		{
+			if(yyisa(node, ILNode_Eq))
+			{
+				temp = ILNode_IsNull_create(node->expr1);
+				CGenCloneLine(temp, node->expr1);
+				*parent = temp;
+				return CSemValueBool;
+			}
+			else if(yyisa(node, ILNode_Ne))
+			{
+				temp = ILNode_IsNonNull_create(node->expr1);
+				CGenCloneLine(temp, node->expr1);
+				*parent = temp;
+				return CSemValueBool;
+			}
+		}
+		else
+		{
+			CCWarningOnLine(yygetfilename(node), yygetlinenum(node),
+				_("comparison between pointer and integer"));
+		}
+		if(IsSignedMachineType(type2))
+		{
+			common = ILMachineType_NativeInt;
+		}
+		else
+		{
+			common = ILMachineType_NativeUInt;
+		}
+	}
+	else if(IsIntegerMachineType(type1) && type2 == ILMachineType_UnmanagedPtr)
+	{
+		/* Compare integer and pointer */
+		if(CSemIsZero(value1))
+		{
+			if(yyisa(node, ILNode_Eq))
+			{
+				temp = ILNode_IsNull_create(node->expr2);
+				CGenCloneLine(temp, node->expr2);
+				*parent = temp;
+				return CSemValueBool;
+			}
+			else if(yyisa(node, ILNode_Ne))
+			{
+				temp = ILNode_IsNonNull_create(node->expr2);
+				CGenCloneLine(temp, node->expr2);
+				*parent = temp;
+				return CSemValueBool;
+			}
+		}
+		else
+		{
+			CCWarningOnLine(yygetfilename(node), yygetlinenum(node),
+				_("comparison between pointer and integer"));
+		}
+		if(IsSignedMachineType(type1))
+		{
+			common = ILMachineType_NativeInt;
+		}
+		else
+		{
+			common = ILMachineType_NativeUInt;
+		}
+	}
+	else if(type1 == ILMachineType_ObjectRef &&
+			type2 == ILMachineType_ObjectRef)
+	{
+		/* Compare two object references */
+		if(yyisa(node, ILNode_Eq) || yyisa(node, ILNode_Ne))
+		{
+			return CSemValueBool;
+		}
+		goto invalid;
+	}
+	else if(type1 == ILMachineType_ObjectRef && IsIntegerMachineType(type2))
+	{
+		/* Compare object reference and integer */
+		if(CSemIsZero(value2))
+		{
+			if(yyisa(node, ILNode_Eq))
+			{
+				temp = ILNode_IsNull_create(node->expr1);
+				CGenCloneLine(temp, node->expr1);
+				*parent = temp;
+				return CSemValueBool;
+			}
+			else if(yyisa(node, ILNode_Ne))
+			{
+				temp = ILNode_IsNonNull_create(node->expr1);
+				CGenCloneLine(temp, node->expr1);
+				*parent = temp;
+				return CSemValueBool;
+			}
+		}
+		goto invalid;
+	}
+	else if(IsIntegerMachineType(type1) && type2 == ILMachineType_ObjectRef)
+	{
+		/* Compare integer and object reference */
+		if(CSemIsZero(value1))
+		{
+			if(yyisa(node, ILNode_Eq))
+			{
+				temp = ILNode_IsNull_create(node->expr2);
+				CGenCloneLine(temp, node->expr2);
+				*parent = temp;
+				return CSemValueBool;
+			}
+			else if(yyisa(node, ILNode_Ne))
+			{
+				temp = ILNode_IsNonNull_create(node->expr2);
+				CGenCloneLine(temp, node->expr2);
+				*parent = temp;
+				return CSemValueBool;
+			}
+		}
+		goto invalid;
+	}
+	else
+	{
+		goto invalid;
+	}
+
+	/* Cast the arguments to their final types */
+	if(common != type1)
+	{
+		temp = ILNode_CastSimple_create(node->expr1, common);
+		CGenCloneLine(temp, node->expr1);
+		node->expr1 = temp;
+	}
+	if(common != type2)
+	{
+		temp = ILNode_CastSimple_create(node->expr2, common);
+		CGenCloneLine(temp, node->expr2);
+		node->expr2 = temp;
+	}
+
+	/* Attempt to perform constant evaluation on the entire expression */
+	if(ILNode_EvalConst(*parent, info, &evalValue))
+	{
+		*parent = CreateConstantNode
+			((ILNode *)node, (ILNode *)node, &evalValue);
+		CSemSetConstant(value1, ILType_Boolean, evalValue);
+		return value1;
+	}
+
+	/* Return the type of the entire expression */
+	return CSemValueBool;
+
+	/* Report an invalid operands error and bail out */
+invalid:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  _("invalid operands to binary `%s'"), name);
+	return CSemValueBool;
+}
+
+%}
+
+/*
+ * Perform semantic analysis for the addition operator.
+ */
+ILNode_CSemAnalysis(ILNode_Add)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node, parent,
+					 stmtLevel, "+", C_BINARY_ADD);
+}
+
+/*
+ * Perform semantic analysis for the subtraction operator.
+ */
+ILNode_CSemAnalysis(ILNode_Sub)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node, parent,
+					 stmtLevel, "-", C_BINARY_SUB);
+}
+
+/*
+ * Perform semantic analysis for the multiplication operator.
+ */
+ILNode_CSemAnalysis(ILNode_Mul)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node, parent,
+					 stmtLevel, "*", C_BINARY_NUMERIC);
+}
+
+/*
+ * Perform semantic analysis for the division operator.
+ */
+ILNode_CSemAnalysis(ILNode_Div)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node, parent,
+					 stmtLevel, "/", C_BINARY_NUMERIC);
+}
+
+/*
+ * Perform semantic analysis for the remainder operator.
+ */
+ILNode_CSemAnalysis(ILNode_Rem)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node, parent,
+					 stmtLevel, "%", C_BINARY_REM);
+}
+
+/*
+ * Perform semantic analysis for the negation operator.
+ */
+ILNode_CSemAnalysis(ILNode_Neg)
+{
+	CSemValue value;
+	ILMachineType type;
+	ILMachineType common;
+	ILNode *temp;
+	ILEvalValue evalValue;
+
+	/* Perform semantic analysis on the argument */
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	if(!CSemIsRValue(value))
+	{
+		/* Pass error conditions up, but otherwise ignore the problem.
+		   We've already reported the error at the lower level */
+		if(CSemIsError(value))
+		{
+			return CSemValueError;
+		}
+		goto invalid;
+	}
+
+	/* Find an appropriate numeric type to negate within */
+	type = ILTypeToMachineType(CSemGetType(value));
+	switch(type)
+	{
+		case ILMachineType_Boolean:
+		case ILMachineType_Int8:
+		case ILMachineType_UInt8:
+		case ILMachineType_Int16:
+		case ILMachineType_UInt16:
+		case ILMachineType_Char:
+		case ILMachineType_Int32:
+		case ILMachineType_UInt32:
+		{
+			common = ILMachineType_Int32;
+		}
+		break;
+
+		case ILMachineType_Int64:
+		case ILMachineType_UInt64:
+		{
+			common = ILMachineType_Int64;
+		}
+		break;
+
+		case ILMachineType_NativeInt:
+		case ILMachineType_NativeUInt:
+		{
+			common = ILMachineType_NativeInt;
+		}
+		break;
+
+		case ILMachineType_Float32:
+		case ILMachineType_Float64:
+		{
+			common = ILMachineType_Float64;
+		}
+		break;
+
+		case ILMachineType_NativeFloat:
+		{
+			common = ILMachineType_NativeFloat;
+		}
+		break;
+
+		default: goto invalid;
+	}
+
+	/* Cast the argument to its final type */
+	if(common != type)
+	{
+		temp = ILNode_CastSimple_create(node->expr, common);
+		CGenCloneLine(temp, node->expr);
+		node->expr = temp;
+	}
+	CSemSetRValue(value, ILValueTypeToType(info, common));
+
+	/* Attempt to perform constant evaluation on the entire expression */
+	if(ILNode_EvalConst(*parent, info, &evalValue))
+	{
+		*parent = CreateConstantNode((ILNode *)node, *parent, &evalValue);
+		CSemSetConstant(value, CSemGetType(value), evalValue);
+	}
+
+	/* Return the final semantic value */
+	return value;
+
+	/* Report an invalid operands error and bail out */
+invalid:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  _("invalid operand to unary `-'"));
+	return CSemValueError;
+}
+
+/*
+ * Perform semantic analysis for the unary plus operator.
+ */
+ILNode_CSemAnalysis(ILNode_UnaryPlus)
+{
+	CSemValue value;
+	ILMachineType type;
+	ILMachineType common;
+	ILNode *temp;
+	ILEvalValue evalValue;
+
+	/* Perform semantic analysis on the argument */
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	if(!CSemIsRValue(value))
+	{
+		/* Pass error conditions up, but otherwise ignore the problem.
+		   We've already reported the error at the lower level */
+		if(CSemIsError(value))
+		{
+			return CSemValueError;
+		}
+		goto invalid;
+	}
+
+	/* Find an appropriate numeric type to process with */
+	type = ILTypeToMachineType(CSemGetType(value));
+	switch(type)
+	{
+		case ILMachineType_Boolean:
+		case ILMachineType_Int8:
+		case ILMachineType_UInt8:
+		case ILMachineType_Int16:
+		case ILMachineType_UInt16:
+		case ILMachineType_Char:
+		case ILMachineType_Int32:
+		case ILMachineType_UInt32:
+		{
+			common = ILMachineType_Int32;
+		}
+		break;
+
+		case ILMachineType_Int64:
+		case ILMachineType_UInt64:
+		{
+			common = ILMachineType_Int64;
+		}
+		break;
+
+		case ILMachineType_NativeInt:
+		case ILMachineType_NativeUInt:
+		{
+			common = ILMachineType_NativeInt;
+		}
+		break;
+
+		case ILMachineType_Float32:
+		case ILMachineType_Float64:
+		{
+			common = ILMachineType_Float64;
+		}
+		break;
+
+		case ILMachineType_NativeFloat:
+		{
+			common = ILMachineType_NativeFloat;
+		}
+		break;
+
+		default: goto invalid;
+	}
+
+	/* Cast the argument to its final type */
+	if(common != type)
+	{
+		temp = ILNode_CastSimple_create(node->expr, common);
+		CGenCloneLine(temp, node->expr);
+		node->expr = temp;
+	}
+	*parent = node->expr;
+	CSemSetRValue(value, ILValueTypeToType(info, common));
+
+	/* Attempt to perform constant evaluation on the entire expression */
+	if(ILNode_EvalConst(*parent, info, &evalValue))
+	{
+		*parent = CreateConstantNode((ILNode *)node, *parent, &evalValue);
+		CSemSetConstant(value, CSemGetType(value), evalValue);
+	}
+
+	/* Return the final semantic value */
+	return value;
+
+	/* Report an invalid operands error and bail out */
+invalid:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  _("invalid operand to unary `+'"));
+	return CSemValueError;
+}
+
+/*
+ * Perform semantic analysis for the bitwise AND operator.
+ */
+ILNode_CSemAnalysis(ILNode_And)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node, parent,
+					 stmtLevel, "&", C_BINARY_BITWISE);
+}
+
+/*
+ * Perform semantic analysis for the bitwise OR operator.
+ */
+ILNode_CSemAnalysis(ILNode_Or)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node, parent,
+					 stmtLevel, "|", C_BINARY_BITWISE);
+}
+
+/*
+ * Perform semantic analysis for the bitwise XOR operator.
+ */
+ILNode_CSemAnalysis(ILNode_Xor)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node, parent,
+					 stmtLevel, "^", C_BINARY_BITWISE);
+}
+
+/*
+ * Perform semantic analysis for the bitwise NOT operator.
+ */
+ILNode_CSemAnalysis(ILNode_Not)
+{
+	CSemValue value;
+	ILMachineType type;
+	ILMachineType common;
+	ILNode *temp;
+	ILEvalValue evalValue;
+
+	/* Perform semantic analysis on the argument */
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	if(!CSemIsRValue(value))
+	{
+		/* Pass error conditions up, but otherwise ignore the problem.
+		   We've already reported the error at the lower level */
+		if(CSemIsError(value))
+		{
+			return CSemValueError;
+		}
+		goto invalid;
+	}
+
+	/* Find an appropriate numeric type to NOT within */
+	type = ILTypeToMachineType(CSemGetType(value));
+	switch(type)
+	{
+		case ILMachineType_Boolean:
+		case ILMachineType_Int8:
+		case ILMachineType_UInt8:
+		case ILMachineType_Int16:
+		case ILMachineType_UInt16:
+		case ILMachineType_Char:
+		case ILMachineType_Int32:
+		{
+			common = ILMachineType_Int32;
+		}
+		break;
+
+		case ILMachineType_UInt32:
+		{
+			common = ILMachineType_UInt32;
+		}
+		break;
+
+		case ILMachineType_Int64:
+		{
+			common = ILMachineType_Int64;
+		}
+		break;
+
+		case ILMachineType_UInt64:
+		{
+			common = ILMachineType_UInt64;
+		}
+		break;
+
+		case ILMachineType_NativeInt:
+		{
+			common = ILMachineType_NativeInt;
+		}
+		break;
+
+		case ILMachineType_NativeUInt:
+		{
+			common = ILMachineType_NativeUInt;
+		}
+		break;
+
+		default: goto invalid;
+	}
+
+	/* Cast the argument to its final type */
+	if(common != type)
+	{
+		temp = ILNode_CastSimple_create(node->expr, common);
+		CGenCloneLine(temp, node->expr);
+		node->expr = temp;
+	}
+	CSemSetRValue(value, ILValueTypeToType(info, common));
+
+	/* Attempt to perform constant evaluation on the entire expression */
+	if(ILNode_EvalConst(*parent, info, &evalValue))
+	{
+		*parent = CreateConstantNode((ILNode *)node, *parent, &evalValue);
+		CSemSetConstant(value, CSemGetType(value), evalValue);
+	}
+
+	/* Return the final semantic value */
+	return value;
+
+	/* Report an invalid operands error and bail out */
+invalid:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  _("invalid operand to unary `~'"));
+	return CSemValueError;
+}
+
+/*
+ * Perform semantic analysis for the left shift operator.
+ */
+ILNode_CSemAnalysis(ILNode_Shl)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node, parent,
+					 stmtLevel, "<<", C_BINARY_SHIFT);
+}
+
+/*
+ * Perform semantic analysis for the right shift operator.
+ */
+ILNode_CSemAnalysis(ILNode_Shr),
+ILNode_CSemAnalysis(ILNode_UShr)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node, parent,
+					 stmtLevel, ">>", C_BINARY_SHIFT);
+}
+
+/*
+ * Perform semantic analysis for the assignment expression.
+ */
+ILNode_CSemAnalysis(ILNode_Assign)
+{
+	CSemValue value1;
+	CSemValue value2;
+
+	/* Determine if the l-value will leave the machine state at
+	   the statement level of the expression, or if it might leave
+	   values on the stack before computing "expr2".  This check
+	   is necessary to ensure that we can assign the results of
+	   "setjmp" and "alloca" to local/global variables */
+	if(stmtLevel)
+	{
+		if(!yyisa(node->expr1, ILNode_CLocalVar) &&
+		   !yyisa(node->expr1, ILNode_CArgumentVar) &&
+		   !yyisa(node->expr1, ILNode_CGlobalVar))
+		{
+			stmtLevel = 0;
+		}
+	}
+
+	/* Perform semantic analysis on the two values */
+	value1 = ILNode_CSemAnalysis(node->expr1, info, &(node->expr1), 0);
+	value2 = ILNode_CSemAnalysis(node->expr2, info, &(node->expr2), stmtLevel);
+
+	/* Check that the first is an l-value and the second is an r-value */
+	if(!CSemIsLValue(value1))
+	{
+		if(!CSemIsError(value1))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "invalid lvalue in assignment");
+		}
+		return CSemValueError;
+	}
+	if(!CSemIsRValue(value2))
+	{
+		if(!CSemIsError(value2))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "invalid rvalue in assignment");
+		}
+		return CSemValueError;
+	}
+
+	/* Check that we can coerce from "value2" to "value1"'s type */
+	if(ILTypeStripPrefixes(CSemGetType(value1)) == ILType_Boolean &&
+	   (CSemIsBoolean(value2) ||
+	    ILTypeStripPrefixes(CSemGetType(value2)) == ILType_Boolean))
+	{
+		/* Assigning a value to a "__bool__" variable is handled specially */
+		return CSemValueBool;
+	}
+	else
+	{
+		if(!CCanCoerceValue(value2, CSemGetType(value1)))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "incompatible types in assignment");
+			CSemSetRValue(value1, CSemGetType(value1));
+			return value1;
+		}
+
+		/* Insert coercion nodes to convert the rvalue appropriately */
+		CCoerceNode(info, node->expr2, &(node->expr2),
+					value2, CSemGetType(value1));
+
+		/* Convert value1 into an rvalue and return its type */
+		CSemSetRValue(value1, CSemGetType(value1));
+		return value1;
+	}
+}
+
+/*
+ * Perform semantic analysis for the addition assignment expression.
+ */
+ILNode_CSemAnalysis(ILNode_AssignAdd)
+{
+	return AssignSem(info, (ILNode *)node,
+					 (ILNode_BinaryExpression *)(node->assign),
+					 &(node->assign), "+", C_BINARY_ADD);
+}
+
+/*
+ * Perform semantic analysis for the subtraction assignment expression.
+ */
+ILNode_CSemAnalysis(ILNode_AssignSub)
+{
+	return AssignSem(info, (ILNode *)node,
+					 (ILNode_BinaryExpression *)(node->assign),
+					 &(node->assign), "-", C_BINARY_SUB);
+}
+
+/*
+ * Perform semantic analysis for the multiplication assignment expression.
+ */
+ILNode_CSemAnalysis(ILNode_AssignMul)
+{
+	return AssignSem(info, (ILNode *)node,
+					 (ILNode_BinaryExpression *)(node->assign),
+					 &(node->assign), "*", C_BINARY_NUMERIC);
+}
+
+/*
+ * Perform semantic analysis for the division assignment expression.
+ */
+ILNode_CSemAnalysis(ILNode_AssignDiv)
+{
+	return AssignSem(info, (ILNode *)node,
+					 (ILNode_BinaryExpression *)(node->assign),
+					 &(node->assign), "/", C_BINARY_NUMERIC);
+}
+
+/*
+ * Perform semantic analysis for the remainder assignment expression.
+ */
+ILNode_CSemAnalysis(ILNode_AssignRem)
+{
+	return AssignSem(info, (ILNode *)node,
+					 (ILNode_BinaryExpression *)(node->assign),
+					 &(node->assign), "%", C_BINARY_REM);
+}
+
+/*
+ * Perform semantic analysis for the bitwise AND assignment expression.
+ */
+ILNode_CSemAnalysis(ILNode_AssignAnd)
+{
+	return AssignSem(info, (ILNode *)node,
+					 (ILNode_BinaryExpression *)(node->assign),
+					 &(node->assign), "&", C_BINARY_BITWISE);
+}
+
+/*
+ * Perform semantic analysis for the bitwise OR assignment expression.
+ */
+ILNode_CSemAnalysis(ILNode_AssignOr)
+{
+	return AssignSem(info, (ILNode *)node,
+					 (ILNode_BinaryExpression *)(node->assign),
+					 &(node->assign), "|", C_BINARY_BITWISE);
+}
+
+/*
+ * Perform semantic analysis for the bitwise XOR assignment expression.
+ */
+ILNode_CSemAnalysis(ILNode_AssignXor)
+{
+	return AssignSem(info, (ILNode *)node,
+					 (ILNode_BinaryExpression *)(node->assign),
+					 &(node->assign), "^", C_BINARY_BITWISE);
+}
+
+/*
+ * Perform semantic analysis for the left shift assignment expression.
+ */
+ILNode_CSemAnalysis(ILNode_AssignShl)
+{
+	return AssignSem(info, (ILNode *)node,
+					 (ILNode_BinaryExpression *)(node->assign),
+					 &(node->assign), "<<", C_BINARY_SHIFT);
+}
+
+/*
+ * Perform semantic analysis for the right shift assignment expression.
+ */
+ILNode_CSemAnalysis(ILNode_AssignShr),
+ILNode_CSemAnalysis(ILNode_AssignUShr)
+{
+	return AssignSem(info, (ILNode *)node,
+					 (ILNode_BinaryExpression *)(node->assign),
+					 &(node->assign), ">>", C_BINARY_SHIFT);
+}
+
+/*
+ * Perform semantic analysis for the pre-increment expression.
+ */
+ILNode_CSemAnalysis(ILNode_PreInc)
+{
+	return IncOrDecSem(info, (ILNode_UnaryExpression *)node,
+					   parent, "increment");
+}
+
+/*
+ * Perform semantic analysis for the pre-decrement expression.
+ */
+ILNode_CSemAnalysis(ILNode_PreDec)
+{
+	return IncOrDecSem(info, (ILNode_UnaryExpression *)node,
+					   parent, "decrement");
+}
+
+/*
+ * Perform semantic analysis for the post-increment expression.
+ */
+ILNode_CSemAnalysis(ILNode_PostInc)
+{
+	return IncOrDecSem(info, (ILNode_UnaryExpression *)node,
+					   parent, "increment");
+}
+
+/*
+ * Perform semantic analysis for the post-decrement expression.
+ */
+ILNode_CSemAnalysis(ILNode_PostDec)
+{
+	return IncOrDecSem(info, (ILNode_UnaryExpression *)node,
+					   parent, "decrement");
+}
+
+/*
+ * Perform semantic analysis for the equality operator.
+ */
+ILNode_CSemAnalysis(ILNode_Eq)
+{
+	return RelationalSem(info, (ILNode_BinaryExpression *)node,
+				         parent, stmtLevel, "==");
+}
+
+/*
+ * Perform semantic analysis for the inequality operator.
+ */
+ILNode_CSemAnalysis(ILNode_Ne)
+{
+	return RelationalSem(info, (ILNode_BinaryExpression *)node,
+				         parent, stmtLevel, "!=");
+}
+
+/*
+ * Perform semantic analysis for the less than operator.
+ */
+ILNode_CSemAnalysis(ILNode_Lt)
+{
+	return RelationalSem(info, (ILNode_BinaryExpression *)node,
+				         parent, stmtLevel, "<");
+}
+
+/*
+ * Perform semantic analysis for the less than or equal operator.
+ */
+ILNode_CSemAnalysis(ILNode_Le)
+{
+	return RelationalSem(info, (ILNode_BinaryExpression *)node,
+				         parent, stmtLevel, "<=");
+}
+
+/*
+ * Perform semantic analysis for the greater than operator.
+ */
+ILNode_CSemAnalysis(ILNode_Gt)
+{
+	return RelationalSem(info, (ILNode_BinaryExpression *)node,
+				         parent, stmtLevel, ">");
+}
+
+/*
+ * Perform semantic analysis for the greater than or equal operator.
+ */
+ILNode_CSemAnalysis(ILNode_Ge)
+{
+	return RelationalSem(info, (ILNode_BinaryExpression *)node,
+				         parent, stmtLevel, ">=");
+}
+
+/*
+ * Perform semantic analysis for the comma operator.
+ */
+ILNode_CSemAnalysis(ILNode_Comma)
+{
+	CSemValue value1;
+	CSemValue value2;
+
+	/* Perform semantic analysis on the two arguments */
+	value1 = ILNode_CSemAnalysis(node->expr1, info, &(node->expr1), stmtLevel);
+	value2 = ILNode_CSemAnalysis(node->expr2, info, &(node->expr2), stmtLevel);
+
+	/* Both must be r-value's or "void" */
+	if((!CSemIsRValue(value1) && !CSemIsVoid(value1)) ||
+	   (!CSemIsRValue(value2) && !CSemIsVoid(value2)))
+	{
+		if(!CSemIsError(value1) && !CSemIsError(value2))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("invalid operands to binary `,'"));
+		}
+		return CSemValueError;
+	}
+	if(CSemIsLValue(value2))
+	{
+		/* Turn l-values into r-values */
+		CSemSetRValue(value2, CSemGetType(value2));
+	}
+	if(CSemIsConstant(value1) && CSemIsConstant(value2))
+	{
+		/* The whole expression evaluates to its constant second argument */
+		*parent = node->expr2;
+	}
+	else if(!CSemIsConstant(value1) && CSemIsConstant(value2))
+	{
+		/* Both must be constants for the whole expression to be constant */
+		CSemSetRValue(value2, CSemGetType(value2));
+	}
+
+	/* Return "value2" as the final semantic value */
+	return value2;
+}
+
+/*
+ * Perform semantic analysis for "as is" operators.
+ */
+ILNode_CSemAnalysis(ILNode_AsIs),
+ILNode_CSemAnalysis(ILNode_Pedantic),
+ILNode_CSemAnalysis(ILNode_NoPedantic)
+{
+	return ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+}
+
+/*
+ * Perform semantic analysis for the "checked" operator.
+ */
+ILNode_CSemAnalysis(ILNode_Overflow)
+{
+	CSemValue value;
+	int overflow = info->overflowInsns;
+	int changed = info->overflowChanged;
+	info->overflowInsns = -1;
+	info->overflowChanged = -1;
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	info->overflowInsns = overflow;
+	info->overflowChanged = changed;
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the "unchecked" operator.
+ */
+ILNode_CSemAnalysis(ILNode_NoOverflow)
+{
+	CSemValue value;
+	int overflow = info->overflowInsns;
+	int changed = info->overflowChanged;
+	info->overflowInsns = 0;
+	info->overflowChanged = -1;
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	info->overflowInsns = overflow;
+	info->overflowChanged = changed;
+	return value;
+}
+
+/*
+ * Generate l-value addresses for "as is" operators.
+ */
+ILNode_CGenAddress(ILNode_AsIs),
+ILNode_CGenAddress(ILNode_Pedantic),
+ILNode_CGenAddress(ILNode_NoPedantic)
+{
+	if(yyisa(node->expr, ILNode_LValue))
+	{
+		return ILNode_CGenAddress((ILNode_LValue *)(node->expr), info);
+	}
+	else
+	{
+		return CAddressDefault;
+	}
+}
+
+/*
+ * Generate l-value addresses for the "checked" operator.
+ */
+ILNode_CGenAddress(ILNode_Overflow)
+{
+	CAddress value;
+	int overflow = info->overflowInsns;
+	int changed = info->overflowChanged;
+	info->overflowInsns = -1;
+	info->overflowChanged = -1;
+	if(yyisa(node->expr, ILNode_LValue))
+	{
+		value = ILNode_CGenAddress((ILNode_LValue *)(node->expr), info);
+	}
+	else
+	{
+		value = CAddressDefault;
+	}
+	info->overflowInsns = overflow;
+	info->overflowChanged = changed;
+	return value;
+}
+
+/*
+ * Generate l-value addresses for the "unchecked" operator.
+ */
+ILNode_CGenAddress(ILNode_NoOverflow)
+{
+	CAddress value;
+	int overflow = info->overflowInsns;
+	int changed = info->overflowChanged;
+	info->overflowInsns = 0;
+	info->overflowChanged = -1;
+	if(yyisa(node->expr, ILNode_LValue))
+	{
+		value = ILNode_CGenAddress((ILNode_LValue *)(node->expr), info);
+	}
+	else
+	{
+		value = CAddressDefault;
+	}
+	info->overflowInsns = overflow;
+	info->overflowChanged = changed;
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the simple cast operator.
+ */
+ILNode_CSemAnalysis(ILNode_CastSimple)
+{
+	/* This will never be called, as the grammar uses "CastType" instead */
+	return CSemValueError;
+}
+
+/*
+ * Perform semantic analysis for the general-purpose cast operator.
+ */
+ILNode_CSemAnalysis(ILNode_CastType)
+{
+	CSemValue value;
+
+	/* Perform semantic analysis on the argument value */
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+
+	/* Bail out if not an r-value or a "void"-to-"void" cast */
+	if(!CSemIsRValue(value) &&
+	   (!CSemIsVoid(value) || node->type != ILType_Void))
+	{
+		if(!CSemIsError(value))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("invalid operand to cast expression"));
+		}
+		CSemSetRValue(value, node->type);
+		return value;
+	}
+
+	/* It is always possible to cast to "void" */
+	if(node->type == ILType_Void)
+	{
+		*parent = node->expr;
+		return CSemValueDefault;
+	}
+
+	/* Can we coerce to the destination type? */
+	if(!CCanCoerceValue(value, node->type))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  		  "no conversion from `%s' to `%s'",
+					  CTypeToName(info, CSemGetType(value)),
+					  CTypeToName(info, node->type));
+		CSemSetRValue(value, node->type);
+		return value;
+	}
+
+	/* Perform the cast and get the new semantic value.  We also copy the
+	   expression node up one level to eliminate the ILNode_CastType node */
+	*parent = node->expr;
+	return CCastNode(info, node->expr, parent, value, node->type);
+}
+
+/*
+ * Perform semantic analysis for the cast from C# String to C# char pointer.
+ */
+ILNode_CSemAnalysis(ILNode_CastStringToCharPtr)
+{
+	/* This will never be called, as the grammar uses "CastType" instead */
+	return CSemValueError;
+}
+
+/*
+ * Perform semantic analysis for the cast from C# Array to a C pointer to
+ * the array's element type.
+ */
+ILNode_CSemAnalysis(ILNode_CastArrayToElementPtr)
+{
+	/* This will never be called, as the grammar uses "CastType" instead */
+	return CSemValueError;
+}
+
+
+/*
+ * Perform semantic analysis for C to C# string conversion.
+ */
+ILNode_CSemAnalysis(ILNode_CToCSharpString)
+{
+	/* Not used, so nothing to do here */
+	return CSemValueDefault;
+}
+
+/*
+ * Get the type of a C to C# string conversion.
+ */
+ILNode_GetType(ILNode_CToCSharpString)
+{
+	return ILMachineType_ObjectRef;
+}
+
+/*
+ * Generate value code for a C to C# string conversion.
+ */
+ILNode_GenValue(ILNode_CToCSharpString)
+{
+	/* Evaluate the C version of the string */
+	ILNode_GenValue(node->expr, info);
+
+	/* Use "Marshal.PtrToStringAnsi" to convert the string */
+	ILGenCallByName(info, "class [.library]System.String "
+						  "[.library]System.Runtime.InteropServices.Marshal::"
+						  "PtrToStringAnsi(native int)");
+
+	/* The result is always an object reference */
+	return ILMachineType_ObjectRef;
+}
+JavaGenValue(ILNode_CToCSharpString)
+{
+	/* Java output is not supported */
+	return ILMachineType_ObjectRef;
+}
+
+%{
+
+/*
+ * Get the common type for a conditional operator.  Returns "ILType_Invalid"
+ * if there is no common type.
+ */
+static ILType *CommonCondType(ILGenInfo *info, ILType *type1, ILType *type2)
+{
+	ILMachineType mtype1 = ILTypeToMachineType(type1);
+	ILMachineType mtype2 = ILTypeToMachineType(type2);
+
+	/* If one of the types is "void", then the result is also "void" */
+	if(mtype1 == ILMachineType_Void ||
+	   mtype2 == ILMachineType_Void)
+	{
+		return ILType_Void;
+	}
+
+	/* Check for numeric combinations */
+	if(IsNumericMachineType(mtype1) && IsNumericMachineType(mtype2))
+	{
+		return ILValueTypeToType(info, CommonBinaryType(info, mtype1, mtype2));
+	}
+
+	/* Check for pointer combinations */
+	if(CTypeIsPointer(type1) && CTypeIsPointer(type2))
+	{
+		return type1;
+	}
+	else if(CTypeIsFunctionPtr(type1) && CTypeIsFunctionPtr(type2))
+	{
+		return type1;
+	}
+	else if(CTypeIsPointer(type1) && IsIntegerMachineType(mtype2))
+	{
+		return type1;
+	}
+	else if(CTypeIsFunctionPtr(type1) && IsIntegerMachineType(mtype2))
+	{
+		return type1;
+	}
+	else if(CTypeIsPointer(type2) && IsIntegerMachineType(mtype1))
+	{
+		return type2;
+	}
+	else if(CTypeIsFunctionPtr(type2) && IsIntegerMachineType(mtype1))
+	{
+		return type2;
+	}
+
+	/* The types must be identical (e.g. for struct and union types) */
+	if(CTypeIsIdentical(type1, type2))
+	{
+		return type1;
+	}
+
+	/* Could not determine a common type */
+	return ILType_Invalid;
+}
+
+%}
+
+/*
+ * Perform semantic analysis for the conditional operator.
+ */
+ILNode_CSemAnalysis(ILNode_Conditional)
+{
+	CSemValue boolValue;
+	CSemValue value1;
+	CSemValue value2;
+	ILType *commonType;
+	ILEvalValue *evalValue;
+
+	/* Perform semantic analysis on the boolean condition */
+	boolValue = ILNode_CSemAnalysis(node->expr1, info,
+									&(node->expr1), stmtLevel);
+
+	/* Perform semantic analysis on the "then" and "else" clauses */
+	value1 = ILNode_CSemAnalysis(node->expr2, info, &(node->expr2), stmtLevel);
+	value2 = ILNode_CSemAnalysis(node->expr3, info, &(node->expr3), stmtLevel);
+	if((!CSemIsRValue(value1) && !CSemIsVoid(value1)) ||
+	   (!CSemIsRValue(value2) && !CSemIsVoid(value2)))
+	{
+		goto error;
+	}
+
+	/* Convert function references into function pointers */
+	if(CTypeIsFunction(CSemGetType(value1)) &&
+	   yyisa(node->expr2, ILNode_FunctionRef))
+	{
+		CSemSetRValue(value1, CTypeAddFunctionPtr(info, CSemGetType(value1)));
+	}
+	if(CTypeIsFunction(CSemGetType(value2)) &&
+	   yyisa(node->expr3, ILNode_FunctionRef))
+	{
+		CSemSetRValue(value2, CTypeAddFunctionPtr(info, CSemGetType(value2)));
+	}
+
+	/* Determine the common type and then coerce the arguments */
+	commonType = CommonCondType(info, CSemGetType(value1), CSemGetType(value2));
+	if(commonType == ILType_Invalid)
+	{
+		goto error;
+	}
+	else if(commonType == ILType_Void)
+	{
+		return CSemValueDefault;
+	}
+	else
+	{
+		value1 = CCoerceNode(info, node->expr2, &(node->expr2),
+							 value1, commonType);
+		value2 = CCoerceNode(info, node->expr3, &(node->expr3),
+							 value2, commonType);
+		evalValue = CSemGetConstant(boolValue);
+		if(evalValue)
+		{
+			if(evalValue->un.i4Value)
+			{
+				*parent = node->expr2;
+				CSemLToRValue(value1);
+			}
+			else
+			{
+				*parent = node->expr3;
+				CSemLToRValue(value2);
+				return value2;
+			}
+		}
+		else
+		{
+			CSemSetRValue(value1, commonType);
+		}
+		return value1;
+	}
+
+	/* Report an error with the arguments to "?:" */
+error:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  _("invalid operands to ternary `?:'"));
+	return CSemValueError;
+}
+
+/*
+ * Perform semantic analysis for the "address of" operator.
+ */
+ILNode_CSemAnalysis(ILNode_AddressOf)
+{
+	CSemValue value;
+
+	/* If the argument is a function reference, then remove this operator */
+	if(yyisa(node->expr, ILNode_FunctionRef))
+	{
+		*parent = node->expr;
+		return ILNode_CSemAnalysis(node->expr, info, parent, stmtLevel);
+	}
+
+	/* Perform semantic analysis on the argument */
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	if(CSemIsDecayed(value))
+	{
+		/* The argument was an array that just decayed into a pointer.
+		   Convert it into a pointer to the entire array */
+		CSemSetRValue(value, CTypeCreatePointer
+				(info, CSemGetDecayedType(value)));
+		return value;
+	}
+	else if(!CSemIsLValue(value) || CSemIsNoRef(value))
+	{
+		if(!CSemIsError(value))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("invalid lvalue in unary `&'"));
+		}
+		return CSemValueError;
+	}
+
+	/* Build the final semantic value and return it */
+	CSemSetRValue(value, CTypeCreatePointer(info, CSemGetType(value)));
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the "to boolean" operator.
+ */
+ILNode_CSemAnalysis(ILNode_ToBool)
+{
+	CSemValue value;
+	ILEvalValue *evalValue;
+
+	/* Perform semantic analysis on the expression */
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+
+	/* Bail out if not an r-value */
+	if(CSemIsError(value))
+	{
+		return CSemValueBool;
+	}
+	else if(!CSemIsRValue(value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("invalid boolean expression"));
+		return CSemValueBool;
+	}
+
+	/* Perform constant evaluation */
+	evalValue = CSemGetConstant(value);
+	if(evalValue && ILGenCastConst(info, evalValue, evalValue->valueType,
+								   ILMachineType_Boolean))
+	{
+		*parent = CreateBoolConstant((ILNode *)node, evalValue->un.i4Value);
+		return CreateBoolValue(evalValue->un.i4Value);
+	}
+
+	/* Determine how to test the boolean value */
+	if(CTypeIsPrimitive(CSemGetType(value)))
+	{
+		switch(CTypeToElementType(CSemGetType(value)))
+		{
+			case IL_META_ELEMTYPE_BOOLEAN:
+			case IL_META_ELEMTYPE_I1:
+			case IL_META_ELEMTYPE_U1:
+			case IL_META_ELEMTYPE_I2:
+			case IL_META_ELEMTYPE_U2:
+			case IL_META_ELEMTYPE_CHAR:
+			case IL_META_ELEMTYPE_I4:
+			case IL_META_ELEMTYPE_U4:
+			case IL_META_ELEMTYPE_I8:
+			case IL_META_ELEMTYPE_U8:
+			case IL_META_ELEMTYPE_I:
+			case IL_META_ELEMTYPE_U:
+			case IL_META_ELEMTYPE_R4:
+			case IL_META_ELEMTYPE_R8:
+			case IL_META_ELEMTYPE_R:
+			{
+				/* The code generator already knows how to handle
+				   boolean conversions for these kinds of types */
+			}
+			break;
+
+			default:
+			{
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+							  _("invalid boolean expression"));
+			}
+			break;
+		}
+	}
+	else if(CTypeIsPointer(CSemGetType(value)) ||
+	        CTypeIsFunctionPtr(CSemGetType(value)))
+	{
+		*parent = ILNode_IsNonNull_create(node->expr);
+		CGenCloneLine(*parent, node->expr);
+	}
+	else if(ILTypeIsReference(CSemGetType(value)))
+	{
+		*parent = ILNode_IsNonNull_create(node->expr);
+		CGenCloneLine(*parent, node->expr);
+	}
+	else
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("invalid boolean expression"));
+	}
+
+	/* The result will always be boolean */
+	return CSemValueBool;
+}
+
+/*
+ * Perform semantic analysis for the "to constant" operator.
+ */
+ILNode_CSemAnalysis(ILNode_ToConst)
+{
+	CSemValue value;
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	if(CSemIsRValue(value) && CSemIsConstant(value))
+	{
+		return value;
+	}
+	else if(!CSemIsError(value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("constant value required"));
+	}
+	return CSemValueError;
+}
+
+/*
+ * Perform semantic analysis for the "sizeof expression" operator.
+ */
+ILNode_CSemAnalysis(ILNode_SizeOfExpr)
+{
+	CSemValue value;
+	ILEvalValue evalValue;
+	CTypeLayoutInfo layout;
+
+	/* Special cases for strings */
+	if(yyisa(node->expr, ILNode_CString))
+	{
+		evalValue.valueType = ILMachineType_UInt32;
+		evalValue.un.i4Value =
+			(ILInt32)(((ILNode_CString *)(node->expr))->len + 1);
+		CSemSetConstant(value, ILType_UInt32, evalValue);
+		*parent = CreateConstantNode
+			((ILNode *)node, (ILNode *)node, &evalValue);
+		return value;
+	}
+	else if(yyisa(node->expr, ILNode_CWString))
+	{
+		evalValue.valueType = ILMachineType_UInt32;
+		evalValue.un.i4Value =
+			(ILInt32)((CGenWStringLength
+						(((ILNode_CWString *)(node->expr))->str,
+						 ((ILNode_CWString *)(node->expr))->len) + 1) * 2);
+		CSemSetConstant(value, ILType_UInt32, evalValue);
+		*parent = CreateConstantNode
+			((ILNode *)node, (ILNode *)node, &evalValue);
+		return value;
+	}
+
+	/* Perform semantic analysis on the expression */
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	if(!CSemIsRValue(value))
+	{
+		if(!CSemIsError(value))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("invalid operand to `sizeof'"));
+		}
+		CSemSetDynConstant(value, ILType_UInt32);
+		return value;
+	}
+	if(CSemIsDecayed(value))
+	{
+		node->type = CSemGetDecayedType(value);
+	}
+	else
+	{
+		node->type = CSemGetType(value);
+	}
+
+	/* Determine the size based on the type */
+	CTypeGetLayoutInfo(node->type, &layout);
+	if(layout.category == C_TYPECAT_FIXED)
+	{
+		/* We can replace this node with a compile-time constant */
+		evalValue.valueType = ILMachineType_UInt32;
+		evalValue.un.i4Value = (ILInt32)(layout.size);
+		CSemSetConstant(value, ILType_UInt32, evalValue);
+	}
+	else if(layout.category == C_TYPECAT_NO_LAYOUT)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("invalid operand to `sizeof'"));
+		CSemSetDynConstant(value, ILType_UInt32);
+	}
+	else
+	{
+		/* We must compute this constant value dynamically at runtime */
+		CSemSetDynConstant(value, ILType_UInt32);
+	}
+	return value;
+}
+
+/*
+ * Evaluate the constant value of the "sizeof expression" operator.
+ */
+ILNode_EvalConst(ILNode_SizeOfExpr)
+{
+	CTypeLayoutInfo layout;
+	if(!(node->type))
+	{
+		return 0;
+	}
+	CTypeGetLayoutInfo(node->type, &layout);
+	if(layout.category == C_TYPECAT_FIXED)
+	{
+		/* The type's size can be evaluated to a compile-time constant */
+		value->valueType = ILMachineType_UInt32;
+		value->un.i4Value = (ILInt32)(layout.size);
+		return 1;
+	}
+	else
+	{
+		/* We must compute this constant value dynamically at runtime */
+		return 0;
+	}
+}
+
+/*
+ * Perform semantic analysis for the "sizeof type" operator.
+ */
+ILNode_CSemAnalysis(ILNode_SizeOfType)
+{
+	CSemValue value;
+	ILEvalValue evalValue;
+	CTypeLayoutInfo layout;
+
+	CTypeGetLayoutInfo(node->type, &layout);
+	if(layout.category == C_TYPECAT_FIXED)
+	{
+		/* We can replace this node with a compile-time constant */
+		evalValue.valueType = ILMachineType_UInt32;
+		evalValue.un.i4Value = (ILInt32)(layout.size);
+		CSemSetConstant(value, ILType_UInt32, evalValue);
+	}
+	else if(layout.category == C_TYPECAT_NO_LAYOUT)
+	{
+		/* The supplied type does not have any layout information */
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("invalid operand to `sizeof'"));
+		CSemSetDynConstant(value, ILType_UInt32);
+	}
+	else
+	{
+		/* We must compute this constant value dynamically at runtime */
+		CSemSetDynConstant(value, ILType_UInt32);
+	}
+	return value;
+}
+
+/*
+ * Evaluate the constant value of a "sizeof type" operator.
+ */
+ILNode_EvalConst(ILNode_SizeOfType)
+{
+	CTypeLayoutInfo layout;
+	CTypeGetLayoutInfo(node->type, &layout);
+	if(layout.category == C_TYPECAT_FIXED)
+	{
+		/* The type's size can be evaluated to a compile-time constant */
+		value->valueType = ILMachineType_UInt32;
+		value->un.i4Value = (ILInt32)(layout.size);
+		return 1;
+	}
+	else
+	{
+		/* We must compute this constant value dynamically at runtime */
+		return 0;
+	}
+}
+
+/*
+ * Perform code generation operations for the "sizeof" operator.
+ */
+ILNode_GetType(ILNode_SizeOfType),
+ILNode_GetType(ILNode_SizeOfExpr)
+{
+	return ILMachineType_UInt32;
+}
+ILNode_GenValue(ILNode_SizeOfType),
+ILNode_GenValue(ILNode_SizeOfExpr)
+{
+	CGenSizeOf(info, node->type);
+	return ILMachineType_UInt32;
+}
+JavaGenValue(ILNode_SizeOfType),
+JavaGenValue(ILNode_SizeOfExpr)
+{
+	/* Will never be called: nothing to do here */
+	return ILMachineType_UInt32;
+}
+
+/*
+ * Perform semantic analysis for error nodes.
+ */
+ILNode_CSemAnalysis(ILNode_Error)
+{
+	return CSemValueError;
+}
+
+/*
+ * Perform semantic analysis for the C# typeof operator ("__typeof").
+ */
+ILNode_CSemAnalysis(ILNode_CSharpTypeOf)
+{
+	/* The return value is always "System.Type" */
+	CSemValue value;
+	CSemSetRValue(value, ILFindSystemType(info, "Type"));
+	return value;
+}
+
+/*
+ * Get the machine type for the C# typeof operator.
+ */
+ILNode_GetType(ILNode_CSharpTypeOf)
+{
+	return ILMachineType_ObjectRef;
+}
+
+/*
+ * Generate value code for the C# typeof operator.
+ */
+ILNode_GenValue(ILNode_CSharpTypeOf)
+{
+	ILGenTypeToken(info, IL_OP_LDTOKEN, node->type);
+	ILGenAdjust(info, 1);
+	ILGenCallByName(info,
+			"class [.library]System.Type "
+				"[.library]System.Type::GetTypeFromHandle"
+				"(valuetype [.library]System.RuntimeTypeHandle)");
+	return ILMachineType_ObjectRef;
+}
+JavaGenValue(ILNode_CSharpTypeOf)
+{
+	/* Nothing to do here */
+	return ILMachineType_ObjectRef;
+}
+
+/*
+ * Perform semantic analysis for type expressions.
+ */
+ILNode_CSemAnalysis(ILNode_CTypeExpression)
+{
+	CSemValue value;
+	CSemSetType(value, node->type);
+	return value;
+}
+
+/*
+ * Get the type or generate value code for type expressions.
+ */
+ILNode_GetType(ILNode_CTypeExpression),
+ILNode_GenValue(ILNode_CTypeExpression),
+JavaGenValue(ILNode_CTypeExpression)
+{
+	/* Should never be called */
+	return ILMachineType_Void;
+}
+
+/*
+ * Perform semantic analysis for a "__box" expression.
+ */
+ILNode_CSemAnalysis(ILNode_CBox)
+{
+	CSemValue value;
+	ILType *objectType;
+	ILClass *classInfo;
+
+	/* Perform semantic analysis on the sub-expression */
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	if(!CSemIsRValue(value))
+	{
+		if(!CSemIsError(value))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("invalid operator to `__box' operator"));
+		}
+		return CSemValueError;
+	}
+
+	/* If the value is already a reference type, then leave it as-is */
+	if(ILTypeIsReference(CSemGetType(value)))
+	{
+		*parent = node->expr;
+		CSemLToRValue(value);
+		return value;
+	}
+
+	/* Determine if we have a boxing conversion */
+	objectType = ILFindSystemType(info, "Object");
+	if(!ILCanCoerceKind(info, CSemGetType(value), objectType,
+						IL_CONVERT_BOXING, 0))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("cannot box values of type `%s'"),
+					  CTypeToName(info, CSemGetType(value)));
+		return CSemValueError;
+	}
+
+	/* Perform the coercion */
+	ILCoerceKind(info, node->expr, &(node->expr), CSemGetType(value),
+				 objectType, IL_CONVERT_BOXING, 0);
+
+	/* Set the return type to the reference form of the value's type */
+	classInfo = ILTypeToClass(info, CSemGetType(value));
+	if(!classInfo)
+	{
+		CCOutOfMemory();
+	}
+	*parent = node->expr;
+	CSemSetRValue(value, ILType_FromClass(classInfo));
+	return value;
+}
+
+/*
+ * Stub out the code generation functions for "__box", which we don't need.
+ */
+ILNode_GetType(ILNode_CBox),
+ILNode_GenValue(ILNode_CBox),
+JavaGenValue(ILNode_CBox)
+{
+	return ILMachineType_ObjectRef;
+}
+
+/*
+ * Perform semantic analysis for a raw "sizeof" expression.
+ */
+ILNode_CSemAnalysis(ILNode_CSizeOfRaw)
+{
+	CSemValue value;
+	CSemSetDynConstant(value, ILType_UInt32);
+	return value;
+}
+
+/*
+ * Perform semantic analysis for temporary variable assignment.
+ */
+ILNode_CSemAnalysis(ILNode_CSizeTempVar)
+{
+	/* Not used during semantic analysis */
+	return CSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for temporary variable release.
+ */
+ILNode_CSemAnalysis(ILNode_CSizeReleaseTempVar)
+{
+	return ILNode_CSemAnalysis(node->expr1, info, &(node->expr1), stmtLevel);
+}
+
+/*
+ * Perform semantic analysis for a "max sizeof" expression.
+ */
+ILNode_CSemAnalysis(ILNode_CSizeMax)
+{
+	CSemValue value1;
+	CSemValue value2;
+	value1 = ILNode_CSemAnalysis(node->expr1, info, &(node->expr1), 0);
+	value2 = ILNode_CSemAnalysis(node->expr2, info, &(node->expr2), 0);
+	if(CSemIsConstant(value1) && CSemIsConstant(value2))
+	{
+		/* Both expressions are constant, so compute the result now */
+		if(CSemGetConstant(value1)->un.i4Value >
+		   CSemGetConstant(value2)->un.i4Value)
+		{
+			*parent = node->expr1;
+			CGenCloneLine(*parent, (ILNode *)node);
+			return value1;
+		}
+		else
+		{
+			*parent = node->expr2;
+			CGenCloneLine(*parent, (ILNode *)node);
+			return value2;
+		}
+	}
+	CSemSetDynConstant(value1, ILType_UInt32);
+	return value1;
+}
+
+/*
+ * Perform semantic analysis for an "alignof" expression.
+ */
+ILNode_CSemAnalysis(ILNode_CSizeAlign)
+{
+	CSemValue value;
+	ILNode_CSemAnalysis(node->size, info, &(node->size), 0);
+	CSemSetDynConstant(value, ILType_UInt32);
+	return value;
+}
+
+/*
+ * Get type information for "sizeof" expressions.
+ */
+ILNode_GetType(ILNode_CSizeOfRaw),
+ILNode_GetType(ILNode_CSizeTempVar),
+ILNode_GetType(ILNode_CSizeReleaseTempVar),
+ILNode_GetType(ILNode_CSizeMax),
+ILNode_GetType(ILNode_CSizeAlign)
+{
+	return ILMachineType_UInt32;
+}
+
+/*
+ * Generate value code for a raw "sizeof" expression.
+ */
+ILNode_GenValue(ILNode_CSizeOfRaw)
+{
+	ILGenClassToken(info, IL_OP_PREFIX + IL_PREFIX_OP_SIZEOF,
+				    ILTypeToClass(info, node->type));
+	ILGenAdjust(info, 1);
+	return ILMachineType_UInt32;
+}
+
+/*
+ * Generate value code for temporary variable assignment.
+ */
+ILNode_GenValue(ILNode_CSizeTempVar)
+{
+	/* Not used during code generation */
+	return ILMachineType_UInt32;
+}
+
+/*
+ * Generate value code for a temporary variable release.
+ */
+ILNode_GenValue(ILNode_CSizeReleaseTempVar)
+{
+	ILNode_CSizeTempVar *var = (ILNode_CSizeTempVar *)(node->expr2);
+	ILNode_GenValue(node->expr1, info);
+	if(var->tempVar != ~((unsigned)0))
+	{
+		ILGenReleaseTempVar(info, var->tempVar);
+		var->tempVar = ~((unsigned)0);
+	}
+	return ILMachineType_UInt32;
+}
+
+/*
+ * Generate value code for a "max sizeof" expression.
+ */
+ILNode_GenValue(ILNode_CSizeMax)
+{
+	unsigned tempVar1 = ILGenTempTypedVar(info, ILType_UInt32);
+	unsigned tempVar2 = ILGenTempTypedVar(info, ILType_UInt32);
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+
+	/* Compute the two values and store them in local variables */
+	ILNode_GenValue(node->expr1, info);
+	ILGenStoreLocal(info, tempVar1);
+	ILGenAdjust(info, -1);
+	ILNode_GenValue(node->expr2, info);
+	ILGenSimple(info, IL_OP_DUP);
+	ILGenAdjust(info, 1);
+	ILGenStoreLocal(info, tempVar2);
+	ILGenAdjust(info, -1);
+
+	/* Compare the two values (tempVar2 > tempVar1) */
+	ILGenLoadLocal(info, tempVar1);
+	ILGenAdjust(info, 1);
+	ILGenJump(info, IL_OP_BGT, &label1);
+	ILGenAdjust(info, -2);
+
+	/* Push the result onto the stack */
+	ILGenLoadLocal(info, tempVar1);
+	ILGenJump(info, IL_OP_BR, &label2);
+	ILGenLabel(info, &label1);
+	ILGenLoadLocal(info, tempVar2);
+	ILGenLabel(info, &label2);
+	ILGenAdjust(info, 1);
+
+	/* Free the temporary variables that we no longer require */
+	ILGenReleaseTempVar(info, tempVar1);
+	ILGenReleaseTempVar(info, tempVar2);
+	return ILMachineType_UInt32;
+}
+
+/*
+ * Generate value code for an "alignof" expression.
+ */
+ILNode_GenValue(ILNode_CSizeAlign)
+{
+	ILNode_CSizeTempVar *tempVar = (ILNode_CSizeTempVar *)(node->alignVar);
+	ILField *field;
+
+	/* Compute the size value to be aligned */
+	ILNode_GenValue(node->size, info);
+
+	/* Perform the alignment according to the supplied parameters */
+	if(node->alignFlags == C_ALIGN_BYTE)
+	{
+		/* Nothing to be done if we have byte alignment */
+		return ILMachineType_UInt32;
+	}
+	else if((node->alignFlags & C_ALIGN_UNKNOWN) == 0)
+	{
+		/* Ordinary alignment with no unknown elements */
+		ILGenUInt32(info, node->alignFlags);
+		ILGenAdjust(info, 1);
+	}
+	else if(node->measureType)
+	{
+		/* Use the "LDFLDA" instruction to measure the alignment */
+		field = CTypeGetMeasureField(info, node->measureType);
+		ILGenUIntNative(info, 0);
+		ILGenAdjust(info, 1);
+		ILGenFieldRef(info, IL_OP_LDFLDA, field);
+		ILGenSimple(info, IL_OP_CONV_U4);
+
+		/* Merge the flags into the total structure alignment */
+		if(tempVar)
+		{
+			ILGenSimple(info, IL_OP_DUP);
+			ILGenAdjust(info, -1);
+			if(tempVar->tempVar == ~((unsigned)0))
+			{
+				tempVar->tempVar = ILGenTempTypedVar(info, ILType_UInt32);
+				ILGenStoreLocal(info, tempVar->tempVar);
+				ILGenAdjust(info, -1);
+			}
+			else
+			{
+				ILGenLoadLocal(info, tempVar->tempVar);
+				ILGenAdjust(info, 1);
+				ILGenSimple(info, IL_OP_OR);
+				ILGenStoreLocal(info, tempVar->tempVar);
+				ILGenAdjust(info, -2);
+			}
+		}
+	}
+	else if(tempVar && tempVar->tempVar != ~((unsigned)0))
+	{
+		/* Use the final alignment from the temporary variable */
+		if((node->alignFlags & ~C_ALIGN_UNKNOWN) != 0)
+		{
+			ILGenUInt32(info, node->alignFlags & ~C_ALIGN_UNKNOWN);
+			ILGenLoadLocal(info, tempVar->tempVar);
+			ILGenAdjust(info, 2);
+			ILGenSimple(info, IL_OP_OR);
+			ILGenAdjust(info, -1);
+		}
+		else
+		{
+			ILGenLoadLocal(info, tempVar->tempVar);
+			ILGenAdjust(info, 1);
+		}
+	}
+	else
+	{
+		/* We didn't encounter any unknown fields, so ignore the variable */
+		ILGenUInt32(info, node->alignFlags & ~C_ALIGN_UNKNOWN);
+		ILGenAdjust(info, 1);
+	}
+
+	/* Align the size value using the alignment flags on the stack */
+	ILGenCallByName(info,
+		"unsigned int32 [OpenSystem.C]OpenSystem.C.Crt0::Align"
+			"(unsigned int32, unsigned int32)");
+	ILGenAdjust(info, -1);
+	return ILMachineType_UInt32;
+}
+
+/*
+ * Stub out Java code generation methods for "sizeof" expressions.
+ */
+JavaGenValue(ILNode_CSizeOfRaw),
+JavaGenValue(ILNode_CSizeTempVar),
+JavaGenValue(ILNode_CSizeReleaseTempVar),
+JavaGenValue(ILNode_CSizeMax),
+JavaGenValue(ILNode_CSizeAlign)
+{
+	return ILMachineType_UInt32;
+}

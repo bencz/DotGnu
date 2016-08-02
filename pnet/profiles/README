@@ -1,0 +1,41 @@
+This directory defines a number of "profiles" for how the runtime
+engine should be built.
+
+Profiles are selected at configuration time as follows:
+
+    ./configure --with-profile=compact
+
+The default profile is "full", which enables all CLR features.
+The other profiles can be summarised as:
+
+    kernel
+
+        The smallest possible ECMA-compatible configuration.  No support
+        for floating-point, reflection, networking, PInvoke, multi-dimensional
+        arrays, etc.  The default text encoding is hard-wired to Latin1.
+
+    kernel-fp
+
+        The "kernel" profile, with the addition of floating-point.
+
+    compact
+
+        The "kernel" profile, with the addition of reflection and networking.
+
+    compact-fp
+
+        The "compact" profile, with the addition of floating-point.
+
+    tiny
+
+        The "kernel" profile, without runtime infrastructure or filesystem
+        support.
+
+It is possible to reduce the feature set further with other "configure"
+options, such as "--without-libffi", "--enable-threads=none", etc.
+
+The runtime engine also depends upon features in "libc".  You may need
+to use a stripped-down "libc" to reduce memory requirements further.
+
+The profile files reduce the size of the runtime engine, but not the size
+of the C# class library (e.g. pnetlib).  Reducing that is a separate task.

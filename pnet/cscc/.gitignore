@@ -1,0 +1,12 @@
+Makefile
+Makefile.in
+.deps
+.libs
+cscc
+cscc-bf
+cscc-c-s
+cscc-cs
+cscc-java
+cscc-vb
+csdoc
+*.o

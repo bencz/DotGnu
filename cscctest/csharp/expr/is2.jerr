@@ -1,0 +1,4 @@
+./is2.cs:29: invalid operands to binary `is'
+./is2.cs:29: warning: `is' expression is equivalent to a test against `null'
+./is2.cs:32: invalid type specification `t1' 
+./is2.cs:32: warning: `is' expression is always false

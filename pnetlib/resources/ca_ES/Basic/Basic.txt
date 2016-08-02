@@ -1,0 +1,62 @@
+#
+# Basic.txt - Resources for VB.NET.
+#
+# Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+VB_BothBeforeAndAfter=No es pot especificar "Before i "After" quan s'afegeix un item a la col·lecció
+VB_InvalidCollectionIndex=Col·lecció d'index invàlids
+VB_KeyAlreadyExists=La clau especificada ja existeix a la col·lecció
+VB_InvalidErrorNumber=S'ha especificat un nombre d'error invàlid
+VB_InvalidFileMode=S'ha especificat un mode de fitxer invàlid
+VB_InvalidFileAccess=S'ha especificat un valod d'acces invàlid al fitxer
+VB_InvalidFileShare=S'ha especificat un valor de compartiment de fitxer invàlid
+VB_InvalidRecordLength=La longitut ha de ser entre 1 i 32767, ambdos inclosos
+VB_Obsolete=Funcionalitat obsoleta
+VB_InvalidRank=S'ha especificat una fila invalida pel tipus d'array
+VB_InvalidColorIndex=S'ha especificat un índex QBcolor invàlid
+VB_NonNegative=El valor no pot ser negatiu
+VB_EmptyString=No es pot especificar una string nul.la
+VB_InvalidArrayBound=Especificació invàlida dels rangs de l'array
+VB_InvalidStringIndex=Especificació invàlida de l'índex a l'string
+VB_InvalidStringLength=Longitut invàlida de la string
+VB_InvalidCast=No es pot moldejar desde {0} find {1}
+VB_IsValueType=L'objecte no te un tipus de valor
+VB_ValueIsNull=L'argument no pot ser nul
+VB_CommonForType=No s'ha pogut trobar un tipus comú per a l'operació aritmètica
+VB_LoopCounterIsNull=No s'ha especificat el contador del bucle
+VB_InvalidHexOrOct=Format invàlid per octal o hexadecimal
+VB_InvalidAddArguments=Arguments invàlids per un OR
+VB_InvalidBitAndArguments=Arguments invàlids per un AND binari
+VB_InvalidBitOrArguments=Arguments invàlids per un OR binari
+VB_InvalidBitXorArguments=Arguments invàlids per un XOR
+VB_InvalidDivArguments=Arguments invàlids per a una divisio binaria
+VB_InvalidIDivArguments=Arguments invàlids per a una divisio d'enters
+VB_InvalidModArguments=Invalid arguments to binary modulus
+VB_InvalidMulArguments=Arguments invàlids per a una multiplicació
+VB_InvalidNegArgument=Argument invàlid per a una negació unària
+VB_InvalidNotArgument=Arumgnet invàlid per a una negació binària-unària
+VB_InvalidTstArguments=Arguments invàlids per a una comparació binària
+VB_InvalidPlusArgument=Argument invàlid per a una suma unària
+VB_InvalidPowArguments=Arguments invàlids per a una potència binària
+VB_InvalidShiftLeftArguments=Arguments invàlids per a un desplaçament binari cap a l'esquerra
+VB_InvalidShiftRightArguments=Arguments invàlids per a un desplaçament binari cap a la dreta
+VB_InvalidSubArguments=Arguments invàlids per a una sustracció binària
+VB_InvalidXorArguments=Arguments invàlids per a un XOR booleà
+VB_InvalidPattern=Patró "like" invàlid
+VB_MismatchedRanks=No concorden les files de les arrays
+VB_MismatchedDimensions=No concorden les mides de les arrays
+VB_DateTimeRange=Valor "DateTime" fora de rang

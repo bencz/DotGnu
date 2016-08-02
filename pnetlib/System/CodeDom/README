@@ -1,0 +1,8 @@
+
+Most of the System.CodeDom classes are in "RuleOutput.cs", which is
+generated from "rules.txt" using "gencdom.c":
+
+	./gencdom <rules.txt >RuleOutput.cs
+
+The remaining classes are those that can't be easily implemented using
+auto-generation.

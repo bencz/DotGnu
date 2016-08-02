@@ -1,0 +1,55 @@
+#
+# Crypto.txt - Resources for crypto-related errors and exceptions.
+#
+# Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Crypto_Exception=Ha succeït una excepció criptogràfica
+Crypto_UnexpectedOperation=Ha succeït una operació criptogràfica no esperada
+Crypto_InvalidKeySize=Mida invàlida de la clau criptogràfica: {0}
+Crypto_HashNotComputed=El valor hash no ha estat encara calculat
+Crypto_InvalidBlockSize=Tamany de bloc incorrecte: {0}
+Crypto_InvalidFeedbackSize=Mida de retroalimentació criptogràfica invàlida: {0}
+Crypto_InvalidIVSize=Mida del vector d'inicialització invàlid: {0}
+Crypto_InvalidCipherMode=Mode de xifrat invàlid
+Crypto_InvalidPaddingMode=Mode de padding invàlid
+Crypto_InvalidStreamMode=Mode de fluxe incorrecte per la criptografia
+Crypto_NoProvider=El sistema no ofereix suport per {0}
+Crypto_WeakKey=La clau DES és feble
+Crypto_InvalidOID=Cadena d'identificació d'objecte invàlida: {0}
+Crypto_HashInProgress=No es pot canviar la clau en mig d'un procés de hash
+Crypto_DSANeedsSHA1=L'algoritme de hash per DSA ha de ser del tipus SHA-1
+Crypto_DSAParamsNotSet=No s'han definit els parametres DSA
+Crypto_InvalidDSAParams=Paràmetres incorrectes per al DSA
+Crypto_CannotSignWithPublic=No es pot signar amb una clau publicar
+Crypto_UnknownKey=Nom desconegut de la clau: {0}
+Crypto_NoKeyAccess=No està permés l'acces a la clau: {0}
+Crypto_NeedsDSA=Es necessita una instància de l'algoritme DSA
+Crypto_MissingKey=No hi ha cap clau disponible per realitzar aquesta operació
+Crypto_NeedsHash=Es necessita una instància de l'algoritme de hash
+Crypto_InvalidASN1=Invalid ASN.1 data in supplied information
+Crypto_RSAParamsNotSet=The RSA parameters have not been set
+Crypto_InvalidRSAParams=Paràmetres RSA invàlids
+Crypto_PKCS1Hash=The hash algorithm must be MD5, SHA1, SHA256, SHA384, or SHA512
+Crypto_NeedsRSA=Es requereix una instància de l'algoritme RSA
+Crypto_HashAlreadySet=L'algoritme de hash ja ha estat definit
+Crypto_CountAlreadySet=El contador d'itineracions ja ha estat definit
+Crypto_SaltAlreadySet=La llavor ja ha estat definida
+Crypto_RSAMessageTooLong=El missatge ha de ser més curt
+Crypto_RSAKeyTooShort=La clau RSA és massa curta per desxifrar
+Crypto_RSAInvalidCiphertext=Format de texte xifrat invàlid per a desxifrar amb RSA
+Crypto_InvalidHashSize=Mida del hash invàlida per realitzar una firma digital
+Crypto_CertNotSupp=No estan suportada la construcció de certificats bassats en el maneig

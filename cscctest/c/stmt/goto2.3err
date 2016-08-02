@@ -1,0 +1,3 @@
+./goto2.c:24: warning: label `a' defined but not used
+./goto2.c:30: label `a' used but not defined
+./goto2.c:37: duplicate label `a'

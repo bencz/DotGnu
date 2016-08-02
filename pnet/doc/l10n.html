@@ -1,0 +1,475 @@
+<html>
+<head>
+<title>String Localization Issues for C#</title>
+</head>
+<body bgcolor="#ffffff">
+<h1>String Localization Issues for C#</h1>
+
+Rhys Weatherley, <a href="mailto:rweather@southern-storm.com.au">rweather@southern-storm.com.au</a>.<br>
+Last Modified: $Date: 2001/11/07 01:17:55 $<p>
+
+Copyright &copy; 2001 Southern Storm Software, Pty Ltd.<br>
+Permission to distribute unmodified copies of this work is hereby granted.<p>
+
+<h2>1. Introduction</h2>
+
+The ECMA specifications for C# have fairly extensive support for
+localizing the strings that applications use.  However, the mechanisms
+are not very "natural" to use for more than a small handful of strings.<p>
+
+This document discusses various alternatives, with a view to devising
+a common localization framework for use by both Portable.NET and Mono.
+This framework may also be submitted to ECMA for consideration.<p>
+
+<blockquote>
+Note: we explicitly limit ourselves to string localization issues in this
+document.  We do not consider dates, times, localized bitmaps, and the
+other issues that an application must be aware of.<p>
+</blockquote>
+
+Each alternative is evaluated based on the following criteria:
+
+<ul>
+	<li>The degree of "naturalness" to the mechanism.  The more natural
+		the mechanism, the more likely programmers will use it without
+		being "ordered" to do so.</li>
+	<li>Whether or not new features are needed in the C# language.</li>
+	<li>Whether or not applications that use the proposal will continue
+		to work with existing C# library implementations.</li>
+	<li>Whether or not the same proposal works for both applications
+		and the "corlib" runtime library.</li>
+	<li>The ease of gatewaying to pre-existing localization systems
+		such as GNU gettext.</li>
+	<li>The ease of automatically extracting a list of strings to be
+		translated into a foreign language.</li>
+	<li>The behaviour when a localized string is not present.</li>
+	<li>The ease of calling other house-keeping methods related to
+	    localization, beyond the simple "get string" API.</li>
+</ul>
+
+We do not judge which of these criteria is desirable or not at
+this stage.  Extending the C# language may be drastic, and hence may
+be unattractive, but it could also lead to cleaner code, and hence
+be desirable.  The decision as to which proposal to adopt is not
+the purpose of this document.  This document is a starting point
+for discussion.<p>
+
+<h2>2. Definitions</h2>
+
+<dl>
+<dt>corlib</dt>
+<dd>The common C# runtime library, which is called "mscorlib.dll" in
+	the Portable.NET and Microsoft implementations, and "corlib.dll"
+	in the Mono implementation.</dd>
+
+<dt>String-Based</dt>
+<dd>A resource system that uses the English string as the key.
+	GNU gettext is an example of such a system.</dd>
+
+<dt>Tag-Based</dt>
+<dd>A resource system that uses a synthetic identifier as the key.
+    e.g. "<code>Arg_MustBeBoolean</code>"</dd>
+</dl>
+
+We generally lean towards string-based systems in the following
+sections, because it is easier to provide fallbacks when translations
+are missing.  However, the techniques discussed remain mostly the same
+if tag-based systems are used.  The primary difference is that the
+programmer must extract the strings for translation manually.<p>
+
+<h2>3. Existing Functionality</h2>
+
+Microsoft's "mscorlib.dll" contains a class called
+"<code>System.Resources.ResourceManager</code>" which can be used
+to access the string resources that are embedded in
+the manifest resource section of an assembly.<p>
+
+<blockquote>
+Note: this class does not yet appear in the ECMA specifications, but that
+is probably an oversight rather than a deliberate omission.  We expect
+that the "<code>System.Resources</code>" namespace will eventually
+be standardised.<p>
+</blockquote>
+
+To access localized strings, an application creates an instance of
+"<code>ResourceManager</code>" and then calls the "<code>GetString</code>"
+method to access strings using their assigned "tag".<p>
+
+The most immediate problem with this API is that it requires that
+the resource manager be created first.  Since creating a new manager
+for every string access is expensive, Microsoft has adopted a convention
+in their own code for getting around the API's limitations.<p>
+
+Each of Microsoft's assemblies contains an "<code>internal</code>"
+class or method that caches the resource manager for that assembly
+in a static field.  After the first string access, all subsequent
+accesses are relatively efficient.  Microsoft's "mscorlib.dll" uses
+"<code>Environment.GetResourceString</code>" and their other assemblies
+typically have a class called "<code>SR</code>" within that
+assembly's namespace.<p>
+
+There is no consistency to Microsoft's approach: every assembly must
+come up with its own manager caching strategy.  None of these classes
+are accessible to other assemblies to improve code reuse.<p>
+
+Using our evaluation criteria:
+
+<ul>
+	<li>The sequence "<code>Environment.GetResourceString("Tag")</code>"
+		is not very natural, and quickly becomes burdensome.</li>
+	<li>No new features are present in the C# language.</li>
+	<li>Applications do work with existing implementations, as this is
+		how existing implementations have done it.</li>
+	<li>The mechanism is different for every assembly.</li>
+	<li>Gatewaying is theoretically possible, if one were to change
+		the implementation of "<code>ResourceManager</code>".</li>
+	<li>Automatic extraction of strings is impossible.  Programmers
+		must manually extract the strings, assign a tag, and then be
+		diligent enough to keep the extracted versions up to date.</li>
+	<li>If a localized version of a string is not present, the API
+		returns <code>null</code>, which isn't very useful as a default.
+		This is exacerbated by the previous point, because it is very easy
+		for the programmer to forget to assign a fallback English
+		string in the separate resource file.</li>
+	<li>Accessing house-keeping API's is similar in difficulty to
+		accessing the "get string" API's.</li>
+</ul>
+
+The use of the "<code>SR</code>" class in so many assemblies is quite odd.
+It may be the result of massive cut-and-paste, or it may be the result
+of some undocumented feature of Microsoft's tools that automatically
+generates a class called "<code>SR</code>" in each assembly that
+requires it.<p>
+
+The "<code>SR</code>" class contains a number of standard methods such
+as "<code>GetString</code>", "<code>GetObject</code>", etc.  It usually
+also contains hundreds of fields that hold tag names for all of
+the strings that are used by the assembly.<p>
+
+We cannot find any evidence in the .NET Beta2 Framework documentation that
+suggests that the C# tools are doing this automatically (perhaps it is
+a feature of Visual Studio.NET?).  But it seems
+strange that Microsoft's programmers would create classes with that many
+fields on purpose, and then do it consistently across dozens of assemblies and
+thousands of classes, unless there was some kind of tool support.<p>
+
+If Microsoft is indeed writing the "<code>SR</code>" classes by hand,
+then this would seem an obvious place to introduce some automation.<p>
+
+<h2>4. GNU gettext</h2>
+
+We describe the GNU gettext system in this section, to provide an
+example of an existing localization framework that is well-deployed
+and solves many of the problems we are trying to address.<p>
+
+The system is very natural for programmers to use.  Strings
+can be marked for localization as follows:
+
+<blockquote><code>_("Hello World!")</code></blockquote>
+
+The C pre-processor takes care of expanding this to an appropriate
+call to <code>gettext</code>, or <code>dgettext</code> in the case
+of libraries.  On systems without <code>gettext</code>,
+the '<code>_</code>' macro expands to its argument and the program
+behaves correctly, albeit only in the original language.<p>
+
+<blockquote>
+Note: gettext also has the "<code>N_</code>" macro, which is used
+to mark static strings.  Because C# strings are always created
+dynamically, we do not require an equivalent to this.
+</blockquote>
+
+Because the overhead of localization is so low, it increases the chance
+that programmers will use it and use it consistently.  Automated tools
+can scan C source code for uses of the '<code>_</code>' macro and
+create English resource files ready for translation.<p>
+
+If a translation is not available, the macro's argument provides
+a meaningful English fallback.  Synthetic tag names or null strings
+can never be displayed to the user by accident.<p>
+
+If the programmer wishes to gateway to a non-gettext system, they
+need only modify the definition of the macro and recompile.
+Usually this isn't necessary because GNU gettext already supports
+most of the popular message catalog formats.<p>
+
+<h2>5. New C# Libraries</h2>
+
+Because C# lacks a rich pre-processor, it isn't possible to adopt
+the GNU gettext approach as-is.  This leaves us with two options:
+add new libraries or add keywords to the language.  This section
+explores the first option.<p>
+
+We can create a new namespace within the C# library called
+"<code>System.I18N</code>", that contains a number of classes
+that manage resources for any assemblies that use it.  The
+following is a simplified example of implementing a
+gettext-style system:<p>
+
+<blockquote>
+<pre>
+namespace System.I18N
+{
+
+using System.Collections;
+using System.Reflection;
+using System.Resources;
+
+public sealed class GetText
+{
+    private static Hashtable managers = new Hashtable();
+
+    public static String _(String value)
+    {
+        Assembly assembly = Assembly.GetCallingAssembly();
+        ResourceManager mgr = (ResourceManager)(managers[assembly]);
+        if(mgr == null)
+        {
+            mgr = new ResourceManager(assembly.FullName, assembly);
+            managers[assembly] = mgr;
+        }
+        String str = mgr.GetString(value);
+        if(str != null)
+        {
+            return str;
+        }
+        else
+        {
+            return value;
+        }
+    }
+
+} // class GetText
+
+} // namespace System.I18N
+</pre>
+</blockquote>
+
+A real implementation would need additional house-keeping methods, culture
+support, and thread synchronization.  A single resource block per assembly
+may insufficient; thus requiring the introduction of gettext-style "domains".
+We have omitted these details for brevity.<p>
+
+The effect of C's '<code>_</code>' macro could be achieved as follows:
+
+<blockquote>
+<pre>
+using I = System.I18N.GetText;
+
+class Hello
+{
+    public static void Main()
+    {
+        System.Console.WriteLine(I._("Hello World!"));
+    }
+}
+</pre>
+</blockquote>
+
+The usage of "<code>I._</code>" is a little ugly.  If we were willing
+to modify the core system library, we could do the following:<p>
+
+<blockquote>
+<pre>
+namespace System
+{
+
+using System.I18N;
+
+public class Object
+{
+    ...
+
+    protected static String _(String value)
+    {
+        return System.I18N.GetText.GetString(value);
+    }
+
+    ...
+} // class Object
+
+} // namespace System
+</pre>
+</blockquote>
+
+This would make the definition available to all classes uniformly.
+However, it wouldn't be backwards compatible with pre-existing
+C# system libraries.<p>
+
+Using our evaluation criteria:
+
+<ul>
+	<li>The mechanism is almost as natural to use as GNU gettext.</li>
+	<li>No new features are needed in the C# language.</li>
+	<li>Applications that use this will not work with existing C#
+		libraries that lack definitions for "<code>System.I18N</code>".
+		However, that namespace could be implemented in a separate
+		assembly that is distributed with applications.</li>
+	<li>See below regarding uniformity.</li>
+	<li>Gatewaying to other implementations requires changes to the
+		"<code>System.I18N</code>" code, but not to any applications
+		that use it.</li>
+	<li>Automatically extracting strings is easy.</li>
+	<li>The behaviour when a localized string is not present is
+		straight-forward: return the argument.</li>
+	<li>House-keeping API's are simply extra methods within the
+		"<code>System.I18N</code>" classes.</li>
+</ul>
+
+Placing "<code>System.I18N</code>" into a different assembly
+will improve interoperability with existing C# libraries.  However,
+it will be inaccessible to our own implementation of "corlib".
+Thus, we will need a different mechanism for "corlib".<p>
+
+However, this may not be too bad.  We can create a specialized
+"<code>internal</code>" class within our "corlib" that has a similar
+API to "<code>System.I18N.GetText</code>", and then do the following:
+
+<blockquote>
+<pre>
+namespace System
+{
+
+using I = System.Private.GetText;
+
+public class FormatException : SystemException
+{
+
+    // Constructors.
+    public FormatException()
+        : base(I._("The supplied value did not have the correct format")) {}
+    public FormatException(String msg)
+        : base(msg) {}
+    public FormatException(String msg, Exception inner)
+        : base(msg, inner) {}
+
+} // class FormatException
+
+} // namespace System
+</pre>
+</blockquote>
+
+The usage of "<code>I._</code>" is consistent with that used by other
+assemblies, but is redirected to a different class.  This would allow
+automated extraction tools to work consistently on "corlib" and other
+assemblies.<p>
+
+The main drawback of this approach is that gateways must be implemented
+in two places within the code.  This is still better than Microsoft's
+approach.<p>
+
+<h2>6. New C# Keywords</h2>
+
+We could envisage adding a new '<code>_</code>' keyword to the
+language as follows:
+
+<blockquote>
+<i>string-literal</i>:<br>
+&nbsp;&nbsp;&nbsp;&nbsp;<code>_</code> <code>(</code> <i>string-literal</i>
+<code>)</code><br>
+&nbsp;&nbsp;&nbsp;&nbsp;...
+</blockquote>
+
+This would be legal anywhere that a string literal is currently
+permitted, except in serialized attributes.  The compiler converts
+the construct into a call on an appropriate system-supplied library.<p>
+
+The "<code>System.Object</code>" definition trick from the previous
+section can be used to provide an implementation of '<code>_</code>' for
+compilers that lack the keyword.<p>
+
+Using our evaluation criteria, everything is the same as the "new library"
+case, except that we have now altered the C# language.  Interoperability
+with existing C# libraries remains a problem, but could be addressed
+by once again treating "corlib" as a special case.<p>
+
+<h2>7. Internal Libraries</h2>
+
+Even with a keyword-enhanced compiler, and a rich supporting library,
+we still have some problems.<p>
+
+If we place "<code>System.I18N</code>" into "corlib", then programs that
+use it will not run against existing C# libraries, even if they were
+compiled with a keyword-enhanced compiler.<p>
+
+If we place "<code>System.I18N</code>" into a separate assembly, then
+all programs that use it will need to redistribute that DLL with their
+program.  And the code will be inaccessible to our own "corlib",
+which would need to be treated as a special case.<p>
+
+Going back to the example of Microsoft's "<code>SR</code>" class, and
+assuming that we can modify the compiler, we may be able to do better.
+The compiler could automatically insert an "<code>internal</code>" class into
+any assembly that uses the '<code>_</code>' keyword in its source.<p>
+
+This class will be responsible for acquiring a resource manager,
+caching it in a static field, and handling all resource requests
+for that assembly.  The compiler will cause the '<code>_</code>'
+keyword to call this internal library rather than one that is
+assumed to be present elsewhere in the system.<p>
+
+Using our evaluation criteria:
+
+<ul>
+	<li>The mechanism is just as natural to use as GNU gettext.</li>
+	<li>A new keyword is needed in the C# language, and the compiler
+		must know how to insert the special class automatically.</li>
+	<li>Applications that use this will mechanism work with existing
+		C# libraries.</li>
+	<li>The mechanism is the same for "corlib" and other assemblies.</li>
+	<li>Gatewaying to other implementations is more difficult.</li>
+	<li>Automatically extracting strings is easy.</li>
+	<li>The behaviour when a localized string is not present is
+		straight-forward: return the argument.</li>
+	<li>House-keeping API's are more difficult to access, unless the
+		compiler gives the class a fixed name, with a pre-declared
+		interface.</li>
+</ul>
+
+A drawback of this approach is that it makes gatewaying harder.
+Interfacing to a different resource system will involve recompiling
+all assemblies that have the internal library, unless one has
+the luxury to modify "<code>ResourceManager</code>".<p>
+
+One way to solve the gateway issue may be to provide an "escape hatch"
+in the internal library.  This would use reflection to search for
+an alternative resource manager before falling back to the standard
+one.  For example:
+
+<blockquote>
+<pre>
+private static ResourceManager GetManager(Assembly assembly)
+{
+    Type type = Type.GetType
+        ("System.I18N.ReplacementResourceManager", false);
+    if(type != null)
+    {
+        return (type.GetConstructor(Type.EmptyTypes)).Invoke(null);
+    }
+    return new ResourceManager(assembly.FullName, assembly);
+}
+</pre>
+</blockquote>
+
+This would allow future versions of the C# library to provide an
+implementation of "<code>System.I18N.ReplacementResourceManager</code>"
+that overrides the manager's behaviour with gateway functionality.
+Existing C# library implementations won't have this class, and so
+the code will fallback to a standard resource manager.<p>
+
+This "internal library" solution introduces a lot of complexity into
+the compiler, to get around deficiencies in existing C# libraries.
+It may not be worth the effort.<p>
+
+<h2>8. Acknowledgements</h2>
+
+Miguel de Icaza suggested the "<code>using</code>" construct as a
+way to shorten the method name to "<code>I._</code>", while
+avoiding language extensions.<p>
+
+<h2>9. Revision History</h2>
+
+7 November 2001: Original version<br>
+
+</body>
+</html>

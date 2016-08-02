@@ -1,0 +1,32 @@
+#
+# Security.txt - Resources for security errors.
+#
+# Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Security_AllMembershipCondition=Tot el codi
+Security_AppDirMembershipCondition=ApplicationDirectory
+Security_PolicyVersion=Versió incorrecte per a l'objecte serialitzat de les politiques de seguretat
+Security_PolicyName=Nom incorrecte per a una serialització de la política de seguretat
+Security_NotCodeGroupChild=L'objecte no es un fill del grup de codi
+Security_RemotingCheckType=El tipus {0} no pot ser exportat com a nivell `Baix' de seguretat
+Security_SelectorCycle=L'encadenació dels selectors crearà un cicle
+Security_Exclusive=S'ha trobat una exclusivitat mutua a les normes de seguretat
+Security_PermissionSetNotFound=No s'han pogut especificar els permisos
+Security_FullTrustPresent=Tota la informació de confiança esta present
+Security_FullTrustNotPresent=No està tota la informació de confiança
+Security_RootGroupDescription=El grup del codi arrel guanya tots els permisos
+Security_CodeGroupName=Nom del tag XML incorrecte per al grup de seguretat de codi

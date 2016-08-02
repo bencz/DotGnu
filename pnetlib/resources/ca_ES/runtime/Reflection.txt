@@ -1,0 +1,40 @@
+#
+# Reflection.txt - Resources for reflection classes.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Reflection_AmbiguousAttr=Hi ha més d'un atripus amb el mateix nom
+Reflection_AssemblyName=Nom d'ensamblat invàlid
+Reflection_AssemblyFile=No s'ha trobat l'ensamblat "{0}"
+Reflection_AssemblySecurity=No és tenen suficients permisos per carregar "{0}"
+Reflection_BadImage=El format de l'executable o la llibreria "{0}" és invàlid
+Reflection_NoEventAdd=No s'ha pogut accedir al mètode 'add' per a l'event
+Reflection_NoEventRemove=No s'ha pogut accedir el mètode 'remove' per l'event
+Reflection_InvalidEventHandler=El manjeador d'events no es del tipus correcte
+Reflection_NoPropertyGet=No s'ha pogut accedir al mètode 'get' per la propietat
+Reflection_NoPropertySet=No s'ha pogut accedir al metode 'set' per a la propietat
+Reflection_NoPropertyAccess=L'invocador no té accés al metode 'get' o 'set de la propietat
+Reflection_InvokeAttr=Atributs invàlids per Type.InvokeMember
+Reflection_CtorTarget=No s'ha pogut especificar l'objectiu al cridar el constructor
+Reflection_MissingField=No s'ha trobat el field utilitzant Type.InvokeMember
+Reflection_MissingMethod=No s'ha trobat el metode utilitzant Type.InvokeMember
+Reflection_MissingProperty=No s'ha trobat la propietat utilitzant Type.InvokeMember
+Reflection_GetField=Arguments invàlids per a la peticio GetField
+Reflection_SetField=Aruments invàlids per la petició SetField
+Reflection_InvalidArgs=Arguments invàlids per a l'invocació
+Reflection_ParamName=Nom de paràmetre incorrecte en la invocació
+Reflection_UnknownField=El nom del camp és desconegut

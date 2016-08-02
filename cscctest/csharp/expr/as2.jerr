@@ -1,0 +1,5 @@
+./as2.cs:35: invalid operands to binary `as'
+./as2.cs:38: invalid type specification `t1' 
+./as2.cs:38: reference type required
+./as2.cs:41: reference type required
+./as2.cs:44: no conversion from `Test3' to `Test2'

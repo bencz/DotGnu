@@ -1,0 +1,4 @@
+./new3.cs:33: unsafe method declaration not permitted with Java output
+./new3.cs:37: unsafe address operator not permitted with Java output
+./new3.cs:39: unsafe pointer dereference not permitted with Java output
+./new3.cs:40: unsafe pointer dereference not permitted with Java output

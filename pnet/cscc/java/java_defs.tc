@@ -1,0 +1,114 @@
+/*
+ * java_defs.tc - Semantic analysis routines and new nodes for Java 
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ * Copyright (C) 2003  Gopal.V
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+%include %readonly "cg_all.tc"
+
+/*
+ * Set a new header for definitions that follow.
+ */
+%header "java_defs.h"
+
+/*
+ * Copy includes to the top of the "java_defs.h" file.
+ */
+%decls %{
+
+#include <codegen/cg_nodes.h>
+#include <codegen/cg_coerce.h>
+#include <codegen/cg_resolve.h>
+#include <codegen/cg_scope.h>
+#include "il_utils.h"
+#include <cscc/java/java_semvalue.h>
+
+%}
+
+%output "java_nodes.c"
+
+%node ILNode_JPrimitiveType ILNode_Dummy =
+{
+	ILUInt32 elementType;
+}
+
+%node ILNode_JArrayType ILNode_Dummy =
+{
+	ILNode  *type;
+	ILUInt32 numDimensions;
+}
+
+%node ILNode_JPackage ILNode_Dummy =
+{
+	const char *name;
+	%nocreate ILNode *import={0};
+}
+
+%node ILNode_JImport ILNode_Dummy =
+{
+	const char *name;
+	%nocreate ILNode *next={0};
+}
+%node ILNode_JImportType ILNode_JImport
+%node ILNode_JImportPackage ILNode_JImport
+
+%node ILNode_JSystemType ILNode_Dummy =
+{
+	char *className;
+}
+
+%node ILNode_ILSystemType ILNode_Dummy =
+{
+	char *className;
+}
+
+%node ILNode_JMain ILNode_Statement = 
+{
+	ILMethod *method;
+}
+
+%node ILNode_JTypeSuffix ILNode_Dummy =
+{
+	ILUInt32 count;		/* 0 for '*', 1 + for dimension separators */
+}
+
+%node ILNode_UserCast ILNode_DummyBinaryExpr
+%node ILNode_InstanceOf ILNode_DummyBinaryExpr
+
+%node ILNode_JNewExpression ILNode_NewExpression
+
+%node ILNode_TypeSuffixDeclarator ILNode_Dummy =
+{
+	ILNode *name;
+	int dims;
+}
+
+%{
+#include <cscc/java/java_internal.h>
+%}
+
+%include "java_semantics.tc" 
+%include "java_lvalue.tc"
+%include "java_types.tc"
+%include "java_const.tc"
+%include "java_stmt.tc"
+%include "java_decls.tc"
+%include "java_invoke.tc"
+%include "java_misc.tc"
+%include "java_oper.tc"
+%include "java_cast.tc"

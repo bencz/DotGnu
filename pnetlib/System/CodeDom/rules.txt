@@ -1,0 +1,134 @@
+#
+# rules.txt - Code generation rules for "System.CodeDom" classes.
+#
+# Copyright (C) 2002, 2003  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+# '-'	Indicates the base class if it isn't implicit
+# '?'	Indicates an optional constructor argument
+# '*'	Indicates a "params Type[]" argument
+# '@'	Indicates a "Type[]" argument
+# '$'	Indicates that no special constructors should be generated
+
+CodeArgumentReferenceExpression: String<ParameterName>
+CodeArrayIndexerExpression:
+	CodeExpression<TargetObject> *CodeExpression<Indices>
+CodeAssignStatement: CodeExpression<Left> CodeExpression<Right>
+CodeAttributeArgumentCollection: CodeAttributeArgument
+CodeAttributeArgument-Object:
+	?String<Name> CodeExpression<Value>
+CodeAttributeDeclarationCollection: CodeAttributeDeclaration
+CodeAttributeDeclaration-Object:
+	String<Name> ?@CodeAttributeArgument<Arguments>
+
+CodeBaseReferenceExpression
+CodeBinaryOperatorExpression:
+	CodeExpression<Left> CodeBinaryOperatorType<Operator> CodeExpression<Right>
+
+CodeCatchClauseCollection: CodeCatchClause
+CodeComment: String<Text> ?bool<DocComment>
+CodeCommentStatementCollection: CodeCommentStatement
+CodeCompileUnit:
+	$CodeAttributeDeclarationCollection<AssemblyCustomAttributes> \
+	CodeNamespaceCollection<Namespaces> \
+	StringCollection<ReferencedAssemblies>
+CodeConstructor-CodeMemberMethod:
+	$CodeExpressionCollection<BaseConstructorArgs> \
+	CodeExpressionCollection<ChainedConstructorArgs>
+
+CodeDelegateCreateExpression:
+	CodeTypeReference<DelegateType> CodeExpression<TargetObject> \
+	String<MethodName>
+CodeDelegateInvokeExpression:
+	CodeExpression<TargetObject> ?@CodeExpression<Parameters>
+CodeDirectionExpression: FieldDirection<Direction> CodeExpression<Expression>
+
+CodeEntryPointMethod-CodeMemberMethod
+CodeEventReferenceExpression:
+	CodeExpression<TargetObject> String<EventName>
+CodeExpressionCollection: CodeExpression
+CodeExpression-CodeObject
+CodeExpressionStatement: CodeExpression<Expression>
+
+CodeFieldReferenceExpression:
+	CodeExpression<TargetObject> String<FieldName>
+
+CodeIndexerExpression:
+	CodeExpression<TargetObject> *CodeExpression<Indices>
+CodeIterationStatement:
+	CodeStatement<InitStatement> CodeExpression<TestExpression> \
+	CodeStatement<IncrementStatement> *CodeStatement<Statements>
+
+CodeLabeledStatement: String<Label> ?CodeStatement<Statement>
+
+CodeMethodReferenceExpression: CodeExpression<TargetObject> String<MethodName>
+CodeMethodReturnStatement: CodeExpression<Expression>
+
+CodeNamespaceCollection: CodeNamespace
+
+CodeParameterDeclarationExpressionCollection:
+	CodeParameterDeclarationExpression
+CodePrimitiveExpression: Object<Value>
+CodePropertyReferenceExpression:
+	CodeExpression<TargetObject> String<PropertyName>
+CodePropertySetValueReferenceExpression
+
+CodeSnippetExpression: String<Value>
+CodeSnippetStatement: String<Value>
+CodeSnippetTypeMember-CodeTypeMember: String<Text>
+CodeStatement-CodeObject: $CodeLinePragma<LinePragma>
+
+CodeThisReferenceExpression
+CodeThrowExceptionStatement: CodeExpression<ToThrow>
+CodeTryCatchFinallyStatement:
+	@CodeStatement<TryStatements> @CodeCatchClause<CatchClauses> \
+	?@CodeStatement<FinallyStatements>
+CodeTypeConstructor-CodeMemberMethod
+CodeTypeDeclarationCollection: CodeTypeDeclaration
+CodeTypeMemberCollection: CodeTypeMember
+
+CodeVariableReferenceExpression: String<VariableName>
+
+#
+# The following classes must be defined manually, because they are
+# too complex or odd to subject to rule-based code generation:
+#
+#	- CodeArrayCreateExpression
+#	- CodeAttachEventStatement
+#	- CodeCastExpression
+#	- CodeCatchClause
+#	- CodeCommentStatement
+#	- CodeConditionStatement
+#	- CodeMemberEvent
+#	- CodeMemberField
+#	- CodeMemberMethod
+#	- CodeMethodInvokeExpression
+#	- CodeNamespace
+#	- CodeNamespaceImportCollection
+#	- CodeNamespaceImport
+#	- CodeObjectCreateExpression
+#	- CodeObject
+#	- CodeParameterDeclarationExpression
+#	- CodeRemoveEventStatement
+#	- CodeSnippetCompileUnit
+#	- CodeTypeDeclaration
+#	- CodeTypeDelegate
+#	- CodeTypeMember
+#	- CodeTypeOfExpression
+#	- CodeTypeReference
+#	- CodeTypeReferenceExpression
+#	- CodeVariableDeclarationStatement
+#

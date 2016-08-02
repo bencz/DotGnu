@@ -1,0 +1,264 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(include/stdarg.h)
+
+dnl Force the configure script to think that the target is "cli".
+dnl The full name is "cli-unknown-none": "unknown-none" means that the
+dnl resulting binaries will work for all vendors and operating systems
+dnl that have cli's, which is what we want to happen.
+if test "x$as_expr" = "x" ; then
+	dnl Old-style autoconf where --host == --build
+	target=cli-unknown
+	target_alias=cli-unknown
+	cross_compiling=yes
+	ac_cv_prog_cc_cross=yes
+else
+	dnl New-style autoconf where --host == --target
+	host=cli-unknown-none
+	host_alias=cli-unknown
+	target=cli-unknown-none
+	target_alias=cli-unknown
+	ac_tool_prefix=cli-unknown-
+	ac_cv_host=$host
+	ac_cv_target=$target
+	cross_compiling=yes
+	ac_cv_prog_cc_cross=yes
+fi
+
+dnl Determine the build, host, and target system types.
+AC_CANONICAL_SYSTEM
+
+dnl Initialize automake.
+AM_INIT_AUTOMAKE(pnetC, 0.7.5)
+AM_MAINTAINER_MODE
+
+dnl The --with-pnet option can be used to specify the location of
+dnl Portable.NET, so that we know where to get the C compiler, etc.
+dnl The default location is assumed to be "../pnet".
+AC_SUBST(PNET_PATH)
+AC_ARG_WITH(pnet,
+[  --with-pnet=DIR         specify the location of Portable.NET],
+[
+	if test -n "$withval"; then
+		case "$withval" in
+		  ../*) PNET_PATH="`pwd`/$withval"
+		        PNET_CHECK_PATH="$withval" ;;
+		     *) PNET_PATH="$withval"
+			    PNET_CHECK_PATH="$withval" ;;
+		esac
+	else
+		PNET_PATH="`pwd`/../pnet"
+		PNET_CHECK_PATH="../pnet"
+	fi
+],
+[
+	PNET_PATH="`pwd`/../pnet"
+	PNET_CHECK_PATH="../pnet"
+])
+
+dnl The --with-pnetlib option can be used to specify the location of
+dnl the Portable.NET C# library, so that we know where to get the
+dnl mscorlib.dll assembly to use with "ilrun".  The default location
+dnl is assumed to be "../pnetlib".
+AC_SUBST(PNETLIB_PATH)
+AC_ARG_WITH(pnetlib,
+[  --with-pnetlib=DIR      specify the location of pnetlib],
+[
+	if test -n "$withval"; then
+		case "$withval" in
+		  ../*) PNETLIB_PATH="`pwd`/$withval"
+		        PNETLIB_CHECK_PATH="$withval" ;;
+		     *) PNETLIB_PATH="$withval"
+			    PNETLIB_CHECK_PATH="$withval" ;;
+		esac
+	else
+		PNETLIB_PATH="`pwd`/../pnetlib"
+		PNETLIB_CHECK_PATH="../pnetlib"
+	fi
+],
+[
+	PNETLIB_PATH="`pwd`/../pnetlib"
+	PNETLIB_CHECK_PATH="../pnetlib"
+])
+
+dnl Find the location of the "cscc" compiler.
+AC_PATH_PROG(CSCC, cscc,, ${PNET_CHECK_PATH}/cscc:${prefix}/bin:$PATH)
+if test -z "$CSCC" ; then
+	AC_MSG_ERROR([Portable.NET's C compiler, cscc, is required to build.])
+fi
+case "$CSCC" in
+	../*) CSCC_REAL="${PNET_PATH}/cscc/cscc" ;;
+	   *) CSCC_REAL="$CSCC" ;;
+esac
+
+dnl Find the location of the "ilrun" runtime engine.
+AC_PATH_PROG(ILRUN, ilrun,, ${PNET_PATH}/engine:${prefix}/bin:$PATH)
+
+dnl Find the location of the "ilgac" program.
+AC_PATH_PROG(ILGAC, ilgac,, ${PNET_PATH}/ilgac:${prefix}/bin:$PATH)
+
+dnl Find the location of the "ildd" program.
+AC_PATH_PROG(ILDD, ildd,, ${PNET_PATH}/ildd:${prefix}/bin:$PATH)
+
+dnl Find the location of the "cscc-cpp" program.
+AC_PATH_PROG(CSCC_CPP, cscc-cpp,, ${PNET_PATH}/cscc/cpp:${prefix}/bin:$PATH)
+
+dnl Find the location of the "cygpath" program.
+AC_PATH_PROG(CYGPATH, cygpath)
+
+dnl Find the location of the "ilranlib" program.
+AC_PATH_PROG(ILRANLIB, ilranlib,, ${PNET_PATH}/ilranlib:${prefix}/bin:$PATH)
+RANLIB="$ILRANLIB"
+ac_cv_prog_RANLIB="$RANLIB"
+
+dnl Determine additional flags that we need to force "cscc" to act sane.
+dnl We use slightly different paths than the final to prevent strange
+dnl problems with spaces in pathnames under Cygwin.
+CFLAGS="-x c $EXTRA_CFLAGS"
+if test -x "$PNET_CHECK_PATH/cscc/cscc-c-s" ; then
+	CFLAGS="$CFLAGS -fplugin-c-path=$PNET_CHECK_PATH/cscc/cscc-c-s"
+fi
+if test -x "$PNET_CHECK_PATH/cscc/cscc-cs" ; then
+	CFLAGS="$CFLAGS -fplugin-cs-path=$PNET_CHECK_PATH/cscc/cscc-cs"
+fi
+if test -x "$PNET_CHECK_PATH/cscc/cpp/cscc-cpp" ; then
+	CFLAGS="$CFLAGS -fcpp-path=$PNET_CHECK_PATH/cscc/cpp/cscc-cpp"
+fi
+if test -f "$PNETLIB_CHECK_PATH/csupport/OpenSystem.C.dll" ; then
+	CFLAGS="$CFLAGS -L$PNETLIB_CHECK_PATH/csupport"
+fi
+if test -f "$PNETLIB_CHECK_PATH/System/first/System.dll" ; then
+	CFLAGS="$CFLAGS -L$PNETLIB_CHECK_PATH/System/first"
+fi
+if test -f "$PNETLIB_CHECK_PATH/DotGNU.SSL/DotGNU.SSL.dll" ; then
+	CFLAGS="$CFLAGS -L$PNETLIB_CHECK_PATH/DotGNU.SSL"
+fi
+if test -f "$PNETLIB_CHECK_PATH/runtime/mscorlib.dll" ; then
+	CFLAGS="$CFLAGS -L$PNETLIB_CHECK_PATH/runtime"
+fi
+
+dnl Modify the environment to force autoconf/automake to use "cscc"
+dnl instead of the system's default C compiler.  We use the flag
+dnl "-fcross-compile-check" to force cscc to generate a program that
+dnl will compile successfully, but won't run.  This fools configure
+dnl into believing that cscc is a cross-compiler, which it is.
+CC="$CSCC"
+CPPFLAGS="-nostdinc"
+LDFLAGS="-fcross-compile-check -nostdlib"
+
+dnl Force the configure script to believe that we are a cross-compiler.
+dnl Configure may still try to run the binary anyway, in which case
+dnl the "-fcross-compile-check" flag should catch us.
+cross_compiling=yes
+
+dnl Checks for programs.
+AC_PROG_AWK
+AC_PROG_CC
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_PROG_RANLIB
+
+dnl Remove the "-fcross-compile-check" flag from "LDFLAGS".
+LDFLAGS="-nostdlib"
+
+dnl Check for file extensions.
+AC_EXEEXT
+AC_OBJEXT
+
+dnl Get the version number of "mscorlib.dll" to use on the libraries.
+AC_SUBST(MSCORLIB_VERSION)
+AC_MSG_CHECKING(for version of pnetlib)
+MSCORLIB=""
+if test -f "$PNETLIB_PATH/runtime/mscorlib.dll" ; then
+	MSCORLIB="$PNETLIB_PATH/runtime/mscorlib.dll"
+else
+	if test -f "${prefix}/lib/cscc/lib/mscorlib.dll" ; then
+		MSCORLIB="${prefix}/lib/cscc/lib/mscorlib.dll"
+	fi
+fi
+if test "x$MSCORLIB" = "x" ; then
+	# Use "ilgac" to get the default version number from the cache.
+	MSCORLIB_VERSION=`"$ILGAC" -ld mscorlib`
+else
+	# Use "ildd" to get the version number from the actual library file.
+	MSCORLIB_VERSION=`"$ILDD" -f "$MSCORLIB"`
+fi
+MSCORLIB_VERSION=`echo "$MSCORLIB_VERSION" | grep ' (version=' | \
+				  sed -e '1,$s/^.* (version=//g' | \
+				  sed -e '1,$s/).*$//g'`
+if test "x$MSCORLIB_VERSION" = "x" ; then
+	MSCORLIB_VERSION="0.0.0.0"
+fi
+AC_MSG_RESULT($MSCORLIB_VERSION)
+
+dnl Set up the final CC, CSCC, CFLAGS, and LDFLAGS values for the Makefile's.
+CC="\"$CSCC_REAL\""
+CSCC="\"$CSCC_REAL\""
+CFLAGS="-x c $EXTRA_CFLAGS"
+if test -x "$PNET_PATH/cscc/cscc-c-s" ; then
+	CFLAGS="$CFLAGS \"-fplugin-c-path=$PNET_PATH/cscc/cscc-c-s\""
+fi
+if test -x "$PNET_PATH/cscc/cscc-cs" ; then
+	CFLAGS="$CFLAGS \"-fplugin-cs-path=$PNET_PATH/cscc/cscc-cs\""
+fi
+if test -x "$PNET_PATH/cscc/cpp/cscc-cpp" ; then
+	CFLAGS="$CFLAGS \"-fcpp-path=$PNET_PATH/cscc/cpp/cscc-cpp\""
+else
+	CFLAGS="$CFLAGS \"-fcpp-path=$CSCC_CPP\""
+fi
+if test -f "$PNETLIB_PATH/csupport/OpenSystem.C.dll" ; then
+	CFLAGS="$CFLAGS \"-L$PNETLIB_PATH/csupport\""
+fi
+if test -f "$PNETLIB_CHECK_PATH/System/first/System.dll" ; then
+	CFLAGS="$CFLAGS \"-L$PNETLIB_CHECK_PATH/System/first\""
+fi
+if test -f "$PNETLIB_CHECK_PATH/DotGNU.SSL/DotGNU.SSL.dll" ; then
+	CFLAGS="$CFLAGS \"-L$PNETLIB_CHECK_PATH/DotGNU.SSL\""
+fi
+if test -f "$PNETLIB_PATH/runtime/mscorlib.dll" ; then
+	CFLAGS="$CFLAGS \"-L$PNETLIB_PATH/runtime\""
+fi
+LDFLAGS="-fassembly-version=$MSCORLIB_VERSION $LDFLAGS"
+
+dnl Find the location of the assembly cache, and adjust for Cygwin.
+AC_SUBST(CYG_CACHE)
+if test "x$prefix" = "xNONE" ; then
+	CYG_CACHE="${ac_default_prefix}/lib/cscc/lib"
+else
+	CYG_CACHE="${prefix}/lib/cscc/lib"
+fi
+if test "x$CYGPATH" != "x" ; then
+	CYG_CACHE=`"$CYGPATH" -w "${CYG_CACHE}"`
+fi
+
+AC_OUTPUT([
+Makefile
+include/Makefile
+include/arpa/Makefile
+include/assembly/Makefile
+include/bits/Makefile
+include/gnu/Makefile
+include/netinet/Makefile
+include/sys/Makefile
+libc/Makefile
+libc/ctype/Makefile
+libc/dirent/Makefile
+libc/locale/Makefile
+libc/malloc/Makefile
+libc/misc/Makefile
+libc/pthread/Makefile
+libc/pwd/Makefile
+libc/signal/Makefile
+libc/socket/Makefile
+libc/stdio/Makefile
+libc/stdlib/Makefile
+libc/string/Makefile
+libc/time/Makefile
+libc/unistd/Makefile
+libm/Makefile
+libpthread/Makefile
+samples/Makefile
+samples/ilrun.sh
+pnetc.spec])
+
+chmod +x "${srcdir}/samples/ilrun.sh" 2>/dev/null

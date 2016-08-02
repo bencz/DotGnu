@@ -1,0 +1,989 @@
+/*
+ * java_lvalue.tc - Semantic analysis for Java Identifiers and other l-values 
+ *
+ * Copyright (C) 2001, 2008, 2009  Southern Storm Software, Pty Ltd.
+ * Copyright (C) 2003  Gopal.V
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+%{
+
+/*
+ * Check to see if we are permitted to use the "this" expression
+ * to access an instance member.
+ */
+static void CheckForInstanceAccess(ILGenInfo *info, ILNode *node)
+{
+	ILNode_MethodDeclaration *caller;
+	caller = (ILNode_MethodDeclaration *)(info->currentMethod);
+	if(!caller || (caller->modifiers & IL_META_METHODDEF_STATIC) != 0)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "cannot access instance members in static methods");
+	}
+}
+
+/*
+ * Convert a field into a literal constant node if possible.
+ * Returns NULL if not possible.
+ */
+static ILNode *FieldToConstant(ILGenInfo *info, ILNode *node, ILField *field)
+{
+	ILConstant *constValue;
+	ILNode_ClassDefn *defn;
+
+	/* Make sure that semantic analysis has been performed on the item */
+	if(ILTypeIsEnum(ILClassToType(ILField_Owner(field))))
+	{
+		/* This is an enumerated type, so perform semantic analysis
+		   on the type instead of the field, so that we create the
+		   members with default values in the correct order */
+		defn = (ILNode_ClassDefn *)ILProgramItemToNode
+			(info, ILToProgramItem(ILField_Owner(field)));
+		if(defn != 0 && defn->visited == ILVisitMode_NotVisited)
+		{
+			JavaSemProgramItem(info, ILToProgramItem(ILField_Owner(field)));
+		}
+		else
+		{
+			/* We may already be inside the enumerated type, so go
+			   directly to the field to avoid circularity problems */
+			JavaSemProgramItem(info, ILToProgramItem(field));
+		}
+	}
+	else
+	{
+		/* Perform semantic analysis on the value directly */
+		JavaSemProgramItem(info, ILToProgramItem(field));
+	}
+
+	/* Get the constant value, if present */
+	if(ILField_IsLiteral(field))
+	{
+		if((constValue = ILConstantGetFromOwner(ILToProgramItem(field))) != 0)
+		{
+			/* Convert the constant into an appropriate node */
+			ILType *baseType = ILTypeGetEnumType(ILField_Type(field));
+			const unsigned char *value;
+			ILUInt32 valueLen;
+			value = ILConstantGetValue(constValue, &valueLen);
+			switch(ILConstantGetElemType(constValue))
+			{
+				case IL_META_ELEMTYPE_BOOLEAN:
+				{
+					/* Create a boolean constant */
+					if(value && valueLen > 0 && baseType == ILType_Boolean)
+					{
+						if(value[0])
+						{
+							return ILNode_True_create();
+						}
+						else
+						{
+							return ILNode_False_create();
+						}
+					}
+				}
+				break;
+
+				case IL_META_ELEMTYPE_I1:
+				case IL_META_ELEMTYPE_U1:
+				{
+					/* Create an 8-bit constant */
+					if(value && valueLen > 0)
+					{
+						if(baseType == ILType_Int8)
+						{
+							ILInt8 val = (ILInt8)(value[0]);
+							if(val >= 0)
+							{
+								return ILNode_Int8_create
+									((ILUInt64)(-((ILInt32)val)), 1, 0);
+							}
+							else
+							{
+								return ILNode_Int8_create
+									((ILUInt64)val, 0, 0);
+							}
+						}
+						else if(baseType == ILType_UInt8)
+						{
+							return ILNode_UInt8_create
+								((ILUInt64)(value[0]), 0, 0);
+						}
+					}
+				}
+				break;
+
+				case IL_META_ELEMTYPE_I2:
+				case IL_META_ELEMTYPE_U2:
+				{
+					/* Create a 16-bit constant */
+					if(value && valueLen > 1)
+					{
+						if(baseType == ILType_Int16)
+						{
+							ILInt16 val = (ILInt16)(IL_READ_INT16(value));
+							if(val >= 0)
+							{
+								return ILNode_Int16_create
+									((ILUInt64)(-((ILInt32)val)), 1, 0);
+							}
+							else
+							{
+								return ILNode_Int16_create
+									((ILUInt64)val, 0, 0);
+							}
+						}
+						else if(baseType == ILType_UInt16)
+						{
+							return ILNode_UInt16_create
+								((ILUInt64)(IL_READ_UINT16(value)), 0, 0);
+						}
+					}
+				}
+				break;
+
+				case IL_META_ELEMTYPE_CHAR:
+				{
+					/* Create a character constant */
+					if(value && valueLen > 1)
+					{
+						if(baseType == ILType_Char)
+						{
+							return ILNode_Char_create
+								((ILUInt64)(IL_READ_UINT16(value)), 0, 0);
+						}
+					}
+				}
+				break;
+
+				case IL_META_ELEMTYPE_I4:
+				case IL_META_ELEMTYPE_U4:
+				{
+					/* Create a 32-bit constant */
+					if(value && valueLen > 3)
+					{
+						if(baseType == ILType_Int32)
+						{
+							ILInt32 val = IL_READ_INT32(value);
+							if(val >= 0)
+							{
+								return ILNode_Int32_create
+									((ILUInt64)(ILUInt32)(-val), 1, 0);
+							}
+							else
+							{
+								return ILNode_Int32_create
+									((ILUInt64)val, 0, 0);
+							}
+						}
+						else if(baseType == ILType_UInt32)
+						{
+							return ILNode_UInt32_create
+								((ILUInt64)(IL_READ_UINT32(value)), 0, 0);
+						}
+					}
+				}
+				break;
+
+				case IL_META_ELEMTYPE_I8:
+				case IL_META_ELEMTYPE_U8:
+				{
+					/* Create a 64-bit constant */
+					if(value && valueLen > 7)
+					{
+						if(baseType == ILType_Int64)
+						{
+							ILInt64 val = IL_READ_INT64(value);
+							if(val < 0)
+							{
+								return ILNode_Int64_create
+									((ILUInt64)(-val), 1, 0);
+							}
+							else
+							{
+								return ILNode_Int64_create
+									((ILUInt64)val, 0, 0);
+							}
+						}
+						else if(baseType == ILType_UInt64)
+						{
+							return ILNode_UInt64_create
+								(IL_READ_UINT64(value), 0, 0);
+						}
+					}
+				}
+				break;
+
+				case IL_META_ELEMTYPE_R4:
+				{
+					/* Create a 32-bit floating-point constant */
+					if(value && valueLen > 3)
+					{
+						if(baseType == ILType_Float32)
+						{
+							return ILNode_Float32_create
+								(IL_READ_FLOAT(value));
+						}
+					}
+				}
+				break;
+
+				case IL_META_ELEMTYPE_R8:
+				{
+					/* Create a 64-bit floating-point constant */
+					if(value && valueLen > 7)
+					{
+						if(baseType == ILType_Float64)
+						{
+							return ILNode_Float64_create
+								(IL_READ_DOUBLE(value));
+						}
+					}
+				}
+				break;
+
+				case IL_META_ELEMTYPE_STRING:
+				{
+					/* Create a string constant */
+					if(value && ILTypeIsStringClass(baseType))
+					{
+						int posn = 0;
+						int len = 0;
+						char *newStr;
+						ILIntString interned;
+						while(posn < (int)valueLen)
+						{
+							len += ILUTF8WriteChar
+							  (0, ILUTF16ReadCharAsBytes
+								((const char *)value, (int)valueLen, &posn));
+						}
+						newStr = (char *)ILMalloc(len + 1);
+						if(!newStr)
+						{
+							CCOutOfMemory();
+						}
+						posn = 0;
+						len = 0;
+						while(posn < (int)valueLen)
+						{
+							len += ILUTF8WriteChar
+							  (newStr + len, ILUTF16ReadCharAsBytes
+								((const char *)value, (int)valueLen, &posn));
+						}
+						interned = ILInternString(newStr, len);
+						ILFree(newStr);
+						return ILNode_String_create(interned.string,
+													interned.len);
+					}
+				}
+				break;
+
+				case IL_META_ELEMTYPE_CLASS:
+				{
+					/* Create a "null" constant */
+					if(value &&
+					   ((valueLen == 4 && IL_READ_UINT32(value) == 0) ||
+					    (valueLen == 8 && IL_READ_UINT64(value) == 0)))
+					{
+						if(ILTypeAssignCompatible(info->image, 0, baseType))
+						{
+							return ILNode_Null_create();
+						}
+					}
+				}
+				break;
+			}
+
+			/* If we get here, then the constant is not compatible
+			   with the type of the field */
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "literal field has an incorrect constant value");
+			return 0;
+		}
+		else if(ILField_IsLiteral(field) &&
+		        ILTypeIsStringClass(ILField_Type(field)))
+		{
+			/* Sometimes the empty string constant is stored as a literal
+			   field with no value associated with it */
+			return ILNode_String_create(ILInternString("", 0).string, 0);
+		}
+		else
+		{
+			/* This is a literal without an actual constant value */
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "literal field does not have a constant value");
+			return 0;
+		}
+	}
+	else if(ILField_IsInitOnly(field))
+	{
+		/* Check for "DecimalConstantAttribute" values, which are
+		   attached to "readonly" fields of type "System.Decimal" */
+		ILType *decimalType = ILFindSystemType(info, "Decimal");
+		if(ILTypeIdentical(decimalType, ILField_Type(field)))
+		{
+			ILAttribute *attr = 0;
+			ILMethod *ctor;
+			const char *namespace;
+			const unsigned char *value;
+			ILUInt32 valueLen;
+			ILDecimal decValue;
+
+			while((attr = ILProgramItemNextAttribute(ILToProgramItem(field),
+													 attr)) != 0)
+			{
+				ctor = ILProgramItemToMethod(ILAttributeTypeAsItem(attr));
+				if(ctor && !strcmp(ILMethod_Name(ctor), ".ctor") &&
+				   !strcmp(ILClass_Name(ILMethod_Owner(ctor)),
+						   "DecimalConstantAttribute"))
+				{
+					namespace = ILClass_Namespace(ILMethod_Owner(ctor));
+					if(namespace &&
+					   !strcmp(namespace, "System.Runtime.CompilerServices"))
+					{
+						value = (const unsigned char *)
+							ILAttributeGetValue(attr, &valueLen);
+						if(value && valueLen == 18 &&
+						   value[0] == 0x01 && value[1] == 0x00 &&
+						   value[2] < 29 && (value[3] == 0x00 ||
+						   					 value[3] == 0x80))
+						{
+							decValue.flags =
+								(((ILUInt32)(value[2])) << 16) |
+								(((ILUInt32)(value[3])) << 24);
+							decValue.high = IL_READ_UINT32(value + 4);
+							decValue.middle = IL_READ_UINT32(value + 8);
+							decValue.low = IL_READ_UINT32(value + 12);
+							return ILNode_Decimal_create(decValue);
+						}
+					}
+				}
+			}
+		}
+
+		/* Load the contents of the read-only field using regular techniques */
+		return 0;
+	}
+	else
+	{
+		/* Regular static field */
+		return 0;
+	}
+}
+
+/*
+ * Get the type of the current class.  NULL if not possible.
+ */
+static ILType *CurrentClassType(ILGenInfo *info)
+{
+	if(info->currentClass)
+	{
+		ILClass *classInfo = ((ILNode_ClassDefn *)(info->currentClass))
+									->classInfo;
+		if(classInfo)
+		{
+			return ILClassToType(classInfo);
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+/*
+ * Check if the method is the psuedo method ".init" which is expanded
+ * into the constructor body inline.
+ */
+static int ILMethodIsPsuedoConstructor(ILMethod *method)
+{
+	ILType *signature=ILMethod_Signature(method);
+	ILUInt32 attrs=	(IL_META_METHODDEF_PRIVATE| IL_META_METHODDEF_HIDE_BY_SIG);
+
+	return (!strcmp(ILMethod_Name(method),".init") && 
+			((ILMethod_Attrs(method) & attrs) !=0) &&
+			(ILTypeNumParams(signature)==0) &&
+			ILTypeIdentical(ILTypeGetReturn(signature),ILType_Void));
+}
+
+
+/*
+ * Convert a semantic value into an l-value or r-value if necessary.
+ */
+static JavaSemValue SemToLRValue(ILNode *node, ILGenInfo *info, ILNode **parent,
+								 JavaSemValue value, const char *name,
+								 ILNode *expr, JavaSemValue *exprSem)
+{
+	ILNode *constNode;
+	ILMethod *method;
+	ILField *field;
+	int allowConst;
+	ILType *thisType;
+	ILType *type;
+
+	switch(JavaSemGetKind(value))
+	{
+		case JAVA_SEMKIND_FIELD:
+		{
+			/* Reference to a class field */
+			field = JavaSemGetField(value);
+			if(!(info->currentMethod))
+			{
+				/* We are performing semantic analysis of declarations,
+				   where only literals and types are allowed */
+				if(!ILField_IsStatic(field) || !ILField_IsLiteral(field))
+				{
+					CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "`%s' is not declared as a type in the current scope",
+					  name);
+					JavaSemSetType(value, ILType_Int32);
+					return value;
+				}
+			}
+
+			/* Create the final semantic type */
+			JavaSemSetLValue(value, ILField_Type(field));
+
+			/* Check the usage of "readonly" fields */
+			allowConst = 1;
+			if(ILField_IsInitOnly(field))
+			{
+				method = ((ILNode_MethodDeclaration *)(info->currentMethod))
+							->methodInfo;
+				if(method && JavaGetAccessScope(info, 1) == ILField_Owner(field))
+				{
+					/* The field is being used inside the class */
+					if(ILField_IsStatic(field) &&
+					   ILMethodIsStaticConstructor(method))
+					{
+						/* Static readonly used within static constructor */
+						allowConst = 0;
+					}
+					else if(!ILField_IsStatic(field) &&
+					        (ILMethodIsConstructor(method)||
+							ILMethodIsPsuedoConstructor(method)))
+					{
+						/* Instance readonly used within instance constructor.
+						   or the ".init" psuedo constructor
+						   Nothing needs to be done here */
+					}
+					else
+					{
+						/* The field is used elsewhere, so make it an r-value */
+						JavaSemSetRValue(value, ILField_Type(field));
+					}
+				}
+				else
+				{
+					/* The field is used elsewhere, so make it an r-value */
+					JavaSemSetRValue(value, ILField_Type(field));
+				}
+			}
+
+			/* Replace this identifier with a field access node */
+			if(ILField_IsStatic(field))
+			{
+				/* Convert the field into a constant node if possible */
+				if(allowConst &&
+				   (constNode = FieldToConstant(info, node, field)) != 0)
+				{
+					ILEvalValue evalValue;
+					*parent = constNode;
+					ILNode_EvalConst(constNode, info, &evalValue);
+					thisType = ILClassToType(ILField_Owner(field));
+					type = ILField_Type(field);
+					if(ILTypeIsEnum(thisType) &&
+					   ILTypeIdentical(type, ILTypeGetEnumType(thisType)))
+					{
+						/* The enum definition erroneously used the
+						   underlying type for the constant, instead
+						   of using the enum type.  Work around it */
+						type = thisType;
+					}
+					JavaSemSetConstant(value, type, evalValue);
+				}
+				else
+				{
+					*parent = ILNode_StaticField_create(field);
+				}
+			}
+			else if(expr)
+			{
+				*parent = ILNode_MemberField_create
+						(ILNode_MarkType_create
+							(expr, JavaSemGetType(*exprSem)), field);
+			}
+			else
+			{
+				CheckForInstanceAccess(info, node);
+				thisType = CurrentClassType(info);
+				if(thisType)
+				{
+					*parent = ILNode_MemberField_create
+							(ILNode_MarkType_create
+								(ILNode_This_create(), thisType), field);
+				}
+				else
+				{
+					*parent = ILNode_MemberField_create
+							(ILNode_This_create(), field);
+				}
+			}
+			yysetfilename(*parent, yygetfilename(node));
+			yysetlinenum(*parent, yygetlinenum(node));
+		}
+		break;
+
+		case JAVA_SEMKIND_METHOD_GROUP:
+		{
+			/* Reference to a method group */
+			if(!(info->currentMethod))
+			{
+				/* We are performing semantic analysis of declarations,
+				   which does not permit methods to be used as types */
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "`%s' is not declared as a type in the current scope",
+					  name);
+				JavaSemSetType(value, ILType_Int32);
+				return value;
+			}
+
+			/* Replace the node with either the object expression or "this" */
+			if(expr)
+			{
+				*parent = ILNode_MarkType_create(expr, JavaSemGetType(*exprSem));
+			}
+			else
+			{
+				thisType = CurrentClassType(info);
+				if(thisType)
+				{
+					*parent = ILNode_MarkType_create
+						(ILNode_This_create(), thisType);
+				}
+				else
+				{
+					*parent = ILNode_This_create();
+				}
+			}
+			yysetfilename(*parent, yygetfilename(node));
+			yysetlinenum(*parent, yygetlinenum(node));
+
+			/* Copy the "base" indication to the method group */
+			if(exprSem && JavaSemIsSuper(*exprSem))
+			{
+				JavaSemSetSuper(value);
+			}
+		}
+		break;
+	}
+	// TODO
+	return value;
+}
+
+%}
+/*
+ * Perform semantic analysis for singleton identifiers.
+ */
+ILNode_JSemAnalysis(ILNode_Identifier)
+{
+	JavaSemValue value;
+	ILScopeData *data;
+	unsigned long index;
+	ILNode_MethodDeclaration *method;
+	ILType *type;
+
+	/* Look for local variables in the current scope */
+	data = ILScopeLookup(info->currentScope, node->name, 1);
+	if(data && ILScopeDataGetKind(data) == IL_SCOPE_LOCAL)
+	{
+		index = ILScopeDataGetIndex(data);
+		method = (ILNode_MethodDeclaration *)(info->currentMethod);
+		if((index & JAVA_LOCAL_IS_ARG) == 0)
+		{
+			/* Local variable reference */
+			type = ILTypeGetLocal(method->localVarSig, index);
+			JavaSemSetLValue(value, type);
+			*parent = ILNode_LocalVar_create(index, ILTypeToMachineType(type));
+			yysetfilename(*parent, yygetfilename(node));
+			yysetlinenum(*parent, yygetlinenum(node));
+		}
+		else
+		{
+			/* Argument reference */
+			index &= ~JAVA_LOCAL_IS_ARG;
+			if((method->modifiers & IL_META_METHODDEF_STATIC) == 0)
+			{
+				ILGenGetParamInfo(method->methodInfo, 0,
+											 index, &type);
+			}
+			else
+			{
+				ILGenGetParamInfo(method->methodInfo, 0,
+											 index + 1, &type);
+			}
+			*parent = ILNode_ArgumentVar_create
+							(index, ILTypeToMachineType(type));
+			JavaSemSetLValue(value, type);
+		}
+		return value;
+	}
+#if TODO
+	else if(data && ILScopeDataGetKind(data) == IL_SCOPE_LOCAL_CONST)
+	{
+		method = (ILNode_MethodDeclaration *)(info->currentMethod);
+		constVar = (ILNode_JSemGuard *)(ILScopeDataGetData1(data));
+		*parent = constVar->expr;
+		JavaSemSetRValue(value, JavaSemGetType(constVar->value));
+		return value;
+	}
+#endif
+
+	value = JavaResolveSimpleName(info, (ILNode *)node, node->name, 0);
+	
+	/* Convert the result into an l-value or r-value and return it */
+	return SemToLRValue((ILNode *)node, info, parent, 
+							value, node->name, 0, 0);
+}
+
+/*
+ * Perform semantic analysis for qualified identifiers.
+ */
+ILNode_JSemAnalysis(ILNode_QualIdent)
+{
+	JavaSemValue value;
+	JavaSemValue value2;
+	const char *name;
+
+	/* Get the semantic value for the left part of the identifier */
+	value = ILNode_JSemAnalysis(node->left, info, &(node->left));
+
+	/* Resolve the member */
+	name = node->name;
+	value2 = JavaResolveMemberName(info, (ILNode *)node, value, name, 0);
+
+	/* Convert the result into an l-value or r-value and return it */
+	return SemToLRValue((ILNode *)node, info, parent, value2,
+						name, node->left, &value);
+}
+
+/*
+ * Perform semantic analysis for member access operators.
+ */
+ILNode_JSemAnalysis(ILNode_MemberAccess)
+{
+	JavaSemValue value;
+	JavaSemValue value2;
+	const char *name;
+	ILEvalValue evalue;
+
+	/* Get the semantic value for the left part of the identifier */
+	value = ILNode_JSemAnalysis(node->expr1, info, &(node->expr1));
+
+	/* Set the rvalue if it is a constant expression */
+	if(yyisa(node->expr1,ILNode_Constant))
+	{
+		if(ILNode_EvalConst(node->expr1,info,&evalue))
+		{
+			/* Set the RValue to the type .. to handle Boxing later on*/
+			if(JavaSemGetType(value)==ILType_Null)
+			{
+				JavaSemSetRValue(value,ILValueTypeToType(info,evalue.valueType));
+			}
+			else
+			{
+				JavaSemSetRValue(value,JavaSemGetType(value));
+			}
+		}
+	}
+
+	/* Convert the second subexpression into a name */
+	name = ILQualIdentName(node->expr2, 0);
+
+	/* Check for the special case of "array.Length" */
+	if(JavaSemIsValue(value) && !strcmp(name, "Length") &&
+	   ILType_IsSimpleArray(JavaSemGetType(value)))
+	{
+		*parent = ILNode_ArrayLength_create(node->expr1);
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		*parent = ILNode_CastSimple_create(*parent, ILMachineType_Int32);
+		JavaSemSetRValue(value, ILType_Int32);
+		return value;
+	}
+	else if(JavaSemIsValue(value) && !strcmp(name, "length") &&
+	   ILType_IsSimpleArray(JavaSemGetType(value)))
+	{
+		*parent = ILNode_ArrayLength_create(node->expr1);
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		*parent = ILNode_CastSimple_create(*parent, ILMachineType_Int32);
+		JavaSemSetRValue(value, ILType_Int32);
+		return value;
+	}
+
+	/* Resolve the member */
+	value2 = JavaResolveMemberName(info, (ILNode *)node, value, name, 0);
+
+	if (JavaSemGetKind(value2) != JAVA_SEMKIND_VOID)
+	{
+		/* Convert the result into an l-value or r-value and return it */
+		return SemToLRValue((ILNode *)node, info, parent, value2,
+					    name, node->expr1, &value);
+	}
+	return JavaSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for the "new scope" statement.
+ */
+ILNode_JSemAnalysis(ILNode_NewScope)
+{
+	ILScope *savedScope = info->currentScope;
+	if(!(node->scope))
+	{
+		node->scope = ILScopeCreate(info, savedScope);
+	}
+	info->currentScope = node->scope;
+	StmtSem(node->stmt, info, &(node->stmt));
+	info->currentScope = savedScope;
+	return JavaSemValueDefault;
+}
+
+%{
+
+/*
+ * Wrap an array index expression in an overflow conversion to "int".
+ */
+static ILNode *ArrayIndexToInt(ILGenInfo *info, ILNode *node,
+							   ILNode **parent, ILType *currentType)
+{
+	ILNode *result;
+	if(info->overflowInsns)
+	{
+		/* We are already in overflow mode, so just wrap it */
+		result = ILNode_CastSimple_create(node, ILMachineType_Int32);
+	}
+	else
+	{
+		/* The index is not being computed in overflow mode,
+		   but we want an overflow conversion for the cast */
+		result = ILNode_Overflow_create
+					(ILNode_CastSimple_create
+						(ILNode_NoOverflow_create(node), ILMachineType_Int32));
+	}
+	*parent = result;
+	return result;
+}
+
+/*
+ * Coerce an array index to "int", "uint", "long", or "ulong".
+ */
+static void CoerceArrayIndex(ILGenInfo *info, ILNode **node,
+							 ILNode **parent, ILType *type)
+{
+	if(ILCoerce(info, *node, parent, type, ILType_Int32, 1))
+	{
+		*node = ArrayIndexToInt
+			(info, *parent, parent, ILType_Int32);
+	}
+	else if(ILCoerce(info, *node, parent, type, ILType_UInt32, 1))
+	{
+		*node = ArrayIndexToInt
+			(info, *parent, parent, ILType_UInt32);
+	}
+	else if(ILCoerce(info, *node, parent, type, ILType_Int64, 1))
+	{
+		*node = ArrayIndexToInt
+			(info, *parent, parent, ILType_Int64);
+	}
+	else if(ILCoerce(info, *node, parent, type, ILType_UInt64, 1))
+	{
+		*node = ArrayIndexToInt
+			(info, *parent, parent, ILType_Int64);
+	}
+	else
+	{
+		CCErrorOnLine(yygetfilename(*node), yygetlinenum(*node),
+					  "no conversion from `%s' to `int'",
+					  JavaTypeToName(type));
+	}
+}
+
+static int GetArrayDepth(ILType *array)
+{
+	int dims=0;
+	while(ILType_IsArray(array))
+	{
+		array=ILType_ElemType(array);
+		dims++;
+	}
+	return dims;
+}
+%}
+
+/*
+ * Perform semantic analysis for an array access operation.
+ */
+ILNode_JSemAnalysis(ILNode_ArrayAccess)
+{
+	JavaSemValue value;
+	JavaEvalArg *args;
+	int numArgs, argNum;
+
+	/* Perform semantic analysis on the array expression */
+	if(!JavaSemExpectValue(node->array, info, &(node->array), &value))
+	{
+		CCErrorOnLine(yygetfilename(node->array), yygetlinenum(node->array),
+					  "array expected");
+		JavaSemSetLValue(value, ILType_Int32);
+		return value;
+	}
+
+	/* Perform semantic analysis on the index argument list */
+	numArgs = JavaEvalArguments(info, node->indices, &(node->indices), &args);
+	if(numArgs < 0)
+	{
+		JavaSemSetLValue(value, ILType_Int32);
+		return value;
+	}
+
+	/* Is this an array element or an indexer access? */
+	if(ILType_IsArray(JavaSemGetType(value)))
+	{
+		/* All arguments must be coercable to one of "int", "uint",
+		   "long", or "ulong", and are converted to "int" */
+		for(argNum = 0; argNum < numArgs; ++argNum)
+		{
+			CoerceArrayIndex(info, &(args[argNum].node), args[argNum].parent,
+			            	 args[argNum].type);
+		}
+		
+		/* Check the array's rank */
+		if(numArgs > GetArrayDepth(JavaSemGetType(value)))
+		{
+			CCErrorOnLine(yygetfilename(node->indices),
+						  yygetlinenum(node->indices),
+						  "incorrect number of indices for `%s'",
+						  JavaTypeToName(JavaSemGetType(value)));
+		}
+
+		/* Store the type information in the node for the code generator */
+		node->arrayType = JavaSemGetType(value);
+		node->elemType = node->arrayType;
+
+		for(argNum=0 ; argNum<numArgs; argNum++)
+		{
+			node->elemType=ILType_ElemType(node->elemType);	
+		}
+
+		/* Construct the semantic value for the element type */
+		JavaSemSetLValue(value, node->elemType);
+	}
+	else
+	{
+		/* Not an appropriate value for array or indexer access */
+		CCErrorOnLine(yygetfilename(node->array), yygetlinenum(node->array),
+					  "array expected");
+		JavaSemSetLValue(value, ILType_Int32);
+	}
+
+	/* Free the argument list and return the element type */
+	JavaEvalFreeArguments(args);
+	return value;
+}
+
+ILNode_JSemAnalysis(ILNode_This)
+{
+	JavaSemValue value;
+	ILNode_MethodDeclaration *method;
+	ILType *type;
+
+	/* Find the method declaration */
+	method = (ILNode_MethodDeclaration *)(info->currentMethod);
+
+	/* If the method is static, then we cannot use "this" */
+	if((method->modifiers & IL_META_METHODDEF_STATIC) != 0)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "cannot use `this' in static methods");
+	}
+
+	/* Get the type from the method's class and return */
+	type = ILClassToType(ILMethod_Owner(method->methodInfo));
+	if(ILTypeIsValue(type) && !(info->outputIsJava))
+	{
+		JavaSemSetLValue(value, type);
+	}
+	else
+	{
+		JavaSemSetRValue(value, type);
+	}
+	return value;
+}
+
+/*
+ * Perform semantic analysis for base member access operators.
+ */
+ILNode_JSemAnalysis(ILNode_BaseAccess)
+{
+	JavaSemValue value;
+	JavaSemValue value2;
+	ILNode_MethodDeclaration *caller;
+	ILClass *classInfo;
+	ILNode *thisExpr;
+	const char *name;
+
+	/* Bail out if "base" is used within a static method */
+	caller = (ILNode_MethodDeclaration *)(info->currentMethod);
+	if(!caller || (caller->modifiers & IL_META_METHODDEF_STATIC) != 0)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  "cannot use base reference in a static method");
+		JavaSemSetType(value, ILType_Int32);
+		return value;
+	}
+
+	/* Find the parent class to start searching from */
+	classInfo = ILClass_ParentClass(ILMethod_Owner(caller->methodInfo));
+	if(!classInfo)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  "cannot use base reference in `System.Object'");
+		JavaSemSetType(value, ILType_Int32);
+		return value;
+	}
+
+	/* Get the semantic value for the "base" part of the node */
+	JavaSemSetRValue(value, ILClassToType(classInfo));
+	JavaSemSetSuper(value);
+
+	/* Construct a dummy "this" expression to represent the object */
+	thisExpr = ILNode_This_create();
+
+	/* Resolve the member */
+	name = ILQualIdentName(node->expr, 0);
+	value2 = JavaResolveMemberName(info, (ILNode *)node, value, name, 0);
+
+	/* Convert the result into an l-value or r-value and return it */
+	return SemToLRValue((ILNode *)node, info, parent, value2,
+						name, thisExpr, &value);
+}

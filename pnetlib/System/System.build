@@ -1,0 +1,91 @@
+<?xml version="1.0"?>
+<project name="pnetlib System" default="all">
+	<target name="all">
+
+		<!-- ****************************************************** -->
+		<!-- *** See Makefile.am for some important build notes *** -->
+		<!-- ****************************************************** -->
+
+		<!-- Build the System.dll library for the first time -->
+		<compile output="first/System.dll"
+				 target="library"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="${CONFIG_DEBUG_LINES}">
+
+			<sources>
+				<includes name="**/*.cs"/>
+				<excludes if="${ECMA_COMPAT}" 
+							name="Text/RegularExpressions/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<file name="../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../runtime/mscorlib.dll"/>
+			</references>
+
+			<resources>
+				<includes if="${CONFIG_RUNTIME_INFRA}"
+						  name="../resources/en_US/System/System.resources"/>
+			</resources>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=neutral"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+	</target>
+
+	<target name="phase-two">
+
+		<!-- Build the actual System.dll library -->
+		<compile output="System.dll"
+				 target="library"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="${CONFIG_DEBUG_LINES}"
+				 install="true"
+				 installasdefault="${INSTALL_AS_DEFAULT}">
+
+			<define name="SECOND_PASS" value="true"/>
+
+			<sources>
+				<includes name="**/*.cs"/>
+				<excludes if="${ECMA_COMPAT}" 
+							name="Text/RegularExpressions/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="../System.Xml/System.Xml.dll"/>
+				<file name="first/System.dll"/>
+				<file name="../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<file name="../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../runtime/mscorlib.dll"/>
+			</references>
+
+			<resources>
+				<includes if="${CONFIG_RUNTIME_INFRA}"
+						  name="../resources/en_US/System/System.resources"/>
+			</resources>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=neutral"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+	</target>
+</project>

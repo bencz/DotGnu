@@ -1,0 +1,28 @@
+#
+# Exception.txt - Resources for exception messages.
+#
+# Copyright (C) 2001, 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Exception_Web=Ha ocorregut una fallida durant una operació relacionada amb Internet
+Exception_Protocol=Ha ocorregut un error de protocol
+Exception_Disposed=Aquesta instància no està disposada
+Exception_InvalidEnum=Invalid enumerated value for argument
+Exception_Checkout=Ha ocorregut un error comprobant el fitxer
+Exception_CheckoutCanceled=L'operació de comprovació ha estat cancel·lada
+Exception_BufferOverflow=S'ha superat un buffer intern (overflow)
+Exception_License=S'ha ofert una llicència incorrecte
+Exception_Cookie=No s'ha pogut afegir la 'cookie' al contenidor.

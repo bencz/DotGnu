@@ -1,0 +1,86 @@
+.\" Copyright (c) 2002 Southern Storm Software, Pty Ltd.
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.TH clrwrap 1 "15 June 2002" "Southern Storm Software" "Portable.NET Development Tools"
+.SH NAME
+clrwrap \- wrap a CLR-compatible executable
+.SH SYNOPSIS
+\fBclrwrap\fR [ \-\-clr=\fICLRNAME\fR ] \fIscript\fR ...
+.SH DESCRIPTION
+.B Clrwrap
+is used to make an IL program Unix-friendly by placing
+a small wrapper script in the same directory as the IL `.exe' file.
+It also makes the choice of Common Language Runtime (CLR) dynamic,
+so that the same installed application can be invoked by multiple
+CLR implementations.  The wrapper script contains something like:
+.RS
+.nf
+\fC
+#!/usr/bin/env clrwrap
+program.exe
+\fR
+.fi
+.RE
+where `\fCprogram.exe\fR' is the name of the `.exe' file, relative
+to the location of the script.  Remaining lines in the wrapper script
+are ignored, and are reserved for future use.  Comment lines may appear
+in the wrapper script, beginning with `\fC#\fR'.  Empty lines are also
+comment lines.
+
+If the wrapper script does not specify a `.exe' file, then the IL program
+is assumed to be `\fCscript.exe\fR' where `\fCscript\fR' is the name
+of the script.
+
+When the \fBclrwrap\fR program runs, it searches for an appropriate CLR as
+follows:
+.TP
+1.
+Look for the `\fB--clr=\fICLRNAME\fR' option on the command-line.  This
+option is removed from the command-line and \fICLRNAME\fR is invoked as
+the CLR.
+.TP
+2.
+Look for the \fCCLR_PROGRAM\fR environment variable.
+.TP
+3.
+Use \fC/etc/alternatives/clr\fR if it is present (for Debian compatibility).
+.TP
+4.
+Use the compiled-in default (normally \fBilrun\fR).
+.PP
+The \fBclrwrap\fR program can also be used to launch ordinary IL binaries.
+For example:
+.RS
+.nf
+\fC
+clrwrap program.exe
+\fR
+.fi
+.RE
+The same sequence as above is used to detect the user's preferred CLR,
+and no wrapper script is required.  The \fBclrwrap\fR program automatically
+detects whether it is supplied a wrapper script or a real IL executable.
+.SH OPTIONS
+.TP
+.B \-\-clr=\fICLRNAME\fR
+Specify the name of the Common Language Runtime to use to execute
+the program.  [Windows only: if \fICLRNAME\fR is `\fBms\fR', then use
+the native Microsoft CLR.]
+.SH "AUTHOR"
+Written by Southern Storm Software, Pty Ltd.
+
+http://www.southern-storm.com.au/
+.SH "SEE ALSO"
+ilrun(1)

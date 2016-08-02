@@ -1,0 +1,60 @@
+#
+# Xsharp.txt - Default English resources for the Xsharp.dll library.
+#
+# Copyright (C) 2002, 2003  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+X_Exception=Ha ocorregut una excepció no especificada
+X_LibraryNotPresent=No s'ha pogut trobar la llibreria d'X/Windows
+X_CannotOpenTo=No s'ha pogut obrir el visor: {0}
+X_CannotOpen=No s'ha pogut obrir el visor
+X_ConnectionLost=S'ha perdut la conexió amb el servidor X
+X_WidgetDestroyed=El widget ha estat destruït
+X_PixmapDestroyed=El pixmap ha estat destruït
+X_BitmapDestroyed=El bitmap ha estat destruït
+X_GraphicsDestroyed=L'objecte de grafics ha estat destruït
+X_InvalidOperation=Ha ocorregut una operació invàlida sobre les X
+X_BellPercent=El percentatge de la campana ha de entre -100 i 100
+X_PointCoordRange=Les coordenades del punt estan fora de rang
+X_RectCoordRange=Les coordenades del rectangle estan fora de rang
+X_PolygonNeeds3Pts=Els poligons necessiten almenys tres punts
+X_InvalidPosition=Posició invàlida per al widget
+X_InvalidSize=Mida incorrecte pel widget
+X_FillRule=Norma incorrecte per omplir: {0}
+X_Function=Valor incorrecte per la funció: {0}
+X_LineWidth=Ample de línea invàlid: {0}
+X_LineStyle=Tipus de línea incorrecte: {0}
+X_CapStyle=Tipus incorrecte de punta de linea: {0}
+X_JoinStyle=Estil d'unió de linies incorrecte: {0}
+X_ArcMode=Mode d'arc incorrecte: {0}
+X_GraphicsIsOutputOnly=Els objectes gràfics només poden ser creats per widgets d'entrada/sortida
+X_NonRootParent=El pare no pot ser la finestra arrel
+X_NonRootOperation=L'operació demanada no pot ser realitzada en la finestra arrel
+X_NonTopLevelOperation=L'operació demanada no pot ser realitzada en widgets de primer plà
+X_NonPlaceholderOperation=L'operació no pot ser realizada sobre widgets
+X_BadEnumeratorPosition=L'enumerador no esta posicionat en un element
+X_InvalidPixmapSize=Mida incorrecte del pixmap
+X_InvalidBitmapSize=Mida incorrecte del bitmap
+X_InvalidBitmapBits=Bits incorrectes al bitmap
+X_Need2Points=Es necessiten almenys 2 punts a l'array
+X_Need1Point=Es necessita almenys 1 punt a l'array
+X_MaxReqSizeExceeded=L'array excedeix el màxim de peticions del servidor X
+X_Need1Rect=Es necessita almenys 1 rectangle en l'array
+X_InvalidIcon=Format incorrecte per l'icona
+X_InvalidFocusChild=El widget del fill no pot ser definit com una finestra en primer plà
+X_InvalidReparent=Reparent would create a circularity in the widget tree
+X_NonNegative=No estan permesos valors negatius en aquest contexte
+X_InvalidImageFile=No s'ha pogut obrir la imatge especificada

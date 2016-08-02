@@ -1,0 +1,35 @@
+#
+# Serialize.txt - Resources for serialization-related errors and exceptions.
+#
+# Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Serialize_NoObjectID=No s'ha assignat cap identificador per l'objecte
+Serialize_BadType=Tipus incorrecte per: SerializationInfo.AddValue
+Serialize_AlreadyPresent=Aquest nom ja existeix
+Serialize_NotField=El descriptor del membre no és un objecte FieldInfo
+Serialize_NotClrType=Cal que sigui del tipus motor de runtime
+Serialize_MemberDataMismatch=El membre i les arrays són de mides diferents
+Serialize_BadObjectID=Identificador d'objecte invàlid
+Serialize_AlreadyRegistered=L'identificador d'objecte ja ha estat registrat amb un objecte diferent
+Serialize_MissingFixup=Pegat no trobat durant la deserialització
+Serialize_BadFixup=El pegat no ha pogut ser aplicat
+Serialize_StateMissing=Alguns dels estats requerits de serialització no estan
+Serialize_KeyValueMismatch=La clau i les arrays per la taula hash són de mides diferents
+Serialize_UnknownAssembly=S'ha especificat un ensamblat desconegut
+Serialize_DelegateTargetMismatch=L'objectiu delegat no és del tipus esperat
+Serialize_DelegateNotPublic=El metode delegat no és public
+Serialize_CannotSerialize=No es pot serialitzar {0}

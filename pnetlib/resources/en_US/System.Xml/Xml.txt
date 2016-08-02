@@ -1,0 +1,64 @@
+#
+# Xml.txt - Resources for xml exception messages.
+#
+# Copyright (C) 2001, 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Xml_ArgumentException=Invalid argument ({0}) supplied.
+Xml_AttrAlreadySet=The specified attribute has already been set on an element
+Xml_AttrCollectionWrongNode=Wrong type of node for an attribute collection
+Xml_BooleanFormat=Invalid format for boolean value
+Xml_CannotClone=Cannot clone this type of node
+Xml_CannotInsert=Cannot insert the specified node at the given location
+Xml_CannotRemove=Cannot remove the specific node
+Xml_CannotSetInnerXml=Cannot set the inner XML for this node type
+Xml_CannotSetValue=Cannot set the value for this node type
+Xml_Default=An XML error has occured
+Xml_IncorrectNode=Node was unexpected at this point in the XML input
+Xml_InvalidAttributeIndex=Invalid attribute index value
+Xml_InvalidEncoding=Invalid encoding attribute value
+Xml_InvalidEntityRef=Invalid entity reference name
+Xml_InvalidEntityHandling=Invalid entity handling value
+Xml_InvalidName=Name is not in a valid XML format
+Xml_InvalidNamespace=Invalid namespace specified
+Xml_InvalidNamespaceURI=Invalid namespace URI specified
+Xml_InvalidNodeType=Invalid node type
+Xml_InvalidPrefix=The specified prefix is invalid
+Xml_InvalidQuoteChar=Invalid quote character
+Xml_InvalidReadState=Invalid state for specified read operation
+Xml_InvalidSpecialAttribute=Invalid name for a special attribute
+Xml_InvalidStandalone=Invalid standalone attribute value
+Xml_InvalidSurrogate=Invalid surrogate character pair
+Xml_InvalidValidationType=Invalid validation type value
+Xml_InvalidVersion=Invalid XML version - must be 1.0
+Xml_InvalidWhitespace=Invalid whitespace string
+Xml_InvalidWhitespaceHandling=Invalid whitespace handling value
+Xml_InvalidWriteState=Invalid state for specified write operation
+Xml_InvalidXmlWritten=Invalid XML data sequence written
+Xml_IsAncestor=Attempt to add an ancestor as a child
+Xml_MustBeStream=Object type must be null or typeof(Stream)
+Xml_NamespacesNotSupported=Namespaces are not supported by this writer
+Xml_NoRootElement=The document does not contain a root element
+Xml_NotAttrCollectionMember=The reference node is not a member of the collection
+Xml_NotSameDocument=The specified nodes are not in the same document
+Xml_NotTextReader=The specified XmlReader is not an XmlTextReader
+Xml_ReadOnly=The specified node is read-only
+Xml_ReaderClosed=XML reader has already been closed or does not exist
+Xml_ReaderError=An error was detected in the input XML stream
+Xml_RefNotChild=The reference node is not a child of the specified parent
+Xml_UnexpectedEOF=The end of the XML input stream was encountered unexpectedly
+Xml_UnspecifiedUri=No URI was specified
+Xml_WrongNameTable=A wrong XmlNameTable has been used

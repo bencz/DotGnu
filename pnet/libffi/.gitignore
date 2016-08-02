@@ -1,0 +1,15 @@
+config.cache
+Makefile
+stamp-h
+config.status
+libtool
+fficonfig.h
+config.log
+*.la
+*.lo
+.libs
+.deps
+ffitest
+autom4te.cache
+fficonfig.h.in
+stamp-h1

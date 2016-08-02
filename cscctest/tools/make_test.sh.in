@@ -1,0 +1,94 @@
+#!/bin/sh
+#
+# make_test.sh - Helper script for making test output files.
+#
+# Copyright (C) 2001, 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+# Parameters from the configuration process.
+CSCC="@CSCC@"
+CSCC_SYSTEM_FLAGS="@CSCC_SYSTEM_FLAGS@"
+
+# Command to use to invoke "cscc".
+CSCC_INVOKE="${CSCC} ${CSCC_SYSTEM_FLAGS}"
+
+# Options to pass to "cscc".
+CSCC_FLAGS='-Wall -funsafe -nostdlib -fbuiltin-library'
+
+# Check the command-line arguments.
+if test -z "$1" ; then
+	echo "Usage: $0 testname"
+	exit 1
+fi
+if test ! -f "$1" ; then
+	echo "$1: No such file or directory"
+	exit 1
+fi
+
+# Qualify the input file with a directory name.
+if test "$1" != `basename "$1"` ; then
+	FILE="$1"
+else
+	FILE="./$1"
+fi
+
+# Determine the base name to use for output files.
+CTEST="no"
+case "$FILE" in
+	*.cs)	BASE=`dirname "$FILE"`/`basename "$FILE" .cs` ;;
+	*.java)	BASE=`dirname "$FILE"`/`basename "$FILE" .java` ;;
+	*.c)	BASE=`dirname "$FILE"`/`basename "$FILE" .c`
+			CTEST="yes" ;;
+	*)		echo "$1: Do not know how to test this type of file"
+			exit 1 ;;
+esac
+
+# Run the compiler and determine which output files to create or remove.
+if ${CSCC_INVOKE} ${CSCC_FLAGS} -o "${BASE}.il" -S "$FILE" >"${BASE}.err" 2>&1 ; then
+	if test ! -s "${BASE}.err" ; then
+		# Test should only produce assembly code.
+		rm -f "${BASE}.err"
+	fi
+else
+	# Test should only produce errors.
+	rm -f "${BASE}.il"
+fi
+
+if test "$CTEST" = "no" ; then
+	# Run the compiler again to determine the JVM output files.
+	if ${CSCC_INVOKE} ${CSCC_FLAGS} -mjvm -o "${BASE}.jl" -S "${FILE}" >"${BASE}.jerr" 2>&1 ; then
+		if test ! -s "${BASE}.jerr" ; then
+			# Test should only produce assembly code.
+			rm -f "${BASE}.jerr"
+		fi
+	else
+		# Test should only produce errors.
+		rm -f "${BASE}.jl"
+	fi
+else
+	# Run the compiler again to determine the 32-bit C output files.
+	if ${CSCC_INVOKE} ${CSCC_FLAGS} -m32bit-only -o "${BASE}.3il" -S "$FILE" >"${BASE}.3err" 2>&1 ; then
+		if test ! -s "${BASE}.3err" ; then
+			# Test should only produce assembly code.
+			rm -f "${BASE}.3err"
+		fi
+	else
+		# Test should only produce errors.
+		rm -f "${BASE}.3il"
+	fi
+fi
+
+exit 0

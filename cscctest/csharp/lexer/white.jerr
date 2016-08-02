@@ -1,0 +1,9 @@
+./white.cs:24: parse error at or near `x'
+./white.cs:27: parse error at or near `y'
+./white.cs:30: parse error at or near `z'
+./white.cs:33: parse error at or near `w'
+./white.cs:36: parse error at or near `v'
+./white.cs:39: parse error at or near `u'
+./white.cs:42: parse error at or near `Â'
+./white.cs:45: parse error at or near `â'
+./white.cs:45: warning: file contains no declarations

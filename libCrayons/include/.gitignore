@@ -1,0 +1,7 @@
+Makefile
+Makefile.in
+CrayonsConfig.h
+CrayonsConfig.h.in
+CrayonsFeatures.h
+stamp-h*
+.deps

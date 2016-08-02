@@ -1,0 +1,15 @@
+./fixed1.cs:23: unsafe method declaration not permitted with Java output
+./fixed1.cs:27: unsafe `fixed' statement not permitted with Java output
+./fixed1.cs:27: `fixed' disallowed when compiling to Java bytecode
+./fixed1.cs:31: unsafe `fixed' statement not permitted with Java output
+./fixed1.cs:31: `fixed' disallowed when compiling to Java bytecode
+./fixed1.cs:34: unsafe method declaration not permitted with Java output
+./fixed1.cs:38: unsafe `fixed' statement not permitted with Java output
+./fixed1.cs:38: `fixed' disallowed when compiling to Java bytecode
+./fixed1.cs:42: unsafe `fixed' statement not permitted with Java output
+./fixed1.cs:42: `fixed' disallowed when compiling to Java bytecode
+./fixed1.cs:45: unsafe method declaration not permitted with Java output
+./fixed1.cs:49: unsafe `fixed' statement not permitted with Java output
+./fixed1.cs:49: `fixed' disallowed when compiling to Java bytecode
+./fixed1.cs:53: unsafe `fixed' statement not permitted with Java output
+./fixed1.cs:53: `fixed' disallowed when compiling to Java bytecode

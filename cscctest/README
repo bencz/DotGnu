@@ -1,0 +1,154 @@
+Portable.NET Compiler Regression Test Suite
+-------------------------------------------
+
+This package contains regression tests for the Portable.NET compiler,
+"cscc".  It supports tests for both C# and Java, although there are
+no Java tests at present because we don't yet have a Java language
+plug-in for "cscc".
+
+To use this test suite, it is first necessary to build and install
+a copy of Portable.NET.  It can be obtained from the following site:
+
+    http://www.southern-storm.com.au/portable_net.html
+
+If you obtained the test suite from the Portable.NET CVS server, then
+you will need to do the following:
+
+    ./auto_gen.sh
+
+This isn't necessary with the .tar.gz release version.
+
+Then configure the test suite using the one of the following commands:
+
+    ./configure
+    ./configure --with-pnet=DIR
+
+Use the first if you did a "make install" after building Portable.NET.
+Otherwise use the second case, with "DIR" pointing at the directory
+that contains the source code for Portable.NET.  e.g.
+
+    ./configure --with-pnet=../pnet-0.3.2
+
+To run the tests, use one of the following (both are equivalent):
+
+    make
+    make check
+
+How the tests work
+------------------
+
+Each test consists of a source file, plus a number of output files.
+A shell script runs the compiler on the source file and compares the
+result with the pre-existing output files.  If there is a difference,
+the test fails.
+
+The compiler is run twice for each test: once to generate IL output,
+and a second time to generate JVM output.  Errors and warnings are
+collected and compared against the expected list of messages.
+
+    file.cs      Source to be compiled for C# tests
+    file.java    Source to be compiled for Java tests
+    file.il      IL assembly that is expected (if no compile errors)
+    file.err     Errors and warnings for the IL compile
+    file.jl      JVM assembly that is expected (if no compile errors)
+    file.jerr    Errors and warnings for the JVM compile
+
+The tests compile to assembly code, because it is easier to compare
+assembly streams using diff.  Binary IL files are always different,
+because they contain a unique GUID that is changed every time the
+compiler is run.  This makes binary comparison extremely difficult.
+
+It is entirely possible that the ".jerr" file may be different from
+the ".err" file.  C# includes some "unsafe" constructs that cannot
+be compiled to JVM bytecode.  These examples will succeed in the
+IL compile, but give an error in the JVM compile.  For an example,
+see the "csharp/expr/sizeof1.cs" test case.
+
+How to construct a new test case
+--------------------------------
+
+First, place the source file that you wish to test in an appropriate
+subdirectory of the test suite.  e.g. "csharp/expr/mytest.cs" for
+a new C# expression test case.
+
+Second, force the system to build the output files:
+
+    cd csharp/expr
+    ../../tools/make_test.sh mytest.cs
+
+This will run the compiler twice and produce the appropriate output
+files depending upon whether the test gave errors or not.  If you
+re-run "make_test.sh" later, it will overwrite the output files with
+the new contents.
+
+Third, manually inspect the output files to confirm that they do indeed
+contain what you expect to see.  Don't forget to check for core dumps!
+
+If the output files contain what you expect, then the test has been
+successful.  If not, then either you have a bug in your source file,
+or there is a bug in the compiler that needs to be fixed.
+
+Adding the test case to the suite
+---------------------------------
+
+Once the test is producing the output that you expect to see, and
+all relevant bugs have been fixed, add the source file to the "TESTS"
+variable in the directory's "Makefile.am" file.
+
+After this, use "make" or "make check" to run the test and compare
+the new behaviour with the expected output.
+
+What to do if a test produces incorrect output
+----------------------------------------------
+
+There are two answers to this.  You can submit the test case data
+to the Portable.NET developers as a bug report.  Or you can try to
+fix the problem yourself, and then submit the test case along with
+your patch to fix the compiler.
+
+If you submit a patch, then make sure that you have done a complete
+"make check" on the entire test suite to verify that your fix didn't
+break something else that used to work.
+
+When reporting bugs, please provide the following information:
+
+    - The source for a test case that demonstrates the bug.
+    - A description of why you think the output is incorrect.
+    - The platform (OS and CPU) that caused the problem.
+	- The version of Portable.NET that you tested against.
+    - Patch data for compiler fixes, if appropriate.
+
+Bugs should be reported through the Tech Support Manager on Savannah:
+
+	http://savannah.gnu.org/support/?group_id=353
+
+Patches should be submitted through the Patch Manager on Savannah:
+
+    http://savannah.gnu.org/patch/?group_id=353
+
+Why would I submit a test case that produces correct output?
+------------------------------------------------------------
+
+The test suite has a number of purposes:
+
+    - Locating bugs in the implementation and fixing them.
+    - Regressing previously fixed bugs to ensure that something
+      didn't get "unfixed" while fixing other issues.
+    - Exercising all possible programming language constructs.
+
+The last is very useful.  Both to ensure that the entire language
+is implemented correctly and to ensure that fixes to legitimate
+bugs don't change the behaviour of the language unexpectedly.
+
+If you make a test that works just fine, and it exercises something
+that the test suite doesn't cover yet, then please submit it to the
+developers.
+
+Other notes on producing test cases
+-----------------------------------
+
+The compiler is run without the supporting pnetlib library.  Therefore,
+test cases cannot rely upon any definitions from pnetlib.  The purpose of
+this test suite is to regress the compiler, not the library.  The pnetlib
+library has a separate regression test suite that can be used to test
+the interaction between the compiler and pnetlib facilities.

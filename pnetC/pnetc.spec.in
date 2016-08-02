@@ -1,0 +1,49 @@
+Name:		pnetc
+Summary:	C library for DotGNU Portable .NET
+Version:	@VERSION@
+Release:	custom
+
+Group:		System Environment/Base
+License:	LGPL
+URL:		http://www.dotgnu.org
+Source:		http://www.southern-storm.com.au/download/pnetC-%{version}.tar.gz  
+BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+
+Requires:	pnet-interpreter >= 0:@VERSION@
+Requires:	pnet-tools >= 0:@VERSION@
+
+BuildRequires:	pnet-compiler >= 0:@VERSION@
+BuildRequires:	pnet-tools >= 0:@VERSION@
+BuildRequires:	pnet-interpreter >= 0:@VERSION@
+BuildRequires:	pnetlib >= 0:@VERSION@
+
+BuildArch:	noarch
+
+%description
+This is DotGNU's implementation of the C Standard Library.
+It is designed to be used with programs compiled for the
+CLR and locally executed in the pnet-interpreter.
+
+%prep
+%setup -q -n pnetC-%{version}
+
+%build
+%configure
+make %{?_smp_mflags}
+
+%install
+test "${RPM_BUILD_ROOT}" = "/" || rm -rf ${RPM_BUILD_ROOT}
+make install DESTDIR=${RPM_BUILD_ROOT}
+
+%clean
+test "${RPM_BUILD_ROOT}" = "/" || rm -rf ${RPM_BUILD_ROOT}
+
+%files
+%defattr(-,root,root,-)
+%doc AUTHORS COPYING NEWS README doc/HACKING
+%{_libdir}/cscc/lib
+%{_datadir}/cscc/include
+
+%changelog
+* Thu Mar 11 2004 Russell Stuart <rstuart-rpm@stuart.id.au>
+- Adapted from a .spec file by Phillip Compton - thanks Phillip.

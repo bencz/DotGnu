@@ -1,0 +1,349 @@
+%output "jv_nodes.c"
+
+%{
+/*
+ * jv_nodes.tc - Common definitions for Java node types and operations.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <codegen/cg_nodes.h>
+%}
+
+%decls %end %{
+#include "il_jopcodes.h"
+#include <codegen/jv_output.h>
+%}
+
+/*
+ * Declare the Java code generation functions.
+ */
+%operation %virtual void JavaGenDiscard(ILNode *node, ILGenInfo *info)
+%operation %virtual ILMachineType JavaGenValue(ILNode *node, ILGenInfo *info)
+%operation %virtual void JavaGenThen(ILNode *node, ILGenInfo *info,
+									 ILLabel *label)
+%operation %virtual void JavaGenElse(ILNode *node, ILGenInfo *info,
+									 ILLabel *label)
+%operation %virtual ILMachineType JavaPrepare
+				(ILNode_LValue *node, ILGenInfo *info,
+				 void **data1, void **data2)
+%operation %virtual ILMachineType JavaGetAndPrepare
+				(ILNode_LValue *node, ILGenInfo *info, int leave,
+				 void **data1, void **data2)
+%operation %virtual void JavaStore
+				(ILNode_LValue *node, ILGenInfo *info, int leave,
+				 void *data1, void *data2)
+
+/*
+ * Test the value on the top of the stack and jump if true.
+ */
+%operation %inline void JavaStackThen(ILGenInfo *info, ILLabel *label,
+							  		  [ILMachineType type])
+JavaStackThen(ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaStackThen(ILMachineType_Boolean),
+JavaStackThen(ILMachineType_Int8),
+JavaStackThen(ILMachineType_UInt8),
+JavaStackThen(ILMachineType_Int16),
+JavaStackThen(ILMachineType_UInt16),
+JavaStackThen(ILMachineType_Char),
+JavaStackThen(ILMachineType_Int32),
+JavaStackThen(ILMachineType_UInt32),
+JavaStackThen(ILMachineType_NativeInt),
+JavaStackThen(ILMachineType_NativeUInt)
+{
+	JavaGenJump(info, JAVA_OP_IFNE, label);
+	JavaGenAdjust(info, -1);
+}
+JavaStackThen(ILMachineType_Int64),
+JavaStackThen(ILMachineType_UInt64)
+{
+	JavaGenSimple(info, JAVA_OP_LCONST_0);
+	JavaGenSimple(info, JAVA_OP_LCMP);
+	JavaGenJump(info, JAVA_OP_IFNE, label);
+	JavaGenExtend(info, 2);
+	JavaGenAdjust(info, -2);
+}
+JavaStackThen(ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FCONST_0);
+	JavaGenSimple(info, JAVA_OP_FCMPL);
+	JavaGenJump(info, JAVA_OP_IFNE, label);
+	JavaGenExtend(info, 1);
+	JavaGenAdjust(info, -1);
+}
+JavaStackThen(ILMachineType_Float64),
+JavaStackThen(ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_DCONST_0);
+	JavaGenSimple(info, JAVA_OP_DCMPL);
+	JavaGenJump(info, JAVA_OP_IFNE, label);
+	JavaGenExtend(info, 2);
+	JavaGenAdjust(info, -2);
+}
+JavaStackThen(ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+	    JavaGenSimple(info, JAVA_OP_LCONST_0);
+		JavaGenCallByName(info, "java/math/BigDecimal", "valueOf",
+						  "(J)Ljava/math/BigDecimal;");
+		JavaGenExtend(info, 2);
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "equals",
+						   "(Ljava/lang/Object;)Z");
+		JavaGenJump(info, JAVA_OP_IFNE, label);
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+	    JavaGenSimple(info, JAVA_OP_ICONST_0);
+		JavaGenCallByName(info, "System/Decimal", "op_Implicit__iV",
+						  "(I)LSystem/Decimal;");
+		JavaGenCallByName(info, "System/Decimal", "op_Equality__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenExtend(info, 1);
+		JavaGenJump(info, JAVA_OP_IFNE, label);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaStackThen(ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/Boolean", "valueOf",
+						  "(Ljava/lang/String;)Ljava/lang/Boolean;");
+		JavaGenCallVirtual(info, "java/lang/Boolean", "booleanValue", "()Z");
+		JavaGenJump(info, JAVA_OP_IFNE, label);
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Boolean", "FromString",
+						  "(LSystem/String;)Z");
+		JavaGenJump(info, JAVA_OP_IFNE, label);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaStackThen(ILMachineType_ObjectRef),
+JavaStackThen(ILMachineType_UnmanagedPtr),
+JavaStackThen(ILMachineType_ManagedPtr),
+JavaStackThen(ILMachineType_TransientPtr),
+JavaStackThen(ILMachineType_ManagedValue)
+{
+	JavaGenJump(info, JAVA_OP_IFNONNULL, label);
+	JavaGenAdjust(info, -1);
+}
+
+/*
+ * Test the value on the top of the stack and jump if false.
+ */
+%operation %inline void JavaStackElse(ILGenInfo *info, ILLabel *label,
+							  		  [ILMachineType type])
+JavaStackElse(ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaStackElse(ILMachineType_Boolean),
+JavaStackElse(ILMachineType_Int8),
+JavaStackElse(ILMachineType_UInt8),
+JavaStackElse(ILMachineType_Int16),
+JavaStackElse(ILMachineType_UInt16),
+JavaStackElse(ILMachineType_Char),
+JavaStackElse(ILMachineType_Int32),
+JavaStackElse(ILMachineType_UInt32),
+JavaStackElse(ILMachineType_NativeInt),
+JavaStackElse(ILMachineType_NativeUInt)
+{
+	JavaGenJump(info, JAVA_OP_IFEQ, label);
+	JavaGenAdjust(info, -1);
+}
+JavaStackElse(ILMachineType_Int64),
+JavaStackElse(ILMachineType_UInt64)
+{
+	JavaGenSimple(info, JAVA_OP_LCONST_0);
+	JavaGenSimple(info, JAVA_OP_LCMP);
+	JavaGenJump(info, JAVA_OP_IFEQ, label);
+	JavaGenExtend(info, 2);
+	JavaGenAdjust(info, -2);
+}
+JavaStackElse(ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FCONST_0);
+	JavaGenSimple(info, JAVA_OP_FCMPL);
+	JavaGenJump(info, JAVA_OP_IFEQ, label);
+	JavaGenExtend(info, 1);
+	JavaGenAdjust(info, -1);
+}
+JavaStackElse(ILMachineType_Float64),
+JavaStackElse(ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_DCONST_0);
+	JavaGenSimple(info, JAVA_OP_DCMPL);
+	JavaGenJump(info, JAVA_OP_IFEQ, label);
+	JavaGenExtend(info, 2);
+	JavaGenAdjust(info, -2);
+}
+JavaStackElse(ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+	    JavaGenSimple(info, JAVA_OP_LCONST_0);
+		JavaGenCallByName(info, "java/math/BigDecimal", "valueOf",
+						  "(J)Ljava/math/BigDecimal;");
+		JavaGenExtend(info, 2);
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "equals",
+						   "(Ljava/lang/Object;)Z");
+		JavaGenJump(info, JAVA_OP_IFEQ, label);
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+	    JavaGenSimple(info, JAVA_OP_ICONST_0);
+		JavaGenCallByName(info, "System/Decimal", "op_Implicit__iV",
+						  "(I)LSystem/Decimal;");
+		JavaGenCallByName(info, "System/Decimal", "op_Equality__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenExtend(info, 1);
+		JavaGenJump(info, JAVA_OP_IFEQ, label);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaStackElse(ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallByName(info, "java/lang/Boolean", "valueOf",
+						  "(Ljava/lang/String;)Ljava/lang/Boolean;");
+		JavaGenCallVirtual(info, "java/lang/Boolean", "booleanValue", "()Z");
+		JavaGenJump(info, JAVA_OP_IFEQ, label);
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Boolean", "FromString",
+						  "(LSystem/String;)Z");
+		JavaGenJump(info, JAVA_OP_IFEQ, label);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaStackElse(ILMachineType_ObjectRef),
+JavaStackElse(ILMachineType_UnmanagedPtr),
+JavaStackElse(ILMachineType_ManagedPtr),
+JavaStackElse(ILMachineType_TransientPtr),
+JavaStackElse(ILMachineType_ManagedValue)
+{
+	JavaGenJump(info, JAVA_OP_IFNULL, label);
+	JavaGenAdjust(info, -1);
+}
+
+/*
+ * Default implementation of "JavaGenDiscard" for expressions.
+ */
+JavaGenDiscard(ILNode_Expression)
+{
+	ILMachineType type = JavaGenValue(node, info);
+	JavaGenCast(info, type, ILMachineType_Void);
+}
+
+/*
+ * Default implementation of "JavaGenThen" for expressions.
+ */
+JavaGenThen(ILNode_Expression)
+{
+	ILMachineType type = JavaGenValue(node, info);
+	JavaStackThen(info, label, type);
+}
+
+/*
+ * Default implementation of "JavaGenElse" for expressions.
+ */
+JavaGenElse(ILNode_Expression)
+{
+	ILMachineType type = JavaGenValue(node, info);
+	JavaStackElse(info, label, type);
+}
+
+/*
+ * Statements only need "JavaGenDiscard".
+ */
+JavaGenValue(ILNode_Statement)
+{
+	fprintf(stderr, "JavaGenDiscard is not implemented for node type `%s'",
+			yykindname(node));
+	exit(1);
+	return ILMachineType_Void; /* Not reached */
+}
+JavaGenThen(ILNode_Statement)
+{
+	fprintf(stderr, "JavaGenThen is not implemented for node type `%s'",
+			yykindname(node));
+	exit(1);
+}
+JavaGenElse(ILNode_Statement)
+{
+	fprintf(stderr, "JavaGenElse is not implemented for node type `%s'",
+			yykindname(node));
+	exit(1);
+}
+
+/*
+ * Dummy nodes don't need anything.
+ */
+JavaGenDiscard(ILNode_Dummy)
+{
+	fprintf(stderr, "JavaGenDiscard is not implemented for node type `%s'",
+			yykindname(node));
+	exit(1);
+}
+JavaGenValue(ILNode_Dummy)
+{
+	fprintf(stderr, "JavaGenValue is not implemented for node type `%s'",
+			yykindname(node));
+	exit(1);
+	return ILMachineType_Void; /* Not reached */
+}
+JavaGenThen(ILNode_Dummy)
+{
+	fprintf(stderr, "JavaGenThen is not implemented for node type `%s'",
+			yykindname(node));
+	exit(1);
+}
+JavaGenElse(ILNode_Dummy)
+{
+	fprintf(stderr, "JavaGenElse is not implemented for node type `%s'",
+			yykindname(node));
+	exit(1);
+}
+
+/*
+ * EmptyExpr's for casting in stack vars
+ */
+JavaGenValue(ILNode_EmptyExpr)
+{
+	return node->type;
+}
+
+/*
+ * Code generation functions for "DummyUnary" and "DummyBinary".
+ */
+JavaGenValue(ILNode_DummyUnaryExpr),
+JavaGenValue(ILNode_DummyBinaryExpr)
+{
+	return ILMachineType_Void;
+}

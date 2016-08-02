@@ -1,0 +1,4 @@
+
+The definitions in this directory are specific to the Portable.NET
+implementation of System.Drawing and System.Windows.Forms.  They
+should not be used directly by application programs.

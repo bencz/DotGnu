@@ -1,0 +1,1843 @@
+%output "cg_relop.c"
+
+/*
+ * cg_relop.tc - Relational operator nodes.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/*
+ * Apply a relational operator to two values on the stack
+ * that have been coerced to a common type.
+ */
+%operation void JavaRelational_ApplyOp(ILGenInfo *info,
+								       [ILNode_Relational *node],
+								       [ILMachineType commonType])
+
+/*
+ * Apply a relational operator to two values on the stack
+ * that have been coerced to a common type, and jump to
+ * a label if true.
+ */
+%operation void JavaRelational_ThenOp(ILGenInfo *info,
+								      [ILNode_Relational *node],
+								      [ILMachineType commonType],
+									  ILLabel *label)
+
+/*
+ * Apply a relational operator to two values on the stack
+ * that have been coerced to a common type, and jump to
+ * a label if false.
+ */
+%operation void JavaRelational_ElseOp(ILGenInfo *info,
+								      [ILNode_Relational *node],
+								      [ILMachineType commonType],
+									  ILLabel *label)
+
+/*
+ * Generate discard code for a relational operator.
+ */
+JavaGenDiscard(ILNode_Relational)
+{
+	JavaGenDiscard(node->expr1, info);
+	JavaGenDiscard(node->expr2, info);
+}
+
+/*
+ * Generate value code for a relational operator.
+ */
+JavaGenValue(ILNode_Relational)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+
+	/* Determine the common type to use */
+	type1 = ILNode_GetType(node->expr1, info);
+	type2 = ILNode_GetType(node->expr2, info);
+	commonType = Relational_CommonType(info, type1, type2);
+
+	/* Generate code for the sub-expressions */
+	JavaGenCast(info, JavaGenValue(node->expr1, info), commonType);
+	JavaGenCast(info, JavaGenValue(node->expr2, info), commonType);
+
+	/* Compare the values */
+	JavaRelational_ApplyOp(info, node, commonType);
+
+	/* The result type is always boolean */
+	return ILMachineType_Boolean;
+}
+
+/*
+ * Generate "then" code for a relational operator.
+ */
+JavaGenThen(ILNode_Relational)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+
+	/* Determine the common type to use */
+	type1 = ILNode_GetType(node->expr1, info);
+	type2 = ILNode_GetType(node->expr2, info);
+	commonType = Relational_CommonType(info, type1, type2);
+
+	/* Generate code for the sub-expressions */
+	JavaGenCast(info, JavaGenValue(node->expr1, info), commonType);
+	JavaGenCast(info, JavaGenValue(node->expr2, info), commonType);
+
+	/* Compare the values and jump */
+	JavaRelational_ThenOp(info, node, commonType, label);
+}
+
+/*
+ * Generate "else" code for a relational operator.
+ */
+JavaGenElse(ILNode_Relational)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+
+	/* Determine the common type to use */
+	type1 = ILNode_GetType(node->expr1, info);
+	type2 = ILNode_GetType(node->expr2, info);
+	commonType = Relational_CommonType(info, type1, type2);
+
+	/* Generate code for the sub-expressions */
+	JavaGenCast(info, JavaGenValue(node->expr1, info), commonType);
+	JavaGenCast(info, JavaGenValue(node->expr2, info), commonType);
+
+	/* Compare the values and jump */
+	JavaRelational_ElseOp(info, node, commonType, label);
+}
+
+/*
+ * Apply the equality operator to two values on the stack.
+ */
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_Boolean),
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_Int8),
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_UInt8),
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_Int16),
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_UInt16),
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_Char),
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_Int32),
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_UInt32),
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_NativeInt),
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_NativeUInt)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenJump(info, JAVA_OP_IF_ICMPNE, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -1);
+}
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_Int64),
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_UInt64)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenSimple(info, JAVA_OP_LCMP);
+	JavaGenJump(info, JAVA_OP_IFNE, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -3);
+}
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_ObjectRef),
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_UnmanagedPtr),
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_ManagedPtr),
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_TransientPtr),
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_ManagedValue)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenJump(info, JAVA_OP_IF_ACMPNE, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -1);
+}
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_Float32)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenSimple(info, JAVA_OP_FCMPL);
+	JavaGenJump(info, JAVA_OP_IFNE, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -1);
+}
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_Float64),
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_NativeFloat)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenSimple(info, JAVA_OP_DCMPL);
+	JavaGenJump(info, JAVA_OP_IFNE, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -3);
+}
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "equals",
+						   "(Ljava/lang/Object;)Z");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Equality__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaRelational_ApplyOp(ILNode_Eq, ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/lang/String", "equals",
+						   "(Ljava/lang/Object;)Z");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/String", "op_Equality",
+						  "(LSystem/String;LSystem/String;)Z");
+		JavaGenAdjust(info, -1);
+	}
+}
+
+/*
+ * Apply the inequality operator to two values on the stack.
+ */
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_Boolean),
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_Int8),
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_UInt8),
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_Int16),
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_UInt16),
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_Char),
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_Int32),
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_UInt32),
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_NativeInt),
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_NativeUInt)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenJump(info, JAVA_OP_IF_ICMPEQ, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -1);
+}
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_Int64),
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_UInt64)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenSimple(info, JAVA_OP_LCMP);
+	JavaGenJump(info, JAVA_OP_IFEQ, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -3);
+}
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_ObjectRef),
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_UnmanagedPtr),
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_ManagedPtr),
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_TransientPtr),
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_ManagedValue)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenJump(info, JAVA_OP_IF_ACMPEQ, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -1);
+}
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_Float32)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenSimple(info, JAVA_OP_FCMPL);
+	JavaGenJump(info, JAVA_OP_IFEQ, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -1);
+}
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_Float64),
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_NativeFloat)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenSimple(info, JAVA_OP_DCMPL);
+	JavaGenJump(info, JAVA_OP_IFEQ, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -3);
+}
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		ILLabel label1 = ILLabel_Undefined;
+		ILLabel label2 = ILLabel_Undefined;
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "compareTo",
+						   "(Ljava/math/BigDecimal;)I");
+		JavaGenJump(info, JAVA_OP_IFEQ, &label1);
+		JavaGenSimple(info, JAVA_OP_ICONST_1);
+		JavaGenJump(info, JAVA_OP_GOTO, &label2);
+		JavaGenLabel(info, &label1);
+		JavaGenSimple(info, JAVA_OP_ICONST_0);
+		JavaGenLabel(info, &label2);
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Inequality__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaRelational_ApplyOp(ILNode_Ne, ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		ILLabel label1 = ILLabel_Undefined;
+		ILLabel label2 = ILLabel_Undefined;
+		JavaGenCallVirtual(info, "java/lang/String", "equals",
+						   "(Ljava/lang/Object;)Z");
+		JavaGenJump(info, JAVA_OP_IFNE, &label1);
+		JavaGenSimple(info, JAVA_OP_ICONST_1);
+		JavaGenJump(info, JAVA_OP_GOTO, &label2);
+		JavaGenLabel(info, &label1);
+		JavaGenSimple(info, JAVA_OP_ICONST_0);
+		JavaGenLabel(info, &label2);
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/String", "op_Inequality",
+						  "(LSystem/String;LSystem/String;)Z");
+		JavaGenAdjust(info, -1);
+	}
+}
+
+/*
+ * Apply the less than operator to two values on the stack.
+ */
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_Boolean),
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_Int8),
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_UInt8),
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_Int16),
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_UInt16),
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_Char),
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_Int32),
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_NativeInt)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenJump(info, JAVA_OP_IF_ICMPGE, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -1);
+}
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_Int64)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenSimple(info, JAVA_OP_LCMP);
+	JavaGenJump(info, JAVA_OP_IFGE, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -3);
+}
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_String),
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_ObjectRef),
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_UnmanagedPtr),
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_ManagedPtr),
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_TransientPtr),
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_ManagedValue)
+{
+	/* Shouldn't happen */
+}
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_UInt32),
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_NativeUInt)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenCallIntrinsic(info, "iucmp", "(II)I");
+	JavaGenJump(info, JAVA_OP_IFGE, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -1);
+}
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_UInt64)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenCallIntrinsic(info, "lucmp", "(JJ)I");
+	JavaGenJump(info, JAVA_OP_IFGE, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -3);
+}
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_Float32)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenSimple(info, JAVA_OP_FCMPG);
+	JavaGenJump(info, JAVA_OP_IFGE, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -1);
+}
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_Float64),
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_NativeFloat)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenSimple(info, JAVA_OP_DCMPG);
+	JavaGenJump(info, JAVA_OP_IFGE, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -3);
+}
+JavaRelational_ApplyOp(ILNode_Lt, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		ILLabel label1 = ILLabel_Undefined;
+		ILLabel label2 = ILLabel_Undefined;
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "compareTo",
+						   "(Ljava/math/BigDecimal;)I");
+		JavaGenJump(info, JAVA_OP_IFGE, &label1);
+		JavaGenSimple(info, JAVA_OP_ICONST_1);
+		JavaGenJump(info, JAVA_OP_GOTO, &label2);
+		JavaGenLabel(info, &label1);
+		JavaGenSimple(info, JAVA_OP_ICONST_0);
+		JavaGenLabel(info, &label2);
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_LessThan__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenAdjust(info, -1);
+	}
+}
+
+/*
+ * Apply the less than or equal to operator to two values on the stack.
+ */
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_Boolean),
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_Int8),
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_UInt8),
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_Int16),
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_UInt16),
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_Char),
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_Int32),
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_NativeInt)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenJump(info, JAVA_OP_IF_ICMPGT, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -1);
+}
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_Int64)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenSimple(info, JAVA_OP_LCMP);
+	JavaGenJump(info, JAVA_OP_IFGT, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -3);
+}
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_String),
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_ObjectRef),
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_UnmanagedPtr),
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_ManagedPtr),
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_TransientPtr),
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_ManagedValue)
+{
+	/* Shouldn't happen */
+}
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_UInt32),
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_NativeUInt)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenCallIntrinsic(info, "iucmp", "(II)I");
+	JavaGenJump(info, JAVA_OP_IFGT, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -1);
+}
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_UInt64)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenCallIntrinsic(info, "lucmp", "(JJ)I");
+	JavaGenJump(info, JAVA_OP_IFGT, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -3);
+}
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_Float32)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenSimple(info, JAVA_OP_FCMPG);
+	JavaGenJump(info, JAVA_OP_IFGT, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -1);
+}
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_Float64),
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_NativeFloat)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenSimple(info, JAVA_OP_DCMPG);
+	JavaGenJump(info, JAVA_OP_IFGT, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -3);
+}
+JavaRelational_ApplyOp(ILNode_Le, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		ILLabel label1 = ILLabel_Undefined;
+		ILLabel label2 = ILLabel_Undefined;
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "compareTo",
+						   "(Ljava/math/BigDecimal;)I");
+		JavaGenJump(info, JAVA_OP_IFGT, &label1);
+		JavaGenSimple(info, JAVA_OP_ICONST_1);
+		JavaGenJump(info, JAVA_OP_GOTO, &label2);
+		JavaGenLabel(info, &label1);
+		JavaGenSimple(info, JAVA_OP_ICONST_0);
+		JavaGenLabel(info, &label2);
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_LessThanOrEqual__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenAdjust(info, -1);
+	}
+}
+
+/*
+ * Apply the greater than operator to two values on the stack.
+ */
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_Boolean),
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_Int8),
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_UInt8),
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_Int16),
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_UInt16),
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_Char),
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_Int32),
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_NativeInt)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenJump(info, JAVA_OP_IF_ICMPLE, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -1);
+}
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_Int64)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenSimple(info, JAVA_OP_LCMP);
+	JavaGenJump(info, JAVA_OP_IFLE, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -3);
+}
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_String),
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_ObjectRef),
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_UnmanagedPtr),
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_ManagedPtr),
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_TransientPtr),
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_ManagedValue)
+{
+	/* Shouldn't happen */
+}
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_UInt32),
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_NativeUInt)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenCallIntrinsic(info, "iucmp", "(II)I");
+	JavaGenJump(info, JAVA_OP_IFLE, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -1);
+}
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_UInt64)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenCallIntrinsic(info, "lucmp", "(JJ)I");
+	JavaGenJump(info, JAVA_OP_IFLE, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -3);
+}
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_Float32)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenSimple(info, JAVA_OP_FCMPL);
+	JavaGenJump(info, JAVA_OP_IFLE, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -1);
+}
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_Float64),
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_NativeFloat)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenSimple(info, JAVA_OP_DCMPL);
+	JavaGenJump(info, JAVA_OP_IFLE, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -3);
+}
+JavaRelational_ApplyOp(ILNode_Gt, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		ILLabel label1 = ILLabel_Undefined;
+		ILLabel label2 = ILLabel_Undefined;
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "compareTo",
+						   "(Ljava/math/BigDecimal;)I");
+		JavaGenJump(info, JAVA_OP_IFLE, &label1);
+		JavaGenSimple(info, JAVA_OP_ICONST_1);
+		JavaGenJump(info, JAVA_OP_GOTO, &label2);
+		JavaGenLabel(info, &label1);
+		JavaGenSimple(info, JAVA_OP_ICONST_0);
+		JavaGenLabel(info, &label2);
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_GreaterThan__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenAdjust(info, -1);
+	}
+}
+
+/*
+ * Apply the greater than or equal to operator to two values on the stack.
+ */
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_Boolean),
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_Int8),
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_UInt8),
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_Int16),
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_UInt16),
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_Char),
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_Int32),
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_NativeInt)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenJump(info, JAVA_OP_IF_ICMPLT, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -1);
+}
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_Int64)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenSimple(info, JAVA_OP_LCMP);
+	JavaGenJump(info, JAVA_OP_IFLT, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -3);
+}
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_String),
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_ObjectRef),
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_UnmanagedPtr),
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_ManagedPtr),
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_TransientPtr),
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_ManagedValue)
+{
+	/* Shouldn't happen */
+}
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_UInt32),
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_NativeUInt)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenCallIntrinsic(info, "iucmp", "(II)I");
+	JavaGenJump(info, JAVA_OP_IFLT, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -1);
+}
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_UInt64)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenCallIntrinsic(info, "lucmp", "(JJ)I");
+	JavaGenJump(info, JAVA_OP_IFLT, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -3);
+}
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_Float32)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenSimple(info, JAVA_OP_FCMPL);
+	JavaGenJump(info, JAVA_OP_IFLT, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -1);
+}
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_Float64),
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_NativeFloat)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenSimple(info, JAVA_OP_DCMPL);
+	JavaGenJump(info, JAVA_OP_IFLT, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, -3);
+}
+JavaRelational_ApplyOp(ILNode_Ge, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		ILLabel label1 = ILLabel_Undefined;
+		ILLabel label2 = ILLabel_Undefined;
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "compareTo",
+						   "(Ljava/math/BigDecimal;)I");
+		JavaGenJump(info, JAVA_OP_IFLT, &label1);
+		JavaGenSimple(info, JAVA_OP_ICONST_1);
+		JavaGenJump(info, JAVA_OP_GOTO, &label2);
+		JavaGenLabel(info, &label1);
+		JavaGenSimple(info, JAVA_OP_ICONST_0);
+		JavaGenLabel(info, &label2);
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_GreaterThanOrEqual__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenAdjust(info, -1);
+	}
+}
+
+/*
+ * Generate "then" code for the equality operator.
+ */
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_Boolean),
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_Int8),
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_UInt8),
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_Int16),
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_UInt16),
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_Char),
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_Int32),
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_UInt32),
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_NativeInt),
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_NativeUInt)
+{
+	JavaGenJump(info, JAVA_OP_IF_ICMPEQ, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_Int64),
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_UInt64)
+{
+	JavaGenSimple(info, JAVA_OP_LCMP);
+	JavaGenJump(info, JAVA_OP_IFEQ, label);
+	JavaGenAdjust(info, -4);
+}
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_ObjectRef),
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_UnmanagedPtr),
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_ManagedPtr),
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_TransientPtr),
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_ManagedValue)
+{
+	JavaGenJump(info, JAVA_OP_IF_ACMPEQ, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FCMPL);
+	JavaGenJump(info, JAVA_OP_IFEQ, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_Float64),
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_DCMPL);
+	JavaGenJump(info, JAVA_OP_IFEQ, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "equals",
+						   "(Ljava/lang/Object;)Z");
+		JavaGenJump(info, JAVA_OP_IFNE, label);
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Equality__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenJump(info, JAVA_OP_IFNE, label);
+		JavaGenAdjust(info, -2);
+	}
+}
+JavaRelational_ThenOp(ILNode_Eq, ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/lang/String", "equals",
+						   "(Ljava/lang/Object;)Z");
+		JavaGenJump(info, JAVA_OP_IFNE, label);
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/String", "op_Equality",
+						  "(LSystem/String;LSystem/String;)Z");
+		JavaGenJump(info, JAVA_OP_IFNE, label);
+		JavaGenAdjust(info, -2);
+	}
+}
+
+/*
+ * Generate "then" code for the inequality operator.
+ */
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_Boolean),
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_Int8),
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_UInt8),
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_Int16),
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_UInt16),
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_Char),
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_Int32),
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_UInt32),
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_NativeInt),
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_NativeUInt)
+{
+	JavaGenJump(info, JAVA_OP_IF_ICMPNE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_Int64),
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_UInt64)
+{
+	JavaGenSimple(info, JAVA_OP_LCMP);
+	JavaGenJump(info, JAVA_OP_IFNE, label);
+	JavaGenAdjust(info, -4);
+}
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_ObjectRef),
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_UnmanagedPtr),
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_ManagedPtr),
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_TransientPtr),
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_ManagedValue)
+{
+	JavaGenJump(info, JAVA_OP_IF_ACMPNE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FCMPL);
+	JavaGenJump(info, JAVA_OP_IFNE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_Float64),
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_DCMPL);
+	JavaGenJump(info, JAVA_OP_IFNE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "equals",
+						   "(Ljava/lang/Object;)Z");
+		JavaGenJump(info, JAVA_OP_IFEQ, label);
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Inequality__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenJump(info, JAVA_OP_IFNE, label);
+		JavaGenAdjust(info, -2);
+	}
+}
+JavaRelational_ThenOp(ILNode_Ne, ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/lang/String", "equals",
+						   "(Ljava/lang/Object;)Z");
+		JavaGenJump(info, JAVA_OP_IFEQ, label);
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/String", "op_Inequality",
+						  "(LSystem/String;LSystem/String;)Z");
+		JavaGenJump(info, JAVA_OP_IFNE, label);
+		JavaGenAdjust(info, -2);
+	}
+}
+
+/*
+ * Generate "then" code for the less than operator.
+ */
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_Boolean),
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_Int8),
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_UInt8),
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_Int16),
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_UInt16),
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_Char),
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_Int32),
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_NativeInt)
+{
+	JavaGenJump(info, JAVA_OP_IF_ICMPLT, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_UInt32),
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_NativeUInt)
+{
+	JavaGenCallIntrinsic(info, "iucmp", "(II)I");
+	JavaGenJump(info, JAVA_OP_IFLT, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_Int64)
+{
+	JavaGenSimple(info, JAVA_OP_LCMP);
+	JavaGenJump(info, JAVA_OP_IFLT, label);
+	JavaGenAdjust(info, -4);
+}
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_UInt64)
+{
+	JavaGenCallIntrinsic(info, "lucmp", "(JJ)I");
+	JavaGenJump(info, JAVA_OP_IFLT, label);
+	JavaGenAdjust(info, -4);
+}
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_String),
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_ObjectRef),
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_UnmanagedPtr),
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_ManagedPtr),
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_TransientPtr),
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_ManagedValue)
+{
+	/* Shouldn't happen */
+}
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FCMPG);
+	JavaGenJump(info, JAVA_OP_IFLT, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_Float64),
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_DCMPG);
+	JavaGenJump(info, JAVA_OP_IFLT, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Lt, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "compareTo",
+						   "(Ljava/math/BigDecimal;)I");
+		JavaGenJump(info, JAVA_OP_IFLT, label);
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_LessThan__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenJump(info, JAVA_OP_IFNE, label);
+		JavaGenAdjust(info, -2);
+	}
+}
+
+/*
+ * Generate "then" code for the less than or equal operator.
+ */
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_Boolean),
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_Int8),
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_UInt8),
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_Int16),
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_UInt16),
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_Char),
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_Int32),
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_NativeInt)
+{
+	JavaGenJump(info, JAVA_OP_IF_ICMPLE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_UInt32),
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_NativeUInt)
+{
+	JavaGenCallIntrinsic(info, "iucmp", "(II)I");
+	JavaGenJump(info, JAVA_OP_IFLE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_Int64)
+{
+	JavaGenSimple(info, JAVA_OP_LCMP);
+	JavaGenJump(info, JAVA_OP_IFLE, label);
+	JavaGenAdjust(info, -4);
+}
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_UInt64)
+{
+	JavaGenCallIntrinsic(info, "lucmp", "(JJ)I");
+	JavaGenJump(info, JAVA_OP_IFLE, label);
+	JavaGenAdjust(info, -4);
+}
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_String),
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_ObjectRef),
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_UnmanagedPtr),
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_ManagedPtr),
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_TransientPtr),
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_ManagedValue)
+{
+	/* Shouldn't happen */
+}
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FCMPG);
+	JavaGenJump(info, JAVA_OP_IFLE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_Float64),
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_DCMPG);
+	JavaGenJump(info, JAVA_OP_IFLE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Le, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "compareTo",
+						   "(Ljava/math/BigDecimal;)I");
+		JavaGenJump(info, JAVA_OP_IFLE, label);
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_LessThanOrEqual__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenJump(info, JAVA_OP_IFNE, label);
+		JavaGenAdjust(info, -2);
+	}
+}
+
+/*
+ * Generate "then" code for the greater than operator.
+ */
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_Boolean),
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_Int8),
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_UInt8),
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_Int16),
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_UInt16),
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_Char),
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_Int32),
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_NativeInt)
+{
+	JavaGenJump(info, JAVA_OP_IF_ICMPGT, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_UInt32),
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_NativeUInt)
+{
+	JavaGenCallIntrinsic(info, "iucmp", "(II)I");
+	JavaGenJump(info, JAVA_OP_IFGT, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_Int64)
+{
+	JavaGenSimple(info, JAVA_OP_LCMP);
+	JavaGenJump(info, JAVA_OP_IFGT, label);
+	JavaGenAdjust(info, -4);
+}
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_UInt64)
+{
+	JavaGenCallIntrinsic(info, "lucmp", "(JJ)I");
+	JavaGenJump(info, JAVA_OP_IFGT, label);
+	JavaGenAdjust(info, -4);
+}
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_String),
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_ObjectRef),
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_UnmanagedPtr),
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_ManagedPtr),
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_TransientPtr),
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_ManagedValue)
+{
+	/* Shouldn't happen */
+}
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FCMPL);
+	JavaGenJump(info, JAVA_OP_IFGT, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_Float64),
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_DCMPL);
+	JavaGenJump(info, JAVA_OP_IFGT, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Gt, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "compareTo",
+						   "(Ljava/math/BigDecimal;)I");
+		JavaGenJump(info, JAVA_OP_IFGT, label);
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_GreaterThan__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenJump(info, JAVA_OP_IFNE, label);
+		JavaGenAdjust(info, -2);
+	}
+}
+
+/*
+ * Generate "then" code for the greater than or equal operator.
+ */
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_Boolean),
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_Int8),
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_UInt8),
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_Int16),
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_UInt16),
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_Char),
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_Int32),
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_NativeInt)
+{
+	JavaGenJump(info, JAVA_OP_IF_ICMPGE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_UInt32),
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_NativeUInt)
+{
+	JavaGenCallIntrinsic(info, "iucmp", "(II)I");
+	JavaGenJump(info, JAVA_OP_IFGE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_Int64)
+{
+	JavaGenSimple(info, JAVA_OP_LCMP);
+	JavaGenJump(info, JAVA_OP_IFGE, label);
+	JavaGenAdjust(info, -4);
+}
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_UInt64)
+{
+	JavaGenCallIntrinsic(info, "lucmp", "(JJ)I");
+	JavaGenJump(info, JAVA_OP_IFGE, label);
+	JavaGenAdjust(info, -4);
+}
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_String),
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_ObjectRef),
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_UnmanagedPtr),
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_ManagedPtr),
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_TransientPtr),
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_ManagedValue)
+{
+	/* Shouldn't happen */
+}
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FCMPL);
+	JavaGenJump(info, JAVA_OP_IFGE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_Float64),
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_DCMPL);
+	JavaGenJump(info, JAVA_OP_IFGE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ThenOp(ILNode_Ge, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "compareTo",
+						   "(Ljava/math/BigDecimal;)I");
+		JavaGenJump(info, JAVA_OP_IFGE, label);
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_GreaterThanOrEqual__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenJump(info, JAVA_OP_IFNE, label);
+		JavaGenAdjust(info, -2);
+	}
+}
+
+/*
+ * Generate "else" code for the equality operator.
+ */
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_Boolean),
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_Int8),
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_UInt8),
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_Int16),
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_UInt16),
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_Char),
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_Int32),
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_UInt32),
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_NativeInt),
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_NativeUInt)
+{
+	JavaGenJump(info, JAVA_OP_IF_ICMPNE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_Int64),
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_UInt64)
+{
+	JavaGenSimple(info, JAVA_OP_LCMP);
+	JavaGenJump(info, JAVA_OP_IFNE, label);
+	JavaGenAdjust(info, -4);
+}
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_ObjectRef),
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_UnmanagedPtr),
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_ManagedPtr),
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_TransientPtr),
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_ManagedValue)
+{
+	JavaGenJump(info, JAVA_OP_IF_ACMPNE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FCMPL);
+	JavaGenJump(info, JAVA_OP_IFNE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_Float64),
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_DCMPL);
+	JavaGenJump(info, JAVA_OP_IFNE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "equals",
+						   "(Ljava/lang/Object;)Z");
+		JavaGenJump(info, JAVA_OP_IFEQ, label);
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Equality__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenJump(info, JAVA_OP_IFEQ, label);
+		JavaGenAdjust(info, -2);
+	}
+}
+JavaRelational_ElseOp(ILNode_Eq, ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/lang/String", "equals",
+						   "(Ljava/lang/Object;)Z");
+		JavaGenJump(info, JAVA_OP_IFEQ, label);
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/String", "op_Equality",
+						  "(LSystem/String;LSystem/String;)Z");
+		JavaGenJump(info, JAVA_OP_IFEQ, label);
+		JavaGenAdjust(info, -2);
+	}
+}
+
+/*
+ * Generate "else" code for the inequality operator.
+ */
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_Boolean),
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_Int8),
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_UInt8),
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_Int16),
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_UInt16),
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_Char),
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_Int32),
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_UInt32),
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_NativeInt),
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_NativeUInt)
+{
+	JavaGenJump(info, JAVA_OP_IF_ICMPEQ, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_Int64),
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_UInt64)
+{
+	JavaGenSimple(info, JAVA_OP_LCMP);
+	JavaGenJump(info, JAVA_OP_IFEQ, label);
+	JavaGenAdjust(info, -4);
+}
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_ObjectRef),
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_UnmanagedPtr),
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_ManagedPtr),
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_TransientPtr),
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_ManagedValue)
+{
+	JavaGenJump(info, JAVA_OP_IF_ACMPEQ, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FCMPL);
+	JavaGenJump(info, JAVA_OP_IFEQ, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_Float64),
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_DCMPL);
+	JavaGenJump(info, JAVA_OP_IFEQ, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "equals",
+						   "(Ljava/lang/Object;)Z");
+		JavaGenJump(info, JAVA_OP_IFNE, label);
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Inequality__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenJump(info, JAVA_OP_IFEQ, label);
+		JavaGenAdjust(info, -2);
+	}
+}
+JavaRelational_ElseOp(ILNode_Ne, ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/lang/String", "equals",
+						   "(Ljava/lang/Object;)Z");
+		JavaGenJump(info, JAVA_OP_IFNE, label);
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/String", "op_Inequality",
+						  "(LSystem/String;LSystem/String;)Z");
+		JavaGenJump(info, JAVA_OP_IFEQ, label);
+		JavaGenAdjust(info, -2);
+	}
+}
+
+/*
+ * Generate "else" code for the less than operator.
+ */
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_Boolean),
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_Int8),
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_UInt8),
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_Int16),
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_UInt16),
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_Char),
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_Int32),
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_NativeInt)
+{
+	JavaGenJump(info, JAVA_OP_IF_ICMPGE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_UInt32),
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_NativeUInt)
+{
+	JavaGenCallIntrinsic(info, "iucmp", "(II)I");
+	JavaGenJump(info, JAVA_OP_IFGE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_Int64)
+{
+	JavaGenSimple(info, JAVA_OP_LCMP);
+	JavaGenJump(info, JAVA_OP_IFGE, label);
+	JavaGenAdjust(info, -4);
+}
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_UInt64)
+{
+	JavaGenCallIntrinsic(info, "lucmp", "(JJ)I");
+	JavaGenJump(info, JAVA_OP_IFGE, label);
+	JavaGenAdjust(info, -4);
+}
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_String),
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_ObjectRef),
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_UnmanagedPtr),
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_ManagedPtr),
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_TransientPtr),
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_ManagedValue)
+{
+	/* Shouldn't happen */
+}
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FCMPG);
+	JavaGenJump(info, JAVA_OP_IFGE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_Float64),
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_DCMPG);
+	JavaGenJump(info, JAVA_OP_IFGE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Lt, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "compareTo",
+						   "(Ljava/math/BigDecimal;)I");
+		JavaGenJump(info, JAVA_OP_IFGE, label);
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_LessThan__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenJump(info, JAVA_OP_IFEQ, label);
+		JavaGenAdjust(info, -2);
+	}
+}
+
+/*
+ * Generate "else" code for the less than or equal operator.
+ */
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_Boolean),
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_Int8),
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_UInt8),
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_Int16),
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_UInt16),
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_Char),
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_Int32),
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_NativeInt)
+{
+	JavaGenJump(info, JAVA_OP_IF_ICMPGT, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_UInt32),
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_NativeUInt)
+{
+	JavaGenCallIntrinsic(info, "iucmp", "(II)I");
+	JavaGenJump(info, JAVA_OP_IFGT, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_Int64)
+{
+	JavaGenSimple(info, JAVA_OP_LCMP);
+	JavaGenJump(info, JAVA_OP_IFGT, label);
+	JavaGenAdjust(info, -4);
+}
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_UInt64)
+{
+	JavaGenCallIntrinsic(info, "lucmp", "(JJ)I");
+	JavaGenJump(info, JAVA_OP_IFGT, label);
+	JavaGenAdjust(info, -4);
+}
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_String),
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_ObjectRef),
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_UnmanagedPtr),
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_ManagedPtr),
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_TransientPtr),
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_ManagedValue)
+{
+	/* Shouldn't happen */
+}
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FCMPG);
+	JavaGenJump(info, JAVA_OP_IFGT, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_Float64),
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_DCMPG);
+	JavaGenJump(info, JAVA_OP_IFGT, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Le, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "compareTo",
+						   "(Ljava/math/BigDecimal;)I");
+		JavaGenJump(info, JAVA_OP_IFGT, label);
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_LessThanOrEqual__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenJump(info, JAVA_OP_IFEQ, label);
+		JavaGenAdjust(info, -2);
+	}
+}
+
+/*
+ * Generate "else" code for the greater than operator.
+ */
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_Boolean),
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_Int8),
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_UInt8),
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_Int16),
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_UInt16),
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_Char),
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_Int32),
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_NativeInt)
+{
+	JavaGenJump(info, JAVA_OP_IF_ICMPLE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_UInt32),
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_NativeUInt)
+{
+	JavaGenCallIntrinsic(info, "iucmp", "(II)I");
+	JavaGenJump(info, JAVA_OP_IFLE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_Int64)
+{
+	JavaGenSimple(info, JAVA_OP_LCMP);
+	JavaGenJump(info, JAVA_OP_IFLE, label);
+	JavaGenAdjust(info, -4);
+}
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_UInt64)
+{
+	JavaGenCallIntrinsic(info, "lucmp", "(JJ)I");
+	JavaGenJump(info, JAVA_OP_IFLE, label);
+	JavaGenAdjust(info, -4);
+}
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_String),
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_ObjectRef),
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_UnmanagedPtr),
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_ManagedPtr),
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_TransientPtr),
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_ManagedValue)
+{
+	/* Shouldn't happen */
+}
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FCMPL);
+	JavaGenJump(info, JAVA_OP_IFLE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_Float64),
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_DCMPL);
+	JavaGenJump(info, JAVA_OP_IFLE, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Gt, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "compareTo",
+						   "(Ljava/math/BigDecimal;)I");
+		JavaGenJump(info, JAVA_OP_IFLE, label);
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_GreaterThan__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenJump(info, JAVA_OP_IFEQ, label);
+		JavaGenAdjust(info, -2);
+	}
+}
+
+/*
+ * Generate "else" code for the greater than or equal operator.
+ */
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_Boolean),
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_Int8),
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_UInt8),
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_Int16),
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_UInt16),
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_Char),
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_Int32),
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_NativeInt)
+{
+	JavaGenJump(info, JAVA_OP_IF_ICMPLT, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_UInt32),
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_NativeUInt)
+{
+	JavaGenCallIntrinsic(info, "iucmp", "(II)I");
+	JavaGenJump(info, JAVA_OP_IFLT, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_Int64)
+{
+	JavaGenSimple(info, JAVA_OP_LCMP);
+	JavaGenJump(info, JAVA_OP_IFLT, label);
+	JavaGenAdjust(info, -4);
+}
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_UInt64)
+{
+	JavaGenCallIntrinsic(info, "lucmp", "(JJ)I");
+	JavaGenJump(info, JAVA_OP_IFLT, label);
+	JavaGenAdjust(info, -4);
+}
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_String),
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_ObjectRef),
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_UnmanagedPtr),
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_ManagedPtr),
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_TransientPtr),
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_ManagedValue)
+{
+	/* Shouldn't happen */
+}
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FCMPL);
+	JavaGenJump(info, JAVA_OP_IFLT, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_Float64),
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_DCMPL);
+	JavaGenJump(info, JAVA_OP_IFLT, label);
+	JavaGenAdjust(info, -2);
+}
+JavaRelational_ElseOp(ILNode_Ge, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "compareTo",
+						   "(Ljava/math/BigDecimal;)I");
+		JavaGenJump(info, JAVA_OP_IFLT, label);
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_GreaterThanOrEqual__VV",
+						  "(LSystem/Decimal;LSystem/Decimal;)Z");
+		JavaGenJump(info, JAVA_OP_IFEQ, label);
+		JavaGenAdjust(info, -2);
+	}
+}

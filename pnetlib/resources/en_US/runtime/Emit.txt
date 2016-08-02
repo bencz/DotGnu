@@ -1,0 +1,72 @@
+#
+# Emit.txt - Resources for Reflection.Emit errors.
+#
+# Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Emit_NoDynamicAssemblies=Runtime engine does not allow dynamic assemblies
+Emit_AlreadySaved=The dynamic assembly has already been saved
+Emit_ModuleNameInvalid=The dynamic module name is invalid
+Emit_AssemblyNameInvalid=The dynamic assembly name is invalid
+Emit_SingleModuleOnly=Multiple modules in a single assembly are not supported
+Emit_ExternalModule=External module files are not supported
+Emit_NameEmpty=Name cannot be empty
+Emit_InvalidParamNum=Invalid parameter index
+Emit_InvalidTypeAttrs=Invalid type attributes
+Emit_InvalidConstant=Invalid constant value
+Emit_NeedExceptionBlock=Not currently within an exception block
+Emit_CatchAfterFinally=Catch block cannot be emitted after a finally block
+Emit_NoExceptionClauses=No exception clauses were specified
+Emit_VarArgsWithNonVarArgMethod=Variable arguments specified for a non-variable method
+Emit_InvalidLabel=Invalid label value specified
+Emit_LabelAlreadyDefined=Label is already defined
+Emit_MissingWriteLine=Could not find the Console.WriteLine method
+Emit_NotAnExceptionType=Specified type does not inherit from System.Exception
+Emit_NeedDefaultConstructor=Exception type does not have a default constructor
+Emit_BothStaticAndVirtual=Cannot specify both "static" and "virtual"
+Emit_InterfaceMethodAttrs=Interface method attributes are incorrect
+Emit_BodyAlreadySet=Method body has already been set
+Emit_CannotHaveBody=This type of method cannot have a body
+Emit_GlobalNonStatic=Global method must have the "static" attribute
+Emit_CannotImportItem=Could not import the specified item into the assembly
+Emit_CannotImportRefType=Cannot import "byref" types
+Emit_GetAlreadyDefined=The "get" method for this property is already defined
+Emit_SetAlreadyDefined=The "set" method for this property is already defined
+Emit_NeedDynamicModule=Module is not dynamic
+Emit_GenericsNotSupported=Generic types are not supported by System.Reflection.Emit
+Emit_InvalidSigArgument=Invalid argument for signature
+Emit_TypeAlreadyExists=The specified type already exists
+Emit_UnderlyingNotSet=The underlying type of an "enum" has not been set
+Emit_NestingParentNotCreated=The type's nesting parent has not yet been created
+Emit_TypeInvalid=The dynamic type is invalid
+Emit_DataSize=Invalid size for data block
+Emit_OverrideBodyNotInType=Override body is not defined in the same type as the override declaration
+Emit_PInvokeInInterface=PInvoke methods cannot be defined in interfaces
+Emit_PInvokeAbstract=PInvoke methods cannot be abstract
+Emit_NotSimpleUnmanagedType=The unmanaged type is not simple and requires further arguments
+Emit_NoUnmanagedBaseType=Unmanaged base type is not specified
+Emit_NoUnmanagedElementCount=Unmanaged element count is not specified
+Emit_NotCustom=Unmanaged type does not specify custom marshaling
+Emit_LengthsPropertiesDifferent=The number of named properties and property values is different
+Emit_LengthsFieldsDifferent=Number of named fields and field values is different
+Emit_ConstructorPrivateOrStatic=Constructor is private or static
+Emit_ConstructorArgsNumber=Incorrect number of arguments for the constructor
+Emit_IllegalCustomAttributeType=An illegal type is for a custom attribute constructor parameter, property, or field
+Emit_ConstructorArgsType=An incompatible value is provided as a constructor parameter
+Emit_PropertyType=An incompatible value is provided for a property
+Emit_CannotWrite=Property is not writable
+Emit_FieldType=An incompatible value is provided for a field
+Emit_FieldNotAssignable=Field does not belong to the same class as the constructor or a base class of the constructor

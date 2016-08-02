@@ -1,0 +1,27 @@
+./literal2.cs:40: integer constant is too large
+./literal2.cs:43: decimal constant is out of range
+./literal2.cs:44: decimal constant is out of range
+./literal2.cs:47: warning: unknown escape sequence `\c'
+./literal2.cs:48: invalid hexadecimal escape sequence `\x'
+./literal2.cs:49: invalid hexadecimal escape sequence `\u'
+./literal2.cs:50: invalid hexadecimal escape sequence `\u3'
+./literal2.cs:51: invalid hexadecimal escape sequence `\u03'
+./literal2.cs:52: invalid hexadecimal escape sequence `\u003'
+./literal2.cs:53: warning: multi-character constant
+./literal2.cs:54: invalid hexadecimal escape sequence `\U'
+./literal2.cs:55: invalid hexadecimal escape sequence `\U3'
+./literal2.cs:56: invalid hexadecimal escape sequence `\U03'
+./literal2.cs:57: invalid hexadecimal escape sequence `\U003'
+./literal2.cs:58: invalid hexadecimal escape sequence `\U00003'
+./literal2.cs:59: invalid hexadecimal escape sequence `\U000003'
+./literal2.cs:60: invalid hexadecimal escape sequence `\U0000003'
+./literal2.cs:61: warning: multi-character constant
+./literal2.cs:62: warning: 32-bit Unicode character `\U00101234' used: truncating to 16 bits
+./literal2.cs:26: incompatible types in initialization: no conversion from `uint' to `int'
+./literal2.cs:27: incompatible types in initialization: no conversion from `long' to `int'
+./literal2.cs:28: incompatible types in initialization: no conversion from `uint' to `int'
+./literal2.cs:31: incompatible types in initialization: no conversion from `long' to `uint'
+./literal2.cs:32: incompatible types in initialization: no conversion from `ulong' to `uint'
+./literal2.cs:33: incompatible types in initialization: no conversion from `int' to `uint'
+./literal2.cs:36: incompatible types in initialization: no conversion from `ulong' to `long'
+./literal2.cs:37: incompatible types in initialization: no conversion from `ulong' to `long'

@@ -1,0 +1,4 @@
+./sizeof1.cs:29: warning: unsafe method declaration
+./sizeof1.cs:31: warning: unsafe `sizeof' operator
+./sizeof1.cs:32: warning: unsafe `sizeof' operator
+./sizeof1.cs:33: warning: unsafe `sizeof' operator

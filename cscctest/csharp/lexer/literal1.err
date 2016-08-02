@@ -1,0 +1,3 @@
+./literal1.cs:150: warning: non-standard octal character escape used
+./literal1.cs:150: warning: (use -fno-octal-chars to disable the use
+./literal1.cs:150: warning: (of non-standard octal character escapes)

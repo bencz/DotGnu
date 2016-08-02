@@ -1,0 +1,194 @@
+%{
+/*
+ * bf_codegen.tc - IL code generator 
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ * 
+ * Contributed by Gopal.V
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+%}
+
+%output "bf_codegen.c"
+
+%decls %{
+extern int maxArraySize;
+%}
+
+%{
+int maxArraySize=8000;
+%}
+
+ILNode_GenDiscard(ILNode_BFProgram)
+{
+	const char * size= CCStringListGetValue(extension_flags,num_extension_flags,
+		"max-array-size");
+	char * name = CCStringListGetValue(extension_flags, num_extension_flags , "class-name");
+
+	char * method = CCStringListGetValue(extension_flags, num_extension_flags , "method-name");
+
+	if(size)
+	{
+		int value;
+		sscanf(size,"%u",&value);
+		if(value >= 8) /* minimum 8 , right ? */
+		{
+			maxArraySize = value;
+		}
+	}
+
+	if(!name) name = "brainfck";
+	if(!method) method = "Main";
+	
+	fprintf(info->asmOutput,
+		".class public %s extends [mscorlib] System.Object \n"
+		"{\n"
+		".method static public void %s() il managed\n"
+		"{\n"
+		"\t.locals (int8[] bfarray, int32 bfarrayloc)\n"
+		"\n",name,method);
+
+	ILGenWordInsn(info,IL_OP_LDC_I4 , maxArraySize);
+	ILGenAdjust(info,1);
+	ILGenArrayNew(info, ILType_Int8);
+	ILGenSimple(info,IL_OP_STLOC_0);
+	ILGenAdjust(info,-1);
+	
+	ILGenWordInsn(info,IL_OP_LDC_I4 , maxArraySize/2);
+	ILGenAdjust(info,1);
+	ILGenSimple(info,IL_OP_STLOC_1);
+	ILGenAdjust(info,-1);
+	
+	ILNode_GenDiscard(node->body,info);
+	ILGenSimple(info,IL_OP_RET);
+	
+	fprintf(info->asmOutput, "\t.maxstack %ld\n", info->maxStackHeight);
+	
+	fprintf(info->asmOutput,"}\n"
+		"}\n");
+}
+
+ILNode_GenDiscard(ILNode_BFLoop)
+{
+	ILLabel label1 = ILLabel_Undefined;	
+	ILLabel label2 = ILLabel_Undefined;
+	ILGenLabel(info, &label1);
+	
+	ILGenSimple(info,IL_OP_LDLOC_0);
+	ILGenSimple(info,IL_OP_LDLOC_1);
+	ILGenSimple(info,IL_OP_LDELEM_I1);
+
+	ILGenJump(info,IL_OP_BRFALSE,&label2);
+	
+	ILNode_GenDiscard(node->body,info);
+	
+	ILGenJump(info,IL_OP_BR,&label1);
+	ILGenLabel(info, &label2);
+}
+
+ILNode_GenDiscard(ILNode_BFRead)
+{
+	ILLabel label1 = ILLabel_Undefined;
+
+	ILGenSimple(info,IL_OP_LDLOC_0);
+	ILGenSimple(info,IL_OP_LDLOC_1);
+	ILGenCallByName(info,"int32 [.library] System.Console::Read()");
+	ILGenAdjust(info,3);
+	
+	ILGenSimple(info,IL_OP_DUP);
+	ILGenSimple(info,IL_OP_LDC_I4_0);
+	ILGenAdjust(info,2);
+	ILGenJump(info,IL_OP_BGE,&label1);
+	ILGenAdjust(info,-2);
+
+	/* result is -1 */
+	ILGenSimple(info,IL_OP_LDC_I4_1);
+	ILGenAdjust(info,1);
+	ILGenSimple(info,IL_OP_ADD);
+	ILGenAdjust(info,-1);
+
+	ILGenLabel(info,&label1);
+	ILGenSimple(info,IL_OP_STELEM_I1);
+	ILGenAdjust(info, -3);
+}
+
+ILNode_GenDiscard(ILNode_BFWrite)
+{
+	ILGenSimple(info,IL_OP_LDLOC_0);
+	ILGenSimple(info,IL_OP_LDLOC_1);
+	ILGenAdjust(info,2);
+	ILGenSimple(info,IL_OP_LDELEM_I1);
+	ILGenAdjust(info,-1);
+	ILGenCallByName(info,"void [.library] System.Console::Write(char)");
+	ILGenAdjust(info,-1);
+}
+
+ILNode_GenDiscard(ILNode_BFArith)
+{
+	if(!node->count)return;
+
+	ILGenSimple(info,IL_OP_LDLOC_0);
+	ILGenSimple(info,IL_OP_LDLOC_1);
+	ILGenAdjust(info,2);
+
+	ILGenSimple(info,IL_OP_LDLOC_0);
+	ILGenSimple(info,IL_OP_LDLOC_1);
+	ILGenAdjust(info,2);
+
+	ILGenSimple(info,IL_OP_LDELEM_I1);
+	ILGenAdjust(info,-1);
+	
+	if(node->count > 0)
+	{
+		ILGenShortInsn(info,IL_OP_LDC_I4_S,node->count);
+		ILGenAdjust(info,1);
+		ILGenSimple(info,IL_OP_ADD);
+		ILGenAdjust(info,-1);
+	}
+	else
+	{
+		ILGenShortInsn(info,IL_OP_LDC_I4_S,-(node->count));
+		ILGenAdjust(info,1);
+		ILGenSimple(info,IL_OP_SUB);
+		ILGenAdjust(info,-1);
+	}
+
+	ILGenSimple(info,IL_OP_STELEM_I1);
+	ILGenAdjust(info,-3);
+}
+
+
+ILNode_GenDiscard(ILNode_BFMove)
+{
+	if(!node->count)return;
+
+	ILGenSimple(info,IL_OP_LDLOC_1);
+	if(node->count > 0)
+	{
+		ILGenShortInsn(info,IL_OP_LDC_I4_S, node->count);
+		ILGenAdjust(info,2);
+		ILGenSimple(info,IL_OP_ADD);
+	}
+	else
+	{
+		ILGenShortInsn(info,IL_OP_LDC_I4_S, -(node->count));
+		ILGenAdjust(info,2);
+		ILGenSimple(info,IL_OP_SUB);
+	}
+	ILGenAdjust(info,-1);
+	ILGenSimple(info,IL_OP_STLOC_1);
+	ILGenAdjust(info,-1);
+}

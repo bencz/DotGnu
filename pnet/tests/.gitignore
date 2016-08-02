@@ -1,0 +1,8 @@
+Makefile
+Makefile.in
+.deps
+.libs
+test_crypt
+test_verify
+test_thread
+*.o

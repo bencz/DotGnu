@@ -1,0 +1,734 @@
+2009-06-25  Radek Polak  <psonek2@seznam.cz>
+
+	*  class/System.XML, class/System.XML/.cvsignore,
+	class/System.XML/Consts.cs, class/System.XML/Locale.cs,
+	class/System.XML/Makefile.am, class/System.XML/MonoTODOAttribute.cs,
+	class/System.XML/README, class/System.XML/System.XmlMono.build: New files
+	for building System.XML.
+
+	* NEWS, README: Info about building System.XML.
+	
+	* class/Makefile.am: Added System.XML to build.
+
+2007-03-04  Klaus Treichel  <ktreichel@web.de>
+
+	* NEWS, configure.in: update version for the "0.8.0" release.
+
+	* configure.in: update working version to "0.8.1".
+
+2006-02-20  Russell Stuart  <russell-savannah@stuart.id.au>
+
+	* minor re-work of build-debian-packages.
+
+2005-08-26  Klaus Treichel  <ktreichel@web.de>
+
+	* class/Custommarshalers/Custommarshalers.build,
+	class/Mono.Cairo/Mono.Cairo.build,
+	class/Mono.Data.SqliteClient/Mono.Data.SqliteClient.build,
+	class/Mono.Data.SybaseClient/Mono.Data.SybaseClient.build,
+	class/Mono.Data.Tds/Mono.Data.Tds.build,
+	class/Mono.Data.TdsClient/Mono.Data.TdsClient.build,
+	class/Mono.GetOptions/Mono.GetOptions.build,
+	class/Mono.Http/Mono.Http.build, class/Mono.Security/Mono.Security.build,
+	class/Mono.Security/Mono.Security.build,
+	class/Novell.Directory.Ldap/Novell.Directory.Ldap.build,
+	class/Npgsql/Npgsql.build, class/PEAPI/PEAPI.build,
+	class/System.Data/System.Data.build,
+	class/System.Data.OracleClient/System.Data.OracleClient.build,
+	class/System.DirectoryServices/System.DirectoryServices.build,
+	class/System.Management/System.Management.build,
+	class/System.Messaging/System.Messaging.build,
+	class/System.Runtime.Remoting/System.Runtime.Remoting.build,
+	class/System.Runtime.Serialization.Formatters.Soap/System.Runtime.Serialization.Formatters.Soap.build,
+	class/System.Security/System.Security.build,
+	class/System.ServiceProcess/System.ServiceProcess.build,
+	class/System.Web/System.Web.build,
+	class/System.Web.Services/System.Web.Services.build: Add file
+	build/common/Consts.cs to build.
+
+2005-08-17  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* NEWS, configure.in: update version for the "0.7.2" release.
+
+	* configure.in: update working version to "0.7.3".
+
+2005-08-07  Klaus Treichel  <ktreichel@web.de>
+
+	* class/System.Web/System.Web.build,
+	class/Novell.Directory.Ldap/Novell.Directory.Ldap.build: exclude the jvm
+	directories and files from build.
+
+2005-06-25  Klaus Treichel  <ktreichel@web.de>
+
+	* class/Custommarshalers/Custommarshalers.build,
+	class/Mono.Data.SybaseClient/Mono.Data.SybaseClient.build,
+	class/Mono.Data.Tds/Mono.Data.Tds.build,
+	class/Mono.Data.TdsClient/Mono.Data.TdsClient.build,
+	class/Mono.Security/Mono.Security.build,
+	class/System.Data/System.Data.build,
+	class/System.Data.OracleClient/System.Data.OracleClient.build,
+	class/System.DirectoryServices/System.DirectoryServices.build,
+	class/System.Management/System.Management.build,
+	class/System.Messaging/System.Messaging.build,
+	class/System.ServiceProcess/System.ServiceProcess.build,
+	class/System.Runtime.Serialization.Formatters.Soap/
+	System.Runtime.Serialization.Formatters.Soap.build,
+	class/System.Runtime.Remoting/System.Runtime.Remoting.build,
+	class/System.Security/System.Security.build,
+	class/System.Web/System.Web.build,
+	class/System.Web.Services/System.Web.Services.build: Add files
+	build/common/Locale.cs and build/common/MonoTODOAttribute.cs to build.
+
+	* tests/Test.build: Add reference to Mono.Security.dll and exclude file
+	System.Xml/XsdParticleValidationTests.cs from build of test for System.Xml.
+
+2005-06-11  Klaus Treichel  <ktreichel@web.de>
+
+	* class/IBM.Data.DB2/IBM.Data..DB".build, class/IBM.Data.DB2/Makefile.am,
+	class/IBM.Data.DB2/.cvsignore: Add IBM.Data.DB2 to ml-pnet.
+
+	* configure.in, class/Makefile.am: Remove class/Mono.Data.DB2Client,
+	class/Mono.Data.MySql, class/Mono.Data.PostgreSqlClient,
+	class/Mono.Directory.LDAP, class/System.Data.ObjectSpaces and
+	class/System.Data.SqlXml from build and add IBM.Data.DB2.
+
+	* copy-mcs.sh: remove Mono.Data.DB2Client, Mono.Data.MySql,
+	Mono.Data.PostgreSqlClient, Mono.Directory.LDAP, System.Data.ObjectSpaces
+	and System.Data.SqlXml from copy list and add IBM.Data.DB2.
+
+	* tests/Makefile.am, tests/Test.build: remove test of
+	Mono.Directory.LDAP.
+
+2005-06-11  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* NEWS, configure.in: update version for the "0.7.0" release.
+
+	* configure.in: update working version to "0.7.1".
+
+2005-06-05  Klaus Treichel  <ktreichel@web.de>
+
+	* class/System.Data/System.Data.build: exclude directories
+	System.Data.OleDb.jvm, System.Data.SqlClient and System.Data.SqlTypes.jvm
+	from build and remove exclusions of System.Data.Common/ExceptionHelper.cs
+	and System.Data.ProviderBase/DbStringManager.cs.
+
+2005-05-24  Klaus Treichel  <ktreichel@web.de>
+
+	* class/Mono.GetOptions/Mono.GetOptions.build: add missing reference to
+	System.dll.
+
+	* class/System.Data/System.Data.build: exclude directory
+	System.Data.ProviderBase.jvm, System.Data/Res.cs,
+	System.Data.Common/DbConvert.cs, System.Data.Common/ExceptionHelper.cs and
+	System.Data.ProviderBase/DbStringManager.cs from build.
+ 
+2005-02-25  Klaus Treichel  <ktreichel@web.de>
+
+	* tests/Test.build: exclude dir tools/npgsql from build for Mono.Security
+	tests.
+
+	* copy-mcs.sh: allow copying of a 1.0.x tarball of mcs. (Fix problem with
+	tools/SqlSharp in 1.0.x vs tools/sqlsharp in 1.1.x or svn).
+
+2005-01-27  Marc Haisenco  <haisenko@webport.de>
+
+	* class/System.ServiceProcess/System.ServiceProcess.build: Add missing
+	reference to System.Configuration.Install.dll. (patch #3683, Klaus)
+
+2005-01-23  Russell Stuart  <russell-savannah@stuart.id.au>
+
+	* Updated build-depian-packages.sh for new release.
+
+2005-01-16  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* NEWS, configure.in: update version for the "0.6.12" release.
+
+	* configure.in: update working version to "0.6.13".
+
+2005-01-15  Klaus Treichel  <ktreichel@web.de>
+
+	* tests/Test.build: exclude dir DataProviderTests from tests for the
+	System.Data assembly.
+
+	* copy-mcs.sh: rename SqlSharp to sqlsharp.
+
+2004-12-15  Klaus Treichel  <ktreichel@web.de>
+
+	* class/Novell.Directory.Ldap/Novell.Directory.Ldap.build,
+	class/System.DirectoryServices/System.DirectoryServices.build: Add reference
+	to Mono.Security.
+
+	* tools/SqlSharp/SqlSharp.build: change source basedir to sqlsharp. 	
+
+2004-10-30  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	*  class/ByteFX.Data/ByteFX.Data.build, class/Npgsql/Npgsql.build,
+	class/Mono.Security/Mono.Security.build: adjustments to the
+	"<references>" for clean builds.
+
+	* NEWS, configure.in: update version for the "0.6.10" release.
+
+	* configure.in: update working version to "0.6.11".
+
+2004-10-29  Klaus Treichel  <ktreichel@web.de>
+
+	* nunit20/core/nunit.core.build: exclude WarningSuite.cs from build.
+
+2004-10-18  Klaus Treichel  <ktreichel@web.de>
+
+	* copy-mcs.sh: Copy the tests for corlib, System and System.XML too.
+
+2004-10-07  Klaus Treichel  <ktreichel@web.de>
+
+	* class/System.Data/SqlNotificationInfo.cs,
+	class/System.Data/SqlNotificationSource.cs,
+	class/System.Data/SqlNotificationType.cs: removed. They are in the mcs
+	sources now.
+
+	* class/System.Data/System.Data.build: remove these files from the build.
+
+2004-10-03  Klaus Treichel  <ktreichel@web.de>
+
+	* tests/Test.build: exclude directory System.IO.Compression from build of
+	System assembly test.
+
+2004-10-03  Klaus Treichel  <ktreichel@web.de>
+
+	* tests/Makefile.am, tests/Test.build: split test for corlib into tests per
+	Namespace.
+
+2004-09-28  Klaus Treichel  <ktreichel@web.de>
+
+	* configure.in: add class/ByteFX.Data/MAkefile to the files to be created
+
+	* class/Makefile.am: include ByteFX.Data and Npgsql in the build.
+
+	* class/ByteFX.Data/ByteFX.Data.build: add missing references and exclude
+	one file.
+
+2004-09-27  Klaus Treichel  <ktreichel@web.de>
+
+	* configure.in, profiles/framework1.1, profiles/framework2.0: change the
+	build system to support profiles (framework1.1 is default because 2.0 does
+	not build completely yet).
+	
+	* class/Makefile.am: switch Mono.Security and System.Security because of
+	dependecy changes in 2.0.
+
+	* class/System.Data/System.Data.build,
+	class/System.Data.ObjectSpaces/System.Data.ObjectSpaces.build,
+	class/System.Data.SqlXml/System.Data.SqlXml.build,
+	class/System.Security/System.Sqcurity.build,
+	class/System.Web/System.Web.build,
+	class/System.Web.Services/System.Web.Services.build,
+	class/System.Runtime.Remoting/System.Runtime.Remoting.build,
+	class/System.Runtime.Serialization.Formatters.Soap/System.Runtime.Serialization.Formatters.Soap.build,
+	tests/Test.build: remove defines of NET_1_1 and ONLY_1_1
+
+	* class/System.Data/System.Data.build,
+	class/System.Data.SqlNotificationInfo.cs,
+	class/System.Data/SqlNotificationSource.cs,
+	class/System.Data/SqlNotificationType.cs: added/changed to build System.Data
+	for .NET 2.0
+  
+2004-09-17  Gopal.V  <gopalv82@yahoo.com>
+
+	* class/System.Web/System.Web.build: remove the -flatin1-only and
+	the exclusion of Localize.cs.
+
+	* class/System.Web/ICalls.cs: return "" instead of null for the 
+	icall stub functions.
+
+2004-09-12  Klaus Treichel  <ktreichel@web.de>
+
+	* class/Makefile.am: exclude Mono.Security.Win32 from builid because of
+	problem with Assembly/AssemblyInfo.cs
+
+	* nunit20/util/nunit.util.build: remove resource Transform.resources
+	because the file does not exist. 
+
+2004-09-12  Klaus Treichel  <ktreichel@web.de>
+
+	* class/Custommarshalers/Custommarshalers.build: remove obsolete reference
+	to the missing TODOAttribute
+
+	* class/System.Web/System.Web.build: exclude the file
+	System.Web.UI.WebControls/Localize.cs because of cscc problem with the
+	fileheader.
+ 
+	* tests/Test.build: fix reference to nunit.framework.dll and exclude
+	directory System.Data.SqlClient from System.Data test.
+
+2004-09-09  Russell Stuart  <russell-savannah@stuart.id.au>
+
+	* build-debian-packages.conf,
+	  build-debian-packages.sh,
+	  configure.in,
+	  debian/changelog,
+	  debian/README.Debian,
+	  debian/rules,
+	  ml-pnet.spec.in:
+	  Added rpm and Debian packaging.
+
+
+2004-08-31  Gopal.V  <gopalv82@yahoo.com>
+
+	* class/Npgsql/Npgsql.build: Add required references for Npgsql to
+	compile.
+
+2004-08-09  Gopal.V  <gopalv82@yahoo.com>
+
+	* README: The comment about needing mono sources is applicable only
+	when building from CVS.
+
+2004-08-08  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* copy-mcs.sh: add missing directories.
+
+	* NEWS, configure.in: update version for the "0.6.8" release.
+
+	* configure.in: update working version to "0.6.9".
+
+2004-08-07  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* nunit20/nunit-console/Makefile.am, tools/run_test.sh.in,
+	nunit20/nunit-console/nunit.console.build: rename "nunit-console.exe"
+	to "nunit-console-pnet.exe" to prevent clashes with Mono packages.
+
+	* tools/wsdl/Makefile.am, tools/wsdl/wsdl.build: fix the "wsdl"
+	build system so that it doesn't pick up MonoWSDL2.cs by mistake.
+
+2004-08-04  Gopal.V  <gopalv82@yahoo.com>
+	
+	* Makefile.am, nunit20/nunit-console/Makefile.am,
+	nunit20/nunit-console/nunit.console.build, nunit20/util/nunit.util.build:
+	Add nunit20 to the default build and swap around the assembly references.
+	Install nunit-console into the PATH using clrwrap.
+
+	* nunit20/util/nunit.util.build, nunit20/util/Makefile.am: Work around
+	the resource naming problem by copying to the required name.
+	
+2004-08-03  Gopal.V  <gopalv82@yahoo.com>
+
+	* tools/wsdl/Makefile.am: change a "wdsl" to "wsdl" for the install
+	target.
+
+2004-07-23  Klaus Treichel  <ktreichel@web.de>
+
+	* class/Makefile.am: exclude Mono.Posix from build
+
+	* tests/Test.build: exclude System.Data.Odbc dir for System.Data tests.
+
+	* tools/run_test.sh.in: remove arg /nologo from nunit call.
+
+2004-06-22  Klaus Treichel  <ktreichel@web.de>
+
+	* class/System.Data.OracleClient/System.Data.OracleClient.build: add reference
+	to System.Drawing.dll because of added DesignerAttribute.
+
+2004-06-13  Klaus Treichel  <ktreichel@web.de>
+
+	* class/Mono.Security/Mono.Security.build: remove excludes from build file
+	since they compile now.
+
+	* tools/wsdl/Makefile.am, tools/wsdl/wsdl.build: change last wdsls to wsdl
+
+2004-06-13  Klaus Treichel  <ktreichel@web.de>
+
+	* configure.in: change tools/wdsl/Makefile to tools/wsdl/Makefile
+
+	* tools/Makefile.am: change wdsl in SUBDIRS to wsdl
+
+	* tools/wdsl/.cvsignore, tools/wdsl/Makefile.am, tools/wdsl/wdsl.build,
+	tools/wdsl/wdsl-run.sh: removed
+
+	* tools/wsdl/.cvsignore, tools/wsdl/Makefile.am, tools/wsdl/wsdl.build,
+	tools/wsdl/wsdl-run.sh: added
+
+2004-06-12  Klaus Treichel  <ktreichel@web.de>
+
+	* configure.in: add creation of tools/wdsl/Makefile
+
+	* tools/Makefile.am: add wdsl to SUBDIRS
+
+	* tools/wdsl/.cvsignore, tools/wdsl/Makefile.am, tools/wdsl/wdsl.build,
+	tools/wdsl/wdsl-run.sh: added
+
+2004-06-12  Klaus Treichel  <ktreichel@web.de>
+
+	* tests/Makefile.am, tests/Test.build: add building of TestSystem.dll and
+	missing references building testcases to tests/Test.build
+
+	* nunit20/framework/Makefile.am, nunit20/framework,nunit.framework.build,
+	nunit20/core/Makefile.am, nunit20/core/nunit.core.build,
+	nunit20/util/Makefile.am, nunit20/util/nunit.util.build,
+	nunit20/nunit-console/Makefile.am,
+	nunit20/nunit-console/nunit.console.build: build nunit with libraries from
+	pnetlib instead of the installed ones.
+
+	* class/System.Runtime.Remoting/System.Runtime.Remoting.build,
+	class/Mono.Http/Mono.Http.build: add missing references
+
+2004-06-11  Klaus Treichel  <ktreichel@web.de>
+
+	* tests/.cvsignore, tests/Magefile.am, tests/Test.build: add building and
+	execution of testcases using nunit.
+
+	* tools/run_test.sh.in: add arg -C 4096 to ilrun for Testcorlib.dll and
+	some more library directories.  
+
+	* configure.in: add creation of tests/Makefile.
+
+2004-06-09  Klaus Treichel  <ktreichel@web.de>
+
+	* configure.in: add creation of class/System.Runtime.Remoting/Makefile
+
+	* Makefile.am: remove directory nunit20 from SUBDIRS because nunit does not
+	build everywhere
+ 
+	* class/Makefile.am: add System.Runtime.Remoting to SUBDIRS
+
+	* class/Mono.Cairo/Mono.Cairo.build: exclude directory Samples from
+	build
+
+	* class/Mono.Security/Mono.Security.build, class/Mono.Security/Makefile.am:
+	remove creation of testcase
+
+	* class/System.Runtime.Serialization.Formatters.Soap/
+	System.Runtime.Serialization.Formatters.Soap.build: added definition of
+	NET_1_1 (for System.Runtime.Remoting).	 
+
+	* class/System.Runtime.Remoting/Makefile.am,
+	class/System.Runtime.Remoting/System.Runtime.Remoting.build,
+	class/System.Runtime.Remoting/.cvsignore: added 
+
+	* tools/run_test.sh.in: update script to run testcases with nunit
+
+2004-06-06  Klaus Treichel  <ktreichel@web.de>
+
+	* configure.in: add ILRUN and ML_PNET_PATH vars and creation of 
+	tools/run_test.sh
+
+	* tools/run_test.sh.in: added
+
+	* tools/.cvsignore: appended run_test.sh to ignorelist
+
+2004-06-04  Klaus Treichel  <ktreichel@web.de>
+
+	* nunit20/util/nunit.util.build: move reference to nunit.framework.dll
+	to the top due to compiling problems in some cases.
+	
+2004-06-04  Klaus Treichel  <ktreichel@web.de>
+
+	* class/System.Messaging/System.Messaging.build: add reference to
+	System.Windows.Forms.dll needed for System.Messaging.Design.
+
+2004-06-02  Klaus Treichel  <ktreichel@web.de>
+
+	* Makefile.am: add nunit20 to SUBDIRS
+
+	* configure.in: add building of Mono.Http/Makefile,
+	nunit20/Makefile, nunit20/framework/Makefile, nunit20/core/Makefile,
+	nunit20/util/Makefile, nunit20/nunit-console/Makefile
+
+	* class/Makefile.am: add Mono.Http to SUBDIRS
+
+	* class/Mono.Http/Makefile.am, class/Mono.Http/Mono.Http.build,
+	class/Mono.Http/.cvsignore: added
+
+	* nunit20/Makefile.am, nunit20/.cvsignore, nunit20/core/Makefile.am,
+	nunit20/core/nunit.core.build, nunit20/core/.cvsignore,
+	nunit20/framework/Makefile.am, nunit20/framework/nunit.framework.build,
+	nunit20/framework/.cvsignore, nunit20/nunit-console/Makefile.am,
+	nunit20/nunit-console/nunit.console.build,
+	nunit20/nunit-console/.cvsignore, nutil20/util/Makefile.am,
+	nunit20/util/nunit.util.build, nunit20/util/.cvsignore: added
+
+	* class/Mono.Security/Makefile.am, class/Mono.Security/Mono.Security.build:
+	added building of testcases (make check) executing is not yet supported.
+ 
+2004-05-29  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* class/System.Data/Makefile.am, jay/.cvsignore, jay/Makefile.am,
+	jay/README, jay/README.jay, jay/closure.c, jay/defs.h, jay/error.c,
+	jay/lalr.c, jay/lr0.c, jay/main.c, jay/mkpar.c, jay/output.c,
+	jay/reader.c, jay/skeleton, jay/skeleton.cs, jay/symtab.c,
+	jay/verbose.c, jay/warshall.c: check in the full sources for jay
+	because automake 1.4 cannot handle directory specifications in
+	SOURCES lines.
+
+	* class/System.Data/.cvsignore, class/System.Web/.cvsignore,
+	class/System.Web.Services/.cvsignore: add some auto-generated
+	files to .cvsignore.
+
+	* NEWS, configure.in: update version for the "0.6.6" release.
+
+	* configure.in: update working version to "0.6.7".
+
+2004-05-24  Gopal.V  <gopalv82@yahoo.com>
+
+	* copy-mcs.sh: Add the new directories to copy-mcs.sh.
+
+2004-05-21  Gopal.V  <gopalv82@yahoo.com>
+
+	* class/System.Web.Services/System.Web.Services.build: Add references
+	to System.Data and its dependencies to support a clean build.
+
+	* class/System.Web/System.Web.build, class/System.Web/ICall.cs: Add
+	stubs to replace the mono internal calls.
+
+2004-05-20  Gopal.V  <gopalv82@yahoo.com>
+
+	* configure.in, class/Makefile.am, 
+	class/System.Web.Services/Makefile.am, 
+	class/System.Web.Services/System.Web.Services.build: Add
+	System.Web.Services to ml-pnet.
+	
+2004-05-19  Gopal.V  <gopalv82@yahoo.com>
+
+	* configure.in, jay/Makefile.am: add jay as no-inst binary to 
+	enable it to build System.Data.
+	
+	* Makefile.am: place jay before all other tools.
+
+	* class/System.Data/Makefile.am , class/System.Data/System.Data.build:
+	Generate Parser.cs locally using jay and let it compile System.Data
+	out of the box.
+
+	* class/System.Web/System.Web.build , class/System.Web/Makefile.am,
+	class/Makefile.am , configure.in : Add System.Web to ml-pnet.
+	
+2004-04-30  Klaus Treichel  <ktreichel@web.de>
+
+	* class/Makefile.am: Reorder directories to reflect dependencies
+
+	* class/Mono.Data.DB2Client/Mono.Data.DB2Client.build,
+	class/Mono.Data.MySql/Mono.Data.MySql.build,
+	class/Mono.Data.PostgreSqlClient/Mono.Data.PostgreSqlClient.build,
+	class/Mono.Data.SqliteClient/Mono.Data.SqliteClient.build,
+	class/Mono.Data.SybaseClient/Mono.Data.SybaseClient.build,
+	class/Mono.Data.TdsClient/Mono.Data.TdsClient.build,
+	class/System.Data.OracleClient/System.Data.OracleClient.build,
+	tools/SqlSharp/SqlSharp.build: add missing reference to Mono.Security
+
+	* class/Mono.Data.Tds/Mono.Data.Tds.build: added missing reference 
+	to System.Xml and Mono.Security
+	
+	* class/Mono.Security/Mono.Security.build,
+	class/System.Data/System.Data.build: set framework version back 
+	to 1.1 because of missing sources for 1.2 , add flag ONLY_1_1
+	add missing reference to Mono.Security.
+
+	* class/System.Data.Objectspaces/System.Data.Objectspaces.build,
+	class/System.Data.SqlXml/System.Data.SqlXml.build: set framework 
+	version back to 1.1 because of dependencies , add missing reference
+	to Mono.Security. (patch #2935, Gopal)
+
+2004-01-03  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* NEWS, configure.in: update version for the "0.6.2" release.
+
+	* configure.in: update working version to "0.6.3".
+
+2003-12-31  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* class/System.DirectoryServices/System.DirectoryServices.build:
+	add back some classes that were previously broken but work now.
+
+2003-11-28  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* configure.in, copy-mcs.sh, class/Makefile.am,
+	class/System.DirectoryServices/.cvsignore,
+	class/System.DirectoryServices/Makefile.am,
+	class/System.DirectoryServices/System.DirectoryServices.build:
+	add build scripts for "System.DirectoryServices".
+
+	* configure.in, copy-mcs.sh, class/Makefile.am,
+	class/Mono.Data.SqliteClient/.cvsignore,
+	class/Mono.Data.SqliteClient/Makefile.am,
+	class/Mono.Data.SqliteClient/Mono.Data.SqliteClient.build,
+	class/Mono.Data.SybaseClient/.cvsignore,
+	class/Mono.Data.SybaseClient/Makefile.am,
+	class/Mono.Data.SybaseClient/Mono.Data.SybaseClient.build,
+	class/Mono.Data.TdsClient/.cvsignore,
+	class/Mono.Data.TdsClient/Makefile.am,
+	class/Mono.Data.TdsClient/Mono.Data.TdsClient.build
+	add build scripts for "Mono.Data.SqliteClient",
+	"Mono.Data.SybaseClient", and "Mono.Data.TdsClient".
+
+2003-11-27  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* configure.in, class/Makefile.am: temporarily disable
+	Npgsql because it doesn't build due to missing dependencies.
+
+	* configure.in, */*.build, */*.am: modify the build system
+	to use "ilgac" to install assemblies; infer the correct framework
+	version numbers from pnetlib.
+
+	* missing: update the "missing" script so that it is no longer
+	"too old or missing".
+
+	* configure.in, copy-mcs.sh, class/Makefile.am,
+	class/Mono.Cairo/.cvsignore, class/Mono.Cairo/Makefile.am,
+	class/Mono.Cairo/Mono.Cairo.build, class/System.Data/System.Data.build,
+	class/System.Data.ObjectSpaces/.cvsignore,
+	class/System.Data.ObjectSpaces/Makefile.am,
+	class/System.Data.ObjectSpaces/System.Data.ObjectSpaces.build,
+	class/System.Data.SqlXml/.cvsignore,
+	class/System.Data.SqlXml/Makefile.am,
+	class/System.Data.SqlXml/System.Data.SqlXml.build: add build
+	scripts for "Mono.Cairo", "System.Data.SqlXml", and
+	"System.Data.ObjectSpaces".
+
+	* configure.in, copy-mcs.sh, class/Makefile.am,
+	class/Mono.Security/.cvsignore, class/Mono.Security/Makefile.am,
+	class/Mono.Security/Mono.Security.build,
+	class/Mono.Security.Win32/.cvsignore,
+	class/Mono.Security.Win32/Makefile.am,
+	class/Mono.Security.Win32/Mono.Security.Win32.build,
+	class/Novell.Directory.Ldap/.cvsignore,
+	class/Novell.Directory.Ldap/Makefile.am,
+	class/Novell.Directory.Ldap/Novell.Directory.Ldap.build,
+	class/System.Security/.cvsignore, class/System.Security/Makefile.am,
+	class/System.Security/System.Security.build: add build scripts for
+	"Mono.Security", "Mono.Security.Win32", "Novell.Directory.Ldap",
+	and "System.Security".
+
+2003-10-15  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* NEWS, configure.in: update version for the "0.6.0" release.
+
+	* configure.in: update working version to "0.6.1".
+
+2003-10-14  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* configure.in, class/Makefile.am: disable "ByteFX.Data" because
+	it now depends upon "System.Design" and "System.Web" which are
+	not supported yet.
+
+	* tools/.cvsignore, tools/SqlSharp/.cvsignore: add cvsignore files.
+
+2003-10-08  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* configure.in, class/Makefile.am, class/ByteFX.Data/ByteFX.Data.build,
+	class/ICSharpCode.SharpZipLib/ICSharpCode.SharpZipLib.build,
+	class/ICSharpCode.SharpZipLib/Makefile.am: remove the zip library
+	from "ml-pnet" because pnetlib now has its own version.
+
+	* copy-mcs.sh: remove the zip library from the build helper script.
+
+2003-09-21  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* configure.in, copy-mcs.sh, class/Makefile.am,
+	class/ByteFX.Data/ByteFX.Data.build,
+	class/Mono.Data.DB2Client/Mono.Data.DB2Client.build,
+	class/Mono.Data.MySql/Mono.Data.MySql.build,
+	class/Mono.Data.PostgreSqlClient/Mono.Data.PostgreSqlClient.build,
+	class/Npgsql/Npgsql.build, class/System.Data/System.Data.build,
+	class/System.Data.OracleClient/System.Data.OracleClient.build,
+	class/System.EnterpriseServices/Makefile.am,
+	class/System.EnterpriseServices/System.EnterpriseServices.build:
+	remove "System.EnterpriseServices" from "ml-pnet" because pnetlib
+	now has its own version.
+
+2003-09-06  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* NEWS, configure.in: update version for the "0.5.12" release.
+
+	* configure.in: update working version to "0.5.13".
+
+2003-08-09  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* class/System.ServiceProcess/System.ServiceProcess.build:
+	add "System.dll" to the dependencies for "System.ServiceProcess.dll".
+
+	* configure.in, class/Makefile.am,
+	class/System.Configuration.Install/Makefile.am,
+	class/System.Configuration.Install/System.Configuration.Install.build:
+	remove "System.Configuration.Install" from ml-pnet because pnetlib
+	now has its own implementation.
+
+2003-07-26  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* configure.in, copy-mcs.sh: look for "build/library.make" in
+	some other places as well.
+
+	* NEWS, configure.in: update version for the "0.5.10" release.
+
+	* configure.in: update working version to "0.5.11".
+
+2003-07-19  Gopal.V  <gopalv82@symonds.net>
+	
+	* configure.in: look for build/library.make as well
+
+2003-06-17  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* configure.in: look for "mcs-sources" locally first, in case
+	we have the mcs sources in the local directory.
+
+	* copy-mcs.sh: add a helper script for copying the mcs sources
+	into a release tarball.
+
+	* NEWS, configure.in: update version for the "0.5.8" release.
+
+	* configure.in: update working version to "0.5.9".
+
+2003-06-01  Gopal.V  <gopalv82@symonds.net>
+	
+	* class/ByteFX.Data/ByteFX.Data.build,
+	class/Mono.Data.DB2Client/Mono.Data.DB2Client.build,
+	class/Mono.Data.MySql/Mono.Data.MySql.build,
+	class/Mono.Data.PostgreSqlClient/Mono.Data.PostgreSqlClient.build,
+	class/System.Data.OracleClient/System.Data.OracleClient.build,
+	tools/SqlSharp/SqlSharp.build: Provide the path to the various
+	dependency libraries inside ml-pnet for builds using System.Data
+
+	* configure.in, class/Makefile.am, class/Npgsql/Makefile.am , 
+	class/Npgsql/Npgsql.build: Add the Npgsql managed provider for
+	PostgreSql.
+
+2003-05-31  Gopal.V  <gopalv82@symonds.net>
+
+	* configure.in, Makefile.am, tools/Makefile.am
+	tools/SqlSharp/Makefile.am, tools/SqlSharp/SqlSharp.build, 
+	tools/SqlSharp/sqlsharp-run.sh : Add a new tools/ section and 
+	add a build for the SqlSharp command line client.
+
+	* configure.in, class/Makefile.am, class/ByteFX.Data/Makefile.am,
+	class/ByteFX.Data/ByteFX.Data.build: Add the managed Mysql provider
+	to the build.
+	
+	* ChangeLog, configure.in, class/Makefile.am, 
+	class/Mono.Data.DB2Client/Makefile.am, 
+	class/Mono.Data.DB2Client/Mono.Data.DB2Client.build, 
+	class/System.Data.OracleClient/Makefile.am, 
+	class/System.Data.OracleClient/System.Data.OracleClient.build: Add 
+	OracleClient and DB2Client to the build.
+
+	
+2003-05-30  Gopal.V  <gopalv82@symonds.net>
+	
+	* configure.in, class/Makefile.am, class/System.Data/Makefile.am,
+	class/System.Data/System.Data.build: Add the build for System.Data
+	assembly
+
+	* configure.in, class/Makefile.am, 
+	class/Mono.Data.PostgreSqlClient/Makefile.am,
+	class/Mono.Data.PostgreSqlClient/Mono.Data.PostgreSqlClient.build,
+	class/Mono.Data.MySql/Makefile.am,
+	class/Mono.Data.MySql/Mono.Data.MySql.build: Add the Postgres and
+	MySql client plugin builds for System.Data .
+
+2003-05-28  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* configure.in, class/Makefile.am, class/System.Messaging/.cvsignore,
+	class/System.Messaging/Makefile.am,
+	class/System.Messaging/System.Messaging.build: add the
+	"System.Messaging" assembly to "ml-pnet".
+
+2003-05-25  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* configure.in, class/Makefile.am,
+	class/Accessibility/Accessibility.build,
+	class/Accessibility/Makefile.am: remove "Accessibility" from
+	"ml-pnet" because "pnetlib" now has its own version.

@@ -1,0 +1,11 @@
+./fixed1.cs:23: warning: unsafe method declaration
+./fixed1.cs:27: warning: unsafe `fixed' statement
+./fixed1.cs:25: warning: unsafe address operator
+./fixed1.cs:31: warning: unsafe `fixed' statement
+./fixed1.cs:29: warning: unsafe address operator
+./fixed1.cs:34: warning: unsafe method declaration
+./fixed1.cs:38: warning: unsafe `fixed' statement
+./fixed1.cs:42: warning: unsafe `fixed' statement
+./fixed1.cs:45: warning: unsafe method declaration
+./fixed1.cs:49: warning: unsafe `fixed' statement
+./fixed1.cs:53: warning: unsafe `fixed' statement

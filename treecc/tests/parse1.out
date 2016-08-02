@@ -1,0 +1,15 @@
+line 3: %node expression no_parent 6
+line 5: %field type type_code int_type 1
+line 8: %node binary expression 2
+line 10: %field expr1 expression * no_value 0
+line 11: %field expr2 expression * no_value 0
+line 14: %node unary expression 2
+line 17: %field expr expression * no_value 0
+line 21: %node intnum expression 0
+line 23: %field num int no_value 0
+line 26: %node plus binary 0
+line 27: %node minus binary 0
+line 28: %node multiply binary 0
+line 29: %node divide binary 0
+line 30: %node negate unary 0
+line 32: %node power binary 0

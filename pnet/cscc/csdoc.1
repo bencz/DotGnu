@@ -1,0 +1,60 @@
+.\" Copyright (c) 2001 Southern Storm Software, Pty Ltd.
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.TH csdoc 1 "24 September 2001" "Southern Storm Software" "Portable.NET Development Tools"
+.SH NAME
+csdoc \- the C# documentation extraction utility
+.SH SYNOPSIS
+\fBcsdoc\fR [ options ] \fIinput\fR ...
+.SH DESCRIPTION
+.B Csdoc
+reads the supplied C# source files, and writes XML data to the
+file specified by the `\fB-o\fR' option, or to standard output if
+`\fB-o\fR' is not supplied.
+
+The supplied source files are parsed and processed using the
+first phases of semantic analysis.  Thus, the source should be
+valid C#, or a compilation error may occur.  \fBCsdoc\fR will not
+generate assembly or object code output.
+
+The XML output can be processed by tools such as \fBcsdoc2texi\fR(1)
+to produce online or printed documentation.
+.SH OPTIONS
+The \fBcsdoc\fR command-line accepts all of the options that may be
+supplied to \fBcscc\fR(1).  The following options have special
+significance to \fBcsdoc\fR:
+.TP
+.B \-o \fIfile\fR
+Specify the name of the file to write the XML output to.  The
+default is standard output.  Specifying `\fB-o -\fR' will also
+write the XML to standard output.
+.TP
+.B \-fprivate
+By default, \fBcsdoc\fR will only write public types and members to the
+XML output.  Specifying `\fB-fprivate\fR' will force \fBcsdoc\fR to
+also include private types and members.
+.TP
+.B \-flibrary\-name=\fIname\fR
+Specify the library name to use for the types in the XML output
+file.  By default, no library name is used.
+.SH "AUTHOR"
+Written by Southern Storm Software, Pty Ltd.
+
+http://www.southern-storm.com.au/
+.SH "SEE ALSO"
+csdoc2texi(1), cscc(1)
+.SH "DIAGNOSTICS"
+Exit status is 1 if an error occurred while processing the input.
+Otherwise the exit status is 0.

@@ -1,0 +1,6 @@
+parse3.tst:3: declaration expected
+line 4: %node x no_parent 4
+parse3.tst:5: declaration expected
+parse3.tst:7: unknown keyword `%unknown'
+line 7: %node y x 0
+parse3.tst:7: declaration expected

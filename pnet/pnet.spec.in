@@ -1,0 +1,200 @@
+Name:		pnet
+Version:	@VERSION@
+Release:	custom
+Source:		http://www.southern-storm.com.au/download/%{name}-%{version}.tar.gz
+License:	GPL
+Vendor:		DotGNU
+BuildRoot:	%{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+Group:		System/Emulators
+
+BuildRequires:	flex >= 0:2.5.4
+BuildRequires:	bison >= 0:1.28
+BuildRequires:	treecc >= 0:@TREECC_VERSION@
+BuildRequires:	readline-devel
+BuildRequires:	m4
+BuildRequires:	texinfo
+
+Summary: The DotGNU Portable .NET tools
+%description
+The goal of this project is to build a suite of Free Software tools to
+build and execute portable executable (.NET, JavaTM, Parrot)
+applications, including compilers, an assembler, a disassembler, and
+runtime engine capable of executing multiple stack-based bytecode
+formats.
+
+%package interpreter
+Summary: Runtime engine for DotGNU Portable .NET
+Group: System/Emulators
+%description interpreter
+The DotGNU Portable .NET interpreter.  It executes multiple kinds
+of portable executables, including IL (".NET"), JavaTM classes
+and Parrot assemblies.
+
+%package compiler
+Summary: Compilers for DotGNU Portable .NET
+Group: System/Compilers
+%description compiler
+The DotGNU Portable. NET compiler suite.  This collection allows
+multiple input languages and multiple output bytecodes, much like
+GCC.  Current languages include C# and C; current output formats
+include IL assembly (".NET"), JavaTM assembly, and imcc (Parrot
+(Perl6) high-level assembly).
+
+%package tools
+Summary: Binutils for DotGNU Portable .NET  
+Group: System/Tools
+%description tools
+A toolkit for the Portable .NET compiler and interpreter.
+This includes csant, a replacement for make, and various
+tools to deal with IL binaries.
+
+%package embed
+Summary: Shared garbage collector for DotGNU Portable .NET
+Group: Development/Languages
+%description embed
+Portable .NET builds and installs a shared garbage-collection library,
+intended for use with embedded CLR.
+
+%package embed-devel
+Summary: Static libraries and headers for embedding DotGNU Portable .NET
+Group: Development/Libraries
+Requires: pnet-embed
+%description embed-devel
+Static libraries and headers needed to compile programs that embed
+Portable .NET.
+
+%prep
+%setup -q
+
+%build
+./auto_gen.sh
+test "/" = "${RPM_BUILD_ROOT}" || rm -rf ${RPM_BUILD_ROOT}
+export CFLAGS=$(echo $RPM_OPT_FLAGS|sed -e 's!-O3!-O2!g')
+%configure
+make
+
+%install
+make DESTDIR=${RPM_BUILD_ROOT} install
+
+%clean
+test "/" = "${RPM_BUILD_ROOT}" || rm -rf ${RPM_BUILD_ROOT}
+
+%post tools
+/sbin/install-info %{_infodir}/pnettools.info.gz %{_infodir}/dir || :
+sleep 2			# rpm hangs
+
+%postun tools
+[ ."$1" != .0 ] ||
+  [ ! -e %{_infodir}/pnettools.info.gz ] ||
+  /sbin/install-info --delete %{_infodir}/pnettools.info.gz %{_infodir}/dir
+sleep 2			# rpm hangs
+
+%files interpreter
+%defattr(-,root,root,-)
+%doc AUTHORS COPYING ChangeLog NEWS README
+%{_bindir}/ilrun
+%{_mandir}/man1/ilrun.1*
+
+%files compiler
+%defattr(-,root,root,-)
+%doc AUTHORS COPYING ChangeLog NEWS README
+%{_bindir}/al
+%{_bindir}/cli-unknown-ar
+%{_bindir}/cli-unknown-cpp
+%{_bindir}/cli-unknown-gcc
+%{_bindir}/cli-unknown-ranlib
+%{_bindir}/cli-unknown-strip
+%{_bindir}/clrwrap
+%{_bindir}/cscc
+%{_bindir}/cscc-cpp
+%{_bindir}/csant
+%{_bindir}/ilasm
+%{_bindir}/ilalink
+%{_bindir}/ilranlib
+%{_bindir}/ilstrip
+%{_bindir}/resgen
+%{_libdir}/cscc/plugins/*
+%{_mandir}/man1/al.1*
+%{_mandir}/man1/cli-unknown-ar.1*
+%{_mandir}/man1/cli-unknown-cpp.1*
+%{_mandir}/man1/cli-unknown-gcc.1*
+%{_mandir}/man1/cli-unknown-ranlib.1*
+%{_mandir}/man1/cli-unknown-strip.1*
+%{_mandir}/man1/clrwrap.1*
+%{_mandir}/man1/csant.1*
+%{_mandir}/man1/cscc.1*
+%{_mandir}/man1/cscc-cpp.1*
+%{_mandir}/man1/ilalink.1*
+%{_mandir}/man1/ilasm.1*
+%{_mandir}/man1/ilranlib.1*
+%{_mandir}/man1/ilstrip.1*
+%{_mandir}/man1/resgen.1*
+
+%files tools
+%doc AUTHORS COPYING ChangeLog NEWS README
+%{_bindir}/cli-unknown-size
+%{_bindir}/ildasm
+%{_bindir}/ildd
+%{_bindir}/ilfind
+%{_bindir}/ilheader
+%{_bindir}/ilgac
+%{_bindir}/ilsize
+%{_bindir}/ilnative
+%{_bindir}/ilverify
+%{_bindir}/csdoc
+%{_bindir}/csdoc2html
+%{_bindir}/csdoc2hier
+%{_bindir}/csdoc2texi
+%{_bindir}/cssrc2html
+%{_infodir}/pnettools.info*
+%{_mandir}/man1/cli-unknown-size.1*
+%{_mandir}/man1/csdoc.1*
+%{_mandir}/man1/csdoc2hier.1*
+%{_mandir}/man1/csdoc2html.1*
+%{_mandir}/man1/csdoc2texi.1*
+%{_mandir}/man1/cssrc2html.1*
+%{_mandir}/man1/ilfind.1*
+%{_mandir}/man1/ilheader.1*
+%{_mandir}/man1/ildasm.1*
+%{_mandir}/man1/ildd.1*
+%{_mandir}/man1/ilgac.1*
+%{_mandir}/man1/ilnative.1*
+%{_mandir}/man1/ilsize.1*
+%{_mandir}/man1/ilverify.1*
+
+%files embed
+%defattr(-,root,root,-)
+%{_libdir}/pnet/libgc.so
+%{_libdir}/pnet/libgc.so.*
+
+%files embed-devel
+%defattr(-,root,root,-)
+%{_libdir}/libIL*.a
+%{_libdir}/pnet/libffi.la
+%{_libdir}/pnet/libffi.a
+%{_libdir}/pnet/libgc.la
+%{_libdir}/pnet/libgc.a
+%{_includedir}/pnet/*
+
+%changelog
+* Thu Dec 16 2004 Russell Stuart <russell-rpm@stuart.id.au> 0.6.11
+  Improved handling of info files.
+
+* Thu Mar 10 2004 Russell Stuart <russell-rpm@stuart.id.au> 0.6.3
+- Removed /usr/bin/ildb, /usr/bin/ildiff and /usr/share/man/man1/ildiff.1
+  for now, as they aren't being made.
+- Added clrwrap, ilgac, ilheader and ilstrip.
+- Added various man page entries.
+- Installed the pnettools info file.
+- Added files in /usr/lib/cscc to the install list.
+- Introduced embed & embed-devel
+- Added /usr/bin/cli-unknown-* for the GNU build system
+
+* Wed Nov 27 2002 Stephen Compall <rushing@sigecom.net> 0.4.8-2
+- Updated descriptions of packages
+- Changed man files to handle multiple man-install schemes
+- Added fix for gcc failure on -O3 compile
+
+# Local variables:
+# mode: rpm-spec
+# end:

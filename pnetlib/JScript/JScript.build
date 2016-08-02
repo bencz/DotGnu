@@ -1,0 +1,128 @@
+<?xml version="1.0"?>
+<project name="pnetlib JScript" default="all">
+	<target name="all">
+
+		<!-- Build the Microsoft.JScript.dll library -->
+		<compile output="Microsoft.JScript.dll"
+				 target="library"
+				 unsafe="true"
+				 nostdlib="true"
+				 debug="${CONFIG_DEBUG_LINES}"
+				 optimize="true"
+				 install="true"
+				 installasdefault="${INSTALL_AS_DEFAULT}">
+
+			<sources>
+				<includes if="${CONFIG_EXTENDED_NUMERICS}" name="Builtins/*.cs"/>
+				<includes if="${CONFIG_EXTENDED_NUMERICS}" name="CodeDom/*.cs"/>
+				<includes if="${CONFIG_EXTENDED_NUMERICS}" name="Execute/*.cs"/>
+				<includes if="${CONFIG_EXTENDED_NUMERICS}" name="Jsc/*.cs"/>
+				<includes if="${CONFIG_EXTENDED_NUMERICS}" name="Nodes/*.cs"/>
+				<includes if="${CONFIG_EXTENDED_NUMERICS}" name="Parser/*.cs"/>
+				<includes if="${CONFIG_EXTENDED_NUMERICS}" name="Vsa/*.cs"/>
+				<excludes if="${CONFIG_EXTENDED_NUMERICS}" name="Nodes/JNode.cs"/>
+				<file if="${CONFIG_EXTENDED_NUMERICS}"
+				      basedir="${csant.build.dir}"
+				      name="Nodes/JNode.cs"/>
+				<file name="jsstub.cs"/>
+			</sources>
+
+			<references>
+				<file name="../compat/Microsoft.Vsa.dll"/>
+				<file name="../System/first/System.dll"/>
+				<file name="../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<file name="../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-fassembly-version=${SECONDARY_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=ms"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+			<arg compiler="csc" value="/nowarn:679"/>
+		</compile>
+
+		<!-- Build the JScript.Test.dll library -->
+		<compile output="JScript.Test.dll"
+				 target="library"
+				 unsafe="true"
+				 nostdlib="true"
+				 debug="${CONFIG_DEBUG_LINES}"
+				 optimize="true">
+
+			<define name="TEST" value="true"/>
+
+			<sources>
+				<includes if="${CONFIG_EXTENDED_NUMERICS}" name="Builtins/*.cs"/>
+				<includes if="${CONFIG_EXTENDED_NUMERICS}" name="CodeDom/*.cs"/>
+				<includes if="${CONFIG_EXTENDED_NUMERICS}" name="Execute/*.cs"/>
+				<includes if="${CONFIG_EXTENDED_NUMERICS}" name="Jsc/*.cs"/>
+				<includes if="${CONFIG_EXTENDED_NUMERICS}" name="Nodes/*.cs"/>
+				<includes if="${CONFIG_EXTENDED_NUMERICS}" name="Parser/*.cs"/>
+				<includes if="${CONFIG_EXTENDED_NUMERICS}" name="Vsa/*.cs"/>
+				<excludes if="${CONFIG_EXTENDED_NUMERICS}" name="Nodes/JNode.cs"/>
+				<file if="${CONFIG_EXTENDED_NUMERICS}"
+				      basedir="${csant.build.dir}"
+				      name="Nodes/JNode.cs"/>
+				<file name="jsstub.cs"/>
+			</sources>
+
+			<references>
+				<file name="../compat/Microsoft.Vsa.dll"/>
+				<file name="../System/first/System.dll"/>
+				<file name="../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<file name="../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+			<arg compiler="csc" value="/nowarn:679"/>
+		</compile>
+
+		<!-- Build the jsrun.exe program -->
+		<compile output="jsrun.exe"
+				 target="exe"
+				 unsafe="true"
+				 nostdlib="true"
+				 debug="${CONFIG_DEBUG_LINES}"
+				 optimize="true"
+				 install="true"
+				 installasdefault="${INSTALL_AS_DEFAULT}">
+
+			<sources>
+				<file name="jsrun.cs"/>
+			</sources>
+
+			<references>
+				<file name="./Microsoft.JScript.dll"/>
+				<file name="../compat/Microsoft.Vsa.dll"/>
+				<file name="../System/first/System.dll"/>
+				<file name="../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<file name="../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${SECONDARY_VERSION}"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+			<arg compiler="csc" value="/nowarn:679"/>
+		</compile>
+
+	</target>
+</project>

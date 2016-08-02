@@ -1,0 +1,113 @@
+PROFILING WITH PORTABLE .NET/DOTGNU
+===============================================================================
+
+Portable .NET has very simple profiling support built-in by default which
+simply counts for each method how often it was called. However, we also provide
+a slightly improved profiling which must be enabled at compile-time because it
+has a small performance burden, even when profiling is not enabled at run-time.
+
+Both the standard and enhanced profiler show their data when the application
+exits.
+
+
+DIFFERENCES BETWEEN THE NORMAL AND ENHANCED PROFILER
+===============================================================================
+
+The normal profiler is enabled with -M and simply counts the number of times a
+method is called and prints those numbers on exit.
+
+For the enhanced profiler to work -M is not enough: -M activates the profiling
+support BUT IT DOES NOT ENABLE IT ! You have to either activate it with the -E
+commandline switch or with the DotGNU.Misc.Profiling class (see below).
+
+The enhanced profiler not only counts the number of times a method is called
+but also how much time was spent in the method (total and average).
+
+
+HOW TO ENABLE THE ENHANCED PROFILER (COMPILE-TIME)
+===============================================================================
+
+You have to call "configure" with the "--enable-enhanced-profiling" option.
+Note that your system must have the "gettimeofday(2)" C function (all POSIX
+systems like the different flavours of UN*X do, as should Cygwin).
+
+
+HOW TO ENABLE THE ENHANCED PROFILER (RUN-TIME)
+===============================================================================
+
+To enable the enhanced profiler, you have to use the "-M" option to "ilrun" AND
+do one of the following things:
+
+ * either also use the "-E" option to "ilrun" to activate the enhanced profiler
+ 
+ OR
+
+ * use the DotGNU.Misc.Profiling class (described below) to activate/deactivate
+   the profiler at runtime
+
+Of course you may also use the "-E" option when using the DotGNU.Misc.Profiling
+class.
+
+
+WHAT DOES THE ENHANCED PROFILER MEASURE ?
+===============================================================================
+
+Although it's called "enhanced" profiler it's really quite primitive. The pro-
+filer measures the total time spent each method, INCLUDING calls to other
+methods. In other words, the time between entering and leaving a method is
+measured. This means in most System.Windows.Form based application most time be
+spent in the Application.Run method.
+
+
+WHAT DOES THE ENHANCED PROFILER SHOW ME ?
+===============================================================================
+
+When your program exits, "ilrun" will show a list with four columns, sorted by
+the first column:
+
+ * Count: how many times was the method called ?
+ * Total time: the total accumulated time spent in the method (in
+   microseconds)
+ * Average time: "Total time" divided by "count" (in microseconds)
+ * The method name (including argument and return types)
+
+On fast machines some methods may show an average time of "0". This is just
+normal and just means the method took a few nanoseconds in average, that is
+less than a microsecond.
+
+
+WHY DIDN'T THE PROFILER MEASURE ANY TIMES ?
+===============================================================================
+
+If you get the error message:
+
+ilrun: method profiles are not available (forgot -E or enabling profiling at
+runtime ?)
+
+you have either not used the -E commandline switch to activate the enhanced
+profiler or haven't activated it via the Profiling class, depending on how you
+wanted to profile. Maybe you've included calls to Profiling.StartProfiling ()
+but in that particular run your code didn't reach it ?
+
+
+HOW TO USE THE DotGNU.Misc.Profiling CLASS
+===============================================================================
+
+The enhanced profiler can be activated/deactived at runtime through the
+DotGNU.Misc.Profiling class. This class only has static methods:
+
+ * bool IsProfilingSupported (): returns whether the enhanced profiler has
+   been enabled at compile-time with "--enable-enhanced-profiler" and the
+   "-M" option to "ilrun" has been given.
+
+ * bool IsProfilingEnabled (): returns whether the profiler is currently
+   collecting data.
+
+ * void StartProfiling (): tell the profiler to start collecting data.
+
+ * void StopProfiling (): tell the profiler to stop collecting data.
+
+Note that when using the DotGNU.Misc.Profiling class, you'll sometimes get
+weird times for the DotGNU.Misc.Profiling.StartProfiling method. This is normal
+and can be ignored.
+

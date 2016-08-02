@@ -1,0 +1,123 @@
+2006-03-06  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* auto_gen.sh: add support for newer versions of automake
+
+	* src/CBrush.c: fix memory leak in brush destruction
+
+	* src/CPThreadMutex.c: fix memory leak in mutex destruction
+
+	* include/CPThreadMutex.h: fix static mutex initializer
+
+	* src/CRegionStack.c: fix push function
+
+	* src/CRegionRasterizer.c: fix union operator
+
+	* src/CRegion.c: fix region destructor and update to new
+	affine transformation api
+
+	* src/CFlattener.c: fix path flattening code
+
+	* src/CLineBrush.c, src/CPathBrush.c src/CMath.c,
+	src/CMemory.c, src/CMutex.c: fix includes
+
+	* include/Crayons.h, src/CMatrix.c: add matrix destructor
+
+	* include/CAffineTransform.h, src/CAffineTransform.c,
+	src/CMatrix.c: clean up the affine transformation api
+
+	* include/CCache.h, src/CCache.c: add a general purpose
+	cache implementation
+
+	* include/CHashTable.h, src/CHashTable.c: add a general
+	purpose hash table implementation
+
+	* include/CTempFileList.h, src/CTempFileList.c: implement a
+	simple list for managing temporary file clean up
+
+	* include/CFontCollection.h, include/CFontFamily.h,
+	include/CFontFace.h, include/CFont.h, include/CGlyphCache.h,
+	include/CFontFamilyTable.h, include/CUnicodeHashTable.h,
+	include/Crayons.h, src/CFontCollection.c, src/CFontFamily.c,
+	src/CFontFace.c, src/CFont.c, src/CGlyphCache.c,
+	src/CFontFamilyTable.c, src/CUnicodeHashTable.c,
+	src/CGraphics.c: implement font support and basic text
+	measurement and rendering
+
+	* include/Crayons.h, src/CGraphics.c: reference surfaces on
+	graphics context creation, add locking to public functions,
+	use the new surface resolution getters, fix compositing,
+	and implement xbm glyph compositing using the new hatch
+	pattern creation code
+
+	* include/CHatchBrush.h, include/CHatchBrush.c: switch to the
+	new hatch pattern creation code
+
+	* include/CUtils.h, src/CUtils.c: implement new UTF encoding
+	conversions and update existing conversions to the current
+	specification, implement hashing functions and macros,
+	implement portable functions for temporary file creation
+	and file input/output, implement functions for handling
+	endian detection and conversion, add a function to find
+	twin primes, and implement a hatch pattern creation function
+	for use as a general xbm glyph pattern constructor
+
+	* include/Crayons.h, include/CSurface.h, src/CSurface.c: trim
+	the public surface api
+
+	* include/CStroker.h, src/CStroker.c, src/CPath.c: special
+	case curveless path stroking and add additional special
+	casing for thin line stroking
+
+	* include/CImage.h, include/CRegion.h: add declarations for
+	missing methods
+
+	* include/CBitmapSurface.h, include/CSurface.h,
+	include/CX11Surface.h, src/CBitmapSurface.c, src/CSurface.c,
+	src/CX11Surface.c: add resolution getters
+
+	* include/CrayonsInternal.h: add new convenience macros,
+	fix existing macros, and add unary and binary operator and
+	predicate types
+
+	* auto_gen.sh, acinclude.m4, configure.ac, Makefile.am,
+	src/Makefile.am, include/Makefile.am, samples/Makefile.am,
+	include/CrayonsFeatures.h.in, include/Crayons.h,
+	include/CrayonsSurfaceX11.h: update and clean up the build
+	and clean up the installed headers scheme
+
+	* include/CConfig.h.in, samples/sample1.c, src/CFTFont.c:
+	remove unused files
+
+	* src/.cvsignore, samples/.cvsignore, include/.cvsignore:
+	update cvs ignores
+
+	* src/*, include/*: fix the formatting to compensate for the
+	changes from 'SD' to 'C'
+
+	* AUTHORS: add my name
+
+2005-12-11  Deryk Robosson  <deryk@0x0a.com>
+
+	* doc/, samples/: Addition of directories.
+
+	* configure.ac: Add samples/Makefile.am.
+
+	* samples/Makefile.am,
+	samples/sample1.c: initial creation of stub source.
+
+	* src/CMutex.c: Include Crayons.h so the defines are seen.
+
+2005-11-14  Gopal V  <gopalv82@yahoo.com>
+
+	* acinclude.m4,	include/*: check in changes from klausT
+	for renaming SD to 'C' prefix.
+
+	* src/*.c: renamed SD to 'C' for .c files
+
+2005-10-19  Deryk Robosson  <deryk@0x0a.com>
+
+	* auto_gen.sh: Initial import from pnetlib tree.
+
+2005-10-17  Richard Baumann  <biochem333@nyc.rr.com>
+
+	* */*: Initial public release.

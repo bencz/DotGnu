@@ -1,0 +1,1089 @@
+%output "pm_arith.c"
+
+%{
+/*
+ * pm_arith.tc - Arithmetic operator code generation for Parrot.
+ *
+ * Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <codegen/cg_nodes.h>
+%}
+
+/*
+ * Apply a binary operator to two values that have been coerced to
+ * a common type.
+ */
+%operation void ParrotBinary_ApplyOp(ILGenInfo *info,
+								     [ILNode_BinaryArith *node],
+								     [ILMachineType commonType],
+									 PMRegister dest,
+									 PMRegister src1,
+									 PMRegister src2)
+
+/*
+ * Apply a bitwise operator to two values that have been coerced to
+ * a common type.
+ */
+%operation void ParrotBitwise_ApplyOp(ILGenInfo *info,
+								      [ILNode_BinaryBitwise *node],
+								      [ILMachineType commonType],
+									  PMRegister dest,
+									  PMRegister src1,
+									  PMRegister src2)
+
+/*
+ * Apply a shift operator to two values that have been coerced to
+ * appropriate types.
+ */
+%operation void ParrotShift_ApplyOp(ILGenInfo *info,
+								    [ILNode_BinaryShift *node],
+								    [ILMachineType commonType],
+									PMRegister dest,
+									PMRegister src1,
+									PMRegister src2)
+
+/*
+ * Apply the negate operator.
+ */
+%operation %inline void ParrotNegate_ApplyOp(ILGenInfo *info,
+								 		     [ILMachineType commonType],
+											 PMRegister dest,
+											 PMRegister src)
+
+/*
+ * Apply the bitwise NOT operator.
+ */
+%operation %inline void ParrotNot_ApplyOp(ILGenInfo *info,
+							 		      [ILMachineType commonType],
+										  PMRegister dest,
+										  PMRegister src)
+
+/*
+ * Generate discard code for various arithmetic operator types.
+ */
+ParrotGenDiscard(ILNode_BinaryArith),
+ParrotGenDiscard(ILNode_BinaryBitwise),
+ParrotGenDiscard(ILNode_BinaryShift),
+ParrotGenDiscard(ILNode_UserBinaryOp),
+ParrotGenDiscard(ILNode_Concat),
+ParrotGenDiscard(ILNode_DelegateAdd),
+ParrotGenDiscard(ILNode_DelegateSub)
+{
+	ParrotGenDiscard(node->expr1, info);
+	ParrotGenDiscard(node->expr2, info);
+}
+ParrotGenDiscard(ILNode_Neg),
+ParrotGenDiscard(ILNode_UnaryPlus),
+ParrotGenDiscard(ILNode_Not),
+ParrotGenDiscard(ILNode_UserUnaryOp)
+{
+	ParrotGenDiscard(node->expr, info);
+}
+
+/*
+ * Generate value code for a binary arithmetic operator.
+ */
+ParrotGenValue(ILNode_BinaryArith)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+	PMRegister dest;
+	PMRegister src1;
+	PMRegister src2;
+
+	/* Get the types of the sub-expressions */
+	type1 = ILNode_GetType(node->expr1, info);
+	type2 = ILNode_GetType(node->expr2, info);
+
+	/* Determine the common type */
+	commonType = ILCommonType(info, type1, type2, 0);
+
+	/* Evaluate the sub-expressions and cast to the common type */
+	src1 = ParrotGenCast(info, ParrotGenValue(node->expr1, info), commonType);
+	src2 = ParrotGenCast(info, ParrotGenValue(node->expr2, info), commonType);
+
+	/* Determine which register to use for the destination */
+	dest = PMGenDestBinary(info, src1, src2, commonType);
+
+	/* Apply the operator */
+	ParrotBinary_ApplyOp(info, node, commonType, dest, src1, src2);
+
+	/* Return the destination register to the caller */
+	return dest;
+}
+
+/*
+ * Generate value code for the addition operator.
+ */
+ParrotGenValue(ILNode_Add)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+	PMRegister dest;
+	PMRegister src1;
+	PMRegister src2;
+
+	/* Get the types of the sub-expressions */
+	type1 = ILNode_GetType(node->expr1, info);
+	type2 = ILNode_GetType(node->expr2, info);
+
+	/* Determine the common type */
+	if(type1 == ILMachineType_String || type2 == ILMachineType_String)
+	{
+		/* Perform string concatenation on the arguments */
+		commonType = ILMachineType_String;
+	}
+	else
+	{
+		/* Numeric addition operator */
+		commonType = ILCommonType(info, type1, type2, 0);
+	}
+
+	/* Evaluate the sub-expressions and cast to the common type */
+	src1 = ParrotGenCast(info, ParrotGenValue(node->expr1, info), commonType);
+	src2 = ParrotGenCast(info, ParrotGenValue(node->expr2, info), commonType);
+
+	/* Determine which register to use for the destination */
+	dest = PMGenDestBinary(info, src1, src2, commonType);
+
+	/* Apply the operator */
+	ParrotBinary_ApplyOp(info, (ILNode_BinaryArith *)node, commonType,
+						 dest, src1, src2);
+
+	/* Return the destination register to the caller */
+	return dest;
+}
+
+/*
+ * Generate value code for a binary bitwise operator.
+ */
+ParrotGenValue(ILNode_BinaryBitwise)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+	PMRegister dest;
+	PMRegister src1;
+	PMRegister src2;
+
+	/* Get the types of the sub-expressions */
+	type1 = ILNode_GetType(node->expr1, info);
+	type2 = ILNode_GetType(node->expr2, info);
+
+	/* Determine the common type */
+	commonType = ILCommonType(info, type1, type2, 1);
+
+	/* Evaluate the sub-expressions and cast to the common type */
+	src1 = ParrotGenCast(info, ParrotGenValue(node->expr1, info), commonType);
+	src2 = ParrotGenCast(info, ParrotGenValue(node->expr2, info), commonType);
+
+	/* Determine which register to use for the destination */
+	dest = PMGenDestBinary(info, src1, src2, commonType);
+
+	/* Apply the operator */
+	ParrotBitwise_ApplyOp(info, node, commonType, dest, src1, src2);
+
+	/* Return the destination register to the caller */
+	return dest;
+}
+
+/*
+ * Generate value code for a binary shift operator.
+ */
+ParrotGenValue(ILNode_BinaryShift)
+{
+	ILMachineType type;
+	ILMachineType commonType;
+	PMRegister dest;
+	PMRegister src1;
+	PMRegister src2;
+
+	/* Determine the common type */
+	type = ILNode_GetType(node->expr1, info);
+	commonType = ILCommonType(info, type, type, 1);
+
+	/* Evaluate the first sub-expression and cast to the common type */
+	src1 = ParrotGenCast(info, ParrotGenValue(node->expr1, info), commonType);
+
+	/* Evaluate the second sub-expression and cast to "native uint" */
+	src2 = ParrotGenCast(info, ParrotGenValue(node->expr2, info),
+			    		 ILMachineType_NativeUInt);
+
+	/* Determine which register to use for the destination */
+	dest = PMGenDestBinary(info, src1, src2, commonType);
+
+	/* Apply the operator */
+	ParrotShift_ApplyOp(info, node, commonType, dest, src1, src2);
+
+	/* Return the destination register to the caller */
+	return dest;
+}
+
+/*
+ * Generate value code for the negation operator.
+ */
+ParrotGenValue(ILNode_Neg)
+{
+	ILMachineType type;
+	ILMachineType commonType;
+	PMRegister dest;
+	PMRegister src;
+
+	/* Determine the common type to use */
+	type = ILNode_GetType(node->expr, info);
+	commonType = ILCommonType(info, type, type, 0);
+
+	/* Evaluate the sub-expression and cast to the common type */
+	src = ParrotGenCast(info, ParrotGenValue(node->expr, info), commonType);
+
+	/* Determine which register to use for the destination */
+	dest = PMGenDestUnary(info, src, commonType);
+
+	/* Apply the operator */
+	ParrotNegate_ApplyOp(info, commonType, dest, src);
+
+	/* Return the destination register to the caller */
+	return dest;
+}
+
+/*
+ * Generate value code for the unary plus operator.
+ */
+ParrotGenValue(ILNode_UnaryPlus)
+{
+	ILMachineType type;
+	ILMachineType commonType;
+
+	/* Determine the common type to use */
+	type = ILNode_GetType(node->expr, info);
+	commonType = ILCommonType(info, type, type, 0);
+
+	/* Generate code for the sub-expression and cast to the common type */
+	return ParrotGenCast(info, ParrotGenValue(node->expr, info), commonType);
+}
+
+/*
+ * Generate value code for the bitwise NOT operator.
+ */
+ParrotGenValue(ILNode_Not)
+{
+	ILMachineType type;
+	ILMachineType commonType;
+	PMRegister dest;
+	PMRegister src;
+
+	/* Determine the common type to use */
+	type = ILNode_GetType(node->expr, info);
+	commonType = ILCommonType(info, type, type, 1);
+
+	/* Generate code for the sub-expression and cast to the common type */
+	src = ParrotGenCast(info, ParrotGenValue(node->expr, info), commonType);
+
+	/* Determine which register to use for the destination */
+	dest = PMGenDestUnary(info, src, commonType);
+
+	/* Apply the operator */
+	ParrotNot_ApplyOp(info, commonType, dest, src);
+
+	/* Return the destination register to the caller */
+	return dest;
+}
+
+/*
+ * Generate value code for user-defined unary operators.
+ */
+ParrotGenValue(ILNode_UserUnaryOp)
+{
+	/* TODO */
+	return 0;
+}
+
+/*
+ * Generate value code for user-defined binary operators.
+ */
+ParrotGenValue(ILNode_UserBinaryOp)
+{
+	/* TODO */
+	return 0;
+}
+
+/*
+ * Generate value code for string concatenation.
+ */
+ParrotGenValue(ILNode_Concat)
+{
+	/* TODO */
+	return 0;
+}
+
+/*
+ * Generate value code for delegate addition.
+ */
+ParrotGenValue(ILNode_DelegateAdd)
+{
+	/* TODO */
+	return 0;
+}
+
+/*
+ * Generate value code for delegate subtraction.
+ */
+ParrotGenValue(ILNode_DelegateSub)
+{
+	/* TODO */
+	return 0;
+}
+
+/*
+ * Apply the addition operator to various types.
+ */
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	PMGenBinary(info, PM_ADD, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_Int8);
+}
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	PMGenBinary(info, PM_ADD, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_UInt8);
+}
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	PMGenBinary(info, PM_ADD, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_Int16);
+}
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_UInt16),
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	PMGenBinary(info, PM_ADD, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_UInt16);
+}
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_Int32)
+{
+	PMGenBinary(info, PM_ADD, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_Int32);
+}
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_UInt32)
+{
+	PMGenBinary(info, PM_ADD, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_UInt32);
+}
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_Int64)
+{
+	/* TODO */
+}
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_UInt64)
+{
+	/* TODO */
+}
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_NativeInt),
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_NativeUInt),
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_Float32),
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_Float64),
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_NativeFloat)
+{
+	PMGenBinary(info, PM_ADD, dest, src1, src2);
+}
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_Decimal)
+{
+	/* TODO */
+}
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_String)
+{
+	/* TODO */
+}
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_Void),
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_Boolean),
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_ObjectRef),
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_UnmanagedPtr),
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_ManagedPtr),
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_TransientPtr),
+ParrotBinary_ApplyOp(ILNode_Add, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+}
+
+/*
+ * Apply the subtraction operator to various types.
+ */
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	PMGenBinary(info, PM_SUB, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_Int8);
+}
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	PMGenBinary(info, PM_SUB, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_UInt8);
+}
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	PMGenBinary(info, PM_SUB, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_Int16);
+}
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_UInt16),
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	PMGenBinary(info, PM_SUB, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_UInt16);
+}
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_Int32)
+{
+	PMGenBinary(info, PM_SUB, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_Int32);
+}
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_UInt32)
+{
+	PMGenBinary(info, PM_SUB, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_UInt32);
+}
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_Int64)
+{
+	/* TODO */
+}
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_UInt64)
+{
+	/* TODO */
+}
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_NativeInt),
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_NativeUInt),
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_Float32),
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_Float64),
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_NativeFloat)
+{
+	PMGenBinary(info, PM_SUB, dest, src1, src2);
+}
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_Decimal)
+{
+	/* TODO */
+}
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_Void),
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_Boolean),
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_String),
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_ObjectRef),
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_UnmanagedPtr),
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_ManagedPtr),
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_TransientPtr),
+ParrotBinary_ApplyOp(ILNode_Sub, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+}
+
+/*
+ * Apply the multiplication operator to various types.
+ */
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	PMGenBinary(info, PM_MUL, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_Int8);
+}
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	PMGenBinary(info, PM_MUL, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_UInt8);
+}
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	PMGenBinary(info, PM_MUL, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_Int16);
+}
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_UInt16),
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	PMGenBinary(info, PM_MUL, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_UInt16);
+}
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_Int32)
+{
+	PMGenBinary(info, PM_MUL, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_Int32);
+}
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_UInt32)
+{
+	PMGenBinary(info, PM_MUL, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_UInt32);
+}
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_Int64)
+{
+	/* TODO */
+}
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_UInt64)
+{
+	/* TODO */
+}
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_NativeInt),
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_NativeUInt),
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_Float32),
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_Float64),
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_NativeFloat)
+{
+	PMGenBinary(info, PM_MUL, dest, src1, src2);
+}
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_Decimal)
+{
+	/* TODO */
+}
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_Void),
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_Boolean),
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_String),
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_ObjectRef),
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_UnmanagedPtr),
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_ManagedPtr),
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_TransientPtr),
+ParrotBinary_ApplyOp(ILNode_Mul, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+}
+
+/*
+ * Apply the division operator to various types.
+ */
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_Int8),
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_UInt8),
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_Int16),
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_UInt16),
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_Char),
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_Int32),
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_NativeInt)
+{
+	PMGenBinary(info, PM_DIV, dest, src1, src2);
+}
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_UInt32),
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_NativeUInt)
+{
+	/* TODO: unsigned division */
+	PMGenBinary(info, PM_DIV, dest, src1, src2);
+}
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_Int64)
+{
+	/* TODO */
+}
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_UInt64)
+{
+	/* TODO */
+}
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_Float32),
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_Float64),
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_NativeFloat)
+{
+	PMGenBinary(info, PM_DIV, dest, src1, src2);
+}
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_Decimal)
+{
+	/* TODO */
+}
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_Void),
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_Boolean),
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_String),
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_ObjectRef),
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_UnmanagedPtr),
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_ManagedPtr),
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_TransientPtr),
+ParrotBinary_ApplyOp(ILNode_Div, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+}
+
+/*
+ * Apply the remainder operator to various types.
+ */
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_Int8),
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_UInt8),
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_Int16),
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_UInt16),
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_Char),
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_Int32),
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_NativeInt)
+{
+	PMGenBinary(info, PM_REM, dest, src1, src2);
+}
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_UInt32),
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_NativeUInt)
+{
+	/* TODO: unsigned division */
+	PMGenBinary(info, PM_REM, dest, src1, src2);
+}
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_Int64)
+{
+	/* TODO */
+}
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_UInt64)
+{
+	/* TODO */
+}
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_Float32),
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_Float64),
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_NativeFloat)
+{
+	PMGenBinary(info, PM_REM, dest, src1, src2);
+}
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_Decimal)
+{
+	/* TODO */
+}
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_Void),
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_Boolean),
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_String),
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_ObjectRef),
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_UnmanagedPtr),
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_ManagedPtr),
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_TransientPtr),
+ParrotBinary_ApplyOp(ILNode_Rem, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+}
+
+/*
+ * Apply the bitwise AND operator to various types.
+ */
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_Boolean)
+{
+	/* Returns true if both arguments are true.  We assume
+	   that both arguments are clamped to the set {0,1} */
+	PMGenBinary(info, PM_AND, dest, src1, src2);
+}
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	PMGenBinary(info, PM_AND, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_Int8);
+}
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	PMGenBinary(info, PM_AND, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_Int16);
+}
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_Int32)
+{
+	/* Perform the operation and then clamp the result to "int32" */
+	PMGenBinary(info, PM_AND, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_Int32);
+}
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_UInt8),
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_UInt16),
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_Char),
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_NativeInt),
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_UInt32),
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_NativeUInt)
+{
+	PMGenBinary(info, PM_AND, dest, src1, src2);
+}
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_Int64),
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_UInt64)
+{
+	/* TODO */
+}
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_Float32),
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_Float64),
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_NativeFloat),
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_Decimal),
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_Void),
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_String),
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_ObjectRef),
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_UnmanagedPtr),
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_ManagedPtr),
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_TransientPtr),
+ParrotBitwise_ApplyOp(ILNode_And, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+}
+
+/*
+ * Apply the bitwise OR operator to various types.
+ */
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_Boolean)
+{
+	/* Returns true if one of the arguments is true.  We assume
+	   that both arguments are clamped to the set {0,1} */
+	PMGenBinary(info, PM_OR, dest, src1, src2);
+}
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_Int8),
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_UInt8),
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_Int16),
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_UInt16),
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_Char),
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_Int32),
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_NativeInt),
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_UInt32),
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_NativeUInt)
+{
+	PMGenBinary(info, PM_OR, dest, src1, src2);
+}
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_Int64),
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_UInt64)
+{
+	/* TODO */
+}
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_Float32),
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_Float64),
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_NativeFloat),
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_Decimal),
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_Void),
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_String),
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_ObjectRef),
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_UnmanagedPtr),
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_ManagedPtr),
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_TransientPtr),
+ParrotBitwise_ApplyOp(ILNode_Or, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+}
+
+/*
+ * Apply the bitwise XOR operator to various types.
+ */
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_Boolean)
+{
+	/* Returns the XOR of the boolean arguments.  We assume
+	   that both arguments are clamped to the set {0,1} */
+	PMGenBinary(info, PM_XOR, dest, src1, src2);
+}
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	PMGenBinary(info, PM_XOR, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_Int8);
+}
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	PMGenBinary(info, PM_XOR, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_Int16);
+}
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_Int32)
+{
+	/* Perform the operation and then clamp the result to "int32" */
+	PMGenBinary(info, PM_XOR, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_Int32);
+}
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_UInt8),
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_UInt16),
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_Char),
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_NativeInt),
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_UInt32),
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_NativeUInt)
+{
+	PMGenBinary(info, PM_XOR, dest, src1, src2);
+}
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_Int64),
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_UInt64)
+{
+	/* TODO */
+}
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_Float32),
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_Float64),
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_NativeFloat),
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_Decimal),
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_Void),
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_String),
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_ObjectRef),
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_UnmanagedPtr),
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_ManagedPtr),
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_TransientPtr),
+ParrotBitwise_ApplyOp(ILNode_Xor, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+}
+
+/*
+ * Apply the left shift operator to various types.
+ */
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	PMGenBinary(info, PM_SHL, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_Int8);
+}
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	PMGenBinary(info, PM_SHL, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_UInt8);
+}
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	PMGenBinary(info, PM_SHL, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_Int16);
+}
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_UInt16),
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	PMGenBinary(info, PM_SHL, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_UInt16);
+}
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_Int32)
+{
+	/* Perform the operation and then clamp the result to "int32" */
+	PMGenBinary(info, PM_SHL, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_Int32);
+}
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_UInt32)
+{
+	/* Perform the operation and then clamp the result to "uint32" */
+	PMGenBinary(info, PM_SHL, dest, src1, src2);
+	ParrotClamp(info, dest, ILMachineType_UInt32);
+}
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_NativeInt),
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_NativeUInt)
+{
+	PMGenBinary(info, PM_SHL, dest, src1, src2);
+}
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_Int64),
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_UInt64)
+{
+	/* TODO */
+}
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_Float32),
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_Float64),
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_NativeFloat),
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_Decimal),
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_Void),
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_Boolean),
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_String),
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_ObjectRef),
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_UnmanagedPtr),
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_ManagedPtr),
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_TransientPtr),
+ParrotShift_ApplyOp(ILNode_Shl, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+}
+
+/*
+ * Apply the right shift operator to various types.
+ */
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_Int8),
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_UInt8),
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_Int16),
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_UInt16),
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_Char),
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_Int32),
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_NativeInt)
+{
+	PMGenBinary(info, PM_SHR, dest, src1, src2);
+}
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_UInt32),
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_NativeUInt)
+{
+	PMGenBinary(info, PM_USHR, dest, src1, src2);
+}
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_Int64)
+{
+	/* TODO */
+}
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_UInt64)
+{
+	/* TODO */
+}
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_Float32),
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_Float64),
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_NativeFloat),
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_Decimal),
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_Void),
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_Boolean),
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_String),
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_ObjectRef),
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_UnmanagedPtr),
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_ManagedPtr),
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_TransientPtr),
+ParrotShift_ApplyOp(ILNode_Shr, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+}
+
+/*
+ * Apply the unsigned right shift operator to various types.
+ */
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_Int8),
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_UInt8),
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_Int16),
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_UInt16),
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_Char),
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_Int32),
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_NativeInt),
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_UInt32),
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_NativeUInt)
+{
+	PMGenBinary(info, PM_USHR, dest, src1, src2);
+}
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_Int64),
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_UInt64)
+{
+	/* TODO */
+}
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_Float32),
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_Float64),
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_NativeFloat),
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_Decimal),
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_Void),
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_Boolean),
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_String),
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_ObjectRef),
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_UnmanagedPtr),
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_ManagedPtr),
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_TransientPtr),
+ParrotShift_ApplyOp(ILNode_UShr, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+}
+
+/*
+ * Apply the unary negation operator to various types.
+ */
+ParrotNegate_ApplyOp(ILMachineType_Int8)
+{
+	PMGenUnary(info, PM_NEG, dest, src);
+	ParrotClamp(info, dest, ILMachineType_Int8);
+}
+ParrotNegate_ApplyOp(ILMachineType_UInt8)
+{
+	PMGenUnary(info, PM_NEG, dest, src);
+	ParrotClamp(info, dest, ILMachineType_UInt8);
+}
+ParrotNegate_ApplyOp(ILMachineType_Int16)
+{
+	PMGenUnary(info, PM_NEG, dest, src);
+	ParrotClamp(info, dest, ILMachineType_Int16);
+}
+ParrotNegate_ApplyOp(ILMachineType_UInt16),
+ParrotNegate_ApplyOp(ILMachineType_Char)
+{
+	PMGenUnary(info, PM_NEG, dest, src);
+	ParrotClamp(info, dest, ILMachineType_UInt16);
+}
+ParrotNegate_ApplyOp(ILMachineType_Int32)
+{
+	PMGenUnary(info, PM_NEG, dest, src);
+	ParrotClamp(info, dest, ILMachineType_Int32);
+}
+ParrotNegate_ApplyOp(ILMachineType_UInt32)
+{
+	PMGenUnary(info, PM_NEG, dest, src);
+	ParrotClamp(info, dest, ILMachineType_UInt32);
+}
+ParrotNegate_ApplyOp(ILMachineType_NativeInt),
+ParrotNegate_ApplyOp(ILMachineType_NativeUInt)
+{
+	PMGenUnary(info, PM_NEG, dest, src);
+}
+ParrotNegate_ApplyOp(ILMachineType_Int64)
+{
+	/* TODO */
+}
+ParrotNegate_ApplyOp(ILMachineType_UInt64)
+{
+	/* TODO */
+}
+ParrotNegate_ApplyOp(ILMachineType_Float32),
+ParrotNegate_ApplyOp(ILMachineType_Float64),
+ParrotNegate_ApplyOp(ILMachineType_NativeFloat)
+{
+	PMGenUnary(info, PM_NEG, dest, src);
+}
+ParrotNegate_ApplyOp(ILMachineType_Decimal)
+{
+	/* TODO */
+}
+ParrotNegate_ApplyOp(ILMachineType_Void),
+ParrotNegate_ApplyOp(ILMachineType_Boolean),
+ParrotNegate_ApplyOp(ILMachineType_String),
+ParrotNegate_ApplyOp(ILMachineType_ObjectRef),
+ParrotNegate_ApplyOp(ILMachineType_UnmanagedPtr),
+ParrotNegate_ApplyOp(ILMachineType_ManagedPtr),
+ParrotNegate_ApplyOp(ILMachineType_TransientPtr),
+ParrotNegate_ApplyOp(ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+}
+
+/*
+ * Apply the bitwise NOT operator to various types.
+ */
+ParrotNot_ApplyOp(ILMachineType_Int8)
+{
+	PMGenUnary(info, PM_NOT, dest, src);
+	ParrotClamp(info, dest, ILMachineType_Int8);
+}
+ParrotNot_ApplyOp(ILMachineType_UInt8)
+{
+	PMGenUnary(info, PM_NOT, dest, src);
+	ParrotClamp(info, dest, ILMachineType_UInt8);
+}
+ParrotNot_ApplyOp(ILMachineType_Int16)
+{
+	PMGenUnary(info, PM_NOT, dest, src);
+	ParrotClamp(info, dest, ILMachineType_Int16);
+}
+ParrotNot_ApplyOp(ILMachineType_UInt16),
+ParrotNot_ApplyOp(ILMachineType_Char)
+{
+	PMGenUnary(info, PM_NOT, dest, src);
+	ParrotClamp(info, dest, ILMachineType_UInt16);
+}
+ParrotNot_ApplyOp(ILMachineType_Int32)
+{
+	PMGenUnary(info, PM_NOT, dest, src);
+	ParrotClamp(info, dest, ILMachineType_Int32);
+}
+ParrotNot_ApplyOp(ILMachineType_UInt32)
+{
+	PMGenUnary(info, PM_NOT, dest, src);
+	ParrotClamp(info, dest, ILMachineType_UInt32);
+}
+ParrotNot_ApplyOp(ILMachineType_NativeInt),
+ParrotNot_ApplyOp(ILMachineType_NativeUInt)
+{
+	PMGenUnary(info, PM_NOT, dest, src);
+}
+ParrotNot_ApplyOp(ILMachineType_Int64),
+ParrotNot_ApplyOp(ILMachineType_UInt64)
+{
+	/* TODO */
+}
+ParrotNot_ApplyOp(ILMachineType_Float32),
+ParrotNot_ApplyOp(ILMachineType_Float64),
+ParrotNot_ApplyOp(ILMachineType_NativeFloat),
+ParrotNot_ApplyOp(ILMachineType_Decimal),
+ParrotNot_ApplyOp(ILMachineType_Void),
+ParrotNot_ApplyOp(ILMachineType_Boolean),
+ParrotNot_ApplyOp(ILMachineType_String),
+ParrotNot_ApplyOp(ILMachineType_ObjectRef),
+ParrotNot_ApplyOp(ILMachineType_UnmanagedPtr),
+ParrotNot_ApplyOp(ILMachineType_ManagedPtr),
+ParrotNot_ApplyOp(ILMachineType_TransientPtr),
+ParrotNot_ApplyOp(ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+}

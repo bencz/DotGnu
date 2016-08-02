@@ -1,0 +1,40 @@
+#
+# Invalid.txt - Resources for invalid operation messages.
+#
+# Copyright (C) 2001, 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Invalid_CGWriterExists=El generador de codi té un escriptor de texte diferent
+Invalid_ServerNotCreated=No s'ha creat l'oient TCP
+Invalid_SendToOnConnected=Intent d'utilitzar SendTo en un socket de datagrames conectat
+Invalid_SendOnNonConnected=Intent d'utilitzar Send en un socket de datagrames no conectat
+Invalid_RemoteEventSource=No s'ha pogut accedir a l'origen dels events remots
+Invalid_CounterNotInited=El contador no ha estat inicialitzat encara
+Invalid_CategoryNotInited=La categoria no ha estat inicialitzada
+Invalid_ProcessNotExited=El procés no ha estat finalitzat encara
+Invalid_ProcessNotStarted=El procés no ha estat encara iniciat
+Invalid_ProcessExited=El procés ha finalitzat
+Invalid_Platform=L'operació no esta disponible en aquesta en aquesta plataforma
+Invalid_NotWaiting=El fil no està esperant
+Invalid_StandardStream=El fluxe no està definit o redirigit
+Invalid_ProcessStartInfo=La informació d'inicialització del procés no és correcte
+Invalid_PermissionPresent=Aquest permís ja existeix
+Invalid_PermissionNotPresent=No existeix aquest permís
+Invalid_PathMismatch=Incompatibilitat entre les longituts de les rutes de permisos
+Invalid_AuthModuleNotRegistered=El modul d'autenficicació no està registrat
+Invalid_LicenseContextChange=El contexte de la llicència no pot canviar
+Invalid_LicenseContextLocked=El contexte de la llicència està bloquejat
+Invalid_LicenseContextNotLocked=El contexte de la llicència no està bloquejat per l'usuari especificat

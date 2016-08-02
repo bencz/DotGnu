@@ -1,0 +1,40 @@
+#
+# Reflection.txt - Resources for reflection classes.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Reflection_AmbiguousAttr=There was more than one attribute with the specified name
+Reflection_AssemblyName=Invalid assembly name specified
+Reflection_AssemblyFile=Could not find assembly "{0}"
+Reflection_AssemblySecurity=Insufficent security credentials to load "{0}"
+Reflection_BadImage=Format of the executable or library "{0}" is invalid
+Reflection_NoEventAdd=Could not access the add method for an event
+Reflection_NoEventRemove=Could not access the remove method for an event
+Reflection_InvalidEventHandler=Event handler was not of the correct type
+Reflection_NoPropertyGet=Could not access the get method for a property
+Reflection_NoPropertySet=Could not access the set method for a property
+Reflection_NoPropertyAccess=The caller does not have access to the get or set methods on the specified property
+Reflection_InvokeAttr=Invalid attributes for Type.InvokeMember
+Reflection_CtorTarget=Cannot specify a target when invoking a constructor
+Reflection_MissingField=Missing field when using Type.InvokeMember
+Reflection_MissingMethod=Missing method when using Type.InvokeMember
+Reflection_MissingProperty=Missing property when using Type.InvokeMember
+Reflection_GetField=Invalid arguments for GetField request
+Reflection_SetField=Invalid arguments for SetField request
+Reflection_InvalidArgs=Invalid arguments to member invocation
+Reflection_ParamName=Invalid parameter name in arguments to member invocation
+Reflection_UnknownField=The supplied field name is unknown

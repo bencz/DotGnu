@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+
+<project name="Mono.Directory.LDAP" default="all">
+	<target name="all">
+		<compile target="library"
+				 output="Mono.Directory.LDAP.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="true"
+				 installasdefault="true">
+
+			<sources basedir="${mono.sources}/class/Mono.Directory.LDAP">
+				<includes name="**/*.cs"/> 
+				<excludes name="Test/**"/>
+			</sources>
+
+		</compile>
+	</target>
+</project>

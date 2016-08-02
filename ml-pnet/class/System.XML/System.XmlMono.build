@@ -1,0 +1,36 @@
+<?xml version="1.0"?>
+
+<project name="System.XmlMono" default="all">
+	<target name="all">
+		<compile target="library"
+				 output="System.XmlMono.dll"
+				 debug="${debug.flag}"
+				 unsafe="false"
+				 install="true"
+				 installasdefault="true">
+
+			<sources basedir="${mono.sources}/class/System.XML/">
+				<includes name="**/*.cs"/>
+				<file basedir="./" name="Parser.cs"/>
+				<file basedir="./" name="PatternParser.cs"/>
+				<file basedir="./" name="PatternTokenizer.cs"/>
+				<file basedir="./" name="MonoTODOAttribute.cs"/>
+				<file basedir="./" name="Locale.cs"/>
+				<file basedir="./" name="Consts.cs"/>
+				<excludes name="Test/**"/>
+				<excludes name="System.Xml.Serialization/standalone_tests/**"/>
+				<excludes name="Mono.Xml.Xsl/XslDecimalFormat.jvm.cs"/>
+			</sources>
+
+			<references>
+				<file name="mscorlib.dll"/>
+				<file name="System.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=neutral"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+
+		</compile>
+	</target>
+</project>

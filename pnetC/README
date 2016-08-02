@@ -1,0 +1,7 @@
+
+This is the "pnetC" project.  The goal of the project is to create
+an ANSI-compatible C library, that can be compiled down to IL using
+Portable.NET's "cscc" compiler.
+
+See the "doc/HACKING" file for more information on building and
+contributing to the project.

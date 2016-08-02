@@ -1,0 +1,338 @@
+<html>
+<head>
+<title>Portable.NET on embedded systems</title>
+</head>
+<body bgcolor="#ffffff">
+<h1>Portable.NET on embedded systems</h1>
+
+Rhys Weatherley, <a href="mailto:rweather@southern-storm.com.au">rweather@southern-storm.com.au</a>.<br>
+Last Modified: $Date: 2002/06/12 01:52:31 $<p>
+
+Copyright &copy; 2002 Southern Storm Software, Pty Ltd.<br>
+Permission to distribute unmodified copies of this work is hereby granted.<p>
+
+<h2>1. Introduction</h2>
+
+This document describes how to port the Portable.NET runtime engine,
+<code>ilrun</code>, to embedded operating environments.<p>
+
+For the purposes of this document, an embedded operating environment is
+any system with a limited amount of RAM, little or no secondary storage,
+and a restricted set of I/O devices or user purpose.<p>
+
+Note: this document describes how to reduce the size of the engine so
+that it can operate in an embedded environment.  It does not describe
+how to reduce the size of the runtime C# class library, <code>pnetlib</code>.
+Reducing the class library is a separate problem.<p>
+
+<h2>2. Basic requirements</h2>
+
+The Portable.NET code assumes that the embedded operating environment
+has the following facilities:
+
+<ol>
+	<li>Flat 32-bit memory model.</li>
+	<li>Memory blocks that are fixed in position.</li>
+	<li>The ability to create large contiguous blocks of memory.</li>
+	<li>Pre-emptive servicing of devices and other tasks.</li>
+</ol>
+
+If the operating environment does not have all of the above,
+it will be necessary to rewrite the Portable.NET engine from
+scratch.  We have no plans to support such environments.<p>
+
+Primarily, if the engine allocates a block of memory, it is assumed
+that the block is fixed in place until it is freed.<p>
+
+Operating environments that attempt to reclaim memory by shifting
+previously allocated blocks will not work, unless the environment
+has some kind of virtual memory capability for remapping memory pages
+while retaining the original virtual addresses.<p>
+
+The Portable.NET engine does not have any hooks that would allow it
+to "return back" to a co-operative multi-tasking system at regular
+intervals.  Any other tasks or devices in the system will need to
+be serviced via a pre-emptive kernel.<p>
+
+It is recommended that the system have at least 1 Mb of RAM.  It may
+be possible to use the engine with smaller configurations, but the
+list of features will need to be heavily trimmed.<p>
+
+We assume that the compilation environment is GNU-compatible, with at
+least gcc, GNU make, autoconf, and automake available.  Using other
+compile environments will require a lot of work.<p>
+
+We also assume that the operating environment's C library provides ANSI-like
+features such as stdio, string, and stdlib.  So, you will need an embedded
+version of libc.  The following are some suggestions:
+
+<ol>
+	<li>uClibc - <a href="http://www.uclibc.org/">http://www.uclibc.org/</a></li>
+	<li>dietlibc - <a href="http://www.fefe.de/dietlibc/">http://www.fefe.de/dietlibc/</a></li>
+	<li>newlib - <a href="http://sources.redhat.com/newlib/">http://sources.redhat.com/newlib/</a></li>
+</ol>
+
+This is by no means a complete list of embedded C libraries, and we make
+no guarantees that they will work with Portable.NET.  Your mileage may vary.
+
+<h2>3. Platform support</h2>
+
+The "<code>support</code>" directory contains the bulk of the platform
+specific code (with the exception of some math routines in the engine).<p>
+
+This directory is the first place to start when porting the engine to
+a new environment.  You may need to replace memory management, locale
+handling, file operations, socket operations, threading, and floating-point
+routines, depending upon the operating environment.<p>
+
+Usually the "<code>configure</code>" script is smart enough to detect
+most platform-specific features, so you should only replace code in
+"<code>support</code>" if the environment is too strange for
+"<code>configure</code>" to detect automatically.<p>
+
+Some of the files in "<code>support</code>" are generic ANSI C
+(e.g. <code>mempool.c</code>, <code>hashtab.c</code>, <code>utf8.c</code>),
+and usually won't need to be replaced.  However, your environment
+may already have similar routines (especially for UTF-8 handling),
+which you may want to use to reduce duplication.<p>
+
+<h2>4. Profiles</h2>
+
+The primary means to reduce memory consumption is through profiles.
+These define which features are enabled or disabled when the system
+is built.<p>
+
+Each profile is defined by a file in the "<code>profiles</code>" directory.
+At compile time, the profile is converted into the header file
+"<code>include/il_profile.h</code>".  Definitions in this header file
+are used to control which features are compiled into the final engine.<p>
+
+The profile is selected at build time using a "<code>configure</code>"
+option:
+
+<blockquote><code>./configure --with-profile=kernel</code></blockquote>
+
+The default profile is "<code>full</code>", which enables all features.<p>
+
+You may need to define a new profile that describes the capabilities of
+your embedded environment.  Add a new file to the "<code>profiles</code>"
+directory and rebuild the system.<p>
+
+The following table summarises the available profile options:
+
+<dl>
+	<dt><code>IL_CONFIG_REDUCE_CODE</code></dt>
+	<dd>Take steps to reduce the size of the final code.  This may
+		disable certain debug modes that increase the size of the
+		system to support debugging, rather than to support critical
+		features.</dd>
+
+	<dt><code>IL_CONFIG_REDUCE_DATA</code></dt>
+	<dd>Take steps to reduce the amount of data that is used by the
+		engine.  This may adjust some data structures to use a more
+		compact representation.</dd>
+
+	<dt><code>IL_CONFIG_DIRECT</code></dt>
+	<dd>If set, use the direct threaded version of the CVM interpreter
+		if possible.  The direct threaded interpreter uses much more
+		memory than the alternative: token threading.  Normally you will
+		want token threading in an embedded environment.</dd>
+
+	<dt><code>IL_CONFIG_UNROLL</code></dt>
+	<dd>If set, use the unrolled version of the CVM interpreter if
+		possible.  This option is ignored if direct threading is
+		disabled.  Unrolled interpretation uses even more memory
+		than direct threading, but is substantially faster.</dd>
+
+	<dt><code>IL_CONFIG_JAVA</code></dt>
+	<dd>Support Java class files if set.  Not recommended for
+		embedded environments (use an embedded JVM instead).</dd>
+
+	<dt><code>IL_CONFIG_LATIN1</code></dt>
+	<dd>Force the use of the Latin1 encoding if set.  If this option
+		is not set, the engine will attempt to use the underlying
+		environment's notion of a locale, and a full set of Unicode
+		character handling rules.  Setting this option will
+		dramatically reduce engine size because it can use smaller
+		tables for Unicode character handling.</dd>
+
+	<dt><code>IL_CONFIG_CACHE_PAGE_SIZE</code></dt>
+	<dd>Size of a method cache page.  The method cache contains
+		the result of translating IL into CVM bytecode or native
+		machine code.  Memory is allocated from the system in
+		blocks of this size, which must be big enough to hold the
+		largest translated method that may be encountered in an
+		application.</dd>
+
+	<dt><code>IL_CONFIG_STACK_SIZE</code></dt>
+	<dd>Size of a thread value stack, in stack words.  This size is
+		fixed once the thread has been created.</dd>
+
+	<dt><code>IL_CONFIG_FRAME_STACK_SIZE</code></dt>
+	<dd>Number of frames in the call stack.  The call stack may grow
+		in size if <code>IL_CONFIG_GROW_FRAMES</code> is set.</dd>
+
+	<dt><code>IL_CONFIG_GC_HEAP_SIZE</code></dt>
+	<dd>Maximum size for the garbage-collected heap.  If this value
+		is zero, then the heap is essentially unlimited (the garbage
+		collector itself may have a hard-wired maximum limit).</dd>
+
+	<dt><code>IL_CONFIG_PINVOKE</code></dt>
+	<dd>Allow PInvoke methods if set.  Note: if libffi is not available,
+		then PInvoke will not be possible even if this option is set.</dd>
+
+	<dt><code>IL_CONFIG_REFLECTION</code></dt>
+	<dd>Provide support for "<code>System.Reflection</code>" classes
+		if set.</dd>
+
+	<dt><code>IL_CONFIG_NETWORKING</code></dt>
+	<dd>Provide socket-based networking support for the
+		"<code>System.Net</code>" classes if set.</dd>
+
+	<dt><code>IL_CONFIG_FP_SUPPORTED</code></dt>
+	<dd>If not set, disable floating-point instructions within the
+		engine.  Any attempt to use a floating-point instruction will
+		throw "<code>System.NotSupportedException</code>".</dd>
+
+	<dt><code>IL_CONFIG_EXTENDED_NUMERICS</code></dt>
+	<dd>Provide support for the "<code>System.Math</code>",
+		"<code>System.Single</code>", "<code>System.Double</code>",
+		and "<code>System.Decimal</code>" classes if set.  This
+		option will be ignored if <code>IL_CONFIG_FP_SUPPORTED</code>
+		is not set.</dd>
+
+	<dt><code>IL_CONFIG_NON_VECTOR_ARRAYS</code></dt>
+	<dd>Provide support for multi-dimensional arrays and arrays with
+		non-zero lower bounds if set.</dd>
+
+	<dt><code>IL_CONFIG_APPDOMAINS</code></dt>
+	<dd>Allow the creation of new application domains if set.</dd>
+
+	<dt><code>IL_CONFIG_REMOTING</code></dt>
+	<dd>Provide support for remoting if set.</dd>
+
+	<dt><code>IL_CONFIG_VARARGS</code></dt>
+	<dd>Provide support for variable-argument methods if set.
+		Variable arguments are not required for C# applications.</dd>
+
+	<dt><code>IL_CONFIG_GROW_FRAMES</code></dt>
+	<dd>Allow the call frame stack to grow beyond its initial size
+		if set.</dd>
+
+	<dt><code>IL_CONFIG_FILTERED_EXCEPTIONS</code></dt>
+	<dd>Provide support for filtered exceptions if set.  Filtered
+		exceptions are not required for C# applications.</dd>
+
+	<dt><code>IL_CONFIG_DEBUG_LINES</code></dt>
+	<dd>Provide support debug line information within the engine.
+		This is normally not much use unless reflection is also
+		enabled.</dd>
+</dl>
+
+<h2>5. Configuration options</h2>
+
+In addition to the profiles, there are some <code>configure</code>
+options that can be supplied to alter the memory requirements
+and feature lists:
+
+<dl>
+	<dt><code>--enable-threads=none</code></dt>
+	<dd>Disable thread support, reducing the system to a
+		single-threaded environment.  Threading primitives
+		(such as mutexes and monitors) are available to
+		applications, but they behave as though there is
+		only one thread in the system.</dd>
+
+	<dt><code>--without-libffi</code></dt>
+	<dd>Compile without libffi.  This may actually the increase
+		memory requirements because of the large number of marshalling
+		stubs that are needed when libffi is unavailable.  However,
+		on systems where libffi cannot be used, this option may
+		be unavoidable.</dd>
+
+	<dt><code>--without-libgc</code></dt>
+	<dd>Compile without libgc.  The engine will use a default
+	    implementation, suitable for low-memory embedded systems.
+		However, see the section entitled "Garbage collection"
+		below for caveats.</dd>
+</dl>
+
+These options do not have profile equivalents due to the configuration
+requirements for the third-party libffi and libgc libraries.<p>
+
+<h2>6. Garbage collection</h2>
+
+Arguably, the hardest part of supporting embedded systems is the
+garbage collector.  The libgc library is very powerful, but it is
+also very heavy-weight.<p>
+
+If you configure the system with the "<code>--without-libgc</code>"
+option, you will get a default garbage collector implementation
+(<code>support/def_gc.c</code>).<p>
+
+The default implementation allocates a fixed-sized block of memory
+and begins allocating from the lowest address.  It keeps allocating
+until the block is full.  At that time, out of memory is reported
+and the system stops.  "Real" garbage collection is not performed.<p>
+
+This implementation may be suitable for use on low-memory devices
+where the application has been specially written to control its
+memory usage.  It is unlikely to be suitable for executing
+arbitrary applications.<p>
+
+When porting the engine, you can replace "<code>def_gc.c</code>"
+with your own garbage collector, tuned to the particulars of
+your embedded environment.<p>
+
+The replacement algorithm must be a conservative collector, able to
+locate all stack-based and register-based roots on its own.  Other
+roots are specified by the engine when it allocates "persistent"
+GC memory blocks.  Objects are identified by pointer, not handle.<p>
+
+The GC should not move objects when it performs garbage collection,
+and it must be capable of detecting "interior" pointers, which point
+to the interior of an object rather than its beginning.<p>
+
+The collector also must be able to suspend all threads cleanly to
+perform mark and sweep collection.  This may require some work in
+the thread support code to synchronise GC suspension with normal
+thread suspension (<code>ILThreadSuspend</code>).<p>
+
+There is no support in the Portable.NET engine for handle-based
+or compacting garbage collectors.  A complete rewrite of the
+engine would be required, and we have no plans to support such
+collectors.<p>
+
+<h2>7. Embedding the engine</h2>
+
+Normally the engine is launched using the "<code>ilrun</code>" program.
+This may not be possible in an embedded operating environment.<p>
+
+The "<code>engine/ilrun.c</code>" file demonstrates how to initialize
+and launch applications within the engine.  Similar code will be required
+when embedding into other environments.  The minimum steps required
+are:
+
+<ol>
+	<li>Initialize the engine with "<code>ILExecInit</code>".</li>
+	<li>Create a "process" object with "<code>ILExecProcessCreate</code>".</li>
+	<li>Load the application into the "process" with
+	    "<code>ILExecProcessLoadFile</code>" or something similar.</li>
+	<li>Find the application's entry point with
+		"<code>ILExecProcessGetEntry</code>".</li>
+	<li>Find the "main" thread within the "process" with
+	    "<code>ILExecProcessGetMain</code>".</li>
+	<li>Call the entry point within the context of the "main" thread
+	    with "<code>ILExecThreadCall</code>".</li>
+	<li>Clean up the engine data structures with
+	    "<code>ILExecProcessDestroy</code>" (may not be necessary
+		if the application is "infinite").</li>
+</ol>
+
+<hr>
+
+Copyright &copy; 2002 Southern Storm Software, Pty Ltd.<br>
+Permission to distribute unmodified copies of this work is hereby granted.
+
+</body>
+</html>

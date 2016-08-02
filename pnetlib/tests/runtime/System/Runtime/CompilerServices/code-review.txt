@@ -1,0 +1,33 @@
+
+Code review for System.Runtime.CompilerServices
+===============================================
+
+Last updated: 4 June 2003
+
+Classes that need tests
+-----------------------
+
+DateTimeConstantAttribute (done)
+DecimalConstantAttribute (done)
+IDispatchConstantAttribute (done)
+IUnknownConstantAttribute (done)
+RuntimeHelpers (done)
+
+Classes that were validated using manual inspection and csdocvalil
+------------------------------------------------------------------
+
+AccessedThroughPropertyAttribute
+CallConvCdecl
+CallConvFastcall
+CallConvStdcall
+CallConvThiscall
+CompilationRelaxationsAttribute
+CompilerGlobalScopeAttribute
+CustomConstantAttribute
+DiscardableAttribute
+IndexerNameAttribute
+IsVolatile
+MethodCodeType
+MethodImplAttribute
+MethodImplOptions
+RequiredAttributeAttribute

@@ -1,0 +1,1538 @@
+%output "jv_arith.c"
+
+%{
+/*
+ * jv_arith.tc - Arithmetic operator code generation for Java.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <codegen/cg_nodes.h>
+%}
+
+/*
+ * Apply a binary operator to two values on the stack
+ * that have been coerced to a common type.
+ */
+%operation void JavaBinary_ApplyOp(ILGenInfo *info,
+								   [ILNode_BinaryArith *node],
+								   [ILMachineType commonType])
+
+/*
+ * Apply a bitwise operator to two values on the stack
+ * that have been coerced to a common type.
+ */
+%operation void JavaBitwise_ApplyOp(ILGenInfo *info,
+								    [ILNode_BinaryBitwise *node],
+								    [ILMachineType commonType])
+
+/*
+ * Apply a shift operator to two values on the stack
+ * that have been coerced to appropriate types.
+ */
+%operation void JavaShift_ApplyOp(ILGenInfo *info,
+								  [ILNode_BinaryShift *node],
+								  [ILMachineType commonType])
+
+/*
+ * Apply the negate operator to a value on the stack.
+ */
+%operation %inline void JavaNegate_ApplyOp(ILGenInfo *info,
+								 		   [ILMachineType commonType])
+
+/*
+ * Apply the bitwise NOT operator to a value on the stack.
+ */
+%operation %inline void JavaNot_ApplyOp(ILGenInfo *info,
+							 		    [ILMachineType commonType])
+
+/*
+ * Generate discard code for various arithmetic operator types.
+ */
+JavaGenDiscard(ILNode_BinaryArith),
+JavaGenDiscard(ILNode_BinaryBitwise),
+JavaGenDiscard(ILNode_BinaryShift),
+JavaGenDiscard(ILNode_UserBinaryOp),
+JavaGenDiscard(ILNode_Concat),
+JavaGenDiscard(ILNode_DelegateAdd),
+JavaGenDiscard(ILNode_DelegateSub)
+{
+	JavaGenDiscard(node->expr1, info);
+	JavaGenDiscard(node->expr2, info);
+}
+JavaGenDiscard(ILNode_Neg),
+JavaGenDiscard(ILNode_UnaryPlus),
+JavaGenDiscard(ILNode_Not),
+JavaGenDiscard(ILNode_UserUnaryOp)
+{
+	JavaGenDiscard(node->expr, info);
+}
+
+/*
+ * Generate value code for a binary arithmetic operator.
+ */
+JavaGenValue(ILNode_BinaryArith)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+
+	/* Get the types of the sub-expressions */
+	type1 = ILNode_GetType(node->expr1, info);
+	type2 = ILNode_GetType(node->expr2, info);
+
+	/* Determine the common type */
+	commonType = ILCommonType(info, type1, type2, 0);
+
+	/* Evaluate the sub-expressions and cast to the common type */
+	JavaGenCast(info, JavaGenValue(node->expr1, info), commonType);
+	JavaGenCast(info, JavaGenValue(node->expr2, info), commonType);
+
+	/* Apply the operator */
+	JavaBinary_ApplyOp(info, node, commonType);
+
+	/* Return the common type to the caller */
+	return commonType;
+}
+
+/*
+ * Generate value code for the addition operator.
+ */
+JavaGenValue(ILNode_Add)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+
+	/* Get the types of the sub-expressions */
+	type1 = ILNode_GetType(node->expr1, info);
+	type2 = ILNode_GetType(node->expr2, info);
+
+	/* Determine the common type */
+	if(type1 == ILMachineType_String || type2 == ILMachineType_String)
+	{
+		/* Perform string concatenation on the arguments */
+		commonType = ILMachineType_String;
+	}
+	else
+	{
+		/* Numeric addition operator */
+		commonType = ILCommonType(info, type1, type2, 0);
+	}
+
+	/* Evaluate the sub-expressions and cast to the common type */
+	JavaGenCast(info, JavaGenValue(node->expr1, info), commonType);
+	JavaGenCast(info, JavaGenValue(node->expr2, info), commonType);
+
+	/* Apply the operator */
+	JavaBinary_ApplyOp(info, (ILNode_BinaryArith *)node, commonType);
+
+	/* Return the common type to the caller */
+	return commonType;
+}
+
+/*
+ * Generate value code for a binary bitwise operator.
+ */
+JavaGenValue(ILNode_BinaryBitwise)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+	ILMachineType commonType;
+
+	/* Get the types of the sub-expressions */
+	type1 = ILNode_GetType(node->expr1, info);
+	type2 = ILNode_GetType(node->expr2, info);
+
+	/* Determine the common type */
+	commonType = ILCommonType(info, type1, type2, 1);
+
+	/* Evaluate the sub-expressions and cast to the common type */
+	JavaGenCast(info, JavaGenValue(node->expr1, info), commonType);
+	JavaGenCast(info, JavaGenValue(node->expr2, info), commonType);
+
+	/* Apply the operator */
+	JavaBitwise_ApplyOp(info, node, commonType);
+
+	/* Return the common type to the caller */
+	return commonType;
+}
+
+/*
+ * Generate value code for a binary shift operator.
+ */
+JavaGenValue(ILNode_BinaryShift)
+{
+	ILMachineType type;
+	ILMachineType commonType;
+
+	/* Determine the common type */
+	type = ILNode_GetType(node->expr1, info);
+	commonType = ILCommonType(info, type, type, 1);
+
+	/* Evaluate the first sub-expression and cast to the common type */
+	JavaGenCast(info, JavaGenValue(node->expr1, info), commonType);
+
+	/* If we are doing an unsigned shift right on an 8-bit or
+	   16-bit value, we need to mask off the sign bits first */
+	if(commonType == ILMachineType_Int8 &&
+	   yykind(node) == yykindof(ILNode_UShr))
+	{
+		JavaGenInt32(info, 0xFF);
+		JavaGenSimple(info, JAVA_OP_IAND);
+		JavaGenExtend(info, 1);
+	}
+	else if(commonType == ILMachineType_Int16 &&
+	        yykind(node) == yykindof(ILNode_UShr))
+	{
+		JavaGenSimple(info, JAVA_OP_I2C);
+	}
+
+	/* Evaluate the second sub-expression and cast to "native uint" */
+	JavaGenCast(info, JavaGenValue(node->expr2, info),
+			    ILMachineType_NativeUInt);
+
+	/* Apply the operator */
+	JavaShift_ApplyOp(info, node, commonType);
+
+	/* Return the common type to the caller */
+	return commonType;
+}
+
+/*
+ * Generate value code for the negation operator.
+ */
+JavaGenValue(ILNode_Neg)
+{
+	ILMachineType type;
+	ILMachineType commonType;
+
+	/* Determine the common type to use */
+	type = ILNode_GetType(node->expr, info);
+	commonType = ILCommonType(info, type, type, 0);
+
+	/* Evaluate the sub-expression and cast to the common type */
+	JavaGenCast(info, JavaGenValue(node->expr, info), commonType);
+
+	/* Apply the operator */
+	JavaNegate_ApplyOp(info, commonType);
+
+	/* Return the common type to the caller */
+	return commonType;
+}
+
+/*
+ * Generate value code for the unary plus operator.
+ */
+JavaGenValue(ILNode_UnaryPlus)
+{
+	ILMachineType type;
+	ILMachineType commonType;
+
+	/* Determine the common type to use */
+	type = ILNode_GetType(node->expr, info);
+	commonType = ILCommonType(info, type, type, 0);
+
+	/* Generate code for the sub-expression and cast to the common type */
+	JavaGenCast(info, JavaGenValue(node->expr, info), commonType);
+
+	/* Return the common type to the caller */
+	return commonType;
+}
+
+/*
+ * Generate value code for the bitwise NOT operator.
+ */
+JavaGenValue(ILNode_Not)
+{
+	ILMachineType type;
+	ILMachineType commonType;
+
+	/* Determine the common type to use */
+	type = ILNode_GetType(node->expr, info);
+	commonType = ILCommonType(info, type, type, 1);
+
+	/* Generate code for the sub-expression and cast to the common type */
+	JavaGenCast(info, JavaGenValue(node->expr, info), commonType);
+
+	/* Apply the operator */
+	JavaNot_ApplyOp(info, commonType);
+
+	/* Return the common type to the caller */
+	return commonType;
+}
+
+/*
+ * Generate value code for user-defined unary operators.
+ */
+JavaGenValue(ILNode_UserUnaryOp)
+{
+	ILMachineType type;
+
+	/* Generate code to compute the value of the argument */
+	type = JavaGenValue(node->expr, info);
+
+	/* Call the operator */
+	JavaGenCallByMethod(info, node->method);
+
+	/* Adjust the stack height and return */
+	JavaGenAdjust(info, -(JavaGenTypeSize(type)));
+	JavaGenAdjust(info, JavaGenTypeSize(node->machineType));
+	return node->machineType;
+}
+
+/*
+ * Generate value code for user-defined binary operators.
+ */
+JavaGenValue(ILNode_UserBinaryOp)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+
+	/* Generate code to compute the value of the arguments */
+	type1 = JavaGenValue(node->expr1, info);
+	type2 = JavaGenValue(node->expr2, info);
+
+	/* Call the operator */
+	JavaGenCallByMethod(info, node->method);
+
+	/* Adjust the stack height and return */
+	JavaGenAdjust(info, -(JavaGenTypeSize(type1) + JavaGenTypeSize(type2)));
+	JavaGenAdjust(info, JavaGenTypeSize(node->machineType));
+	return node->machineType;
+}
+
+/*
+ * Generate value code for string concatenation.
+ */
+JavaGenValue(ILNode_Concat)
+{
+	ILMachineType type1;
+	ILMachineType type2;
+
+	/* Generate code for the two arguments */
+	type1 = JavaGenValue(node->expr1, info);
+	if(type1 >= ILMachineType_Boolean &&
+	   type1 <= ILMachineType_Decimal)
+	{
+		JavaGenCast(info, type1, ILMachineType_String);
+		type1 = ILMachineType_String;
+	}
+	else
+	{
+		JavaGenCast(info, type1, ILMachineType_ObjectRef);
+		if(info->useJavaLib)
+		{
+			JavaGenCallVirtual(info, "java/lang/Object", "toString",
+							   "()Ljava/lang/String;");
+			type1 = ILMachineType_String;
+		}
+	}
+	type2 = JavaGenValue(node->expr2, info);
+	if(type2 >= ILMachineType_Boolean &&
+	   type2 <= ILMachineType_Decimal)
+	{
+		JavaGenCast(info, type2, ILMachineType_String);
+		type2 = ILMachineType_String;
+	}
+	else
+	{
+		JavaGenCast(info, type2, ILMachineType_ObjectRef);
+		if(info->useJavaLib)
+		{
+			JavaGenCallVirtual(info, "java/lang/Object", "toString",
+							   "()Ljava/lang/String;");
+			type2 = ILMachineType_String;
+		}
+	}
+
+	/* Apply either the string or the object concatenation function */
+	if(type1 == ILMachineType_String && type2 == ILMachineType_String)
+	{
+		if(info->useJavaLib)
+		{
+			JavaGenCallVirtual(info, "java/lang/String", "concat",
+							   "(Ljava/lang/String;)Ljava/lang/String;");
+		}
+		else
+		{
+			JavaGenCallByName(info, "System/String", "Concat",
+					  "(LSystem/String;LSystem/String;)LSystem/String;");
+		}
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/String", "Concat",
+				  "(LSystem/Object;LSystem/Object;)LSystem/String;");
+	}
+	JavaGenAdjust(info, -1);
+	return ILMachineType_String;
+}
+
+/*
+ * Generate value code for delegate addition.
+ */
+JavaGenValue(ILNode_DelegateAdd)
+{
+	/* Generate code for the two arguments */
+	JavaGenValue(node->expr1, info);
+	JavaGenValue(node->expr2, info);
+
+	/* Call the delegate combination operator in "System.Delegate" */
+	JavaGenCallByName(info, "System/Delegate", "Combine",
+			  "(LSystem/Delegate;LSystem/Delegate;)LSystem/Delegate;");
+	JavaGenAdjust(info, -1);
+	JavaGenClassRef(info, JAVA_OP_CHECKCAST, node->delegateClass);
+
+	/* The result is always an object reference */
+	return ILMachineType_ObjectRef;
+}
+
+/*
+ * Generate value code for delegate subtraction.
+ */
+JavaGenValue(ILNode_DelegateSub)
+{
+	/* Generate code for the two arguments */
+	JavaGenValue(node->expr1, info);
+	JavaGenValue(node->expr2, info);
+
+	/* Call the delegate removal operator in "System.Delegate" */
+	JavaGenCallByName(info, "System/Delegate", "Remove",
+			  "(LSystem/Delegate;LSystem/Delegate;)LSystem/Delegate;");
+	JavaGenAdjust(info, -1);
+	JavaGenClassRef(info, JAVA_OP_CHECKCAST, node->delegateClass);
+
+	/* The result is always an object reference */
+	return ILMachineType_ObjectRef;
+}
+
+/*
+ * Apply the addition operator to various types.
+ */
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	JavaGenSimple(info, JAVA_OP_IADD);
+	JavaGenAdjust(info, -1);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_Int8);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2B);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	JavaGenSimple(info, JAVA_OP_IADD);
+	JavaGenAdjust(info, -1);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_UInt8);
+	}
+	else
+	{
+		JavaGenInt32(info, 0xFF);
+		JavaGenSimple(info, JAVA_OP_IAND);
+		JavaGenExtend(info, 1);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	JavaGenSimple(info, JAVA_OP_IADD);
+	JavaGenAdjust(info, -1);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_Int16);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2S);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_UInt16),
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	JavaGenSimple(info, JAVA_OP_IADD);
+	JavaGenAdjust(info, -1);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_UInt16);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2C);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_Int32),
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_NativeInt)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "iadd_ovf", "(II)I");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_IADD);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_UInt32),
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_NativeUInt)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "uiadd_ovf", "(II)I");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_IADD);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_Int64)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "ladd_ovf", "(JJ)J");
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_LADD);
+		JavaGenAdjust(info, -2);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_UInt64)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "uladd_ovf", "(JJ)J");
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_LADD);
+		JavaGenAdjust(info, -2);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FADD);
+	JavaGenAdjust(info, -1);
+}
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_Float64),
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_DADD);
+	JavaGenAdjust(info, -2);
+}
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "add",
+						   "(Ljava/math/BigDecimal;)Ljava/math/BigDecimal;");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Addition__VVV",
+						  "(LSystem/Decimal;LSystem/Decimal;)LSystem/Decimal;");
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_String)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/lang/String", "concat",
+						   "(Ljava/lang/String;)Ljava/lang/String;");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/String", "Concat",
+						  "(LSystem/String;LSystem/String;)LSystem/String;");
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_Void),
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_Boolean),
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_ObjectRef),
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_UnmanagedPtr),
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_ManagedPtr),
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_TransientPtr),
+JavaBinary_ApplyOp(ILNode_Add, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenAdjust(info, -1);
+}
+
+/*
+ * Apply the subtraction operator to various types.
+ */
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	JavaGenSimple(info, JAVA_OP_ISUB);
+	JavaGenAdjust(info, -1);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_Int8);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2B);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	JavaGenSimple(info, JAVA_OP_ISUB);
+	JavaGenAdjust(info, -1);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_UInt8);
+	}
+	else
+	{
+		JavaGenInt32(info, 0xFF);
+		JavaGenSimple(info, JAVA_OP_IAND);
+		JavaGenExtend(info, 1);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	JavaGenSimple(info, JAVA_OP_ISUB);
+	JavaGenAdjust(info, -1);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_Int16);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2S);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_UInt16),
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	JavaGenSimple(info, JAVA_OP_ISUB);
+	JavaGenAdjust(info, -1);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_UInt16);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2C);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_Int32),
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_NativeInt)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "isub_ovf", "(II)I");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_ISUB);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_UInt32),
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_NativeUInt)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "uisub_ovf", "(II)I");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_ISUB);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_Int64)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "lsub_ovf", "(JJ)J");
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_LSUB);
+		JavaGenAdjust(info, -2);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_UInt64)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "ulsub_ovf", "(JJ)J");
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_LSUB);
+		JavaGenAdjust(info, -2);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FSUB);
+	JavaGenAdjust(info, -1);
+}
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_Float64),
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_DSUB);
+	JavaGenAdjust(info, -2);
+}
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "subtract",
+						   "(Ljava/math/BigDecimal;)Ljava/math/BigDecimal;");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Subtraction__VVV",
+						  "(LSystem/Decimal;LSystem/Decimal;)LSystem/Decimal;");
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_Void),
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_Boolean),
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_String),
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_ObjectRef),
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_UnmanagedPtr),
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_ManagedPtr),
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_TransientPtr),
+JavaBinary_ApplyOp(ILNode_Sub, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenAdjust(info, -1);
+}
+
+/*
+ * Apply the multiplication operator to various types.
+ */
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	JavaGenSimple(info, JAVA_OP_IMUL);
+	JavaGenAdjust(info, -1);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_Int8);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2B);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	JavaGenSimple(info, JAVA_OP_IMUL);
+	JavaGenAdjust(info, -1);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_UInt8);
+	}
+	else
+	{
+		JavaGenInt32(info, 0xFF);
+		JavaGenSimple(info, JAVA_OP_IAND);
+		JavaGenExtend(info, 1);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	JavaGenSimple(info, JAVA_OP_IMUL);
+	JavaGenAdjust(info, -1);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_Int16);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2S);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_UInt16),
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	JavaGenSimple(info, JAVA_OP_IMUL);
+	JavaGenAdjust(info, -1);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_UInt32, ILMachineType_UInt16);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2C);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_Int32),
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_NativeInt)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "imul_ovf", "(II)I");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_IMUL);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_UInt32),
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_NativeUInt)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "uimul_ovf", "(II)I");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		/* Note: due to a quirk of binary arithmetic, executing
+		   a signed multiply on the unsigned operands will actually
+		   give the correct unsigned result */
+		JavaGenSimple(info, JAVA_OP_IMUL);
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_Int64)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "lmul_ovf", "(JJ)J");
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_LMUL);
+		JavaGenAdjust(info, -2);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_UInt64)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "ulmul_ovf", "(JJ)J");
+		JavaGenAdjust(info, -2);
+	}
+	else
+	{
+		/* Note: due to a quirk of binary arithmetic, executing
+		   a signed multiply on the unsigned operands will actually
+		   give the correct unsigned result */
+		JavaGenSimple(info, JAVA_OP_LMUL);
+		JavaGenAdjust(info, -2);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FMUL);
+	JavaGenAdjust(info, -1);
+}
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_Float64),
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_DMUL);
+	JavaGenAdjust(info, -2);
+}
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "multiply",
+						   "(Ljava/math/BigDecimal;)Ljava/math/BigDecimal;");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Multiply__VVV",
+						  "(LSystem/Decimal;LSystem/Decimal;)LSystem/Decimal;");
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_Void),
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_Boolean),
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_String),
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_ObjectRef),
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_UnmanagedPtr),
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_ManagedPtr),
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_TransientPtr),
+JavaBinary_ApplyOp(ILNode_Mul, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenAdjust(info, -1);
+}
+
+/*
+ * Apply the division operator to various types.
+ */
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_Int8),
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_UInt8),
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_Int16),
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_UInt16),
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_Char),
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_Int32),
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_NativeInt)
+{
+	JavaGenSimple(info, JAVA_OP_IDIV);
+	JavaGenAdjust(info, -1);
+}
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_UInt32),
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_NativeUInt)
+{
+	JavaGenCallIntrinsic(info, "uidiv", "(II)I");
+	JavaGenAdjust(info, -1);
+}
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_Int64)
+{
+	JavaGenSimple(info, JAVA_OP_LDIV);
+	JavaGenAdjust(info, -2);
+}
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_UInt64)
+{
+	JavaGenCallIntrinsic(info, "uldiv", "(JJ)J");
+	JavaGenAdjust(info, -2);
+}
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FDIV);
+	JavaGenAdjust(info, -1);
+}
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_Float64),
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_DDIV);
+	JavaGenAdjust(info, -2);
+}
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallIntrinsic(info, "Ddiv",
+			  		"(Ljava/math/BigDecimal;Ljava/math/BigDecimal;)"
+							"Ljava/math/BigDecimal;");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Division__VVV",
+						  "(LSystem/Decimal;LSystem/Decimal;)LSystem/Decimal;");
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_Void),
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_Boolean),
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_String),
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_ObjectRef),
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_UnmanagedPtr),
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_ManagedPtr),
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_TransientPtr),
+JavaBinary_ApplyOp(ILNode_Div, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenAdjust(info, -1);
+}
+
+/*
+ * Apply the remainder operator to various types.
+ */
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_Int8),
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_UInt8),
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_Int16),
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_UInt16),
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_Char),
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_Int32),
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_NativeInt)
+{
+	JavaGenSimple(info, JAVA_OP_IREM);
+	JavaGenAdjust(info, -1);
+}
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_UInt32),
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_NativeUInt)
+{
+	JavaGenCallIntrinsic(info, "uirem", "(II)I");
+	JavaGenAdjust(info, -1);
+}
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_Int64)
+{
+	JavaGenSimple(info, JAVA_OP_LREM);
+	JavaGenAdjust(info, -2);
+}
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_UInt64)
+{
+	JavaGenCallIntrinsic(info, "ulrem", "(JJ)J");
+	JavaGenAdjust(info, -2);
+}
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FREM);
+	JavaGenAdjust(info, -1);
+}
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_Float64),
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_DREM);
+	JavaGenAdjust(info, -2);
+}
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallIntrinsic(info, "Drem",
+			  		"(Ljava/math/BigDecimal;Ljava/math/BigDecimal;)"
+							"Ljava/math/BigDecimal;");
+		JavaGenAdjust(info, -1);
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_Modulus__VVV",
+						  "(LSystem/Decimal;LSystem/Decimal;)LSystem/Decimal;");
+		JavaGenAdjust(info, -1);
+	}
+}
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_Void),
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_Boolean),
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_String),
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_ObjectRef),
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_UnmanagedPtr),
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_ManagedPtr),
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_TransientPtr),
+JavaBinary_ApplyOp(ILNode_Rem, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenAdjust(info, -1);
+}
+
+/*
+ * Apply the bitwise AND operator to various types.
+ */
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_Boolean)
+{
+	/* Returns true if both arguments are true.  We assume
+	   that both arguments are clamped to the set {0,1} */
+	JavaGenSimple(info, JAVA_OP_IAND);
+	JavaGenAdjust(info, -1);
+}
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	JavaGenSimple(info, JAVA_OP_IAND);
+	JavaGenSimple(info, JAVA_OP_I2B);
+	JavaGenAdjust(info, -1);
+}
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	JavaGenSimple(info, JAVA_OP_IAND);
+	JavaGenSimple(info, JAVA_OP_I2S);
+	JavaGenAdjust(info, -1);
+}
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_UInt8),
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_UInt16),
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_Char),
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_Int32),
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_NativeInt),
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_UInt32),
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_NativeUInt)
+{
+	JavaGenSimple(info, JAVA_OP_IAND);
+	JavaGenAdjust(info, -1);
+}
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_Int64),
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_UInt64)
+{
+	JavaGenSimple(info, JAVA_OP_LAND);
+	JavaGenAdjust(info, -2);
+}
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_Float32),
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_Float64),
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_NativeFloat),
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_Decimal),
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_Void),
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_String),
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_ObjectRef),
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_UnmanagedPtr),
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_ManagedPtr),
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_TransientPtr),
+JavaBitwise_ApplyOp(ILNode_And, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenAdjust(info, -1);
+}
+
+/*
+ * Apply the bitwise OR operator to various types.
+ */
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_Boolean)
+{
+	/* Returns true if one of the arguments is true.  We assume
+	   that both arguments are clamped to the set {0,1} */
+	JavaGenSimple(info, JAVA_OP_IOR);
+	JavaGenAdjust(info, -1);
+}
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_Int8),
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_UInt8),
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_Int16),
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_UInt16),
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_Char),
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_Int32),
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_NativeInt),
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_UInt32),
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_NativeUInt)
+{
+	JavaGenSimple(info, JAVA_OP_IOR);
+	JavaGenAdjust(info, -1);
+}
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_Int64),
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_UInt64)
+{
+	JavaGenSimple(info, JAVA_OP_LOR);
+	JavaGenAdjust(info, -2);
+}
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_Float32),
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_Float64),
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_NativeFloat),
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_Decimal),
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_Void),
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_String),
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_ObjectRef),
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_UnmanagedPtr),
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_ManagedPtr),
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_TransientPtr),
+JavaBitwise_ApplyOp(ILNode_Or, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenAdjust(info, -1);
+}
+
+/*
+ * Apply the bitwise XOR operator to various types.
+ */
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_Boolean)
+{
+	/* Returns the XOR of the boolean arguments.  We assume
+	   that both arguments are clamped to the set {0,1} */
+	JavaGenSimple(info, JAVA_OP_IXOR);
+	JavaGenAdjust(info, -1);
+}
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	JavaGenSimple(info, JAVA_OP_IXOR);
+	JavaGenSimple(info, JAVA_OP_I2B);
+	JavaGenAdjust(info, -1);
+}
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	JavaGenSimple(info, JAVA_OP_IXOR);
+	JavaGenSimple(info, JAVA_OP_I2S);
+	JavaGenAdjust(info, -1);
+}
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_UInt8),
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_UInt16),
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_Char),
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_Int32),
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_NativeInt),
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_UInt32),
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_NativeUInt)
+{
+	JavaGenSimple(info, JAVA_OP_IXOR);
+	JavaGenAdjust(info, -1);
+}
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_Int64),
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_UInt64)
+{
+	JavaGenSimple(info, JAVA_OP_LXOR);
+	JavaGenAdjust(info, -2);
+}
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_Float32),
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_Float64),
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_NativeFloat),
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_Decimal),
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_Void),
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_String),
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_ObjectRef),
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_UnmanagedPtr),
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_ManagedPtr),
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_TransientPtr),
+JavaBitwise_ApplyOp(ILNode_Xor, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenAdjust(info, -1);
+}
+
+/*
+ * Apply the left shift operator to various types.
+ */
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_Int8)
+{
+	/* Perform the operation and then clamp the result to "int8" */
+	JavaGenSimple(info, JAVA_OP_ISHL);
+	JavaGenSimple(info, JAVA_OP_I2B);
+	JavaGenAdjust(info, -1);
+}
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_UInt8)
+{
+	/* Perform the operation and then clamp the result to "uint8" */
+	JavaGenSimple(info, JAVA_OP_ISHL);
+	JavaGenInt32(info, 0xFF);
+	JavaGenSimple(info, JAVA_OP_IAND);
+	JavaGenAdjust(info, -1);
+}
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_Int16)
+{
+	/* Perform the operation and then clamp the result to "int16" */
+	JavaGenSimple(info, JAVA_OP_ISHL);
+	JavaGenSimple(info, JAVA_OP_I2S);
+	JavaGenAdjust(info, -1);
+}
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_UInt16),
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_Char)
+{
+	/* Perform the operation and then clamp the result to "uint16" */
+	JavaGenSimple(info, JAVA_OP_ISHL);
+	JavaGenSimple(info, JAVA_OP_I2C);
+	JavaGenAdjust(info, -1);
+}
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_Int32),
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_NativeInt),
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_UInt32),
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_NativeUInt)
+{
+	JavaGenSimple(info, JAVA_OP_ISHL);
+	JavaGenAdjust(info, -1);
+}
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_Int64),
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_UInt64)
+{
+	JavaGenSimple(info, JAVA_OP_LSHL);
+	JavaGenAdjust(info, -1);
+}
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_Float32),
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_Float64),
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_NativeFloat),
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_Decimal),
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_Void),
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_Boolean),
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_String),
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_ObjectRef),
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_UnmanagedPtr),
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_ManagedPtr),
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_TransientPtr),
+JavaShift_ApplyOp(ILNode_Shl, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenAdjust(info, -1);
+}
+
+/*
+ * Apply the right shift operator to various types.
+ */
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_Int8),
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_UInt8),
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_Int16),
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_UInt16),
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_Char),
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_Int32),
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_NativeInt)
+{
+	JavaGenSimple(info, JAVA_OP_ISHR);
+	JavaGenAdjust(info, -1);
+}
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_UInt32),
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_NativeUInt)
+{
+	JavaGenSimple(info, JAVA_OP_IUSHR);
+	JavaGenAdjust(info, -1);
+}
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_Int64)
+{
+	JavaGenSimple(info, JAVA_OP_LSHR);
+	JavaGenAdjust(info, -1);
+}
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_UInt64)
+{
+	JavaGenSimple(info, JAVA_OP_LUSHR);
+	JavaGenAdjust(info, -1);
+}
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_Float32),
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_Float64),
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_NativeFloat),
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_Decimal),
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_Void),
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_Boolean),
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_String),
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_ObjectRef),
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_UnmanagedPtr),
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_ManagedPtr),
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_TransientPtr),
+JavaShift_ApplyOp(ILNode_Shr, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenAdjust(info, -1);
+}
+
+/*
+ * Apply the unsigned right shift operator to various types.
+ */
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_Int8),
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_UInt8),
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_Int16),
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_UInt16),
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_Char),
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_Int32),
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_NativeInt),
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_UInt32),
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_NativeUInt)
+{
+	JavaGenSimple(info, JAVA_OP_IUSHR);
+	JavaGenAdjust(info, -1);
+}
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_Int64),
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_UInt64)
+{
+	JavaGenSimple(info, JAVA_OP_LUSHR);
+	JavaGenAdjust(info, -1);
+}
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_Float32),
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_Float64),
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_NativeFloat),
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_Decimal),
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_Void),
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_Boolean),
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_String),
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_ObjectRef),
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_UnmanagedPtr),
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_ManagedPtr),
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_TransientPtr),
+JavaShift_ApplyOp(ILNode_UShr, ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+	JavaGenSimple(info, JAVA_OP_POP);
+	JavaGenAdjust(info, -1);
+}
+
+/*
+ * Apply the unary negation operator to various types.
+ */
+JavaNegate_ApplyOp(ILMachineType_Int8)
+{
+	JavaGenSimple(info, JAVA_OP_INEG);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_Int8);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2B);
+	}
+}
+JavaNegate_ApplyOp(ILMachineType_UInt8)
+{
+	JavaGenSimple(info, JAVA_OP_INEG);
+	JavaGenInt32(info, 0xFF);
+	JavaGenSimple(info, JAVA_OP_IAND);
+	JavaGenExtend(info, 1);
+}
+JavaNegate_ApplyOp(ILMachineType_Int16)
+{
+	JavaGenSimple(info, JAVA_OP_INEG);
+	if(info->overflowInsns)
+	{
+		JavaGenCast(info, ILMachineType_Int32, ILMachineType_Int16);
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_I2S);
+	}
+}
+JavaNegate_ApplyOp(ILMachineType_UInt16),
+JavaNegate_ApplyOp(ILMachineType_Char)
+{
+	JavaGenSimple(info, JAVA_OP_INEG);
+	JavaGenSimple(info, JAVA_OP_I2C);
+}
+JavaNegate_ApplyOp(ILMachineType_Int32),
+JavaNegate_ApplyOp(ILMachineType_NativeInt)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "ineg_ovf", "(I)I");
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_INEG);
+	}
+}
+JavaNegate_ApplyOp(ILMachineType_Int64)
+{
+	if(info->overflowInsns)
+	{
+		JavaGenCallIntrinsic(info, "lneg_ovf", "(J)J");
+	}
+	else
+	{
+		JavaGenSimple(info, JAVA_OP_LNEG);
+	}
+}
+JavaNegate_ApplyOp(ILMachineType_UInt32),
+JavaNegate_ApplyOp(ILMachineType_NativeUInt)
+{
+	JavaGenSimple(info, JAVA_OP_INEG);
+}
+JavaNegate_ApplyOp(ILMachineType_UInt64)
+{
+	JavaGenSimple(info, JAVA_OP_LNEG);
+}
+JavaNegate_ApplyOp(ILMachineType_Float32)
+{
+	JavaGenSimple(info, JAVA_OP_FNEG);
+}
+JavaNegate_ApplyOp(ILMachineType_Float64),
+JavaNegate_ApplyOp(ILMachineType_NativeFloat)
+{
+	JavaGenSimple(info, JAVA_OP_DNEG);
+}
+JavaNegate_ApplyOp(ILMachineType_Decimal)
+{
+	if(info->useJavaLib)
+	{
+		JavaGenCallVirtual(info, "java/math/BigDecimal", "negate",
+						   "()Ljava/math/BigDecimal;");
+	}
+	else
+	{
+		JavaGenCallByName(info, "System/Decimal", "op_UnaryNegation__VV",
+						  "(LSystem/Decimal;)LSystem/Decimal;");
+	}
+}
+JavaNegate_ApplyOp(ILMachineType_Void),
+JavaNegate_ApplyOp(ILMachineType_Boolean),
+JavaNegate_ApplyOp(ILMachineType_String),
+JavaNegate_ApplyOp(ILMachineType_ObjectRef),
+JavaNegate_ApplyOp(ILMachineType_UnmanagedPtr),
+JavaNegate_ApplyOp(ILMachineType_ManagedPtr),
+JavaNegate_ApplyOp(ILMachineType_TransientPtr),
+JavaNegate_ApplyOp(ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+}
+
+/*
+ * Apply the bitwise NOT operator to various types.
+ */
+JavaNot_ApplyOp(ILMachineType_Int8)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_M1);
+	JavaGenSimple(info, JAVA_OP_IXOR);
+	JavaGenSimple(info, JAVA_OP_I2B);
+	JavaGenExtend(info, 1);
+}
+JavaNot_ApplyOp(ILMachineType_UInt8)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_M1);
+	JavaGenSimple(info, JAVA_OP_IXOR);
+	JavaGenInt32(info, 0xFF);
+	JavaGenSimple(info, JAVA_OP_IAND);
+	JavaGenExtend(info, 1);
+}
+JavaNot_ApplyOp(ILMachineType_Int16)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_M1);
+	JavaGenSimple(info, JAVA_OP_IXOR);
+	JavaGenSimple(info, JAVA_OP_I2S);
+	JavaGenExtend(info, 1);
+}
+JavaNot_ApplyOp(ILMachineType_UInt16),
+JavaNot_ApplyOp(ILMachineType_Char)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_M1);
+	JavaGenSimple(info, JAVA_OP_IXOR);
+	JavaGenSimple(info, JAVA_OP_I2C);
+	JavaGenExtend(info, 1);
+}
+JavaNot_ApplyOp(ILMachineType_Int32),
+JavaNot_ApplyOp(ILMachineType_NativeInt),
+JavaNot_ApplyOp(ILMachineType_UInt32),
+JavaNot_ApplyOp(ILMachineType_NativeUInt)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_M1);
+	JavaGenSimple(info, JAVA_OP_IXOR);
+	JavaGenExtend(info, 1);
+}
+JavaNot_ApplyOp(ILMachineType_Int64),
+JavaNot_ApplyOp(ILMachineType_UInt64)
+{
+	JavaGenInt64(info, (ILInt64)(-1));
+	JavaGenSimple(info, JAVA_OP_LXOR);
+	JavaGenExtend(info, 2);
+}
+JavaNot_ApplyOp(ILMachineType_Float32),
+JavaNot_ApplyOp(ILMachineType_Float64),
+JavaNot_ApplyOp(ILMachineType_NativeFloat),
+JavaNot_ApplyOp(ILMachineType_Decimal),
+JavaNot_ApplyOp(ILMachineType_Void),
+JavaNot_ApplyOp(ILMachineType_Boolean),
+JavaNot_ApplyOp(ILMachineType_String),
+JavaNot_ApplyOp(ILMachineType_ObjectRef),
+JavaNot_ApplyOp(ILMachineType_UnmanagedPtr),
+JavaNot_ApplyOp(ILMachineType_ManagedPtr),
+JavaNot_ApplyOp(ILMachineType_TransientPtr),
+JavaNot_ApplyOp(ILMachineType_ManagedValue)
+{
+	/* Default - should never be used */
+}

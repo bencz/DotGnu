@@ -1,0 +1,42 @@
+#
+# Invalid.txt - Resources for invalid operation messages.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Invalid_CollectionModified=Die collection wurde veraendert
+Invalid_BadEnumeratorPosition=The enumerator is not positioned on an element
+Invalid_UnderlyingModified=Die vorliegende collection wurde veraendert
+Invalid_WriteOnce=Der Wert kann nur einmal gesetzt werden value can only be set once
+Invalid_GCHandleNotPinned=The specified GC handle has not been pinned
+Invalid_GCHandleNotInit=The specified GC handle has not been initialized
+Invalid_GCHandleInvalid=The specified GC handle is not valid
+Invalid_ReadOnly=Die angeforderte Operation ist bei read-only Objekten nicht gueltig
+Invalid_EmptyQueue=Die angeforderte Operation ist bei einer leeren Queue ungueltig
+Invalid_EmptyStack=Die angeforderte Operation ist bei einem leeren stack ungueltig
+Invalid_EntryNotInAssembly=Entry point method is not in the specified assembly
+Invalid_PermissionXml=Ungueltige XML Daten fuer Berechtigungsdefinition
+Invalid_PermissionSetName=Ungueltiger Name fuer ein Berechtigungsset
+Invalid_RWLock=Ungueltige Lese/Schreib Sperre Operation
+Invalid_RemoteRegistry=Der Zugriff auf die entfernte Registry wurde verweigert
+Invalid_IsolatedCurrentSize=Die aktuelle Groesse dieses isolierten Speicherobjektes ist nicht verfuegbar
+Invalid_IsolatedQuota=Isolierte Speicher Quota wurde nicht angegeben
+Invalid_ContextFrozen=Der Kontext ist bereits eingefroren
+Invalid_PropertyClash=Es existiert bereits ein Kontext Property mit dem angegebenen Namen
+Invalid_ModifyLease=Es wurde versucht ein Lease zu aendern das sich nicht im urspruenglichen Zustand befindet
+Invalid_ResourceNotString=Tie angegebene Ressource ist kein String
+Invalid_ResourceReaderClosed=Der Ressourcen Leser wurde bereits geschlossen
+Invalid_ResourceWriterClosed=Der Ressourcen Schreiber wurde bereits geschlossen

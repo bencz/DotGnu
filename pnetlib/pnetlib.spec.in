@@ -1,0 +1,62 @@
+Name: pnetlib
+Version: @VERSION@
+Release: custom
+Source: http://www.southern-storm.com.au/download/%{name}-%{version}.tar.gz
+License: GPL
+Vendor: DotGNU
+BuildRoot: %{_tmppath}/%{name}-%{version}-root
+Group: System/Emulators
+BuildArch: noarch
+
+BuildRequires:  treecc >= 0:@TREECC_VERSION@
+BuildRequires:  pnet-interpreter >= 0:@VERSION@
+BuildRequires:  pnet-compiler >= 0:@VERSION@
+BuildRequires:  pnet-tools >= 0:@VERSION@
+BuildRequires:  XFree86-devel
+
+Requires:       pnet-interpreter >= 0:@VERSION@
+Requires:       pnet-tools >= 0:@VERSION@
+
+Summary: The CLR base class library for DotGNU Portable .NET
+
+%description
+This is DotGNU's implementation of the CLR (".NET") standard base
+class library.  It is designed to be used with programs targeted
+at the CLR and locally executed in the pnet-interpreter.
+
+%prep
+%setup -q
+
+%build
+%configure
+make
+
+%install
+if test "/" != "${RPM_BUILD_ROOT}"; then rm -rf ${RPM_BUILD_ROOT}; fi
+make DESTDIR=${RPM_BUILD_ROOT} install
+
+%clean
+if test "/" != "${RPM_BUILD_ROOT}"; then rm -rf ${RPM_BUILD_ROOT}; fi
+
+%files
+%defattr(-,root,root,-)
+%doc AUTHORS COPYING ChangeLog INSTALL NEWS README
+%{_libdir}/cscc/lib
+%{_datadir}/cscc/config/machine.default
+
+%changelog
+* Thu Mar 11 2004 Rhys Weatherley <rweather@southern-storm.com.au> 0.6.3
+- use VERSION in the BuildRequires and Requires lines.
+- use treecc >= 0.2.8, not 0.2.9, because 0.2.9 is a dev version.
+
+* Wed Mar 10 2004 Russell Stuart <russell-rpm@stuart.id.au> 0.6.3
+- Added cscc/config/machine.status
+- Upped the BuildRequires.
+
+* Wed Nov 27 2002 Stephen Compall <rushing@sigecom.net> 0.4.8-2
+- Corrected requires
+- Better description
+
+# Local variables:
+# mode: rpm-spec
+# end:

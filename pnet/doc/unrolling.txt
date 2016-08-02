@@ -1,0 +1,595 @@
+
+Introduction
+------------
+
+CVM unrolling is a mechanism for speeding up the Portable.NET runtime
+engine using some simple JIT techniques.  This document describes what you
+need to do to write a CVM unroller for a new CPU architecture.
+
+The process of writing an unroller has been simplified compared to earlier
+versions of the runtime engine.  Most of the hard work of instruction
+decoding, stack management, register allocation, etc, have already been
+done for you, and you just need to supply the CPU specifics.  In particular,
+you need to provide the following:
+
+    - CPU-specific modifications to the CVM configuration.
+    - Lists of rules for allocating registers, using the FPU, etc.
+    - Code generation macros for the CPU in question.
+
+If you need help, then send an e-mail message on the "pnet-developers"
+mailing list, or contact Rhys Weatherley directly.  To subscribe to the
+mailing list, visit "http://www.dotgnu.org".
+
+Modifying the CVM configuration
+-------------------------------
+
+The first thing to do is to modify the CVM configuration so that it
+knows that you will be using the unroller.  Edit "pnet/engine/cvm_config.h"
+and add some detection logic at the top of the file to detect your
+architecture.  There is already logic there for x86, ARM, etc.
+
+For example, the detection logic for a 32-bit architecture called "foo"
+with little-endian words and word-aligned longs can be defined as follows:
+
+    #if defined(__foo) || defined(__foo__)
+        #define CVM_FOO
+        #define CVM_LITTLE_ENDIAN
+        #define CVM_LONGS_ALIGNED_WORD
+        #define CVM_WORDS_AND_PTRS_SAME_SIZE
+    #endif
+
+The "CVM_FOO" macro will be used elsewhere to detect the CPU type.
+
+Now, down the bottom of "pnet/engine/cvm_config.h", you need to add some
+additional logic which defines the "IL_CVM_DIRECT_UNROLLED" macro.
+For example:
+
+    #if defined(IL_CVM_DIRECT) && defined(CVM_FOO) && \
+        defined(__GNUC__) && !defined(IL_NO_ASM) && \
+        !defined(IL_CVM_PROFILE_CVM_METHODS) && \
+        !defined(IL_CVM_PROFILE_CVM_VAR_USAGE) && \
+        defined(IL_CONFIG_UNROLL)
+    #define IL_CVM_DIRECT_UNROLLED
+    #endif
+
+Finally, we need to add some logic to the top of "pnet/engine/cvm.c" to
+perform manual register assignment.  It will look something like this:
+
+    #elif defined(CVM_FOO) && defined(__GNUC__) && !defined(IL_NO_ASM)
+        #define REGISTER_ASM_PC(x)      register x asm ("r1")
+        #define REGISTER_ASM_STACK(x)   register x asm ("r2")
+        #define REGISTER_ASM_FRAME(x)   register x asm ("r3")
+
+The values "r1", "r2", and "r3" will probably be different for your CPU.
+Look up your system's documentation to find three registers that are
+normally used for local variables and which are saved across function calls.
+
+These three manually-assigned registers will hold the important state
+variables "pc", "stacktop", and "frame".
+
+If you don't know which registers to choose, then ask on the pnet-developers
+mailing list.  If your compiler cannot assign registers manually, then
+there are other ways for the unroller to get the information, but they
+are trickier to set up.  Contact pnet-developers for assistance.
+
+You should now be able to recompile the runtime engine.  The compiler
+will give you an error if the registers you chose are unsuitable.
+The error might be strange, talking about "register spills".  If you
+get such an error, go back and try different registers.
+
+At this point, the engine is set up for unrolling but it isn't actually
+doing any unrolling yet.  Re-test the engine - you will probably already
+see a small performance improvement due to the manual register assignment.
+
+Writing the CPU-specific rules
+------------------------------
+
+The next step is to make a file called "pnet/engine/md_foo.h".  This will
+contain rules that tell the unroller how to assign registers and generate
+code for your architecture.
+
+If you need some extra helper macros, then put them into the file
+"pnet/engine/md_foo_macros.h".  If some of your macros are complicated,
+you may want to convert them into functions.  Put these functions into
+"pnet/engine/md_foo.c" and update the "Makefile.am" file to include it.
+
+We recommend starting with the "md_arm.h" file as a template, since ARM
+is the simplest platform out of those that are currently supported.
+
+If you want to make things easier on yourself, don't worry about
+floating-point on the first pass - just get the integer operations working.
+ARM is a good choice here because its unroller doesn't do floating-point.
+
+The rest of this section describes the rule definitions in "md_foo.h":
+
+MD_REG_<n>
+
+    These macros define the word registers that are used for temporarily
+    storing values during integer computations.  You can use up to 16
+    registers for temporary work values.
+
+    Even if your CPU has more than 16 registers, it is highly unlikely
+    that the unroller will use more than 6 or 7 registers at any one time.
+    You can experiment with greater numbers of registers later if you like.
+
+    The registers you choose must not be used for any other purpose in
+    the system.  e.g. you probably cannot use the CPU's stack pointer
+    register as a temporary register.
+
+    The order of MD_REG_<n> registers determines the order in which the
+    unroller will allocate them to temporary values.  Usually the order
+    will be unimportant.  The x86 CPU is an exception - more efficient
+    code can be obtained for division and shift operations if the order
+    starts with EAX, ECX, and then EDX.
+
+MD_FREG_<n>
+
+    These macros define the floating-point registers that are used during
+    floating-point computations.  If your architecture doesn't have
+    floating-point operations, or you don't wish to do floating-point
+    at this time, then set all of them to -1.
+
+MD_FP_STACK_SIZE
+
+    Some CPU's (e.g. x86) organise their floating-point registers into a
+    stack.  If this applies to you, then set this macro to the maximum height
+    of the floating-point stack.  Otherwise set this macro to zero.
+
+MD_REG_PC
+MD_REG_STACK
+MD_REG_FRAME
+
+    The special registers that contain the CVM interpreter's "pc",
+    "stacktop", and "frame" values.  These must be same as the registers
+    you chose when configuring the engine earlier.
+
+    Of these three registers, MD_REG_STACK and MD_REG_FRAME have a fixed
+    meaning throughout the unrolled code, but MD_REG_PC can be reused as a
+    temporary work register (i.e. one of the MD_REG_<n> values).
+
+MD_STATE_ALREADY_IN_REGS
+
+    This will normally be set to 1 unless you have the misfortune of
+    using a compiler without the ability to manually assign registers.
+    Contact pnet-developers in this case for assistance.
+
+MD_REGS_TO_BE_SAVED
+
+    This macro is a bitmask, with each bit corresponding to one of the
+    registers in the MD_REGS_<n> list.  Use this if your architecture
+    assigns special meaning to certain registers, but you wish to make
+    use of them for temporary values anyway.
+
+MD_SPECIAL_REGS_TO_BE_SAVED
+
+    This is only useful if MD_STATE_ALREADY_IN_REGS is zero.  It should
+    normally be set to zero.
+
+MD_HAS_INT_DIVISION
+
+    Set this to 1 if your CPU has integer division operations.  Some
+    CPU's (e.g. ARM) don't have a simple division operator, and so
+    the unroller should ignore integer division in this case.
+
+    Note: you don't need to do anything special to handle division
+    by zero or arithmetic overflow (MININT / -1).  The unroller will
+    check for these cases before performing the division.
+
+md_inst_ptr
+
+    This is a typedef that defines the type of the instruction word.
+    On CPU's with byte-aligned instructions, this will be "unsigned char".
+    On word-aligned CPU's, this will typically be "unsigned int", or
+    perhaps "unsigned long" on 64-bit architectures.
+
+Writing the code generation macros
+----------------------------------
+
+The rest of the "md_foo.h" file consists of macros for generating code
+for the various instructions used by the unroller.
+
+md_push_reg(inst, reg)
+md_pop_reg(inst, reg)
+
+    Push or pop registers from the system stack.  The system stack is
+    used to save registers before they are reused for other purposes.
+
+md_discard_freg(inst, reg)
+
+    Discard the contents of a floating-point register.  If the FPU
+    is organised as a stack (MD_FP_STACK_SIZE != 0), then this will
+    normally pop the top-most item from the stack.
+
+md_load_const_32(inst, reg, value)
+
+    Load a 32-bit constant into a register, sign-extending if the
+    register is 64-bits in size.
+
+md_load_const_native(inst, reg, value)
+
+    Load a native (32-bit or 64-bit) constant into a register.  This
+    will be the same as "md_load_const_32" on 32-bit platforms.
+
+md_load_const_float_32(inst, reg, value)
+md_load_const_float_64(inst, reg, value)
+
+    Load floating point constants from memory at the address "value"
+    into the floating point register "reg".  If the system does not
+    use floating point registers, then "reg" should be ignored.
+
+md_load_zero_32(inst, reg)
+md_load_zero_native(inst, reg)
+
+    Load the 32-bit or native value zero into a register.  This is usually
+    more efficient than using "md_load_const_32(inst, reg, 0)" or
+    "md_load_const_native(inst, reg, 0)".
+
+md_load_membase_word_32(inst, reg, basereg, offset)
+
+    Loads the contents of the 32-bit memory location "basereg + offset"
+    into the register "reg".  On 64-bit systems, this will sign-extend.
+
+    Note: "offset" could be anything.  It isn't limited to any particular
+    range.  Some CPU's cannot do a direct load with an arbitrary offset
+    in one instruction, and need to load the offset into a scratch
+    register first.
+
+md_load_membase_word_native(inst, reg, basereg, offset)
+
+    Load the contents of the native-sized memory location "basereg + offset"
+    into the register "reg".  On 32-bit systems, this will be identical
+    to "md_load_membase_word_32".
+
+md_load_membase_byte(inst, reg, basereg, offset)
+md_load_membase_sbyte(inst, reg, basereg, offset)
+md_load_membase_short(inst, reg, basereg, offset)
+md_load_membase_ushort(inst, reg, basereg, offset)
+
+    Load 8-bit or 16-bit values form "basereg + offset".
+
+md_load_membase_float_32(inst, reg, basereg, offset)
+md_load_membase_float_64(inst, reg, basereg, offset)
+md_load_membase_float_native(inst, reg, basereg, offset)
+
+    Load floating-point values into a floating-point register.  The
+    values are always extended to the "native" floating-point size.
+
+    If the FPU is organised as a stack, this will load the value onto
+    the top of the stack and "reg" is ignored.
+
+md_store_membase_word_32(inst, reg, basereg, offset)
+
+    Store the contents of "reg" to the address "basereg + offset"
+    as a 32-bit value.  On 64-bit platforms, the most significant bits
+    are discarded.
+
+md_store_membase_word_native(inst, reg, basereg, offset)
+
+    Store the contents of "reg" to the address "basereg+ offset"
+    as a native-sized word value.
+
+md_store_membase_byte(inst, reg, basereg, offset)
+md_store_membase_sbyte(inst, reg, basereg, offset)
+md_store_membase_short(inst, reg, basereg, offset)
+md_store_membase_ushort(inst, reg, basereg, offset)
+
+    Store 8-bit or 16-bit values from "reg" to "basereg + offset".
+    It is OK if the value in "reg" is destroyed during the store
+    because it will immediately forgotten by the unroller afterwards.
+    (ARM destroys 16-bit values in the process of storing them).
+
+md_store_membase_float_32(inst, reg, basereg, offset)
+md_store_membase_float_64(inst, reg, basereg, offset)
+md_store_membase_float_native(inst, reg, basereg, offset)
+
+    Store floating-point values from "reg" to "basereg + offset".
+    If the FPU is stack based, then this will always store the top-most
+    value on the stack, and ignore "reg".
+
+md_add_reg_imm(inst, reg, imm)
+md_sub_reg_imm(inst, reg, imm)
+
+    Add or subtract an immediate value to or from a word register.
+    The immediate value could be anything - it is not limited to any
+    particular range of values.  The register is assumed to be
+    native-sized (i.e. it contains a pointer).
+
+md_add_reg_reg_word_32(inst, reg1, reg2)
+md_sub_reg_reg_word_32(inst, reg1, reg2)
+md_mul_reg_reg_word_32(inst, reg1, reg2)
+md_div_reg_reg_word_32(inst, reg1, reg2)
+md_udiv_reg_reg_word_32(inst, reg1, reg2)
+md_rem_reg_reg_word_32(inst, reg1, reg2)
+md_urem_reg_reg_word_32(inst, reg1, reg2)
+md_neg_reg_word_32(inst, reg)
+md_and_reg_reg_word_32(inst, reg1, reg2)
+md_or_reg_reg_word_32(inst, reg1, reg2)
+md_xor_reg_reg_word_32(inst, reg1, reg2)
+md_not_reg_word_32(inst, reg)
+md_shl_reg_reg_word_32(inst, reg1, reg2)
+md_shr_reg_reg_word_32(inst, reg1, reg2)
+md_ushr_reg_reg_word_32(inst, reg1, reg2)
+
+    Perform arithmetic operations on 32-bit integer values.  If the
+    CPU is 64-bit, then most of these can be performed as 64-bit
+    operations.  Some (e.g. division and right shifts) require the
+    operands to be truncated to 32-bits first.
+
+    It is expected that the code generator will be able to handle
+    any combination of registers.  If an invalid combination is
+    provided, then the code generator must save registers on the
+    system stack to make room, perform the operation, and then
+    restore everything to its original state.
+
+md_add_reg_reg_word_native(inst, reg1, reg2)
+md_sub_reg_reg_word_native(inst, reg1, reg2)
+md_mul_reg_reg_word_native(inst, reg1, reg2)
+md_div_reg_reg_word_native(inst, reg1, reg2)
+md_udiv_reg_reg_word_native(inst, reg1, reg2)
+md_rem_reg_reg_word_native(inst, reg1, reg2)
+md_urem_reg_reg_word_native(inst, reg1, reg2)
+md_neg_reg_word_native(inst, reg)
+md_and_reg_reg_word_native(inst, reg1, reg2)
+md_or_reg_reg_word_native(inst, reg1, reg2)
+md_xor_reg_reg_word_native(inst, reg1, reg2)
+md_not_reg_word_native(inst, reg)
+md_shl_reg_reg_word_native(inst, reg1, reg2)
+md_shr_reg_reg_word_native(inst, reg1, reg2)
+md_ushr_reg_reg_word_native(inst, reg1, reg2)
+
+    Similar to above, except that these macros work on native-sized values.
+    On 32-bit platforms, they will be identical to the above macros.
+
+md_add_reg_reg_float(inst, reg1, reg2)
+md_sub_reg_reg_float(inst, reg1, reg2)
+md_mul_reg_reg_float(inst, reg1, reg2)
+md_div_reg_reg_float(inst, reg1, reg2)
+md_rem_reg_reg_float(inst, reg1, reg2, used)
+md_neg_reg_float(inst, reg)
+
+    Perform arithmetic operations on floating-point values.  If the
+    FPU is organised as a stack, then the register arguments are ignored
+    and the values at the top of the stack are used.
+
+    The "used" parameter on remainder is used on x86 platforms only.
+    It can normally be ignored on other platforms.
+
+md_freg_swap(inst)
+
+    Swap the two top-most values on the floating-point register stack.
+    Not used if the FPU is not stack-based.
+
+md_cmp_reg_reg_float(inst, dreg, sreg1, sreg2, lessop)
+
+	Compare the two floating-point values in "sreg1" and "sreg2".
+	Set the word register "dreg" to -1, 0, or 1 based on the result.
+	If "lessop" is non-zero, then use the NaN rules for "fcmpl".
+	Otherwise use the NaN rules for "fcmpg".
+
+md_reg_to_byte(inst, reg)
+
+    Truncate the contents of a register to 8 bits and zero-extend.
+
+md_reg_to_sbyte(inst, reg)
+
+    Truncate the contents of a register to 8 bits and sign-extend.
+
+md_reg_to_short(inst, reg)
+
+    Truncate the contents of a register to 16 bits and zero-extend.
+
+md_reg_to_ushort(inst, reg)
+
+    Truncate the contents of a register to 16 bits and sign-extend.
+
+md_reg_to_word_32(inst, reg)
+
+    Convert a register from a native word into a 32-bit word.
+    This will not do anything on 32-bit platforms.
+
+md_reg_to_word_native(inst, reg)
+
+    Convert a register from a 32-bit word into a native word by sign-extending.
+    This will not do anything on 32-bit platforms.
+
+md_reg_to_word_native_un(inst, reg)
+
+    Convert a register from a 32-bit word into a native word by zero-extending.
+    This will not do anything on 32-bit platforms.
+
+md_reg_to_float_32(inst, reg)
+
+    Truncate the contents of floating point register "reg" to a 32-bit
+    floating point value and then re-extend to the native size.
+
+md_reg_to_float_64(inst, reg)
+
+    Truncate the contents of floating point register "reg" to a 64-bit
+    floating point value and then re-extend to the native size.
+
+md_jump_to_cvm(inst, pc, label)
+
+    This macro is used to jump back into the CVM interpreter at the
+    end of a block.  The macro should perform the following steps:
+
+        set MD_REG_PC to the value "pc"
+        if "label" is NULL then jump to "*pc"
+        otherwise jump to "label"
+
+md_switch(inst, reg, table)
+
+    Perform a switch.  The value in "reg" is used to index into "table"
+    to find the next program counter value to jump to.  The code can
+    assume that the value in "reg" is within range.
+
+md_clear_membase_start(inst)
+md_clear_membase(inst, reg, offset)
+
+    Used to clear a portion of the stack when allocating local
+    variable variables (i.e. the "mk_local_<n>" instructions).
+    "md_clear_membase" clears a CVM stack position at "reg + offset".
+
+    Some CPU's (e.g. ARM) need to initialize temporary registers before
+    performing the clear.  This can be done in "md_clear_membase_start".
+
+md_lea_membase(inst, reg, basereg, offset)
+
+    Load the effective address "basereg + offset" into "reg".
+
+md_mov_reg_reg(inst, dreg, sreg)
+
+    Move the value in "sreg" into "dreg".
+
+md_seteq_reg(inst, reg)
+md_setne_reg(inst, reg)
+md_setlt_reg(inst, reg)
+md_setle_reg(inst, reg)
+md_setgt_reg(inst, reg)
+md_setge_reg(inst, reg)
+
+    Check the condition codes and set a register to 0 or 1 based on them.
+
+md_cmp_reg_reg_word_32(inst, reg1, reg2)
+md_ucmp_reg_reg_word_32(inst, reg1, reg2)
+
+    Compare two 32-bit registers and set "reg1" to -1, 0, or 1 depending
+    upon the comparison.
+
+md_cmp_cc_reg_reg_word_32(inst, cond, reg1, reg2)
+md_cmp_cc_reg_reg_word_native(inst, cond, reg1, reg2)
+
+    Compare two registers and set the condition codes based on the result.
+	The "cond" argument hints to the code generator as to what kind of
+	condition will be tested for in a subsequent branch instruction.
+	This is needed on some CPU's (e.g. PPC and ia64) to modify the manner
+	in which the condition codes are set.
+
+md_reg_is_null(inst, reg)
+md_reg_is_zero(inst, reg)
+
+    Set the condition codes based on comparing "reg" against NULL or zero.
+
+md_cmp_reg_imm_word_32(inst, cond, reg, imm)
+
+    Set the condition codes based on comparing "reg" against "imm".
+	The "cond" argument hints to the code generator as to what kind of
+	condition will be tested for in a subsequent branch instruction.
+	This is needed on some CPU's (e.g. PPC and ia64) to modify the manner
+	in which the condition codes are set.
+
+md_branch_eq(inst)
+md_branch_ne(inst)
+md_branch_lt(inst)
+md_branch_le(inst)
+md_branch_gt(inst)
+md_branch_ge(inst)
+md_branch_lt_un(inst)
+md_branch_le_un(inst)
+md_branch_gt_un(inst)
+md_branch_ge_un(inst)
+
+    Output a place-holder for a branch instruction to branch to a
+    destination based on a particular condition code.  The actual
+    destination will be inserted with a subsequent "md_patch" call.
+
+md_branch_cc(inst, cond)
+
+    Output a place-holder for a branch instruction, using a numerically
+    defined condition code.  The constants MD_CC_EQ, MD_CC_NE, etc define
+    the condition code values.
+
+md_patch(patch, inst)
+
+    Patch a branch place-holder at "patch" to jump to "inst".
+
+md_bounds_check(inst, reg1, reg2)
+
+    Check an array bounds value for a single-dimensional array.
+    The first register, "reg1", points to the array header.
+    The second register, "reg2" contains the index value to check.
+    The condition codes are set based on whether the index is
+    less than the array's length.
+
+    On some platforms, this macro might modify "reg1" to skip over
+    the array header so that "reg1" is pointing at the start of
+    the array contents for subsequent operations.
+
+md_load_memindex_word_32(inst, reg, basereg, indexreg, disp)
+md_load_memindex_word_native(inst, reg, basereg, indexreg, disp)
+md_load_memindex_word_byte(inst, reg, basereg, indexreg, disp)
+md_load_memindex_word_sbyte(inst, reg, basereg, indexreg, disp)
+md_load_memindex_word_short(inst, reg, basereg, indexreg, disp)
+md_load_memindex_word_ushort(inst, reg, basereg, indexreg, disp)
+
+    Load a value from an indexed array into "reg".  "basereg" points
+    to the start of the array, and "indexreg" is the index value.
+    "disp" is the size of the array header, so that it can be skipped
+    if "md_bounds_check" didn't already do so.
+
+    It is the responsibility of these macros to multiply "indexreg"
+    by the correct amount to get the element's address.
+
+md_store_memindex_word_32(inst, reg, basereg, indexreg, disp)
+md_store_memindex_word_native(inst, reg, basereg, indexreg, disp)
+md_store_memindex_word_byte(inst, reg, basereg, indexreg, disp)
+md_store_memindex_word_sbyte(inst, reg, basereg, indexreg, disp)
+md_store_memindex_word_short(inst, reg, basereg, indexreg, disp)
+md_store_memindex_word_ushort(inst, reg, basereg, indexreg, disp)
+
+    Store a value in "reg" to an indexed array.  "basereg" points
+    to the start of the array, and "indexreg" is the index value.
+    "disp" is the size of the array header, so that it can be skipped
+    if "md_bounds_check" didn't already do so.
+
+    It is the responsibility of these macros to multiply "indexreg"
+    by the correct amount to get the element's address.
+
+Debugging
+---------
+
+Because debugging the unroller can be difficult, you may want to attack
+the problem in stages.  The nice thing about the unroller is that the
+interpreter will automatically handle anything that you haven't handled.
+
+As described earlier, don't bother with floating-point on the first pass.
+You can also temporarily remove entire instruction categories by commenting
+out the #include's for "unroll_xxx.c" at the bottom of "unroll.c".
+
+For testing, we recommend running the "make check" in pnetlib regularly,
+and also running the PNetMark benchmark.  If either of these cause the
+engine to crash, or to fail a test that works in the regular engine,
+then you have probably done something wrong.  You can return to the regular
+engine at any time by commenting out "IL_CVM_DIRECT_UNROLLED" in the
+"pnet/engine/cvm_config.h" file.
+
+Isolating what went wrong can be difficult.  Try commenting out sections
+of "unroll_xxx.c" until the problem disappears.  Whatever you commented
+out last might have something to do with the problem.
+
+While you can breakpoint the unroller while it is converting code, it isn't
+easy to put breakpoints in the code that it outputs. A suggested strategy
+is to use the native trap/break instruction and using gdb to catch it. For
+instance, see the following example in PowerPC unroller (LOR instruction).
+
+ Program received signal SIGTRAP, Trace/breakpoint trap.
+ 0x3003b158 in ?? ()
+ (gdb) x/4i $pc
+ 0x3003b158:     trap
+ 0x3003b15c:     or      r9,r9,r10
+ 0x3003b160:     or      r11,r11,r8
+ 0x3003b164:     stw     r9,-32(r19)
+ (gdb) set $pc = $pc + 4  
+ (gdb) ni
+
+Gdb provides an excellent inline disassembler which is invaluable when 
+writing an unroller. For a bigger picture of the unrolled code, you can 
+also uncomment "UNROLL_DEBUG" in "unroll.c".  This will cause the unroller
+to disassemble the unrolled code before it executes methods. By staring at 
+this output, you should hopefully be able to figure out which instructions 
+are being unrolled incorrectly.
+
+Another problem is the CPU cache.  Most CPU's need to flush the data cache
+prior to executing the unrolled code.  Check the "pnet/support/clflush.c"
+file to ensure that cache flushing on your architecture is supported.
+
+If still in doubt, don't hesitate to ask for help on "pnet-developers".

@@ -1,0 +1,62 @@
+#
+# Emit.txt - Resources for Reflection.Emit errors.
+#
+# Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Emit_NoDynamicAssemblies=Die Laufzeitumgebung erlaubt keine dynamischen Assemblies
+Emit_AlreadySaved=Die dynamische Assembly wurde bereits gespeichert
+Emit_ModuleNameInvalid=Der Name des dynamischen Moduls ist ungueltig
+Emit_AssemblyNameInvalid=Der Name der dynamischen Assembly ist ungueltig
+Emit_SingleModuleOnly=Mehrere Module innerhalb einer einzigen Assembly werden nicht unterstuetzt
+Emit_ExternalModule=Externe Modul Dateien werden nicht unterstuetzt
+Emit_NameEmpty=Der Name darf nicht leer sein
+Emit_InvalidParamNum=Ungueltiger Parameter Index
+Emit_InvalidTypeAttrs=Ungueltige Type Attribute
+Emit_InvalidConstant=Ungueltiger konstanter Wert
+Emit_NeedExceptionBlock=zur Zeit nicht innerhelb eines Ausnahme Blocks
+Emit_CatchAfterFinally=Catch Block kann nicht nach einem finally Block emitted werden
+Emit_NoExceptionClauses=Es wurden keine Exception Klauseln angegeben
+Emit_VarArgsWithNonVarArgMethod=Es wurden variable Parameter angegeben fuer ine nicht variable Methode
+Emit_InvalidLabel=Es wurde ein ungueltiger Label Wert angegeben
+Emit_LabelAlreadyDefined=Das Label ist bereits definiert
+Emit_MissingWriteLine=Konnte die Console.WriteLine Methode nicht finden
+Emit_NotAnExceptionType=Der angegebene Typ leitet sich nicht von System.Exception ab
+Emit_NeedDefaultConstructor=Der Exception Typ hat keinen Standard Konstruktor
+Emit_BothStaticAndVirtual="static" und "virtual" koennen nicht gleichzeitig angegeben werden
+Emit_InterfaceMethodAttrs=Schnittstellen Methoden Attribute sind inkorrekt
+Emit_BodyAlreadySet=Der Methoden Koerper wurde bereits gesetzt
+Emit_CannotHaveBody=Dieser Typ von Methode kann keinen Methodenkoerper haben
+Emit_GlobalNonStatic=Globale Methoden muessen das "static" Attribut haben
+Emit_CannotImportItem=Konnte das angegebene Element nicht in die Assembly importieren
+Emit_CannotImportRefType="byref" Typen koennen nicht importiert werden
+Emit_GetAlreadyDefined=Die "get" Methode fuer dieses Property ist bereits definiert
+Emit_SetAlreadyDefined=Die "set" Methode fuer dieses Property ist bereits definiert
+Emit_NeedDynamicModule=Das Modul ist nicht dynamisch
+Emit_GenericsNotSupported=Generische Typen werden durch System.Reflection.Emit nicht unterstuetzt
+Emit_InvalidSigArgument=Ungueltiger Parameter fuer die Signatur
+Emit_TypeAlreadyExists=Der angegebene Typ existiert bereits
+Emit_UnderlyingNotSet=Der zugrunde liegende Typ einer Aufzaehlung "enum" wurde nicht gesetzt
+Emit_NestingParentNotCreated=Der Typ der verschachtelten Eltern wurde noch nicht erzeugt
+Emit_TypeInvalid=Der dynamische Typ ist ungueltig
+Emit_DataSize=Ungueltige Groesse fuer data block
+Emit_OverrideBodyNotInType=Der ueberschreibende Koerper (override body) ist nicht im selben Typ definiert wie die ueberschreibende Deklaration (override declaration)
+Emit_PInvokeInInterface=PInvoke Methoden koennen nicht in Schnittstellen definiert werden
+Emit_PInvokeAbstract=PInvoke Methoden koennen nicht abstrakt sein
+Emit_NotSimpleUnmanagedType=Der unmanaged Typ ist nicht einfach und erfordert zusaetzliche Parameter
+Emit_NoUnmanagedBaseType=Unmanaged Basistyp ist nicht angegeben
+Emit_NoUnmanagedElementCount=Unmanaged Element Anzahl wurde nicht angegeben
+Emit_NotCustom=Unmanaged Typ gibt kein custom marshaling an

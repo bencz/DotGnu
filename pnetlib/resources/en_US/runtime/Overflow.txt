@@ -1,0 +1,32 @@
+#
+# Overflow.txt - Resources for overflow errors.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Overflow_Byte=Valid Byte values are between 0 and 255, inclusive
+Overflow_SByte=Valid SByte values are between -128 and 127, inclusive
+Overflow_Int16=Valid Int16 values are between -32768 and 32767, inclusive
+Overflow_UInt16=Valid UInt16 values are between 0 and 65535, inclusive
+Overflow_Int32=Valid Int32 values are between -2147483648 and 2147483647, inclusive
+Overflow_UInt32=Valid UInt32 values are between 0 and 4294967295, inclusive
+Overflow_Int64=Valid Int64 values are between -9223372036854775808 and 9223372036854775807, inclusive
+Overflow_UInt64=Valid UInt64 values are between 0 and 18446744073709551615, inclusive
+Overflow_Char=Valid Char values are between 0 and 65535, inclusive
+Overflow_Decimal=Valid Decimal values are between -79228162514264337593543950335 and 79228162514264337593543950335, inclusive
+Overflow_NegateTwosCompNum=Attempt to negate the largest negative integer.
+Overflow_Pointer=Pointer value is out of range for the requested operation
+Overflow_Currency=OA currency value overflowed

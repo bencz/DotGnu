@@ -1,0 +1,49 @@
+#
+# Format.txt - Resources for formatting errors.
+#
+# Copyright (C) 2001, 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Format_BadBoolean=Bad format for Boolean value
+Format_NeedSingleChar=Input must be a single-character string
+Format_Integer=Value must be formatted as an integer
+Format_Guid=Bad format for Guid value: should be "B", "D", "N", or "P"
+Format_GuidValue=Bad format for Guid value
+Format_Enum=Bad format for enumerated value
+Format_Version=Bad format for Version value
+Format_IP=Bad format for IP address
+Format_FormatString=Invalid format specification
+Format_FormatArgNumber=Invalid argument number in format specification
+Format_Base64ArrayChar=Invalid base64 character in input
+Format_TypeException=Invalid type for specified format
+Format_StringException=Invalid format specification
+Format_UnallowedCurrencySymbol=Currency symbol found when not allowed
+Format_UnallowedDecimalPoint=Decimal point found when not allowed
+Format_MultipleDecimalSeparators=Multiple decimal points found
+Format_UnallowedLeadingWhite=Leading whitespace found when not allowed
+Format_UnallowedTrailingWhite=Trailing whitespace found when not allowed
+Format_UnbalancedParentheses=Unbalanced parentheses in string
+Format_ExtraParentheses=More than one pair of parentheses in string
+Format_UnallowedParentheses=Parentheses in string when not allowed
+Format_UnallowedLeadingSign=Leading sign found when not allowed
+Format_UnallowedTrailingSign=Trailing sign found when not allowed
+Format_UnallowedExponent=Exponent found when not allowed
+Format_TwoSigns=Both leading and trailing signs found
+Format_HexNotSupported=Hexadecimal notation not supported for decimal or floating point
+Format_FileIOPermSetName=Same directory FileIO - {0}
+Format_NetCodeGroupName=Same Web site
+Format_DateTime=Invalid format for date/time value
+Format_Empty=Empty format string

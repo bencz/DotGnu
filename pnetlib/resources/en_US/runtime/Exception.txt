@@ -1,0 +1,112 @@
+#
+# Exception.txt - Resources for exception messages.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Exception_WasThrown={0} was thrown
+Exception_System=There was an error in the system
+Exception_InvalidCast=Could not cast to the specified type
+Exception_Overflow=Overflow occurred
+Exception_Arithmetic=The arithmetic operation is not allowed
+Exception_Argument=An invalid argument was specified
+Exception_ArgParamName=Parameter name: {0}
+Exception_InvalidOperation=An invalid operation occurred
+Exception_Format=The supplied value did not have the correct format
+Exception_NoSystemDir=This platform does not have a "System" directory
+Exception_NoCmdLine=This platform does not support command-line arguments
+Exception_NotSupported=The requested feature is not supported
+Exception_ComTypeLoad=[Assembly {0}] Type {1} cannot be created through COM
+Exception_TypeLoad=Could not load the specified type
+Exception_AppDomainUnloaded=The application domain has been unloaded
+Exception_Application=An application exception has occurred
+Exception_NotImplemented=The requested functionality is not implemented
+Exception_Rank=Incorrect array rank specified
+Exception_ArrayTypeMismatch=Source array type cannot be assigned to destination array type
+Exception_IO=Input or output failure
+Exception_FileNotFound=Could not find the specified file
+Exception_FileLoad=Could not load the specified file
+Exception_DirNotFound=Could not find the specified directory
+Exception_BadImage=Format of the executable or library is invalid
+Exception_Filename=Filename: {0}
+Exception_CannotUnloadAD=Attempt to unload the AppDomain failed
+Exception_DivZero=Attempted to divide by zero
+Exception_DuplicateWait=Duplicate objects in argument
+Exception_EntryPoint=Entry point was not found
+Exception_Engine=Internal error occurred
+Exception_MemberAccess=Cannot access member
+Exception_FieldAccess=Attempted to access a private or protected field within a type
+Exception_MethodAccess=Cannot access methodAttempted to access a private or protected method within a type
+Exception_Index=An array index was out of range
+Exception_InvalidProgram=Metadata is incorrect
+Exception_MemberMissing=Attempted to access a non-existing member
+Exception_FieldMissing=Attempted to access a non-existing field
+Exception_MethodMissing=Attempted to access a non-existing method
+Exception_NoMulticast=This operation cannot be performed with the specified delegates
+Exception_NotFinite=The number encountered was not a finite quantity
+Exception_NullRef=The value 'null' was found where an instance of an object was required
+Exception_NoMemory=There was not enough memory to continue the execution of the program
+Exception_StackOverflow=The requested operation caused a stack overflow
+Exception_TypeInit=Type initialization failed
+Exception_TypeInitName=Type initialization failed for {0}
+Exception_TypeUnload=Type has been unloaded
+Exception_Unauthorized=Attempted to perform an unauthorized operation
+Exception_HiddenBuffer=The buffer cannot be retrieved for this instance
+Exception_AmbiguousMatch=Ambiguous match found
+Exception_Target=Instance method cannot be invoked on a null target
+Exception_TargetInvoke=Exception has been thrown by the target of an invocation
+Exception_TargetParam=Parameter count mismatch
+Exception_MissingManRes=Missing manifest resource
+Exception_SyncLock=Synchronization method was invoked from an unsynchronized block of code
+Exception_ThreadState=The requested operation cannot be performed on the thread due to its current state
+Exception_ThreadInterrupt=The thread has been interrupted
+Exception_ThreadAbort=The thread has been aborted
+Exception_ThreadsNotSupported=The runtime doesn't support threads
+Exception_ThreadNeedsLock=The current thread does not own the lock for the specified object
+Exception_ThreadAlreadyStarted=The thread has already started
+Exception_EndOfStream=Attempted to read past the end of the stream
+Exception_PathTooLong=The supplied path is too long
+Exception_Security=A security violation has occurred
+Exception_SecurityNotGranted=The calling code was not granted the requested permissions
+Exception_PermitOnly=There is already a PermitOnly clause in effect
+Exception_Remoting=A failure occurred during a remoting operation
+Exception_RemotingTimeout=A timeout occurred during a remoting operation
+Exception_Server=A server failure occurred during a remoting operation
+Exception_Verification=Could not verify the code
+Exception_Serialization=An error occurred during serialization operations
+Exception_XmlSyntax=Syntax error in XML data
+Exception_XmlSyntaxLine=line {0}: Syntax error in XML data
+Exception_XmlSyntaxLineMsg=line {0}: Syntax error in XML data: {1}
+Exception_COM=A COM exception occurred
+Exception_InvalidComObject=Invalid COM object encountered
+Exception_InvalidOleType=Invalid OLE variant type
+Exception_MarshalDirective=Invalid marshalling directive encountered
+Exception_SafeArrayRank=Ranks of safe arrays do not match
+Exception_SafeArrayType=Types of safe arrays do not match
+Exception_SEH=Problem with structured exception handling
+Exception_Filter=Invalid filter criteria
+Exception_FilterAttribute=Invalid attribute filter criteria
+Exception_FilterName=Invalid name filter criteria
+Exception_Platform=The requested operation is not supported on this platform
+Exception_ContextMarshal=Marshalling across a context boundary failed
+Exception_CustomAttrFormat=Invalid binary format for custom attribute
+Exception_ReflectionTypeLoad=Multiple type load failures occurred
+Exception_DllNotFound=A required DLL file was not found ({0})
+Exception_IsolatedStorage=An error occurred while processing isolated storage
+Exception_Policy=The security policy forbids the requested operation
+Exception_UnexpectedEngineState=The execution engine encoutered a serious problem
+Exception_ComObjectInUse=The specified COM object is currently in use
+Exception_AccessControl=Access to the specified resource is prohibited

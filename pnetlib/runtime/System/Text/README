@@ -1,0 +1,40 @@
+This directory provides support for various character set encodings,
+based around the Windows "code page" concept.  The following is a short
+tour of the main encoding classes:
+
+	Encoding
+
+		The base class for all encoding handlers.
+
+	ASCIIEncoding
+
+		Handles the "us-ascii" encoding.
+
+	DefaultEncoding
+
+		Internal class that handles the default encoding.  The runtime
+		engine provides this encoding when it doesn't otherwise support
+		code pages.
+
+	Latin1Encoding
+
+		Internal class that handles the "iso-8859-1" encoding.
+
+	UTF7Encoding
+
+		Handles the "utf-7" encoding.
+
+	UTF8Encoding
+
+		Handles the "utf-8" encoding.
+
+	UnicodeEncoding
+
+		Handles the "utf-16" encoding in little-endian and big-endian forms.
+
+The method "DefaultEncoding.InternalCodePage()" is used to detect the
+default code page supported by the runtime engine.  This method may
+return 0 if there is no way for the engine to obtain a valid number.
+
+It is possible to create your own code page and encoding handlers to
+extend the set above.  This is done in the "I18N" library.

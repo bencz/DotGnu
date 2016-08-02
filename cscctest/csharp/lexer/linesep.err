@@ -1,0 +1,8 @@
+./linesep.cs:24: parse error at or near `x'
+./linesep.cs:27: parse error at or near `y'
+./linesep.cs:29: parse error at or near `z'
+./linesep.cs:32: parse error at or near `w'
+./linesep.cs:34: parse error at or near `v'
+./linesep.cs:37: parse error at or near `u'
+./linesep.cs:39: parse error at or near `t'
+./linesep.cs:39: warning: file contains no declarations

@@ -1,0 +1,40 @@
+#
+# Installer.txt - Resources for System.Configuration.Install.
+#
+# Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Installer_NoInstallersFound=No installers were found in the specified assembly
+Installer_CouldNotLoadAssembly=Could not load installer assembly: {0}
+Installer_LogIsNull=Event log is null
+Installer_SourceIsNull=Event source is null
+Installer_NotAnEventLog=The specified component is not an event log
+Installer_NoEventLogs=The platform does not support event logs
+Installer_Exception=An exception occurred during the installation process
+Installer_InvalidSavedState=The saved state object is null
+Installer_HelpIsNull=Performance counter help is null
+Installer_NameIsNull=Performance counter category name is null
+Installer_NotAPerformanceCounter=The specified component is not a performance counter
+Installer_BeginInstallTransaction=Begin install transaction
+Installer_BeginInstall=Begin install
+Installer_BeginRollback=Begin rollback
+Installer_EndRollback=End rollback
+Installer_RollbackPerformed=Rollback performed
+Installer_BeginCommit=Begin commit
+Installer_EndCommit=End commit
+Installer_EndInstallTransaction=End install transaction
+Installer_BeginUninstallTransaction=Begin uninstall transaction
+Installer_EndUninstallTransaction=End uninstall transaction

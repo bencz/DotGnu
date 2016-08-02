@@ -1,0 +1,11 @@
+./line.cs:100: parse error at or near `x'
+./line.cs:123: parse error at or near `y'
+foo/bar\baz:153: parse error at or near `z'
+foo/bar\baz:154: badly formatted #line directive
+foo/bar\baz:155: parse error at or near `w'
+ok:12: parse error at or near `v'
+ok:13: spurious data on pre-processor directive line
+ok:5432: parse error at or near `u'
+ok:5433: badly formatted #line directive
+x:23: parse error at or near `t'
+x:23: warning: file contains no declarations

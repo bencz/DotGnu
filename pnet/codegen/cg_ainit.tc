@@ -1,0 +1,631 @@
+%output "cg_ainit.c"
+
+%{
+/*
+ * cg_ainit.tc - Array initialization nodes.
+ *
+ * Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <codegen/cg_nodes.h>
+#include "il_dumpasm.h"
+%}
+
+%decls %end %{
+
+/*
+ * Get the length of an array initialization expression list
+ * at a particular dimension level.
+ */
+ILUInt32 ILGetArrayInitLength(ILNode *list, int dimension);
+
+/*
+ * Determine if an array initialization expression has the
+ * correct shape for an array type.  If it does, then embed
+ * the array type into it.
+ */
+int ILArrayInitShapeOK(ILGenInfo *info, ILNode *node, ILType *type);
+
+/*
+ * Flush nested class definitions that are needed for
+ * static array initialization.  Call this at the end
+ * of writing out the code for a method.
+ */
+void ILArrayInitFlush(ILGenInfo *info);
+
+%}
+
+%{
+
+ILUInt32 ILGetArrayInitLength(ILNode *list, int dimension)
+{
+	ILNode_ListIter iter;
+	ILInt32 length = 0;
+	ILNode_ListIter_Init(&iter, list);
+	while(dimension > 0)
+	{
+		list = ILNode_ListIter_Next(&iter);
+		if(!list || !yyisa(list, ILNode_ArrayInit))
+		{
+			return 0;
+		}
+		ILNode_ListIter_Init(&iter, ((ILNode_ArrayInit *)list)->expr);
+		--dimension;
+	}
+	while(ILNode_ListIter_Next(&iter) != 0)
+	{
+		++length;
+	}
+	return length;
+}
+
+/*
+ * Validate the shape of an array initializer.
+ */
+static int ValidateInitShape(ILNode_ArrayInit *init, ILUInt32 *sizes, int rank)
+{
+	ILNode_ListIter iter;
+	ILNode *node;
+	ILUInt32 length;
+
+	if(rank <= 1)
+	{
+		/* The innermost array dimension must not have nested arrays,
+		   and must have the correct size value */
+		ILNode_ListIter_Init(&iter, init->expr);
+		length = 0;
+		while((node = ILNode_ListIter_Next(&iter)) != 0)
+		{
+			if(yyisa(node, ILNode_ArrayInit))
+			{
+				return 0;
+			}
+			++length;
+		}
+		return (length == *sizes);
+	}
+	else
+	{
+		/* Recurse into the inner dimensions, and check this one's size */
+		ILNode_ListIter_Init(&iter, init->expr);
+		length = 0;
+		while((node = ILNode_ListIter_Next(&iter)) != 0)
+		{
+			if(!yyisa(node, ILNode_ArrayInit))
+			{
+				return 0;
+			}
+			if(!ValidateInitShape(((ILNode_ArrayInit *)node),
+								  sizes + 1, rank - 1))
+			{
+				return 0;
+			}
+			++length;
+		}
+		return (length == *sizes);
+	}
+}
+
+int ILArrayInitShapeOK(ILGenInfo *info, ILNode *node, ILType *type)
+{
+	int rank = ILTypeGetRank(type);
+	int dimension;
+	ILNode *temp;
+	ILUInt32 *sizes;
+	ILNode_ListIter iter;
+
+	/* Collect up the array dimension sizes */
+	if((sizes = (ILUInt32 *)ILMalloc(sizeof(ILUInt32) * rank)) == 0)
+	{
+		ILGenOutOfMemory(info);
+	}
+	temp = node;
+	dimension = 0;
+	while(dimension < rank && yyisa(temp, ILNode_ArrayInit))
+	{
+		sizes[dimension] = ILGetArrayInitLength
+				(((ILNode_ArrayInit *)temp)->expr, 0);
+		++dimension;
+		if(dimension < rank)
+		{
+			ILNode_ListIter_Init(&iter, ((ILNode_ArrayInit *)temp)->expr);
+			temp = ILNode_ListIter_Next(&iter);
+			if(!temp)
+			{
+				ILFree(sizes);
+				return 0;
+			}
+		}
+	}
+	if(dimension < rank)
+	{
+		ILFree(sizes);
+		return 0;
+	}
+
+	/* Validate the initializer shape using the dimension sizes */
+	if(!ValidateInitShape((ILNode_ArrayInit *)node, sizes, rank))
+	{
+		ILFree(sizes);
+		return 0;
+	}
+
+	/* Set the array type and return */
+	((ILNode_ArrayInit *)node)->arrayType = type;
+	ILFree(sizes);
+	return 1;
+}
+
+/*
+ * Populate a particular level of an array.
+ */
+static void PopulateArrayLevel(ILGenInfo *info, ILNode *expr,
+							   ILMachineType elemMachineType,
+							   ILType *elemType, ILType *arrayType,
+							   ILUInt32 *posn, int dim, int rank)
+{
+	int temp;
+	ILNode_ListIter iter;
+	ILNode *node;
+	ILUInt32 index;
+
+	/* Have we reached the innermost level? */
+	if(dim >= rank)
+	{
+		/* Duplicate the array object on the stack */
+		ILGenSimple(info, IL_OP_DUP);
+		ILGenAdjust(info, 1);
+
+		/* Output the numbers for the element's dimensions */
+		for(temp = 0; temp < rank; ++temp)
+		{
+			ILGenUInt32(info, posn[temp]);
+			ILGenAdjust(info, 1);
+		}
+
+		/* Store the value into the array */
+		if(rank == 1)
+		{
+			if(elemMachineType == ILMachineType_ManagedValue ||
+			   elemMachineType == ILMachineType_Decimal)
+			{
+				ILGenTypeToken(info, IL_OP_LDELEMA, elemType);
+				ILGenAdjust(info, -1);
+			}
+			ILGenCast(info, ILNode_GenValue(expr, info), elemMachineType);
+			ILGenStoreArray(info, elemMachineType, elemType);
+			if(elemMachineType == ILMachineType_ManagedValue ||
+			   elemMachineType == ILMachineType_Decimal)
+			{
+				ILGenAdjust(info, -2);
+			}
+			else
+			{
+				ILGenAdjust(info, -3);
+			}
+		}
+		else
+		{
+			ILGenCast(info, ILNode_GenValue(expr, info), elemMachineType);
+			ILGenArraySet(info, arrayType);
+			ILGenAdjust(info, -(rank + 1));
+		}
+	}
+	else
+	{
+		/* Scan the current array dimension and call ourselves recursively */
+		ILNode_ListIter_Init(&iter, ((ILNode_ArrayInit *)expr)->expr);
+		index = 0;
+		while((node = ILNode_ListIter_Next(&iter)) != 0)
+		{
+			posn[dim] = index;
+			PopulateArrayLevel(info, node, elemMachineType, elemType,
+							   arrayType, posn, dim + 1, rank);
+			++index;
+		}
+	}
+}
+
+/*
+ * Determine if an element type can be used for "InitializeArray".
+ */
+static int IsSimpleElemType(ILType *type)
+{
+	if(ILType_IsPrimitive(type))
+	{
+		switch(ILType_ToElement(type))
+		{
+			case IL_META_ELEMTYPE_BOOLEAN:
+			case IL_META_ELEMTYPE_I1:
+			case IL_META_ELEMTYPE_U1:
+			case IL_META_ELEMTYPE_I2:
+			case IL_META_ELEMTYPE_U2:
+			case IL_META_ELEMTYPE_CHAR:
+			case IL_META_ELEMTYPE_I4:
+			case IL_META_ELEMTYPE_U4:
+			case IL_META_ELEMTYPE_I8:
+			case IL_META_ELEMTYPE_U8:
+			case IL_META_ELEMTYPE_R4:
+			case IL_META_ELEMTYPE_R8:	return 1;
+		}
+	}
+	return 0;
+}
+
+/*
+ * Determine if an array initializer expression is constant.
+ */
+static int ArrayInitIsConst(ILGenInfo *info, ILNode *expr)
+{
+	ILNode_ListIter iter;
+	ILNode *node;
+	ILEvalValue value;
+
+	if(yyisa(expr, ILNode_ArrayInit))
+	{
+		ILNode_ListIter_Init(&iter, ((ILNode_ArrayInit *)expr)->expr);
+		while((node = ILNode_ListIter_Next(&iter)) != 0)
+		{
+			if(!ArrayInitIsConst(info, node))
+			{
+				return 0;
+			}
+		}
+		return 1;
+	}
+	else
+	{
+		return ILNode_EvalConst(expr, info, &value);
+	}
+}
+
+/*
+ * Determine the size in bytes of an array initialization block.
+ */
+static ILUInt32 ArrayInitSize(ILType *elemType, ILNode *list, int rank)
+{
+	ILUInt32 size;
+	int dimension;
+
+	/* Determine the size of individual elements */
+	switch(ILType_ToElement(elemType))
+	{
+		case IL_META_ELEMTYPE_BOOLEAN:
+		case IL_META_ELEMTYPE_I1:
+		case IL_META_ELEMTYPE_U1:
+		{
+			size = 1;
+		}
+		break;
+
+		case IL_META_ELEMTYPE_I2:
+		case IL_META_ELEMTYPE_U2:
+		case IL_META_ELEMTYPE_CHAR:
+		{
+			size = 2;
+		}
+		break;
+
+		case IL_META_ELEMTYPE_I4:
+		case IL_META_ELEMTYPE_U4:
+		case IL_META_ELEMTYPE_R4:
+		{
+			size = 4;
+		}
+		break;
+
+		case IL_META_ELEMTYPE_I8:
+		case IL_META_ELEMTYPE_U8:
+		case IL_META_ELEMTYPE_R8:
+		{
+			size = 8;
+		}
+		break;
+
+		default: return 0;
+	}
+
+	/* Multiply the size by all array dimensions */
+	for(dimension = 0; dimension < rank; ++dimension)
+	{
+		size *= ILGetArrayInitLength(list, dimension);
+	}
+
+	/* Return the final size to the caller */
+	return size;
+}
+
+/*
+ * Dump the contents of an array initializer expression.
+ */
+static int ArrayInitDump(FILE *outstream, ILGenInfo *info,
+						 ILNode *expr, ILMachineType elemType,
+						 int numPrev)
+{
+	if(yyisa(expr, ILNode_ArrayInit))
+	{
+		/* Recurse into the array elements */
+		ILNode_ListIter iter;
+		ILNode *node;
+		ILNode_ListIter_Init(&iter, ((ILNode_ArrayInit *)expr)->expr);
+		while((node = ILNode_ListIter_Next(&iter)) != 0)
+		{
+			numPrev = ArrayInitDump(outstream, info, node, elemType, numPrev);
+		}
+		return numPrev;
+	}
+	else
+	{
+		/* Evaluate the constant value and output it */
+		ILEvalValue value;
+		if(!ILNode_EvalConst(expr, info, &value) ||
+		   !ILGenCastConst(info, &value, value.valueType, elemType))
+		{
+			/* Shouldn't happen */
+			return numPrev;
+		}
+		if(numPrev >= 4)
+		{
+			fputs(",\n", outstream);
+			numPrev = 0;
+		}
+		else if(numPrev >= 0)
+		{
+			fputs(", ", outstream);
+		}
+		else
+		{
+			numPrev = 0;
+		}
+		switch(elemType)
+		{
+			case ILMachineType_Boolean:
+			case ILMachineType_Int8:
+			case ILMachineType_UInt8:
+			{
+				fprintf(outstream, "int8(%ld)", (long)(value.un.i4Value));
+			}
+			break;
+
+			case ILMachineType_Int16:
+			case ILMachineType_UInt16:
+			case ILMachineType_Char:
+			{
+				fprintf(outstream, "int16(%ld)", (long)(value.un.i4Value));
+			}
+			break;
+
+			case ILMachineType_Int32:
+			case ILMachineType_UInt32:
+			{
+				fprintf(outstream, "int32(%ld)", (long)(value.un.i4Value));
+			}
+			break;
+
+			case ILMachineType_Int64:
+			case ILMachineType_UInt64:
+			{
+				fprintf(outstream, "int64(0x%08lX%08lX)",
+						(long)((value.un.i8Value >> 32) & IL_MAX_UINT32),
+						(long)(value.un.i8Value & IL_MAX_UINT32));
+			}
+			break;
+
+			case ILMachineType_Float32:
+			{
+				/* The double "float32" is not a bug: it is required by ilasm */
+				unsigned char bytes[4];
+				IL_WRITE_FLOAT(bytes, value.un.r4Value);
+				fprintf(outstream,
+						"float32(float32(0x%02X%02X%02X%02X))",
+						bytes[3], bytes[2], bytes[1], bytes[0]);
+			}
+			break;
+
+			case ILMachineType_Float64:
+			{
+				/* The double "float64" is not a bug: it is required by ilasm */
+				unsigned char bytes[8];
+				IL_WRITE_DOUBLE(bytes, value.un.r8Value);
+				fprintf(outstream,
+					"float64(float64(0x%02X%02X%02X%02X%02X%02X%02X%02X))\n",
+					bytes[7], bytes[6], bytes[5], bytes[4],
+					bytes[3], bytes[2], bytes[1], bytes[0]);
+			}
+			break;
+
+			default: break;
+		}
+		return numPrev + 1;
+	}
+}
+
+/*
+ * Add static array initialization for use by "ILArrayInitFlush".
+ */
+static void ArrayInitAdd(ILGenInfo *info, ILLabel label, ILUInt32 size)
+{
+	ILArrayInit *init = (ILArrayInit *)ILMalloc(sizeof(ILArrayInit));
+	if(!init)
+	{
+		ILGenOutOfMemory(info);
+	}
+	init->label = label;
+	init->size = size;
+	init->next = info->arrayInit;
+	info->arrayInit = init;
+}
+
+/*
+ * Output class information for static array initialization.
+ */
+static void ArrayInitClass(ILGenInfo *info, ILLabel label, ILUInt32 size)
+{
+	fprintf(info->asmOutput,
+			".class nested private explicit sealed '<T%lu>' extends "
+					"[.library]System.ValueType\n{\n"
+					"\t.pack 1\n"
+					"\t.size %lu\n}\n",
+			(unsigned long)label, (unsigned long)size);
+	fprintf(info->asmOutput,
+			".class nested assembly '<D%lu>' extends "
+					"[.library]System.Object\n{\n"
+					"\t.field assembly static valuetype ",
+			(unsigned long)label);
+	ILDumpClassName(info->asmOutput, info->image,
+					((ILNode_ClassDefn *)(info->currentClass))
+							->classInfo, IL_DUMP_QUOTE_NAMES);
+	fprintf(info->asmOutput,
+			"/'<T%lu>' 'data' at D%lu\n}\n",
+			(unsigned long)label, (unsigned long)label);
+}
+
+void ILArrayInitFlush(ILGenInfo *info)
+{
+	ILArrayInit *init, *next;
+	init = info->arrayInit;
+	while(init != 0)
+	{
+		if(info->asmOutput)
+		{
+			ArrayInitClass(info, init->label, init->size);
+		}
+		next = init->next;
+		ILFree(init);
+		init = next;
+	}
+	info->arrayInit = 0;
+}
+
+%}
+
+/*
+ * Get the type for an array initialization expression.
+ */
+ILNode_GetType(ILNode_ArrayInit)
+{
+	return ILMachineType_ObjectRef;
+}
+
+/*
+ * Generate value code for an array initialization expression.
+ */
+ILNode_GenValue(ILNode_ArrayInit)
+{
+	ILType *type = node->arrayType;
+	ILType *elemType;
+	int rank, dimension;
+	ILUInt32 *posn;
+	ILUInt32 length;
+	int sawZero;
+
+	/* Bail out if semantic analysis was not performed correctly */
+	if(!type)
+	{
+		ILGenSimple(info, IL_OP_LDNULL);
+		ILGenAdjust(info, 1);
+		return ILMachineType_ObjectRef;
+	}
+
+	/* Create the array */
+	elemType = ILTypeGetElemType(type);
+	rank = ILTypeGetRank(type);
+	sawZero = 0;
+	if(rank == 1)
+	{
+		/* Create a single-dimensional array */
+		length = ILGetArrayInitLength(node->expr, 0);
+		if(length == 0)
+		{
+			sawZero = 1;
+		}
+		ILGenUInt32(info, length);
+		ILGenAdjust(info, 1);
+		ILGenArrayNew(info, elemType);
+	}
+	else
+	{
+		/* Create a multi-dimensional array */
+		for(dimension = 0; dimension < rank; ++dimension)
+		{
+			length = ILGetArrayInitLength(node->expr, dimension);
+			if(length == 0)
+			{
+				sawZero = 1;
+			}
+			ILGenUInt32(info, length);
+			ILGenAdjust(info, 1);
+		}
+		ILGenArrayCtor(info, type);
+		ILGenAdjust(info, -(rank - 1));
+	}
+
+	/* Determine if we can use "InitializeArray" to populate simple arrays */
+	if(IsSimpleElemType(elemType) &&
+	   ArrayInitIsConst(info, (ILNode *)node) && !sawZero)
+	{
+		/* Output a ".data" directive to hold the raw array data,
+		   and then use "InitializeArray" to do the work */
+		ILLabel dataLabel = ILGenNewLabel(info);
+		ILGenSimple(info, IL_OP_DUP);
+		ILGenAdjust(info, 1);
+		if(info->asmOutput)
+		{
+			fprintf(info->asmOutput, ".data D%lu = {",
+					(unsigned long)dataLabel);
+			ArrayInitDump(info->asmOutput, info, (ILNode *)node,
+						  ILTypeToMachineType(elemType), -1);
+			fputs("}\n\tldtoken\tfield valuetype ", info->asmOutput);
+			ILDumpClassName(info->asmOutput, info->image,
+							((ILNode_ClassDefn *)(info->currentClass))
+									->classInfo, IL_DUMP_QUOTE_NAMES);
+			fprintf(info->asmOutput, "/'<T%lu>' ", (unsigned long)dataLabel);
+			ILDumpClassName(info->asmOutput, info->image,
+							((ILNode_ClassDefn *)(info->currentClass))
+									->classInfo, IL_DUMP_QUOTE_NAMES);
+			fprintf(info->asmOutput, "/'<D%lu>'::'data'\n",
+					(unsigned long)dataLabel);
+		}
+		ILGenAdjust(info, 1);
+		ILGenCallByName(info,
+				"void [.library]System.Runtime."
+					"CompilerServices.RuntimeHelpers::"
+					"InitializeArray(class [.library]System.Array, "
+					"valuetype [.library]System.RuntimeFieldHandle)");
+		ILGenAdjust(info, -2);
+
+		/* Record that we need to output a data field declaration
+		   after we have finished with the current method */
+		ArrayInitAdd(info, dataLabel,
+					 ArrayInitSize(elemType, node->expr, rank));
+	}
+	else
+	{
+		/* Populate the array the hard way */
+		posn = (ILUInt32 *)ILMalloc(sizeof(ILUInt32) * rank);
+		if(!posn)
+		{
+			ILGenOutOfMemory(info);
+		}
+		PopulateArrayLevel(info, (ILNode *)node, ILTypeToMachineType(elemType),
+						   elemType, type, posn, 0, rank);
+		ILFree(posn);
+	}
+
+	/* Return the array's machine type to the caller */
+	return ILMachineType_ObjectRef;
+}

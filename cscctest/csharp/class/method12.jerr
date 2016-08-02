@@ -1,0 +1,2 @@
+./method12.cs:30: cannot use base reference in a static method
+./method12.cs:30: called object is not a method or delegate

@@ -1,0 +1,4 @@
+
+The assemblies in this directory exist to provide compatibility with
+minor Microsoft assemblies within the .NET Framework SDK.  We do not
+recommend using these assemblies in portable code.

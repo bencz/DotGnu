@@ -1,0 +1,35 @@
+line 3: %node type_code no_parent 14
+line 5: %node int_type type_code 16
+line 6: %node float_type type_code 16
+line 9: %node expression no_parent 6
+line 11: %field type type_code int_type 1
+line 14: %node binary expression 2
+line 16: %field expr1 expression * no_value 0
+line 17: %field expr2 expression * no_value 0
+line 20: %node unary expression 2
+line 23: %field expr expression * no_value 0
+line 27: %node intnum expression 0
+line 29: %field num int no_value 0
+line 32: %node plus binary 0
+line 33: %node minus binary 0
+line 34: %node multiply binary 0
+line 35: %node divide binary 0
+line 36: %node negate unary 0
+line 38: %node power binary 0
+line 40: %operation void gen_code 0
+line 40: %param binary * node 1
+line 40: %param type_code type 1
+line 42: %case plus gen_code
+line 43: %case plus gen_code
+line 44: %case minus gen_code
+line 45: %case multiply gen_code
+line 47: %operation void no_cases 0
+line 47: %param binary * node 1
+line 47: %param type_code type 1
+parse9.tst:40: case `minus, float_type' is missing from operation `gen_code'
+parse9.tst:40: case `multiply, int_type' is missing from operation `gen_code'
+parse9.tst:40: case `divide, int_type' is missing from operation `gen_code'
+parse9.tst:40: case `divide, float_type' is missing from operation `gen_code'
+parse9.tst:40: case `power, int_type' is missing from operation `gen_code'
+parse9.tst:40: case `power, float_type' is missing from operation `gen_code'
+parse9.tst:47: operation `no_cases' has no cases

@@ -1,0 +1,57 @@
+#
+# Crypto.txt - Resources for crypto-related errors and exceptions.
+#
+# Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Crypto_Exception=Cryptographic exception occurred
+Crypto_UnexpectedOperation=An unexpected cryptographic operation occurred
+Crypto_InvalidKeySize=Invalid cryptographic key size: {0}
+Crypto_HashNotComputed=Hash value has not yet been computed
+Crypto_InvalidBlockSize=Invalid cryptographic block size: {0}
+Crypto_InvalidFeedbackSize=Invalid cryptographic feedback size: {0}
+Crypto_InvalidIVSize=Invalid initialization vector size: {0}
+Crypto_InvalidCipherMode=Invalid cipher mode
+Crypto_InvalidPaddingMode=Invalid padding mode
+Crypto_InvalidStreamMode=Invalid cryptographic stream mode
+Crypto_NoProvider=The system does not provide support for {0}
+Crypto_WeakKey=DES key is weak or semi-weak
+Crypto_InvalidOID=Invalid object identifier string: {0}
+Crypto_HashInProgress=Cannot change the key while hashing is in progress
+Crypto_DSANeedsSHA1=The hash algorithm for DSA must be SHA-1
+Crypto_DSAParamsNotSet=The DSA parameters have not been set
+Crypto_InvalidDSAParams=Invalid DSA parameters
+Crypto_CannotSignWithPublic=Cannot sign values using a public key
+Crypto_UnknownKey=Unknown key name: {0}
+Crypto_NoKeyAccess=Not permitted to access key: {0}
+Crypto_NeedsDSA=DSA algorithm instance required
+Crypto_MissingKey=There is no key available to perform this operation
+Crypto_NeedsHash=A hash algorithm instance is required
+Crypto_InvalidASN1=Invalid ASN.1 data in supplied information
+Crypto_RSAParamsNotSet=The RSA parameters have not been set
+Crypto_InvalidRSAParams=Invalid RSA parameters
+Crypto_PKCS1Hash=The hash algorithm must be MD5, SHA1, SHA256, SHA384, or SHA512
+Crypto_NeedsRSA=RSA algorithm instance required
+Crypto_HashAlreadySet=The hash algorithm has already been set
+Crypto_CountAlreadySet=The iteration count has already been set
+Crypto_SaltAlreadySet=The salt bytes have already been set
+Crypto_RSAMessageTooLong=The message to be encrypted is too long for the key
+Crypto_RSAKeyTooShort=The RSA key is too short for decryption operations
+Crypto_RSAInvalidCiphertext=Invalid ciphertext format for RSA decryption
+Crypto_InvalidHashSize=Invalid hash size for digital signature operation
+Crypto_CertNotSupp=Handle-based certificate construction is not supported
+Crypto_MultOf16=Array must be a multiple of 16 bytes in length
+Crypto_SaltSize=Salt must be at least 8 bytes in length

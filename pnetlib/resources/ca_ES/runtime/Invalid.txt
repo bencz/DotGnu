@@ -1,0 +1,42 @@
+#
+# Invalid.txt - Resources for invalid operation messages.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Invalid_CollectionModified=La colecció ha estat modificada
+Invalid_BadEnumeratorPosition=L'enumerador no està posicionat en un element
+Invalid_UnderlyingModified=La col·lecció subjacent ha estat modificada
+Invalid_WriteOnce=El valor només pot ser definit un cop
+Invalid_GCHandleNotPinned=El manejador del GC no ha estat clavat
+Invalid_GCHandleNotInit=El manejador del GC no ha estat inicialitzat
+Invalid_GCHandleInvalid=El manejador del GC no és vàlid
+Invalid_ReadOnly=Operacio invàlida sobre objectes de només lectura
+Invalid_EmptyQueue=Operació invàlida sobre cues buida
+Invalid_EmptyStack=Operació invàlida sobre una pila buida
+Invalid_EntryNotInAssembly=El punt d'entrada al mètode no està especificat en l'ensamblat
+Invalid_PermissionXml=Dades XML invàlides per la definició de permisos
+Invalid_PermissionSetName=Nom incorrecte per a una definició de permisos
+Invalid_RWLock=Bloqueig de lectura/escriptura invàlid
+Invalid_RemoteRegistry=S'ha denegat l'acces a un registre remot
+Invalid_IsolatedCurrentSize=No esta disponible la mida d'aquest magatzem aïllat
+Invalid_IsolatedQuota=La quota pel magatzem aïllat no està especificada
+Invalid_ContextFrozen=El context ja està congelat
+Invalid_PropertyClash=Ja existeix una propietat amb el mateix nom
+Invalid_ModifyLease=Modificació d'un arrendat que no està en l'estat inicial
+Invalid_ResourceNotString=El recurs no és una string
+Invalid_ResourceReaderClosed=El recurs de lectura ha estat tancat
+Invalid_ResourceWriterClosed=El recurs d'escriptura ha estat tancat

@@ -1,0 +1,2 @@
+The ildiff program is obsolete and has been removed.  It is our
+intention to write a new diff program in C#.

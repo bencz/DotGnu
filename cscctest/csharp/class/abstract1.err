@@ -1,0 +1,6 @@
+./abstract1.cs:40: no override for abstract member `virtual void Test2.t1()'
+./abstract1.cs:40: no override for abstract member `virtual int Test2.get_X()'
+./abstract1.cs:40: no override for abstract member `virtual void Test2.set_X(int)'
+./abstract1.cs:24: `abstract' used on a member in a non-abstract class
+./abstract1.cs:25: `abstract' used on a member in a non-abstract class
+./abstract1.cs:25: `abstract' used on a member in a non-abstract class

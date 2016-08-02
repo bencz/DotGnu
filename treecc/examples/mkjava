@@ -1,0 +1,12 @@
+#!/bin/sh
+#
+# mkjava - make the Java version of the expression example in "outdir".
+
+if [ ! -d outjava ]; then
+	mkdir outjava
+fi
+set -v
+cp *.java outjava
+../treecc -s ../etc -d outjava expr_java.tc
+cd outjava
+exec javac *.java

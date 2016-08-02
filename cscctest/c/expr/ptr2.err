@@ -1,0 +1,2 @@
+./ptr2.c:25: warning: incompatible pointer types
+./ptr2.c:27: warning: comparison of distinct pointer types lacks a cast

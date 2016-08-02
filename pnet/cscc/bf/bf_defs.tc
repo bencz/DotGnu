@@ -1,0 +1,65 @@
+%{
+/*
+ * bf_defs.tc - TreeCC nodes for BF
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ * 
+ * Contributed by Gopal.V
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+%}
+
+%include %readonly "cg_all.tc"
+
+%header "bf_defs.h"
+%output "bf_nodes.c"
+
+%decls %{
+
+#include "../codegen/cg_nodes.h"
+#include "il_utils.h"
+
+%}
+
+%node ILNode_BF	ILNode_Dummy
+
+%node ILNode_BFBody ILNode_BF =
+{
+	ILNode *body;
+}
+
+%node ILNode_BFProgram ILNode_BFBody 
+
+%node ILNode_BFLoop ILNode_BFBody 
+
+
+%node ILNode_BFRead ILNode_BF
+%node ILNode_BFWrite ILNode_BF
+
+%node ILNode_BFOpt ILNode_BF =
+{
+	signed int count;
+}
+
+%node ILNode_BFArith ILNode_BFOpt
+
+%node ILNode_BFMove ILNode_BFOpt
+
+%{
+#include "bf_internal.h"
+%}
+
+%include "bf_codegen.tc"

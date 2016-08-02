@@ -1,0 +1,1012 @@
+
+2001-01-07  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* HACKING: add a file that describes how people can contribute to pnetlib.
+
+* README: modify the README file to document new directories, and to point
+contributors at the HACKING file instead of "contrib.txt".
+
+* doc/contrib.txt: remove obsolete file.
+
+* runtime/System/IO/Path.cs: new class contributed by Charlie Carnow
+<carnow@gmx.net>.
+
+* configure.in, NEWS: update for the 0.1.2 release.
+
+* configure.in: update the working version to "0.1.3".
+
+2001-12-20  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* runtime/System/TODOAttribute.cs: add the internal "TODO" attribute class
+to the code to make it easier to tag code that is still to be completed,
+and which can be scanned by automated code tools.
+
+* runtime/System/Activator.cs,
+runtime/System/AppDomain.cs,
+runtime/System/Console.cs,
+runtime/System/DateTime.cs,
+runtime/System/Environment.cs,
+runtime/System/Guid.cs,
+runtime/System/Makefile.am,
+runtime/System/MarshalByRefObject.cs,
+runtime/System/String.cs,
+runtime/System/TimeSpan.cs,
+runtime/System/Version.cs,
+runtime/System/Globalization/Calendar.cs,
+runtime/System/Globalization/CompareInfo.cs,
+runtime/System/Globalization/CultureInfo.cs,
+runtime/System/Globalization/DateTimeFormatInfo.cs,
+runtime/System/Globalization/HebrewCalendar.cs,
+runtime/System/Globalization/NumberFormatInfo.cs,
+runtime/System/Globalization/TextInfo.cs,
+runtime/System/IO/FileStream.cs,
+runtime/System/IO/Stream.cs,
+runtime/System/IO/StreamReader.cs,
+runtime/System/IO/StreamWriter.cs,
+runtime/System/IO/TextReader.cs,
+runtime/System/Private/DefaultBinder.cs,
+runtime/System/Reflection/Assembly.cs,
+runtime/System/Reflection/AssemblyName.cs,
+runtime/System/Reflection/StrongNameKeyPair.cs,
+runtime/System/Resources/ResourceManager.cs,
+runtime/System/Resources/ResourceSet.cs,
+runtime/System/Runtime/CompilerServices/IDispatchConstantAttribute.cs,
+runtime/System/Runtime/InteropServices/ComImportAttribute.cs,
+runtime/System/Runtime/InteropServices/DispIdAttribute.cs,
+runtime/System/Runtime/InteropServices/ExposeHResultAttribute.cs,
+runtime/System/Runtime/InteropServices/GuidAttribute.cs,
+runtime/System/Runtime/InteropServices/InterfaceTypeAttribute.cs,
+runtime/System/Runtime/Remoting/ObjRef.cs,
+runtime/System/Runtime/Remoting/ObjectHandle.cs,
+runtime/System/Runtime/Serialization/StreamingContext.cs,
+runtime/System/Security/CodeAccessPermission.cs,
+runtime/System/Security/PermissionSet.cs,
+runtime/System/Security/UnverifiableCodeAttribute.cs,
+runtime/System/Security/Permissions/SecurityPermission.cs,
+runtime/System/Security/Policy/Evidence.cs,
+runtime/System/Text/UTF7Encoding.cs,
+runtime/System/Text/UTF8Encoding.cs,
+runtime/System/Text/UnicodeEncoding.cs,
+runtime/System/Threading/Thread.cs: tag all of the code that used to
+have "// TODO" comments with "[TODO]" attributes.
+
+2001-12-18  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* resources/en_US/runtime/Arg.txt,
+resources/en_US/runtime/Exception.txt,
+runtime/System/Makefile.am,
+runtime/System/Security/ClrSecurity.cs,
+runtime/System/Security/CodeAccessPermission.cs,
+runtime/System/Security/IPermission.cs,
+runtime/System/Security/PermissionSet.cs,
+runtime/System/Security/SecurityElement.cs,
+runtime/System/Security/VerificationException.cs,
+runtime/System/Security/Permissions/CodeAccessSecurityAttribute.cs,
+runtime/System/Security/Permissions/PermissionState.cs,
+runtime/System/Security/Permissions/SecurityAttribute.cs,
+runtime/System/Security/Permissions/SecurityPermission.cs,
+runtime/System/Security/Permissions/SecurityPermissionAttribute.cs,
+runtime/System/Security/Permissions/SecurityPermissionFlag.cs: implement
+a number of security-related classes.
+
+* runtime/System/Globalization/CultureInfo.cs: temporarily work around
+some broken code in the culture system.
+
+2001-12-15  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* resources/en_US/runtime/Arg.txt,
+runtime/System/Globalization/CultureInfo.cs,
+runtime/System/Globalization/DateTimeFormatInfo.cs,
+runtime/System/Globalization/NumberFormatInfo.cs,
+runtime/System/Private/NumberFormatter.cs: update "NumberFormatInfo" and
+"DateTimeFormatInfo".
+
+* runtime/System/Console.cs,
+runtime/System/DefaultBinder.cs,
+runtime/System/Empty.cs,
+runtime/System/Makefile.am,
+runtime/System/Type.cs,
+runtime/System/Collections/ArrayList.cs,
+runtime/System/Collections/Hashtable.cs,
+runtime/System/Collections/Queue.cs,
+runtime/System/Collections/SortedList.cs,
+runtime/System/Collections/Stack.cs,
+runtime/System/Collections/SynchronizedDictEnumerator.cs,
+runtime/System/Collections/SynchronizedEnumerator.cs,
+runtime/System/Collections/SynchronizedList.cs,
+runtime/System/Globalization/CultureInfo.cs,
+runtime/System/Globalization/CultureName.cs,
+runtime/System/Globalization/CultureNameTable.cs,
+runtime/System/IO/StdReader.cs,
+runtime/System/IO/StdWriter.cs,
+runtime/System/Private/CultureName.cs,
+runtime/System/Private/CultureNameTable.cs,
+runtime/System/Private/DefaultBinder.cs,
+runtime/System/Private/Empty.cs,
+runtime/System/Private/README,
+runtime/System/Private/StdReader.cs,
+runtime/System/Private/StdWriter.cs,
+runtime/System/Private/SynchronizedDictEnumerator.cs,
+runtime/System/Private/SynchronizedEnumerator.cs,
+runtime/System/Private/SynchronizedList.cs: move some "internal" classes
+out of the main namespaces into "System.Private", to avoid pollution
+of the standardised parts of the library.
+
+* runtime/System/Globalization/DateTimeStyles.cs: add the missing
+"AdjustToUniversal" enumeration constant.
+
+2001-12-14  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* runtime/System/Makefile.am, runtime/System/Collections/ArrayList.cs:
+complete the implementation of "System.Collections.ArrayList".
+
+* resources/en_US/runtime/Arg.txt, resources/en_US/runtime/Invalid.txt,
+runtime/System/Makefile.am, runtime/System/Collections/ArrayList.cs,
+runtime/System/Collections/Queue.cs, runtime/System/Collections/Stack.cs:
+implement "Queue" and "Stack"; fix some minor bugs in "ArrayList".
+
+* resources/en_US/runtime/Arg.txt,
+runtime/System/Makefile.am,
+runtime/System/Collections/CollectionBase.cs,
+runtime/System/Collections/DictionaryBase.cs,
+runtime/System/Collections/Hashtable.cs,
+runtime/System/Collections/ReadOnlyCollectionBase.cs,
+runtime/System/Collections/SortedList.cs,
+runtime/System/Collections/SynchronizedList.cs: implement the remainder
+of the "System.Collections" namespace.
+
+* runtime/System/Makefile.am: enable optimization in the C# compiler
+to generate more efficient code.
+
+2001-12-13  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* resources/en_US/runtime/Arg.txt,
+runtime/System/Makefile.am,
+runtime/System/Collections/Hashtable.cs,
+runtime/System/Collections/SynchronizedDictEnumerator.cs,
+runtime/System/Collections/SynchronizedEnumerator.cs: implement the
+"System.Collections.Hashtable" class and supporting classes.
+
+* resources/en_US/runtime/Arg.txt,
+runtime/System/Makefile.am,
+runtime/System/Collections/BitArray.cs,
+runtime/System/Collections/CaseInsensitiveComparer.cs,
+runtime/System/Collections/CaseInsensitiveHashCodeProvider.cs,
+runtime/System/Globalization/CompareInfo.cs: implement some more non-ECMA
+collection classes.
+
+2001-12-12  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* csunit/TestCase.cs, csunit/TestSuite.cs, csunit/TestMain.cs: use
+the correct binding flags when searching for methods using reflection.
+
+* configure.in, csunit/.cvsignore, csunit/Makefile.am, csunit/TestMain.cs,
+csunit/TestVersion.cs.in: insert the pnetlib version into csunit during
+configuration.
+
+* csunit/TestMain.cs: report the correct string for unknown test names.
+
+* csunit/Makefile.am, csunit/.cvsignore: split the "csunit" program into
+"cstest.dll" and "csunit.exe".
+
+* Makefile.am, configure.in, tests/.cvsignore, tests/Makefile.am,
+tests/System/.cvsignore, tests/System/Makefile.am, tests/System/TestBoolean.cs,
+tests/System/TestSystem.cs: check in some initial test suite code.
+
+* Makefile.am, configure.in, tools/.cvsignore, tools/Makefile.am,
+tools/run_test.sh.in: modify the configuration scripts to create the
+"run_test.sh" script.
+
+* tests/System/Makefile.am, tools/run_test.sh.in: hook the "run_tests.sh"
+script into "make check", and fix some minor bugs in the script.
+
+* csunit/TestSuite.cs: fix the type of the parameters for the constructor
+invoke.
+
+* runtime/System/Reflection/ClrType.cs: don't traverse ancestor classes
+when looking for a constructor.
+
+* runtime/System/String.cs: WhitespaceChars should be static.
+
+* tests/System/TestBoolean.cs: temporarily disable some tests.
+
+2001-12-11  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* resources/en_US/runtime/Invalid.txt,
+runtime/System/Makefile.am,
+runtime/System/Globalization/CompareInfo.cs,
+runtime/System/Globalization/CultureInfo.cs,
+runtime/System/Globalization/CultureName.cs,
+runtime/System/Globalization/CultureNameTable.cs,
+runtime/System/Globalization/DateTimeFormatInfo.cs: more culture-related
+classes.
+
+* runtime/System/Makefile.am: add "BitConverter" and "Buffer" to the build.
+
+* resources/en_US/runtime/IO.txt, runtime/System/BitConverter.cs,
+runtime/System/Makefile.am, runtime/System/IO/BinaryReader.cs: implement
+the "System.IO.BinaryReader" class.
+
+* runtime/System/Makefile.am, runtime/System/IO/BinaryWriter.cs:
+implement the "System.IO.BinaryWriter" class.
+
+* runtime/System/IO/BinaryReader.cs: bug in "Read7BitEncodedInt" - the
+order of the bytes was reversed.
+
+2001-12-10  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* runtime/System/DateTime.cs,
+runtime/System/Makefile.am,
+runtime/System/Globalization/GregorianCalendar.cs,
+runtime/System/Globalization/HebrewCalendar.cs,
+runtime/System/Globalization/JulianCalendar.cs: implement more calendar
+routines.
+
+2001-12-08  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* resources/en_US/runtime/Arg.txt,
+runtime/System/DateTime.cs,
+runtime/System/DayOfWeek.cs,
+runtime/System/Makefile.am,
+runtime/System/Globalization/Calendar.cs,
+runtime/System/Globalization/CalendarWeekRule.cs,
+runtime/System/Globalization/CompareOptions.cs,
+runtime/System/Globalization/CultureInfo.cs,
+runtime/System/Globalization/CultureTypes.cs,
+runtime/System/Globalization/DateTimeStyles.cs,
+runtime/System/Globalization/GregorianCalendar.cs,
+runtime/System/Globalization/GregorianCalendarTypes.cs,
+runtime/System/Globalization/NumberStyles.cs: implement date and calendar
+functions, together with some Globalization enums.
+
+2001-12-07  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* runtime/System/AttributeUsageAttribute.cs,
+runtime/System/CLSCompliantAttribute.cs,
+runtime/System/Console.cs,
+runtime/System/Decimal.cs,
+runtime/System/FlagsAttribute.cs,
+runtime/System/Math.cs,
+runtime/System/ObsoleteAttribute.cs,
+runtime/System/UIntPtr.cs,
+runtime/System/Globalization/NumberStyles.cs,
+runtime/System/IO/TextWriter.cs,
+runtime/System/Reflection/DefaultMemberAttribute.cs,
+runtime/System/Reflection/PropertyAttributes.cs,
+runtime/System/Runtime/CompilerServices/DecimalConstantAttribute.cs,
+runtime/System/Text/StringBuilder.cs: add extra attributes that are
+required by the ECMA standard.
+
+* runtime/System/Type.cs: implement "IsAssignableFrom", "IsInstanceOfType",
+and "GetDefaultMembers".
+
+* resources/en_US/runtime/Arg.txt: extra error messages used by the
+runtime engine when implementing arrays.
+
+* doc/native.html: minor updates to fix errors.
+
+2001-12-06  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* runtime/System/AppDomain.cs,
+runtime/System/Array.cs,
+runtime/System/Boolean.cs,
+runtime/System/DateTime.cs,
+runtime/System/Enum.cs,
+runtime/System/Environment.cs,
+runtime/System/Exception.cs,
+runtime/System/Makefile.am,
+runtime/System/Object.cs,
+runtime/System/ObsoleteAttribute.cs,
+runtime/System/String.cs,
+runtime/System/Type.cs,
+runtime/System/UnhandledExceptionEventArgs.cs,
+runtime/System/Version.cs,
+runtime/System/_AppDomain.cs,
+runtime/System/Collections/IDictionary.cs,
+runtime/System/Globalization/NumberFormatInfo.cs,
+runtime/System/Globalization/UnicodeCategory.cs,
+runtime/System/IO/FileStream.cs,
+runtime/System/IO/Stream.cs,
+runtime/System/Reflection/ClrEvent.cs,
+runtime/System/Reflection/ClrType.cs,
+runtime/System/Reflection/DefaultMemberAttribute.cs,
+runtime/System/Reflection/EventInfo.cs,
+runtime/System/Reflection/Module.cs,
+runtime/System/Reflection/TypeAttributes.cs,
+runtime/System/Runtime/InteropServices/MarshalAsAttribute.cs,
+runtime/System/Security/Permissions/CodeAccessSecurityAttribute.c,
+runtime/System/Text/StringBuilder.cs,
+runtime/System/Text/UTF8Encoding.cs,
+runtime/System/Threading/Monitor.cs: small changes here and there to improve
+the ECMA-compatibility of the class definitions.
+
+2001-12-03  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* tools/mscsc.sh, runtime/System/Makefile.am, csunit/Makefile.am: disable
+warning messages from Microsoft's C# compiler that don't mean anything useful.
+
+* resources/en_US/runtime/Arg.txt,
+resources/en_US/runtime/Exception.txt,
+resources/en_US/runtime/NotSupp.txt,
+runtime/System/.cvsignore,
+runtime/System/ContextBoundObject.cs,
+runtime/System/Enum.cs,
+runtime/System/IntPtr.cs,
+runtime/System/Makefile.am,
+runtime/System/MarshalByRefObject.cs,
+runtime/System/NonSerializedAttribute.cs,
+runtime/System/SerializableAttribute.cs,
+runtime/System/UIntPtr.cs,
+runtime/System/ValueType.cs,
+runtime/System/Reflection/ClrReflectionAttribute.cs,
+runtime/System/Runtime/Remoting/ObjRef.cs,
+runtime/System/Runtime/Remoting/RemotingException.cs: fill in some of
+the missing gaps in the "System" namespace.
+
+* resources/en_US/runtime/Format.txt, runtime/System/Enum.cs: complete
+the implementation of "System.Enum".
+
+* runtime/Platform/PtrSizes.cs: remove obsolete class.
+
+* runtime/System/Activator.cs: implement "Activator.CreateInstance" using
+reflection.
+
+* runtime/System/Attribute.cs: implement "Attribute.Equals" and
+"Attribute.GetHashCode" using reflection.
+
+* resources/en_US/runtime/Arg.txt,
+resources/en_US/runtime/NotSupp.txt,
+runtime/System/Delegate.cs,
+runtime/System/Makefile.am,
+runtime/System/MulticastDelegate.cs,
+runtime/System/Reflection/ClrHelpers.cs: implement unicast and multicast
+delegates.
+
+* runtime/System/Empty.cs: declare this class as "internal", because it
+is only important to the internal workings of the library.
+
+* runtime/System/Exception.cs: implement "Exception.GetPackedStackTrace".
+
+* runtime/System/RuntimeArgumentHandle.cs: implement the
+"System.RuntimeArgumentHandle" struct.
+
+* resources/en_US/runtime/Arg.txt, resources/en_US/runtime/NotSupp.txt,
+runtime/System/TypedReference.cs: implement "System.TypedReference".
+
+* runtime/System/Variant.cs, runtime/System/Makefile.am: remove the
+obsolete "System.Variant" type.
+
+* resources/en_US/runtime/NotSupp.txt,
+resources/en_US/runtime/Overflow.txt,
+runtime/System/Array.cs,
+runtime/System/Decimal.cs,
+runtime/System/Double.cs,
+runtime/System/Math.cs,
+runtime/System/RuntimeMethodHandle.cs,
+runtime/System/Single.cs,
+runtime/System/String.cs,
+runtime/System/Reflection/ClrConstructor.cs,
+runtime/System/Reflection/ClrEvent.cs,
+runtime/System/Reflection/ClrField.cs,
+runtime/System/Reflection/ClrHelpers.cs,
+runtime/System/Reflection/ClrMethod.cs,
+runtime/System/Reflection/ClrProperty.cs,
+runtime/System/Runtime/InteropServices/GCHandle.cs,
+runtime/System/Text/ASCIIEncoding.cs,
+runtime/System/Text/StringBuilder.cs,
+runtime/System/Threading/Monitor.cs,
+runtime/System/Threading/Thread.cs,
+runtime/System/Threading/WaitHandle.cs: fine-tune the internalcall interface
+of the library while documenting it.
+
+* doc/native.html: document all of the internalcall methods in the library,
+as it currently stands.
+
+2001-12-02  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* resources/en_US/runtime/NotSupp.txt,
+resources/en_US/runtime/Reflection.txt,
+runtime/System/Makefile.am,
+runtime/System/RuntimeFieldHandle.cs,
+runtime/System/Type.cs,
+runtime/System/Configuration/Assemblies/AssemblyHash.cs,
+runtime/System/Configuration/Assemblies/AssemblyHashAlgorithm.cs,
+runtime/System/Configuration/Assemblies/AssemblyVersionCompatibility.cs,
+runtime/System/Reflection/AssemblyAlgorithmIdAttribute.cs,
+runtime/System/Reflection/AssemblyName.cs,
+runtime/System/Reflection/AssemblyNameFlags.cs,
+runtime/System/Reflection/ClrConstructor.cs,
+runtime/System/Reflection/ClrEvent.cs,
+runtime/System/Reflection/ClrField.cs,
+runtime/System/Reflection/ClrHelpers.cs,
+runtime/System/Reflection/ClrMethod.cs,
+runtime/System/Reflection/ClrParameter.cs,
+runtime/System/Reflection/ClrProperty.cs,
+runtime/System/Reflection/ClrType.cs,
+runtime/System/Reflection/ConstructorInfo.cs,
+runtime/System/Reflection/DefaultMemberAttribute.cs,
+runtime/System/Reflection/EventInfo.cs,
+runtime/System/Reflection/FieldInfo.cs,
+runtime/System/Reflection/MemberInfo.cs,
+runtime/System/Reflection/MethodBase.cs,
+runtime/System/Reflection/MethodInfo.cs,
+runtime/System/Reflection/Module.cs,
+runtime/System/Reflection/ParameterInfo.cs,
+runtime/System/Reflection/ParameterModifier.cs,
+runtime/System/Reflection/PropertyInfo.cs,
+runtime/System/Reflection/StrongNameKeyPair.cs: implement most of the
+remaining ECMA functionality in "System.Reflection".
+
+* doc/native.html: document the internalcall methods for "System.Reflection".
+
+2001-12-01  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* runtime/System/Makefile.am,
+runtime/System/Reflection/Emit/Makefile,
+runtime/System/Reflection/Emit/AssemblyBuilderAccess.cs,
+runtime/System/Reflection/Emit/EventToken.cs,
+runtime/System/Reflection/Emit/FieldToken.cs,
+runtime/System/Reflection/Emit/FlowControl.cs,
+runtime/System/Reflection/Emit/Label.cs,
+runtime/System/Reflection/Emit/MethodToken.cs,
+runtime/System/Reflection/Emit/OpCode.cs,
+runtime/System/Reflection/Emit/OpCodes.cs,
+runtime/System/Reflection/Emit/OpCodeType.cs,
+runtime/System/Reflection/Emit/OperandType.cs,
+runtime/System/Reflection/Emit/PackingSize.cs,
+runtime/System/Reflection/Emit/ParameterToken.cs,
+runtime/System/Reflection/Emit/PEFileKinds.cs,
+runtime/System/Reflection/Emit/PropertyToken.cs,
+runtime/System/Reflection/Emit/SignatureToken.cs,
+runtime/System/Reflection/Emit/StackBehaviour.cs,
+runtime/System/Reflection/Emit/StringToken.cs,
+runtime/System/Reflection/Emit/TypeToken.cs: implement many of the simple
+classes in "System.Reflection.Emit".
+
+2001-11-30  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* runtime/System/BitConverter.cs, runtime/System/Buffer.cs,
+resources/en_US/runtime/Arg.txt: new classes "System.BitConverter" and
+"System.Buffer".
+
+* Makefile.am, configure.in, csunit/.cvsignore, csunit/Makefile.am,
+csunit/README, csunit/Test.cs, csunit/TestArray.cs, csunit/TestAssertFailed.cs,
+csunit/TestCase.cs, csunit/TestException.cs, csunit/TestFailure.cs,
+csunit/TestMain.cs, csunit/TestResult.cs, csunit/TestStop.cs,
+csunit/TestSuite.cs, csunit/TestWriterResult.cs: implement the "csunit"
+program, for performing unit tests on the library.
+
+* csunit/TestMain.cs: use "Load" instead of "LoadFrom", because "LoadFrom"
+is not ECMA-compliant.
+
+* resources/en_US/runtime/Reflection.txt,
+runtime/System/Reflection/Assembly.cs,
+runtime/System/Reflection/ClrType.cs: improve the "internalcall" interface
+for assemblies and types.
+
+* runtime/System/Reflection/ClrType.cs: modify the code slightly to
+temporarily work around a bug in cscc's parser.
+
+* runtime/System/Reflection/ClrType.cs: back out the temporary work-around,
+because the compiler is now fixed.
+
+2001-11-29  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* runtime/System/RuntimeType.cs,
+runtime/System/Reflection/RuntimeConstructorInfo.cs,
+runtime/System/Reflection/RuntimeEventInfo.cs,
+runtime/System/Reflection/RuntimeFieldInfo.cs,
+runtime/System/Reflection/RuntimeHelpers.cs,
+runtime/System/Reflection/RuntimeMethodInfo.cs,
+runtime/System/Reflection/RuntimePropertyInfo.cs: remove obsolete types.
+
+* runtime/System/Array.cs,
+runtime/System/Attribute.cs,
+runtime/System/Makefile.am,
+runtime/System/RuntimeTypeHandle.cs,
+runtime/System/Type.cs,
+runtime/System/Reflection/Assembly.cs,
+runtime/System/Reflection/ClrConstructor.cs,
+runtime/System/Reflection/ClrEvent.cs,
+runtime/System/Reflection/ClrField.cs,
+runtime/System/Reflection/ClrHelpers.cs,
+runtime/System/Reflection/ClrMethod.cs,
+runtime/System/Reflection/ClrProperty.cs,
+runtime/System/Reflection/ClrType.cs,
+runtime/System/Reflection/ClrTypeCategory.cs,
+runtime/System/Reflection/IClrProgramItem.cs: modify the reflection
+interface to the runtime engine.
+
+* runtime/System/Version.cs: minor bug in "CompareTo".
+
+* resources/en_US/runtime/Arg.txt, resources/en_US/runtime/Format.txt,
+runtime/System/Guid.cs, runtime/System/Type.cs,
+runtime/System/Reflection/ClrType.cs: implement the Guid class and
+alter other classes that depend upon it.
+
+* runtime/System/Activator.cs, runtime/System/AppDomain.cs,
+runtime/System/AppDomainUnloadedException.cs, runtime/System/ArgIterator.cs:
+insert "ECMA_COMPAT" where necessary to #if out non-ECMA definitions.
+
+* runtime/System/Attribute.cs,
+runtime/System/Reflection/Assembly.cs,
+runtime/System/Reflection/ICustomAttributeProvider.cs,
+runtime/System/Reflection/MemberInfo.cs,
+runtime/System/Reflection/Module.cs,
+runtime/System/Reflection/ParameterInfo.cs: implement "GetCustomAttributes"
+and "IsDefined" within the "Attribute" class, together with the extra
+reflection functionality needed to support it.
+
+* resources/en_US/runtime/Reflection.txt, runtime/System/Attribute.cs,
+runtime/System/Boolean.cs, runtime/System/Byte.cs, runtime/System/Char.cs,
+runtime/System/Convert.cs, runtime/System/DBNull.cs,
+runtime/System/DateTime.cs, runtime/System/Decimal.cs,
+runtime/System/Double.cs, runtime/System/Enum.cs,
+runtime/System/IConvertible.cs, runtime/System/Int16.cs,
+runtime/System/Int32.cs, runtime/System/Int64.cs,
+runtime/System/IntPtr.cs, runtime/System/Makefile.am,
+runtime/System/SByte.cs, runtime/System/Single.cs,
+runtime/System/String.cs, runtime/System/UInt16.cs,
+runtime/System/UInt32.cs, runtime/System/UInt64.cs,
+runtime/System/UIntPtr.cs, runtime/System/Variant.cs,
+runtime/System/Reflection/ClrHelpers.cs,
+runtime/System/Reflection/ClrType.cs,
+runtime/System/Runtime/InteropServices/GCHandle.cs: add #if code to only
+include ECMA-specified features when ECMA_COMPAT is defined; add the
+CLSCompliant attribute to methods that need it.
+
+* runtime/System/Currency.cs: remove obsolete file.
+
+2001-11-28  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* runtime/Platform/Errno.cs: list of Unix-style errno codes for interfacing
+to platform-specific error facilities.
+
+* runtime/Platform/FileMethods.cs: primitive file handle operations for
+the platform layer.
+
+* runtime/Platform/ISecurityManager.cs,
+runtime/Platform/NullSecurityManager.cs,
+runtime/Platform/RuntimeSecurityManager.cs,
+runtime/Platform/Security.cs: implement a Java-like security manager
+system for handling the security of sensitive platform operations.
+
+* runtime/System/Exception.cs: implement a new system for handling default
+messages and extra data in the "ToString()" output, because the ECMA version
+is a pain to implement across dozens of exception classes.
+
+* runtime/System/Security/SecurityException.cs: new class.
+
+* runtime/System/IO/DirectoryNotFoundException.cs,
+runtime/System/IO/EndOfStreamException.cs,
+runtime/System/IO/FileAccess.cs,
+runtime/System/IO/FileLoadException.cs,
+runtime/System/IO/FileMode.cs,
+runtime/System/IO/FileNotFoundException.cs,
+runtime/System/IO/FileShare.cs,
+runtime/System/IO/FileStream.cs,
+runtime/System/IO/IOException.cs,
+runtime/System/IO/PathTooLongException.cs,
+runtime/System/IO/SeekOrigin.cs,
+runtime/System/IO/Stream.cs: implement many of the "System.IO" classes.
+
+* runtime/System/Makefile.am: add the new classes to the build.
+
+* resources/en_US/runtime/Makefile.am,
+resources/en_US/runtime/IO.txt,
+resources/en_US/runtime/Exception.txt: new resource strings for the
+new classes.
+
+* resources/en_US/runtime/IO.txt: remove duplicate strings.
+
+* runtime/System/AccessException.cs: remove obsolete class.
+
+* resources/en_US/runtime/Exception.txt,
+resources/en_US/runtime/IO.txt,
+runtime/System/AppDomainUnloadedException.cs,
+runtime/System/ApplicationException.cs,
+runtime/System/ArgumentException.cs,
+runtime/System/ArgumentNullException.cs,
+runtime/System/ArgumentOutOfRangeException.cs,
+runtime/System/ArithmeticException.cs,
+runtime/System/ArrayTypeMismatchException.cs,
+runtime/System/BadImageFormatException.cs,
+runtime/System/CannotUnloadAppDomainException.cs,
+runtime/System/DivideByZeroException.cs,
+runtime/System/DuplicateWaitObjectException.cs,
+runtime/System/EntryPointNotFoundException.cs,
+runtime/System/ExecutionEngineException.cs,
+runtime/System/FieldAccessException.cs,
+runtime/System/FormatException.cs,
+runtime/System/IndexOutOfRangeException.cs,
+runtime/System/InvalidCastException.cs,
+runtime/System/InvalidOperationException.cs,
+runtime/System/InvalidProgramException.cs,
+runtime/System/Makefile.am,
+runtime/System/MemberAccessException.cs,
+runtime/System/MethodAccessException.cs,
+runtime/System/MissingFieldException.cs,
+runtime/System/MissingMemberException.cs,
+runtime/System/MissingMethodException.cs,
+runtime/System/NotFiniteNumberException.cs,
+runtime/System/NotSupportedException.cs,
+runtime/System/NullReferenceException.cs,
+runtime/System/ObjectDisposedException.cs,
+runtime/System/OutOfMemoryException.cs,
+runtime/System/OverflowException.cs,
+runtime/System/RankException.cs,
+runtime/System/StackOverflowException.cs,
+runtime/System/SystemException.cs,
+runtime/System/TypeInitializationException.cs,
+runtime/System/TypeLoadException.cs,
+runtime/System/TypeUnloadedException.cs,
+runtime/System/UnauthorizedAccessException.cs,
+runtime/System/IO/FileLoadException.cs,
+runtime/System/IO/FileNotFoundException.cs,
+runtime/System/Reflection/AmbiguousMatchException.cs,
+runtime/System/Reflection/TargetException.cs,
+runtime/System/Reflection/TargetInvocationException.cs,
+runtime/System/Reflection/TargetParameterCountException.cs,
+runtime/System/Resources/MissingManifestResourceException.cs,
+runtime/System/Threading/SynchronizationLockException.cs,
+runtime/System/Threading/ThreadInterruptedException.cs,
+runtime/System/Threading/ThreadStateException.cs:
+modify all exception classes to use the new message formatting code
+from "System.Exception".
+
+* runtime/System/Version.cs: implement the "System.Version" class.
+
+* runtime/System/Resources/ResourceManager.cs,
+runtime/System/Resources/ResourceSet.cs: implement two more classes in
+"System.Resources".
+
+* resources/en_US/runtime/Arg.txt: resources related to the "System.Resources"
+and "System.Version" classes.
+
+* runtime/System/Object.cs, runtime/System/Makefile.am: implement the
+internal "_" method as a future replacement for the painful
+"Environment.GetResourceString" method.
+
+* runtime/System/Activator.cs,
+runtime/System/AppDomainUnloadedException.cs,
+runtime/System/ApplicationException.cs,
+runtime/System/ArgIterator.cs,
+runtime/System/ArgumentException.cs,
+runtime/System/ArgumentNullException.cs,
+runtime/System/ArgumentOutOfRangeException.cs,
+runtime/System/ArithmeticException.cs,
+runtime/System/Array.cs,
+runtime/System/ArrayTypeMismatchException.cs,
+runtime/System/BadImageFormatException.cs,
+runtime/System/Boolean.cs,
+runtime/System/Byte.cs,
+runtime/System/CannotUnloadAppDomainException.cs,
+runtime/System/Char.cs,
+runtime/System/CharEnumerator.cs,
+runtime/System/Convert.cs,
+runtime/System/Currency.cs,
+runtime/System/DBNull.cs,
+runtime/System/DateTime.cs,
+runtime/System/Decimal.cs,
+runtime/System/DivideByZeroException.cs,
+runtime/System/Double.cs,
+runtime/System/DuplicateWaitObjectException.cs,
+runtime/System/EntryPointNotFoundException.cs,
+runtime/System/Enum.cs,
+runtime/System/Environment.cs,
+runtime/System/Exception.cs,
+runtime/System/ExecutionEngineException.cs,
+runtime/System/FieldAccessException.cs,
+runtime/System/FormatException.cs,
+runtime/System/IndexOutOfRangeException.cs,
+runtime/System/Int16.cs,
+runtime/System/Int32.cs,
+runtime/System/Int64.cs,
+runtime/System/IntPtr.cs,
+runtime/System/InvalidCastException.cs,
+runtime/System/InvalidOperationException.cs,
+runtime/System/InvalidProgramException.cs,
+runtime/System/Math.cs,
+runtime/System/MemberAccessException.cs,
+runtime/System/MethodAccessException.cs,
+runtime/System/MissingFieldException.cs,
+runtime/System/MissingMemberException.cs,
+runtime/System/MissingMethodException.cs,
+runtime/System/MulticastNotSupportedException.cs,
+runtime/System/NotFiniteNumberException.cs,
+runtime/System/NotSupportedException.cs,
+runtime/System/NullReferenceException.cs,
+runtime/System/ObjectDisposedException.cs,
+runtime/System/OutOfMemoryException.cs,
+runtime/System/OverflowException.cs,
+runtime/System/Random.cs,
+runtime/System/RankException.cs,
+runtime/System/RuntimeType.cs,
+runtime/System/SByte.cs,
+runtime/System/Single.cs,
+runtime/System/StackOverflowException.cs,
+runtime/System/String.cs,
+runtime/System/SystemException.cs,
+runtime/System/TimeSpan.cs,
+runtime/System/Type.cs,
+runtime/System/TypeInitializationException.cs,
+runtime/System/TypeLoadException.cs,
+runtime/System/TypeUnloadedException.cs,
+runtime/System/UInt16.cs,
+runtime/System/UInt32.cs,
+runtime/System/UInt64.cs,
+runtime/System/UIntPtr.cs,
+runtime/System/UnauthorizedAccessException.cs,
+runtime/System/Version.cs,
+runtime/System/Collections/ArrayList.cs,
+runtime/System/Collections/Comparer.cs,
+runtime/System/IO/DirectoryNotFoundException.cs,
+runtime/System/IO/EndOfStreamException.cs,
+runtime/System/IO/FileLoadException.cs,
+runtime/System/IO/FileNotFoundException.cs,
+runtime/System/IO/FileStream.cs,
+runtime/System/IO/IOException.cs,
+runtime/System/IO/PathTooLongException.cs,
+runtime/System/IO/StdReader.cs,
+runtime/System/IO/StdWriter.cs,
+runtime/System/IO/Stream.cs,
+runtime/System/IO/TextReader.cs,
+runtime/System/IO/TextWriter.cs,
+runtime/System/Private/NumberFormatter.cs,
+runtime/System/Private/NumberParser.cs,
+runtime/System/Reflection/AmbiguousMatchException.cs,
+runtime/System/Reflection/RuntimeHelpers.cs,
+runtime/System/Reflection/TargetException.cs,
+runtime/System/Reflection/TargetInvocationException.cs,
+runtime/System/Reflection/TargetParameterCountException.cs,
+runtime/System/Resources/MissingManifestResourceException.cs,
+runtime/System/Resources/ResourceManager.cs,
+runtime/System/Runtime/InteropServices/GCHandle.cs,
+runtime/System/Security/SecurityException.cs,
+runtime/System/Text/ASCIIEncoding.cs,
+runtime/System/Text/DefaultEncoding.cs,
+runtime/System/Text/Encoding.cs,
+runtime/System/Text/StringBuilder.cs,
+runtime/System/Text/UTF7Encoding.cs,
+runtime/System/Text/UTF8Encoding.cs,
+runtime/System/Text/UnicodeEncoding.cs,
+runtime/System/Threading/Monitor.cs,
+runtime/System/Threading/SynchronizationLockException.cs,
+runtime/System/Threading/Thread.cs,
+runtime/System/Threading/ThreadAbortException.cs,
+runtime/System/Threading/ThreadInterruptedException.cs,
+runtime/System/Threading/ThreadStateException.cs,
+runtime/System/Threading/WaitHandle.cs: change all instances of
+"Environment.GetResourceString" into "_".
+
+* runtime/System/Makefile.am, runtime/System/IO/FileMode.cs,
+runtime/System/IO/FileStream.cs, runtime/System/IO/StdReader.cs,
+runtime/System/IO/StdWriter.cs, runtime/System/IO/StreamReader.cs,
+runtime/System/IO/StreamWriter.cs, runtime/System/IO/TextReader.cs,
+runtime/System/IO/TextWriter.cs: implement more of the "System.IO"
+namespace.
+
+2001-11-27  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* configure.in, NEWS: update for the "0.1.0" release.
+
+* configure.in: update the working version to "0.1.1".
+
+2001-11-25  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* resources/en_US/runtime/Arg.txt, runtime/System/Makefile.am,
+runtime/System/Text/ASCIIEncoding.cs, runtime/System/Text/Decoder.cs,
+runtime/System/Text/DefaultEncoding.cs, runtime/System/Text/Encoder.cs,
+runtime/System/Text/Encoding.cs, runtime/System/Text/UTF7Encoding.cs,
+runtime/System/Text/UTF8Encoding.cs, runtime/System/Text/UnicodeEncoding.cs:
+implement most of the "System.Text" namespace.
+
+2001-11-22  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* runtime/System/String.cs, runtime/System/Text/StringBuilder.cs,
+runtime/System/Makefile.am, resources/en_US/runtime/Arg.txt: implement
+the "System.Text.StringBuilder" class.
+
+* runtime/System/String.cs: fix the names of the parameters for "InsertSpace"
+to match their actual usage.
+
+2001-11-21  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* runtime/System/DateTime.cs: bug in the "UtcNow" property - use the
+correct platform method to get the time.
+
+2001-11-20  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* runtime/System/DateTime.cs, runtime/Platform/TimeMethods.cs, doc/native.html:
+introduce new functionality for dealing with the difference between local
+and UTC timezones.
+
+2001-11-17  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* doc/native.html, doc/native.txt: convert the "native.txt" file into
+HTML, and continue the documentation of the library's "internalcall" methods.
+
+* configure.in, NEWS: update for the "0.0.8" release.
+
+* configure.in: change the working version to "0.0.9".
+
+* doc/native.html: continue documentation of the native methods in pnetlib.
+
+* runtime/System/Exception.cs,
+runtime/System/Makefile.am,
+runtime/System/OutOfMemoryException.cs,
+runtime/System/RuntimeMethodHandle.cs,
+runtime/System/SystemException.cs,
+runtime/System/Diagnostics/ConditionalAttribute.cs,
+runtime/System/Diagnostics/DebuggableAttribute.cs,
+runtime/System/Diagnostics/Debugger.cs,
+runtime/System/Diagnostics/DebuggerHiddenAttribute.cs,
+runtime/System/Diagnostics/DebuggerStepThroughAttribute.cs,
+runtime/System/Diagnostics/PackedStackFrame.cs,
+runtime/System/Diagnostics/StackFrame.cs,
+runtime/System/Diagnostics/StackTrace.cs,
+runtime/System/Reflection/MethodBase.cs,
+runtime/System/Reflection/ParameterInfo.cs,
+runtime/System/Reflection/RuntimeConstructorInfo.cs,
+runtime/System/Threading/Thread.cs: implement classes related to
+"System.Diagnostics", and obtaining stack traces during exception handling.
+
+2001-11-14  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* runtime/System/Runtime/CompilerServices/*.cs,
+runtime/System/Runtime/CompilerServices/CSharp/IndexerNameAttribute.cs,
+runtime/System/Makefile.am: implement the "System.Runtime.CompilerServices"
+namespace.
+
+* runtime/System/IServiceObjectProvider.cs,
+runtime/System/Runtime/CompilerServices/CSharp/DecimalConstantAttribute.cs,
+runtime/System/Runtime/CompilerServices/CSharp/OutParameter.cs:
+remove obsolete classes.
+
+* runtime/Platform/DirMethods.cs, runtime/Platform/PathInfo.cs,
+runtime/Platform/PtrSizes.cs, runtime/Platform/Stdio.cs,
+runtime/Platform/SysCharInfo.cs, runtime/Platform/TaskMethods.cs,
+runtime/Platform/TimeMethods.cs, runtime/System/ArgIterator.cs,
+runtime/System/Array.cs, runtime/System/Decimal.cs,
+runtime/System/Double.cs, runtime/System/GC.cs,
+runtime/System/IntPtr.cs, runtime/System/Makefile.am,
+runtime/System/Math.cs, runtime/System/Object.cs,
+runtime/System/RuntimeMethodHandle.cs, runtime/System/RuntimeType.cs,
+runtime/System/Single.cs, runtime/System/String.cs,
+runtime/System/Type.cs, runtime/System/UIntPtr.cs,
+runtime/System/Reflection/Assembly.cs,
+runtime/System/Reflection/RuntimeHelpers.cs,
+runtime/System/Threading/Interlocked.cs, runtime/System/Threading/Monitor.cs,
+runtime/System/Threading/Mutex.cs, runtime/System/Threading/Thread.cs,
+runtime/System/Threading/WaitHandle.cs: replace all references to
+"System.Runtime.InteropServices.MethodImplAttribute" with
+"System.Runtime.CompilerServices.MethodImplAttribute", to be
+consistent with the latest ECMA specification.
+
+* runtime/System/Runtime/InteropServices/MethodImplAttribute.cs,
+runtime/System/Runtime/InteropServices/MethodImplOptions.cs: remove
+obsolete classes.
+
+* runtime/System/Makefile.am,
+runtime/System/Runtime/InteropServices/CallingConvention.cs,
+runtime/System/Runtime/InteropServices/CharSet.cs,
+runtime/System/Runtime/InteropServices/DllImportAttribute.cs,
+runtime/System/Runtime/InteropServices/FieldOffsetAttribute.cs,
+runtime/System/Runtime/InteropServices/GCHandle.cs,
+runtime/System/Runtime/InteropServices/GCHandleType.cs,
+runtime/System/Runtime/InteropServices/InAttribute.cs,
+runtime/System/Runtime/InteropServices/Makefile,
+runtime/System/Runtime/InteropServices/MarshalAsAttribute.cs,
+runtime/System/Runtime/InteropServices/OutAttribute.cs,
+runtime/System/Runtime/InteropServices/StructLayoutAttribute.cs,
+runtime/System/Runtime/InteropServices/UnmanagedType.cs,
+resources/en_US/runtime/Invalid.txt: implement the ECMA-compliant
+classes in "System.Runtime.InteropServices".
+
+2001-11-13  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* runtime/System/String.cs: implement string comparison methods.
+
+2001-11-12  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* runtime/System/DateTime.cs: bug in the TimeSpan-related subtraction
+operator.
+
+* runtime/System/IO/TextWriter.cs: uncomment "Write" methods now that
+we have the formattable "ToString" methods available.
+
+2001-11-11  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* runtime/System/Makefile.am, runtime/System/IResourceReader.cs,
+runtime/System/IResourceWriter.cs,
+runtime/System/MissingManifestResourceException.cs,
+runtime/System/NeutralResourcesLanguageAttribute.cs,
+runtime/System/SatelliteContractVersionAttribute.cs: resource-related classes.
+
+* runtime/System/Makefile.am,
+runtime/System/Threading/Interlocked.cs,
+runtime/System/Threading/Monitor.cs,
+runtime/System/Threading/Mutex.cs,
+runtime/System/Threading/SynchronizationLockException.cs,
+runtime/System/Threading/Thread.cs,
+runtime/System/Threading/ThreadAbortException.cs,
+runtime/System/Threading/ThreadInterruptedException.cs,
+runtime/System/Threading/ThreadPriority.cs,
+runtime/System/Threading/ThreadStart.cs,
+runtime/System/Threading/ThreadState.cs,
+runtime/System/Threading/ThreadStateException.cs,
+runtime/System/Threading/Timeout.cs,
+runtime/System/Threading/WaitHandle.cs: thread-related classes.
+
+* resources/en_US/runtime/Arg.txt, resources/en_US/runtime/Exception.txt,
+resources/en_US/runtime/Invalid.txt: messages for threads and resources.
+
+* runtime/System/Threading/Thread.cs: store the entry point in a field
+rather than passing it to an "internalcall" method.
+
+2001-11-03  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* configure.in, NEWS: update version and news for 0.0.6 release.
+
+* configure.in: change the version to 0.0.7 for the new working version.
+
+2001-10-28  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* runtime/System/Console.cs: remove the temporary code in "Console" that
+caused it to call "Platform.Stdio" directly, rather than go through the
+"System.IO.TextWriter" class.
+
+* runtime/System/String.cs: mark some of the constructors as non-CLS;
+uncomment the "sbyte*" constructor since "Encoding" now exists; fix
+the indexing for "IndexOf", "LastIndexOf"; implement "EqualRange",
+"Split", and "Trim".
+
+2001-10-27  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* runtime/System/Reflection/*.cs: many new reflection classes.
+
+* runtime/System/AssemblyLoadEventHandler.cs,
+runtime/System/UnhandledExceptionEventHandler.cs: new "System" classes.
+
+* runtime/System/DefaultBinder.cs: stub out abstract methods that
+are inherited from "Binder".
+
+* runtime/System/RuntimeType.cs: make "privateData" internal so that
+it can be accessed from the reflection classes; implement methods and
+properties that are inherited from "MemberInfo".
+
+* runtime/System/Makefile.am: add the new classes to the build.
+
+* resources/en_US/runtime/Exception.txt: default error messages for
+the new exception classes.
+
+2001-10-24  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* runtime/System/RuntimeType.cs: Use "InternalGetFullName" for the "ToString"
+method on "System.RuntimeType".
+
+* runtime/System/Decimal.cs: Rearrange the field order to match that
+used by other C# library implementors.
+
+* runtime/System/RuntimeType.cs: remove "InternalGetAssemblyQualifiedName"
+and synthesise its behaviour using "FullName" and "Assembly".
+
+2001-10-23  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* runtime/System/*.cs, resources/en_US/runtime/*.txt: many changes to
+round out the implementation of the "System" namespace.  Too many
+to enumerate them all here.
+
+2001-10-21  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+* configure.in: update version to 0.0.5.
+
+* runtime/System/Radix.cs: remove "System.Radix", which is no longer
+part of the ECMA standard.
+
+* runtime/System/Math.cs, runtime/System/Random.cs, runtime/System/Makefile.am:
+re-implement "System.Math" and "System.Random".
+
+* runtime/System/Environment.cs: declare "TickCount" as "static".
+
+* resources/en_US/runtime/Arg.txt: new error messages for "Math" and "Random".

@@ -1,0 +1,2 @@
+./member_access2.cs:34: `Object' is not a member of the type `Test.System'
+./member_access2.cs:34: invalid type specification `System.Object' 

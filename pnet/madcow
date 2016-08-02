@@ -1,0 +1,278 @@
+#!/bin/sh
+#
+# madcow - Attempt to diagnose Portable.NET build problems.
+#
+# Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+# Print the cow.
+cow()
+{
+	echo ''
+	echo '                    (__)'
+	echo '                    (oo)'
+	echo '                     \/-------\'
+	echo '                      ||     | \'
+	echo '                      ||---W||  *'
+	echo ''
+}
+
+# Read a yes/no answer.
+yesno()
+{
+	read LINE
+	case "x$LINE" in
+		xy|xyes|xY|x) return 0 ;;
+		*) ;;
+	esac
+	return 1
+}
+
+# Abort the diagnostic process with an error message.
+abort()
+{
+	echo "$*" >>"$LOG_FILE"
+	DATEVAL=`date`
+	echo '*** Diagnostics aborted at '"$DATEVAL"' ***' >>"$LOG_FILE"
+	exit 0
+}
+
+# Write a message to the log file.
+log()
+{
+	echo "$*" >>"$LOG_FILE"
+}
+
+# Run a command and log its output to the log file.
+run()
+{
+	echo '*** Running:' $* '***' >>"$LOG_FILE"
+	$* 2>&1 | tee -a "$LOG_FILE"
+}
+
+# Run a version-getting command.
+runversion()
+{
+	echo '*** Running:' $* '***' >>"$LOG_FILE"
+	$* >>"$LOG_FILE" 2>&1
+	echo '' >>"$LOG_FILE"
+}
+
+# Print the banner.
+cow
+echo 'I am the Portable.NET Mad Cow diagnostic utility!'
+echo ''
+echo 'My purpose is to help you diagnose common build problems, and to'
+echo 'create a log of activity that my masters can use to help you'
+echo 'diagnose the problem further.'
+echo ''
+echo 'The final log will be written to the file "madcow.log".  Please'
+echo 'send this file along with your bug report.'
+echo ''
+echo 'You may also want to look at the "HACKING" file for some advice'
+echo 'from my masters as to how to build the system.'
+echo ''
+
+# Wait for the user to respond.
+echo -n 'Press ENTER when you are ready to continue or Ctrl-C to quit ... '
+read LINE
+echo ''
+
+# Are we in the right directory to start?
+if test -f "include/il_engine.h" ; then
+	:
+else
+	echo 'Whoops!  You need to be in the top-level "pnet" directory!'
+	echo 'Please cd to that directory and run "./madcow" again.'
+	echo ''
+	exit 0
+fi
+
+# Does the user want to save the previous log file?
+LOG_FILE="madcow.log"
+if test -f "$LOG_FILE" ; then
+	echo 'You already have a previous "madcow.log" file.  Do you want'
+	echo -n 'me to save it as "madcow.bak" before I start? [y] '
+	if yesno ; then
+		mv "$LOG_FILE" "madcow.bak"
+	fi
+	echo ''
+fi
+
+# Dump some information about the build environment to "madcow.log".
+DATEVAL=`date`
+echo '*** Diagnostics started at '"$DATEVAL"' ***' >"$LOG_FILE"
+echo '*** System: '`uname -a`' ***' >>"$LOG_FILE"
+echo '*** User: '"$USER"' ***' >>"$LOG_FILE"
+echo '*** Tool version information ***' >>"$LOG_FILE"
+runversion autoconf --version
+runversion automake --version
+runversion gcc -v
+runversion make -v
+runversion gmake -v
+runversion bison --version
+runversion flex --version
+echo '*** End of tool version information ***' >>"$LOG_FILE"
+
+# Did the user remember to run auto_gen.sh on the CVS tree?
+RAN_AUTOGEN=no
+if test -f "include/il_config.h.in" ; then
+	if test -f "configure" ; then
+		if test -f "ilasm/Makefile.in" ; then
+			if test -f "aclocal.m4" ; then
+				RAN_AUTOGEN=yes
+			fi
+		fi
+	fi
+fi
+if test "x$RAN_AUTOGEN" = "xno" ; then
+	echo '*** Did not run auto_gen.sh ***' >>"$LOG_FILE"
+	echo 'It looks like you forgot to run "./auto_gen.sh" after checking'
+	echo 'out the sources from the CVS server.  Do you want me to run'
+	echo -n 'the "./auto_gen.sh" script for you now? [y] '
+	if yesno ; then
+		run ./auto_gen.sh
+		echo ''
+		RAN_AUTOGEN=no
+		if test -f "include/il_config.h.in" ; then
+			if test -f "configure" ; then
+				if test -f "ilasm/Makefile.in" ; then
+					if test -f "aclocal.m4" ; then
+						RAN_AUTOGEN=yes
+					fi
+				fi
+			fi
+		fi
+		if test "x$RAN_AUTOGEN" = "xno" ; then
+			echo ''
+			echo 'Hmmm ... there seems to still be something wrong with your'
+			echo 'system.  Maybe you do not have autoconf or automake installed?'
+			echo 'I cannot go any further at this time.  Bye!'
+			echo ''
+			abort '*** Died trying to run auto_gen.sh ***'
+		fi
+	else
+		echo ''
+		echo 'OK, that is probably the problem.  Run that script and'
+		echo 'then retry your build.  Bye!'
+		echo ''
+		abort '*** The user chose not to run auto_gen.sh ***'
+	fi
+fi
+
+# Figure out whether we should be using make or gmake.
+MAKEVERSION=`make --version 2>&1`
+case "$MAKEVERSION" in
+	*GNU*) MAKE=make ;;
+	*)	MAKEVERSION=`gmake --version 2>&1`
+		case "$MAKEVERSION" in
+			*GNU*) MAKE=gmake
+				   log '*** Using gmake instead of make ***'
+				   echo 'Your "make" does not appear to be GNU compatible, but I did find "gmake"'
+				   echo 'on your system, so I am going to use that instead.'
+				   echo ''
+				   echo -n 'Press ENTER when you are ready to continue ... '
+				   read LINE
+				   echo '' ;;
+			*)	   echo 'I could not find either "make" or "gmake" on your system, so I cannot'
+				   echo 'go any further, sorry.  Bye!'
+				   echo ''
+				   abort '*** Could not find make or gmake ***' ;;
+		esac
+	;;
+esac
+
+# Try to get the system back to a pristine state if they've already
+# tried to do configures and builds before.
+PRISTINE=yes
+if test -f config.status ; then
+	PRISTINE=no
+fi
+if test -f ilasm/Makefile ; then
+	PRISTINE=no
+fi
+if test -f include/il_config.h ; then
+	PRISTINE=no
+fi
+if test "x$PRISTINE" = "xno" ; then
+	echo 'It looks like you tried to configure and build the system before.'
+	echo 'I need to start with a pristine, pre-configure system to properly'
+	echo 'diagnose what is wrong.  Do you want me to attempt to make the'
+	echo -n 'system pristine? [y] '
+	if yesno ; then
+		log '*** Returning the system to a pristine state ***'
+		echo ''
+		echo -n 'Returning the system to a pristine state.  Please wait ...'
+		make distclean >/dev/null 2>&1
+		rm -f config.status
+		rm -f config.log
+		echo ''
+		echo ''
+	else
+		echo ''
+		echo 'OK, you can re-run this script later in a clean CVS checkout'
+		echo 'or a fresh downloaded version of the source if you wish.  Bye!'
+		echo ''
+		abort '*** The user did not want to make the system pristine ***'
+	fi
+fi
+
+# Run "./configure".
+echo 'I am now ready to run the "./configure" script to set up the'
+echo 'source tree for your system.  If you think that you may need'
+echo 'additional options for "./configure", then enter them now or'
+echo -n 'just press ENTER: '
+read CONFIGURE_OPTIONS
+echo ''
+run ./configure $CONFIGURE_OPTIONS
+cow
+echo -n 'How did that go?  Does everything look OK? [y] '
+if yesno ; then
+	echo ''
+else
+	echo ''
+	echo 'Drat!  Well, send my masters the "madcow.log" file and they'
+	echo 'will see if they can help you.  See the "HACKING" file for'
+	echo 'information on how to contact them.'
+	echo ''
+	abort '*** The user thinks that the configure output is wrong ***'
+fi
+
+# Now build the system.
+echo 'I am now ready to try to run "'"$MAKE"'" to build the source.'
+echo -n 'Press ENTER when you are ready to continue ... '
+read LINE
+echo ''
+run $MAKE -k
+
+# Finalize the build log.
+cow
+echo -n 'How did that go?  Does everything look OK? [y] '
+if yesno ; then
+	echo ''
+	echo 'Fantastic!  Looks like you are in business!  The final diagnostic'
+	echo 'log is in "madcow.log" if you are interested.  Bye!'
+	echo ''
+	abort '*** The user thinks that the make succeeded ***'
+else
+	echo ''
+	echo 'Drat!  Well, send my masters the "madcow.log" file and they'
+	echo 'will see if they can help you.  See the "HACKING" file for'
+	echo 'information on how to contact them.'
+	echo ''
+	abort '*** The user thinks that the make output is wrong ***'
+fi
+exit 0

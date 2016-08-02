@@ -1,0 +1,1487 @@
+pnetlib 0.8.0 (3 March 2007)
+
+	System.Windows.Forms and System.Drawing:
+
+	* Fix bug in timer when time was changed (Heiko Weiss).
+	* Fix null reference exceptions in TreeNode (Heiko Weiss).
+	* Fix Font height calculation (Heiko Weiss).
+	* Draw TabPage correctly when it is displayed first time (Heiko Weiss).
+	* Added functionality to draw text in graphics path (Heiko Weiss).
+	* Let Pen.DashStyle to be DashStyle.Custom and use Pen.DashPattern as
+	  dasharray (Heiko Weiss).
+	* Environment variable names in started process are now upper case
+	  (Radek Polak).
+	* Minor re-work of build-debian-packages (Russell Stuart).
+	* Fixed X-crash if dash pattern has a zero length (Heiko Weiss).
+	* Added filling arc, drawing arc path object and more (Heiko Weiss).
+	* Added a really cool sample of drawing path. You can find it in FormsTest
+	  under tab page "Path Tiger" (Heiko Weiss).
+	* Fixed changing selected text,	setting caret position and notify text
+	  changes in TextBox (Heiko Weiss).
+	* Fixed not processing mouse events if control is not enabled
+	  (Heiko Weiss).
+	* Fixed memory leak in Xsharp widgets (Heiko Weiss).
+	* Fixed closing dialog stopping Application.InnerMessageLoop if Form was
+	  shown with ShowDialog (Heiko Weiss).
+	* Handle destroyed widgets correctly (Heiko Weiss).
+	* Use OnHandleCreated instead of event in ScrollableControl (Heiko Weiss).
+	* Control disposing (Heiko Weiss).
+	* Always draw disabled textbox with gray, if backcolor not gray
+	  (Peter Flaig).
+	* Fixed bug in calculating Color.FromHSB (Peter Flaig).
+	* Fixed control removing (Heiko Weiss).
+	* Changed handling of setting control's parent to null or reparenting
+	  control (Heiko Weiss).
+	* Handle widnows creating thread safe (Heiko Weiss).
+	* Fixed control's DockStyle property (Heiko Weiss).
+	* Fixed broken MDI forms (Heiko Weiss).
+	* Fixed drawing plus and minus buttons in TreeView (Heiko Weiss).
+	* Fixed layouting issues when control is visible, but parent is not
+	  (Heiko Weiss).
+	* Fixed memory leaks by keeping week references to toolkit objects
+	  (Heiko Weiss).
+	* Fixed deadlock when using Control.Invoke() (Heiko Weiss).
+	* Fixed IndexOutOfRange exception in TabControl drawing (Radek Polak).
+	* Fixed ColorConverter.ConvertFrom() (Heiko Weiss).
+	* Fixed image drawing with graphics transformations by applying only unit
+	  conversion, instead of full device transformation, to source coordinates
+	  (Richard Baumann).
+	* Implement DrawString for scale transformation (Heiko Weiss).
+	* Implement finalizer for Xsharp Graphics object (Deryk Robosson).
+	* Fixed autoscrolling in ScrollableControl (Heiko Weiss).
+	* Various perfomance improvments (Heiko Weiss, Deryk Robosson).
+	* Implement TopIndex for ListBox and allow -1 as SelectedIndex
+	  (David Logan).
+	* Implement drawing of disabled radio button (David Logan).
+	* Cursor fixes (Heiko Weiss).
+	* Fixed bug with main menu not displaying until form is resized
+	  (Heiko Weiss).
+	* Properly call Dispose() in DataGridTableStyle (Klaus Treichel,
+	  Kirill Kononenko).
+	* Implement rotation of arcs and ellipses by drawing and filling them with
+	  graphics path (Heiko Weiss).
+	* Set the correct calling convention in all Win32 method pinvokes. Enable
+	  name mangling where possible (Klaus Treichel).
+	* Fixed problems with Expose and destroyed handle (Heiko Weiss).
+	* Some of framework 2.0 classes (Klaus Treichel).
+	* CheckedListBox implementation (Radek Polak).
+	* Implement keys navigation, fix selection and painting in ListBox
+	  (Heiko Weiss).
+	* Fix problem with inserting root tree node at the beginning
+	  (Deryk Robosson).
+
+	XML:
+
+	* Implement more iterators and namespaces in XPath (Gopal V).
+	* Implement most of XmlNodeReader functionality, except entity support
+	  (Gopal V).
+	* Fixed IsEmpty property on elements in XmlDocument (Gopal V).
+	* Fixed attribute count in XmlNodeReader (Gopal V).
+	* Enable namespaces when reading entire documents via the fragment codepath
+	  (Gopal V).
+	* Implement node order comparisons and add duplicate checks for namespaces
+	  (Gopal V).
+	* Implement union operator in XPathIterators (Gopal V).
+	* Fix InnerXml to avoid skipping over elements (Gopal V).
+	* Use correct encoding when accessing XmlDocument.OuterXml (Heiko Weiss).
+	* Allways write the namespace prefix in XmlTextWriter (Heiko Weiss).
+	* Reset current node when end of document is reached. Without this Depth
+	  property was 1 even when whole document was read (Radek Polak).
+	* Fix for InsertBefore first node (Heiko Weiss).
+	* Fix xml serializer and code dom compiler errors (Heiko Weiss).
+	* Fix problem with reading character references in attributes
+	  (Radek Polak).
+
+	Runtime:
+
+	* Fixed exception in AddMonths, if the new month has less days then the old
+	  month (Heiko Weiss).
+	* Call IComparer.Compare with (elem, value) so that the collection element
+	  is always the first argument (Gopal V, Peter Fristedt).
+	* Bluetooth serial port support (Gopal V).
+	* Fixed memory leaks in System.Collections (Heiko Weiss).
+	* Fixed bugs with formatting floats (Heiko Weiss).
+	* Fixed memory leak in MulticastDelegate (Heiko Weiss).
+	* Framework 2.0 compatibility classes for compiler services
+	  (Klaus Treichel).
+	* Fixes in number formatting (Heiko Weiss).
+	* Framework 2.0 diagnostics classes (Klaus Treichel).
+	* Fixed and optimized AddRange and constructor for ArrayList (Heiko Weiss).
+	* Fixed param checking in CryptoAPITransform, return null instead of
+	  throwing exception when crypto algorithm does not exist (Radek Polak).
+	* IndexOf, LastIndexOf & Sort() not checking bounds properly
+	  (Russell Stuart).
+	* Enable Raw, Rdm, Seqpacket socket type (Heiko Weiss).
+	* Fix writing in a read/write filestream after some data was read and the
+	  fileposition was changed (Klaus Treichel).
+	* Pass errno to SocketException class (Klaus Treichel).
+	* Framework 2.0 System.Net classes (Klaus Treichel).
+
+	DotGNU.Terminal:
+
+	* Use correct exception arguments (Deryk Robosson).
+
+	DotGNU.SLL:
+
+	* Properly dispose of the stream (Deryk Robosson).
+	* Use StringBuilder for concat operations inside a loop (Deryk Robosson).
+
+0.7.4 (15 January 2006)
+
+	System.Windows.Forms and System.Drawing: 
+
+	* Misplaced classes in Forms namespaces (Gopal V).
+	* Icon naming issues (Deryk Robosson).
+	* Parse and load binary RegionData file (Marco Bosatta).
+	* Bug in order is IsVisible changes (Marc Haisenko).
+	* Select a control by default on main forms and mouse click (Marc Haisenko).
+	* Fix ShowInTaskbar flag for Xsharp (Marc Haisenko).
+	* Don't allow control width/height less than zero (Kirill Kononenko).
+	* Fix bezier fills in Graphics.FillPath (Heiko Weiss).
+	* Gnome libraries that need .so mappings (Kirill Kononenko).
+	* Cache ControlCollection instances (Gopal V).
+	* Add ScrollableControl.OnVisibleChanged (Deryk Robosson).
+	* Fix out of tree builds (Gopal V).
+	* Form reparenting (Heiko Weiss).
+	* Use UTF8 for Xft font rendering, not ANSI (Marc Haisenko).
+	* Correct top-level window event handling (Peter Flaig).
+	* Async invoke fixes (Peter Flaig, Heiko Weiss).
+	* Send mouse events to parent if control is disabled (Peter Flaig).
+	* Fix LineAlignment (Peter Flaig).
+	* DataGrid (Boris Manojlovic, Deryk Robosson).
+	* Add image drawing support to Label (Peter Flaig).
+	* Glyphs on a scrollbar resize proportionally to the space left for
+	  the increment and decrement buttons (Kirill Kononenko).
+	* Fix clipping of text drawing (Heiko Weiss).
+	* Handle font drawing properly if no clip region set (Klaus Treichel).
+	* Flicker-free double buffering (Thong Nguyen).
+	* Make text drawing in various controls more Windows-like (Peter Flaig).
+	* Prevent duplicate calls to OnControlAdded (Heiko Weiss).
+	* Don't include non-visible controls in layouting (Peter Flaig).
+	* Implement GetFocusedChild (Deryk Robosson).
+	* Screen.GetBounds (Deryk Robosson).
+	* ScrollableControl.ScrollControlIntoView (Deryk Robosson).
+	* ScrollableControl.OnMouseWheel (Deryk Robosson, Heiko Weiss).
+	* TabControl child remove and set operators (Deryk Robosson).
+	* ToolBarButton.ToString (Deryk Robosson).
+	* TreeView.FullRowSelect (Deryk Robosson).
+	* Prevent multiple creation of toolkit window object (Heiko Weiss).
+	* Increase control layout performance (Heiko Weiss).
+	* Increase TextBox performance by checking previous values (Heiko Weiss).
+	* Fixed layout with anchors (Peter Flaig).
+	* Performance improvements in TrackBar (Deryk Robosson).
+	* UpDownBase - add missing TextAlign property (Deryk Robosson).
+	* Fix image clipping in Xsharp (Peter Flaig).
+	* Raise expand/collapse events properly in TreeView/TreeNode (Radek Polak).
+	* Enhance RegionData performance (Heiko Weiss).
+	* Crash bug fix in FileDialog (Klaus Treichel).
+	* Only map toolkit to window if non-zero size (Peter Flaig).
+	* Improve click events in TreeView (Radek Polak).
+	* Fix click event handling when mouse leaves window (Peter Flaig).
+	* Button.OnClick before MouseUp for compat (Peter Flaig).
+	* Forward Xsharp exceptions to OnThreadException (Heiko Weiss).
+	* Update mouse position on mouse down, for touch screens (Heiko Weiss).
+	* TabPage fixes (Heiko Weiss).
+	* Memory leak in Xsharp (Heiko Weiss).
+	* ToolkitGraphicsImageBase - fire an OnChanged whenever a line draw
+	  occurs, so that the native image can be regenerated (Gopal V).
+	* Support semi-transparent forms in Xsharp (Heiko Weiss).
+
+	JScript:
+
+	* Changes to JFunction.Eval for functional programming (Gopal V).
+
+	XML:
+
+	* Advance reader in ReadString if element is empty (Radek Polak).
+	* Declare correct XSI namespace in scheme code (Deryk Robosson).
+	* Deserialization of objects containing lists (Deryk Robosson).
+	* Fixed loading of XML from a string (Peter Flaig).
+	* Add new 2.0 classes (Klaus Treichel).
+	* Various small fixes (Peter Flaig).
+
+	Tests: 
+
+	* Tests for StatusBar (Deryk Robosson).
+	* Test for empty element read in XML (Radek Polak).
+
+	Other: 
+
+	* Throw the right exceptions in System.Xml.Nametable (Klaus Treichel).
+	* Sorting of return values from TrimMembers (Gopal V).
+	* Integrate Mono's latest regex code (Rainer Größlinger).
+	* Handle nested types in Type.GetMembers (Gopal V).
+	* Read correct number of bytes in BinaryRead.ReadBytes even if
+	  EOF is seen (Peter Flaig).
+	* Handle empty strings properly in NumberParser (Peter Flaig).
+	* Make SortedList enumerators call Reset properly (Heiko Weiss).
+	* Fix non AutoReset timers (Heiko Weiss).
+	* Create correct SocketException from errno (Heiko Weiss).
+	* Bugs in logical and/or within CodeDom (Deryk Robosson).
+	* Change versions to match MS .NET Framework 2.0.
+	* Create invariant CultureInfo correctly (Heiko Weiss).
+	* Fix crash in String.LastIndexOf for empty strings (Heiko Weiss).
+	* Set Hashtable capacity at various points for speed ups (Heiko Weiss).
+	* Remove unnecessary properly calls (Heiko Weiss).
+	* Use current working dir for process starts (Radek Polak).
+	* Cache number formatters (Heiko Weiss).
+	* Speedups in use of BitArray class (Heiko Weiss).
+	* Rounding fixes in Convert for integer types (Heiko Weiss).
+	* Bug fixes in UriBuilder (Carl-Adam Brengesjo).
+	* Deal with system clock changes in System.Timer (Heiko Weiss).
+
+0.7.2 (17 August 2005)
+
+	System.Windows.Forms and System.Drawing: 
+
+	* API compatibility fixes to NotifyIcon (Deryk Robosson).
+	* Improve the look of text and scrollbars under Win32 (Kirill Kononenko).
+	* Wrong toolkit used in font code (Deryk Robosson).
+	* ColorTranslator.ToHtml and FromHtml (Robert Lascelle).
+	* Fix the icon loading in SystemIcons (Deryk Robosson).
+	* Non-opaque background colors (Marc Haisenko).
+	* Optimise Frame.Scale for scaling to the same size (Marc Haisenko).
+	* 32argb support in ShrinkBmp (Marc Haisenko).
+	* Theme support for DrawSizeGrip (Deryk Robosson).
+	* Enable the SetColorMatrix methods (Deryk Robosson).
+
+	Basic: 
+
+	* Implement missing functions in Strings class (Robert Lascelle).
+
+	Tests: 
+
+	* Test cases for attributes (Klaus Treichel).
+
+	Other: 
+
+	* Add newl's graphic to the dining developers example (Deryk Robosson).
+	* Install bug on MingGW (Klaus Treichel).
+	* Fix erroneous TODO markers (Deryk Robosson).
+	* Fixes to Hashtable (Russell Stuart).
+
+0.7.0 (11 June 2005)
+
+	System.Windows.Forms and System.Drawing: 
+
+	* Fix scrollbar layouts for textbox (Marc Haisenko).
+	* Wrapping for Graphics.DrawString (Marc Haisenko).
+	* Texbox background and caret drawing (Heiko Weiss).
+	* Store layout info of children in parent (Marc Haisenko).
+	* Reset view when resizing textbox  (Marc Haisenko).
+	* TreeView and TreeNode bug fixes (Deryk Robosson).
+	* Remove tabs in label text (Deryk Robosson).
+	* Redo Anchor layouting by using bounding box border sizes (Marc Haisenko).
+	* Stub out toolbox classes (Deryk Robosson).
+	* Compatibility fixes for scroll wheel scrolling (Marc Haisenko).
+	* Focus handling is now opt-out for output only control (Deryk Robosson).
+	* LostFocus event for ComboBox (Erich Kitzmuller).
+	* Fix exceptions in DrawLine for Images (Marc Haisenko).
+	* Use CreateControlInner instead of CreateHandle for BeginInvoke 
+	  and Invalidate (Marc Haisenko).
+	* Remove redundant check in OnParentVisibleChanged (Marc Haisenko).
+	* Avoid double call of LostFocus/GotFocus (Deryk Robosson).
+	* Make disabled text more legible (Erich Kitzmuller).
+	* Fix infinite recursion for SetBoundsCore (Heiko Weiss).
+
+	Xsharp: 
+
+	* Fix timer bug when RTC time is reset externally by user or 
+	  NTP (Marc Haisenko).
+	* Double buffering fixes for transparent bg color (Marc Haisenko).
+	* Scroll wheel button events for scrolling (Marc Haisenko).
+	* Extended window manager hints (Deryk Robosson).
+	* Add TopMost to window manager hints (Marc Haisenko).
+	* Use xft-config to lookup Xft paths (Gopal V).
+
+	Basic: 
+
+	* Fix allocations in StringBuilder and improve performance for 
+	  large strings (Klaus Treichel).
+	* StringBuilder speedups using internal calls (Klaus Treichel).
+	* Fixes for Hashtable removals (Heiko Weiss).
+	* Fix TrimStart and TrimEnd on String to work without args (Marc Haisenko).
+	* Compatibility fixes to ApplicationId (Klaus Treichel).
+	* Add some missing exceptions and context classes (Klaus Treichel).
+
+	Xml: 
+
+	* XPath fixes to match behavior (Gopal V).
+	* Fix bug in Skip() (Klaus Treichel).
+	* Return null instead of throwing exception for invalid index 
+	  (Deryk Robosson).
+	* Fix RemoveChild in NodeList to remove node only if it is a 
+	  child (Marc Haisenko).
+
+	Networking & IO: 
+
+	* Improve Buffered Stream performance (Andre Seidelt).
+	* Reset socket state on error (Richard Baumann).
+	* Enable Broadcast option (Doru Budai).
+	* Stub out configuration handlers for HTTP (Gopal V).
+
+	Tests: 
+
+	* New unit tests for Hashtable (Heiko Weiss).
+	* Tests for version and application id (Klaus Treichel).
+	* Update string replace tests (Klaus Treichel).
+
+	Other: 
+
+	* Fixes for mscompact profile builds (Rhys Weatherley).
+	* Add CONFIG_XPATH and CONFIG_XSL profile defines (Gopal V).
+	* Profiling support via DotGNU.Misc namespace (Marc Haisenko).
+	* throw exception when process does not start (Herman Weiss).
+	* Reduce new object creation and speedup simple array 
+	  deserialization (Andre Seidelt).
+	* NumberFormatInfo and NumberParser fixes (Heiko Weiss).
+	* Fix xft checks in configure (Richard Baumann).
+	* Updated build-debian-packages.sh (Russel Stuart).
+
+0.6.12 (16 January 2005)
+
+	System.Windows.Forms & System.Drawing:
+
+	* Raise ListBox.SelectedValueChanged before SelectedIndexChanged
+	  (Stefan Lang).
+	* Fix default background color for StatusBar (Simon Guindon).
+	* Fix minor bug in ListViewItem.SizeSubItemArray (Marc Haisenko).
+	* Move controls down in stacking order correctly (Klaus Treichel).
+	* Transparent background colors in PictureBox (Klaus Treichel).
+	* Check for Win32 errors in SetWindowLong properly (Thong Nguyen).
+	* Ensure that Form.OnLoad is only generated once (Gopal V).
+	* Implement TrackBar (Deryk Robosson).
+	* Matrix.Clone implementation (Erik Pfeifle).
+	* Work around one-off bug in DrawString (Erich Kitzmuller).
+	* Missing ToString methods in Forms classes (Deryk Robosson).
+	* Missing functions in ListBox (Shylaja Kokoori).
+	* Fix two form size issues (Marc Haisenko).
+	* TextBox bounds checking (Erich Kitzmuller).
+	* Allow TextBox.Text to be set to null without an exception
+	  (Carl-Adam Brengesjo).
+	* Basic implementation of MenuItem.CloneMenu (Carl-Adam Brengesjo).
+	* Stub out RichTextBox (Klaus Treichel).
+	* Stub out PrintDialog (Klaus Treichel).
+	* Stub out NotifyIcon (Deryk Robosson).
+	* Implement System.Drawing.SystemIcons (Deryk Robosson).
+	* Rendering fixes in StatusBar (Simon Guindon).
+	* Fixes to NumericUpDown's labelling of buttons (Deryk Robosson).
+	* Fix Control.ResetText to set the right value (Deryk Robosson).
+	* Fix matrix transformations (Heiko Weiss).
+	* Bezier problems when less than two points (Heiko Weiss).
+	* Signature-compatibility fixes in Control (Gopal V).
+	* Initial selected tab in TabControl is the first one (leppie).
+	* Word-wrapping for hyphenated words (Deryk Robosson).
+	* Fill MainMenu screen real estate properly (Deryk Robosson).
+	* Add missing constructors for Matrix (Marco Bosatta).
+	* Implement the Disposing property for controls (Richard Baumann).
+	* Use Dispose instead of DestroyHandle from Form.Close (Richard Baumann).
+	* Z-order and control parenting issues (Richard Baumann).
+	* Do not attempt to dropdown empty ComboBox'es (Deryk Robosson).
+	* Use Items property instead of field in ComboBox (Deryk Robosson).
+	* Do not allow whitespace clicks for non-existent ComboBox items
+	  (Jacob Alberty).
+	* Fix determinant and inversion operations for Matrix (Marco Bosatta).
+
+	Xsharp:
+
+	* Disable font size rounding if Xft is in use (Marc Haisenko).
+	* Unicode support using Xft (Marc Haisenko).
+	* Support larger font sizes (Marc Haisenko).
+	* Use a dpi of 96 for point size conversions (Marc Haisenko).
+	* Fix PopupWindow.Raise (Gopal V).
+	* Add toolkit support for MoveToAbove and MoveToBelow (Richard Baumann).
+	* Enable XFT by default (Richard Baumann).
+
+	System.Xml:
+
+	* Fix HTTP support for XmlReader (Erich Kitzmuller).
+	* Correct URL resolution for XmlReader (Gopal V).
+	* Basic function handling for XPath (Gopal V).
+	* Implement TODO functions in XmlDocumentNavigator (Gopal V).
+	* Resolve relative filenames properly (Carl-Adam Brengesjo).
+	* Signature-compatibility in resolver classes (Richard Baumann).
+	* Fix a duplicate prefix bug in XmlTextWriter (Richard Baumann).
+
+	Serialization and Remoting:
+
+	* Fix serialization of ISerialable types (Andre Seidelt).
+
+	Networking:
+
+	* Check support for HTTP requests (Erich Kitzmuller).
+	* "file://" URL handling (Gopal V).
+	* Fixes to file URI handling (Stephen Compall).
+
+	Other:
+
+	* Bugs in number parsing (Stephen Compall).
+	* Bugs in StringBuilder (Klaus Treichel).
+	* String index range checks (Klaus Treichel).
+	* Changes to compile with Visual Studio overlay (Neil Cawse).
+	* Case sensitive string comparisons (Klaus Treichel).
+	* Prevent duplicate members in reflection lookups (lxs@dev-fr.com).
+	* Default visibility and binding values in ClrType (Gopal V).
+	* Handle '\0' in number parsing the same as MS (Deryk Robosson).
+	* Compatibility fix in StreamWriter.Close (Deryk Robosson).
+
+0.6.10 (30 October 2004)
+
+	System.Windows.Forms & System.Drawing:
+
+	* Event handling fixes in TreeView (Deryk Robosson).
+	* Signature fixes in MenuItem (Gopal V).
+	* Some support for the alpha component in colors (Richard Baumann).
+	* Web hex color parsing mode in ColorConverter (Gopal V).
+	* Stack overflow in ContainsFocus (Rhys Weatherley).
+	* Implement Bitmap.LockBits (Rhys Weatherley, Ovidu Sabou).
+	* Handling of alpha values in BmpReformatter (Gopal V).
+	* Fix visibility of TabPage constructors (Gopal V).
+	* TextBox's initial ForeColor should be WindowText (Gopal V).
+	* BeginInvoke fixes (Derek Robosson).
+	* IsTopLevel check when switching between MDI and non-MDI (Gopal V).
+	* Adam7 interlace decoding in the png reader (Gopal V).
+	* Mnemonic rendering (Gopal V, Derek Robosson).
+	* TextBox.set_Lines wasn't working (Carl-Adam Brengesjo).
+	* Docking layout (Derek Robosson).
+	* Enable OnControlAdded when parent set (Derek Robosson).
+	* StartLocation on forms (Gopal V).
+	* ListBox.ItemHeight property (Richard Baumann).
+	* Correct result for TextBox.Lines (Gopal V).
+	* Do not calculate window borders if border style is none (Gopal V).
+	* Various missing attributes (Gopal V).
+	* Correct the defaults for StringFormat (Richard Baumann).
+	* Improved text layout algorithm (Richard Baumann).
+	* Control.OnPaintBackground (Richard Baumann).
+	* Defer anchoring information during layout suspension (Richard Baumann).
+	* Fix backwards z-ordering of controls (Richard Baumann).
+	* Correct display of TextBox scroll bars (Heiko Weiss).
+
+	Xsharp:
+
+	* Adjust point sizes to better match Win32 equivalents (Richard Baumann).
+	* Use the X display's actual DPI in calculations (Richard Baumann).
+	* Vertical alignment problems when drawing xft fonts (Richard Baumann).
+	* Don't clear during invalidate flush if widget is destroyed (Rhys W).
+	* Work around broken xft pattern matching rules (Richard Baumann).
+	* Add the "skip pager" hint when appropriate (Deryk Robosson).
+
+	System.Xml:
+
+	* Path navigator implementation for XmlDocument (Gopal V).
+	* XPath implementation (Gopal V).
+	* Navigation issues in Xml (Gopal V).
+
+	Serialization and Remoting:
+
+	* Make sure that the logical call context is non-null (Gopal V).
+	* Improve bulk array serialization for primitive types (Andre Seidelt).
+	* Proper serialization for object arrays (Andre Seidelt).
+
+	Basic:
+
+	JScript:
+
+	* Enumerators for ArrayObject (Carl-Adam Brengesjo).
+	* Associative array support (Carl-Adam Brengesjo).
+	* Hex literal and bitwise operator parsing (Gopal V).
+	* Generate objects in Convert.ToObject() correctly (Gopal V).
+	* Use the right token identifiers in JAssignOp (Gopal V).
+	* Logical-And and Try/Catch expression parsing (Gopal V).
+	* String.charAt, charCodeAt, length (Gopal V).
+	* Various sample programs for JScript (Gopal V).
+	* MathObject, LenientMathObject, NumberObject (Carl-Adam Brengesjo).
+	* GlobalObject.GetObject (Carl-Adam Brengesjo).
+	* Parsing of integer values to long, not double (Carl-Adam Brengesjo).
+	* Signature-compatibility issues (Carl-Adam Brengesjo).
+
+	Networking:
+
+	* Configuration settings for System.Web (Gopal V).
+	* Use different lock objects for read and write in NetworkStream (Gopal V).
+
+	Threading:
+
+	* Don't run timer tests if threading is disabled (Russell Stuart).
+	* Changes to match new internalcall engine interface (Thong Nguyen).
+
+	Culture Handling:
+
+	.NET 2.0 Compatibility:
+
+	* Add ACL-related classes to System.Security.AccessControl (Rhys W).
+	* New WinForms classes for 2.0, particularly VisualStyles (Klaus Treichel).
+	* System.Security.Cryptography.X509Certificates (Klaus Treichel).
+	* System.Boolean.TryParse (Klaus Treichel).
+
+	Other:
+
+	* Fixed to UnmanagedMarshal (Marcus Urban).
+	* Implement CustomAttributeBuilder (Marcus Urban).
+	* Use lowercase keys in StringDictionary (Marcus Urban).
+	* DateTime formatting problems (David Logan).
+	* Fixes to path handling in System.IO (Thong Nguyen).
+	* Recursive loop in Type.GetTypeCode for enums (Carl-Adam Brengesjo).
+	* Fixes in System.Diagostics.Trace (Carl-Adam Brengesjo).
+	* Clean up debian packaging rules (Russell Stuart).
+	* Fix enumerator reset for SortedList (Carl-Adam Brengesjo).
+	* Hashtable.Remove fixes (Gopal V).
+	* System.CodeDom fixes (Gopal V).
+	* Fake some more of the AppDomain functionality (Gopal V).
+	* Overflow handling in NumberParser (Klaus Treichel).
+	* Fix System.Convert.FromBase64String (Gopal V).
+	* Fake external module creations in S.R.Emit (Gopal V).
+	* Fake version information for assemblies in S.R.Emit (Gopal V).
+	* Fixes for out of tree builds (Miroslaw Dobrzanski-Neumann).
+	* Fixes to the stream classes in System.IO (Klaus Treichel).
+	* Profile and ml-pnet fixes (Klaus Treichel).
+	* Missing functionality in System.IO.Ports (Gopal V, Adam Gibson).
+	* Throw correct exception for Decimal division by zero (Klaus Treichel).
+	* ECMA profile fixes (Gopal V).
+	* Update SharpZipLib to version 0.8.1 (Rhys Weatherley).
+
+0.6.8 (8 August 2004)
+
+	System.Windows.Forms & System.Drawing:
+
+	* Missing attributes and profile fixes (Klaus Treichel).
+	* BeginInvoke for WinForms (David Logan).
+	* Hotkey prefixes in DrawString (Thomas Fritzsche, Gopal V).
+	* ErrorProvider, HelpProvider (Gopal V).
+	* Image list deserialization (Gopal V).
+	* Bitmap cloning between different pixel formats (Gopal V).
+	* Scroll bar flickering in TextBox (Gopal V).
+	* Fixes to DomainUpDown (Klaus Treichel).
+	* ContextMenu and minimize/maximize fixes (Neil Cawse).
+	* Export the theme classes for external theme assemblies (Simon Guindon).
+	* IsTopLevel is not supposed to be true for MDI children (Gopal V).
+	* Set ActiveMdiChild properly (Gopal V).
+	* Data binding classes (Adam Ballai).
+	* New back end for TextBox (Richard Baumann).
+	* Stub Form.CenterToScreen (Gopal V).
+	* Image conversion and sizing (Neil Cawse).
+	* Draw tabs before tab pages (Neil Cawse).
+	* Transparency mask calculations for 32-bit images (Gopal V).
+	* Implement the properies in ToolTip (Deryk Robosson).
+	* MouseHover events (Deryk Robosson).
+	* Fix TreeView event handlers (Gopal V).
+	* Improvements to string drawing and measuring (Richard Baumann).
+	* Fixes to ImageList container constructor (Richard Baumann).
+
+	Xsharp:
+
+	* Now safe to acquire locks in finalizers (Thong Nguyen).
+	* GetHdc/ReleaseHdc for Xsharp (Thong Nguyen, Richard Baumann).
+	* Allow external access to X display and drawable (Simon Guindon).
+	* Adjustments to how fonts are created (Richard Baumann).
+	* Borderless windows (Richard Baumann, Deryk Robosson).
+	* Set the proper mask for window reconfiguration (Deryk Robosson).
+	* Width calculation for xft fonts (Richard Baumann).
+
+	Win32:
+
+	* System color resolution for System.Drawing (Maciek Plewa).
+	* Optimize SwapRGB (Neil Cawse).
+	* Theme engine for WinXP (Maciek Plewa).
+
+	System.Xml:
+
+	* BinHex support (Klaus Treichel).
+	* IsEmpty behaviour for non-empty elements (Richard Baumann).
+	* Property setter for InnerXml (Richard Baumann).
+	* GetEntity functionality (Deryk Robosson).
+	* Temporarily import Mono's XML serialization (Richard Baumann).
+	* Prefix and namespace handling in XML writers (Richard Baumann).
+	* Partial implementation of node importing (Gopal V).
+
+	Serialization and Remoting:
+
+	* Uri property in IMethodMessage and its derivatives (Gopal V).
+
+	Basic:
+
+	* Make optional an default parameters working correctly (Rhys Weatherley).
+	* Interaction, Conversion, ErrObject, Strings, Utils (Rhys Weatherley).
+	* Financial, DateAndTime, File, FileSystem (Rhys Weatherley).
+	* ECMA-compliant parsing of hex/octal integers (Rhys Weatherley).
+	* Various signature-compatibility fixes (Rhys Weatherley).
+
+	Networking:
+
+	* Dns fixes (Gopal V).
+	* Uncomment ServicePoint property (Klaus Treichel).
+
+	Threading:
+
+	* Fix default timeout for "TryEnter" (Thong Nguyen).
+	* Bugs in timer unit tests (Russell Stuart).
+	* Minimize the number of completion threads (David Logan).
+	* Mutex tests (Thong Nguyen).
+
+	Culture Handling:
+
+	* Cloning of DateTimeFormat/NumberFormat (Klaus Treichel).
+	* Use CurrentUICulture in resource managers (Richard Baumann).
+
+	.NET 2.0 Compatibility:
+
+	* Update profiles to 2.0 beta compatibility (Rhys Weatherley).
+	* System.ComponentModel (Rhys Weatherley).
+	* Add the "System.Deployment" assembly (Rhys Weatherley).
+	* System.IO.Compression (Rhys Weatherley).
+	* Updates to the extended console implementation (Rhys Weatherley).
+	* System.Runtime.CompilerServices (Rhys Weatherley).
+	* System.Runtime.ConstrainedExecution (Rhys Weatherley).
+	* System.Runtime.Reliability (Rhys Weatherley).
+	* System.Runtime.InteropServices (Rhys Weatherley).
+	* System.Reflection (Rhys Weatherley).
+	* System.Security.AccessControl (Rhys Weatherley).
+	* Microsoft.Win32.* namespaces (Rhys Weatherley).
+	* Implementation of the "sysglobl.dll" assembly (Rhys Weatherley).
+	* New Visual C++ marker classes (Rhys Weatherley).
+	* User-defined cultures and regions (Rhys Weatherley).
+
+	Other:
+
+	* Fake AppDomain creation for the time being (Gopal V).
+	* Fixes to System.Collections classes (Gopal V).
+	* Update System.Text.RegularExpressions from Mono (Klaus Treichel).
+	* Report dll name in "DllNotFoundException" messages (Thong Nguyen).
+	* Fix String.ToCharArray (Klaus Treichel).
+	* Give an error in the DCOP sample if KDE is not running (Gopal V).
+	* DateTime formatting problems (Heiko Weiss).
+	* Allow directories with trailing slashes to be created (Heiko Weiss).
+	* Allow GetField | GetProperty to be used in reflection (Rhys Weatherley).
+	* Update the HACKING file (Klaus Treichel).
+	* Number parsing (Klaus Treichel, Gopal V).
+	* Csc compile fixes (Chris Ferell, Neil Cawse).
+	* Remove version information from assembly names to get the name
+	  of a resource assembly (David Logan).
+	* Set the correct metadata version from the profiles (Rhys Weatherley).
+	* Small fix to FileSystemWatcher.Path property (Gopal V).
+
+0.6.6 (29 May 2004)
+
+	System.Windows.Forms & System.Drawing:
+
+	* HelpProvider, TabPageCollection (Russell Stuart).
+	* Button.PerformClick should only work when button is enabled and
+	  visible (Jens Kuehner).
+	* Allow multiple texture brushes to use the same image (Gopal V).
+	* Generate image masks from alpha information (Gopal V).
+	* Null reference exception in MessageBox (Gopal V).
+	* UpDown controls (Klaus Treichel).
+	* Ignore KeyPress events in TextBox that are already handled (Gopal V).
+	* Process application KeyPress's before local (Heiko Weiss).
+	* Fixes to MainMenu, SystemIcons, CheckListBox (Gopal V).
+	* Bug in empty TreeView's (leppie).
+	* Performance improvements to MainMenu, Control, ContextMenu (Richard B).
+	* Double-click bug in TextBox (David Logan).
+	* Deserialization of images (Gopal V).
+	* Double buffering of TabControl (Thong Nguyen).
+	* Fixes to ScrollableControl (Gopal V).
+	* ColumnHeader, ListBindingConverter, ImageIndexConverter (Klaus Treichel).
+
+	Xsharp:
+
+	* Properly fall back to DISPLAY when displayName null (Ilyak Kasnacheev).
+	* Improve ICE and DCOP to the point of being useful (Ilyak Kasnacheev).
+	* Recognize transparent "ParentRelative" backgrounds (Rhys Weatherley).
+	* Detect MDI top-level windows properly (David Logan, Gopal V).
+
+	System.Xml:
+
+	* Fix parsing of empty elements (Richard Baumann).
+	* Various fixes for ml-pnet (Klaus Treichel, Gopal V).
+	* Fixes to element list enumeration (Gopal V).
+	* Attribute handling in XmlDocument (Richard Baumann).
+	* Whitespace and namespace handling (Richard Baumann).
+	* Proper name table usage in NameCache (Richard Baumann).
+	* Lots of small fixes and TODO's (Richard Baumann).
+	* Implement XmlSerialization classes (Richard Baumann).
+	* Fixes for compatibility with ml-pnet (Klaus Treichel).
+	* XmlDocument.Save (Andres March).
+	* Change default namespace URL to expected value (Gopal V).
+	* Processing instructions (Richard Baumann).
+
+	Serialization:
+
+	* Binary serialization for decimal, array, string, null (Andre Seidelt).
+	* Implement binary de-serialization (Andre Seidelt).
+	* Fix incompatibilities between systems (Andre Seidelt).
+	* Serialization of keys and array elements (Andre Seidelt).
+	* Handle ISerializable types properly (Andre Seidelt).
+
+	JScript:
+
+	* Array accesses in JScript (Carl-Adam Brengesjo).
+	* Argument passing fixes (Carl-Adam Brengesjo).
+	* Parse problems with ++ and -- (Gopal V).
+	* --help and --version for jsrun command (Carl-Adam Brengesjo).
+	* Use ScriptStream for output where required (Carl-Adam Brengesjo).
+
+	Networking:
+
+	* Sign extension bug in IPv4 addresses (Russell Stuart).
+	* TcpClient fix (Gopal V).
+	* Stub out cookie and certificate handling in HTTP classes (Gopal V).
+	* SSL tunnelling for HTTP proxies (Gopal V).
+	* Fix parsing of IPv6 hex addresses (Gopal V).
+
+	Threading:
+
+	* Internalcall fixes and tests for pnet threading changes (Thong Nguyen).
+	* Rewrote the Threading.Timer class (Russell Stuart).
+	* Asynchonrous delegates (Thong Nguyen).
+	* Minor typo that prevented LocalDataStoreSlot from working (Gopal V).
+
+	Other:
+
+	* Improvements to "csupport" for pnetC (Rhys Weatherley).
+	* Bug in TimeSpan (Gopal V).
+	* Fix stream length and buffering in StreamReader/XmlStreamReader (Gopal V).
+	* Hex number parsing (Russell Stuart).
+	* Fixes to file routines to make them more ECMA compliant (Russell Stuart).
+	* Interfaces should be assignable to System.Object (Russell Stuart).
+	* Fixes to Hashtable for removed entries (Russell Stuart).
+	* Partial names in Assembly.LoadFrom (Gopal V).
+	* CodeCompiler/ShellExecute bug with redirected stderr (Gopal V).
+	* Only use response files in CodeCompile with long cmdlines (Gopal V).
+	* Small patch to Security Element (Carl-Adam Brengesjo).
+	* Change "test -e" to "test -f" for Solaris compat (Sebastien BOCQ).
+	* Patches to generic classes (Richard Baumann).
+	* Test cases for System.Reflection.Emit (Jonas Printzen).
+	* ClrConstructor.InvokeOnEmpty for post-allocation construction (Gopal V).
+	* Bugs in "machine.default" file (Gopal V).
+	* "default1.1" profile to build 1.1 and install as default (Rhys W).
+	* Parse fixes to System.Configuration handlers (Gopal V).
+	* Use non-null evidence in AppDomain.CreateInstance (Gopal V).
+	* Handle "file://" URL's in Assembly.LoadFrom (Gopal V).
+
+0.6.4 (13 March 2004)
+
+	System.Windows.Forms & System.Drawing:
+
+	* Missing "CtrlN" and "CtrlShiftN" shortcut values (Rhys Weatherley).
+	* Implement the "Splitter" control (Rhys Weatherley).
+	* Rewrite the binding classes (Rhys Weatherley).
+	* Bugs in Win32 window handling (Gopal V, Neil Cawse).
+	* Fixes to ComboBox drop-down width (Neil Cawse).
+	* Don't perform layout on minimized windows (Neil Cawse).
+	* Reduce ProgressBar flicker (Neil Cawse).
+	* Fixes to TabControl, TextBox, TreeView, CustomControl (Neil Cawse).
+	* Finish off the Panel control (Neil Cawse).
+	* Add support for Control.OnClick and Control.OnDoubleClick (Neil Cawse).
+	* Fix toolkit control offsets (Neil Cawse).
+	* ImageList fixes (Neil Cawse).
+	* Set scroll bar cursors to a more appropriate value (Rhys Weatherley).
+	* Tweaks to get the SharpDevelop code editor working (Simon Guindon).
+	* Stub out the color and folder browser dialogs (Rhys Weatherley).
+	* Implement the font selection dialog (Rhys Weatherley).
+	* DrawString fixes (Neil Cawse).
+	* Bugs in popups, keyboard handling, and paint efficiency (Neil Cawse).
+	* Lots of layout and interaction fixes (Neil Cawse).
+	* Double buffering framework (Neil Cawse).
+	* Mnenmonic support (Neil Cawse).
+	* Fix DrawIcon, DrawIconUnstretched, DrawImage (Rhys Weatherley).
+	* Speed up 1-to-1 image draws (Rhys Weatherley).
+	* Invalidate/Update improvements (Neil Cawse).
+	* Signature issues in TabPageCollection (Miroslaw Dobrzanski-Neumann).
+	* TabPageCollection should not inherit from ControlCollection (Rhys W).
+	* Add the missing Label.FlatStyle property (Rhys Weatherley).
+
+	Xsharp:
+
+	* Process pending invalidates before an XFlush (Rhys Weatherley).
+	* Use XEventsQueued to check for events before issuing timeouts;
+	  fixes queue starvation when short timeouts are present (Rhys W).
+	* Get the font family list for use in the font dialog (Rhys Weatherley).
+	* Alter the Windows to Xsharp font size conversion code (Rhys Weatherley).
+	* DOUBLE-BUFFER extension support logic (Rhys Weatherley).
+	* Tweak XImage drawing when double buffering is used (Rhys Weatherley).
+
+	Other:
+
+	* New System.Xml parser (Richard Baumann, Adam Ballai).
+	* Blocking bugs in StreamReader classes (Richard Baumann).
+	* Overflow bug in StringBuilder when maximum capacity was set (Rhys W).
+	* Import the Mono System.Text.RegularExpressions code (Rhys Weatherley).
+	* Generate transparency masks in DotGNU.Images correctly (Rhys W).
+	* Infinite loop in MulticastDelegate.GetInvocationList (Richard Baumann).
+	* Enumerator bug in Queue (Rhys Weatherley).
+	* Add the "OpenSystem.Platform" assembly (Rhys Weatherley).
+	* Use separate locks for socket reads and writes (Rhys Weatherley).
+	* New internalcall interface for wait handles (Rhys Weatherley).
+	* New marker classes to support the C ABI changes (Rhys Weatherley).
+	* Auto-discover full names of .so's for debian (Andrew Mitchell, Rhys W).
+	* Clean up pnetlib.spec (Russell Stuart).
+	* XML bugs in "WriteQuotedString" (Richard Baumann).
+
+0.6.2 (3 January 2004)
+
+	System.Windows.Forms & System.Drawing:
+
+	* Many new tests in FormsText (Neil Cawse).
+	* Image drawing (Neil Cawse).
+	* General improvements to the Win32 toolkit (Neil Cawse).
+	* Improve control border drawing (Neil Cawse).
+	* ListBox (Brain Luft).
+	* PictureBox (Simon Guindon, Neil Cawse).
+	* Fix flicking of TabControl (Neil Cawse).
+	* Support for the ResX resource classes (Neil Cawse).
+	* ComboBox (Neil Cawse).
+	* Implement VisibleClipBounds, TransformPoints (Neil Cawse).
+	* String format alignment (Thomas Fritzsche).
+	* Dialog box support in the Form class (Rhys Weatherley).
+	* MessageBox (Rhys Weatherley).
+	* Flesh out some of the file dialogs - not finished yet (Rhys Weatherley).
+	* Layout helper classes for building system dialogs (Rhys Weatherley).
+	* String drawing and measurement fixes (Neil Cawse).
+	* More accurate ellipse and arc drawing (H. Jones).
+	* Key navigation and focus (Neil Cawse).
+	* Add the correct IDispose pattern to toolkit objects (Neil Cawse).
+	* Color fixes to scrollbar drawing (Rhys Weatherley).
+	* Implement texture brushes (Rhys Weatherley, Neil Cawse).
+	* Glyph drawing, to simplify drawing of radio buttons, check marks,
+	  caption buttons, etc (Rhys Weatherley).
+	* Logic errors in the button classes (Rhys Weatherley).
+	* Reduce button flicker (Rhys Weatherley).
+	* DefaultThemePainter.DrawGrid (Neil Cawse).
+	* Fix ControlPaint.Lighten and ControlPaint.Darken (Neil Cawse).
+	* TreeView (Neil Cawse).
+	* Use the correct form of "GetManifestResourceStream" for icons and
+	  bitmaps, to include the namespace (Rhys Weatherley).
+	* Performance improvements (Neil Cawse).
+	* Text alignment improvements for buttons (Rhys Weatherley).
+	* Window manager hints for the Win32 toolkit (Neil Cawse).
+	* Window manager hints for the Xsharp toolkit (Rhys Weatherley).
+	* MDI support (Rhys Weatherley).
+	* Clipboard, DataFormats (Rhys Weatherley).
+	* Curses (Rhys Weatherley).
+	* XOR brushes (Rhys Weatherley).
+	* ScrollableControl (Gopal V).
+	* System.Drawing.Postscript (Richard Baumann).
+	* Get the file dialog to the point of basic usability (Rhys Weatherley).
+	* MonthCalendar (Gopal V).
+	* Data properties in System.Windows.Forms.Application (Rhys Weatherley).
+
+	Xsharp:
+
+	* Application embedding support using XC-APPGROUP.
+	* Add the correct version information to build libXsharpSupport.dll
+	  under Win32.
+	* Speed up event dispatching by using a faster hash algorithm.
+	* Fix some deadlocks in the finalization of pixmaps and widgets.
+	* Call "OnResize" from an idle timer on top-level windows, to prevent
+	  the event queue from becoming overwhelmed by opaque resizing.
+	* Streamline event member accesses to avoid too many property calls.
+	* Optimize for the 16bpp-LSBFirst and 24bpp-MSBFirst image cases.
+	* "Wakeup" signals in Xsharp.
+	* XFontStruct and direct PCF font rendering.
+	* Add explicit PCF fonts to render the default Winforms appearance.
+	* Complain loudly if the non-X version of "libXsharpSupport.so" is found.
+	* Close top-level windows when Alt+F4 is received.
+	* Re-entering the main loop from an event handler, for dialogs.
+	* Window hints for dialogs, modality, min/max sizes, icons, etc.
+	* Conform to freedesktop.org standards where applicable.
+	* Fix clipping of icons that are drawn somewhere other than (0, 0).
+	* MDI support.
+	* Beginnings of ICE/DCOP support.
+	* Support for Invalidate/Update.
+	* Fixed a bug that caused 1bpp images to only display every second pixel.
+
+	DotGNU.Images:
+
+	* Loading odd BMP formats in DotGNU.Images (Neil Cawse).
+	* Rescaling of images in DotGNU.Images (Neil Cawse).
+	* Fixes to icon and BMP image loading code (Neil Cawse).
+	* Calculation of transparency masks (Gopal V).
+	* Image loading of PNG, JPEG, and GIF files.
+	* Fix the icon writer to match the icon reader.
+	* More pixel formats in "GetPixel" (Richard Baumann).
+
+	Other:
+
+	* Add string resources for German and Catalan.
+	* Increment character count properly in "TextReader" (Stephen Compall).
+	* Extended console and serial port routines from .NET Framework 1.2.
+	* A number of small .NET Framework 1.2 classes in various places.
+	* System.Collections.Generic namespace.
+	* Flesh out Uri.IsPrefix (Joe Boese).
+	* Add the DotGNU.Terminal assembly, which provides readline functionality.
+	* Update profiles for 1.2, add a 1.1-only profile.
+	* Build changes for resources and assemblies to take advantage of
+	  new features in csant.
+	* Updates to calendars to match .NET Framework 1.2, including the
+	  Jalaali and UmAlQura calendars.
+	* Make sure that the class constructor is run before a static field
+	  is accessed via reflection.
+	* HTTP authentication, redirects, and proxies (Gopal V).
+	* Fix some bugs in System.Xml (Adam Ballai).
+	* Bug fixes to the routines in TypeDescriptor.
+	* Fix to "MoveNext" when enumerating an XML NodeList.
+	* Environment.ProcessorCount.
+	* Add the recursive System -> System.Xml dependency.
+	* System.Configuration.
+	* Handle DateTime formats like "yyyyMMdd" properly.
+	* Populate SetupInformation for the current AppDomain.
+	* Add the "AssemblyAttributesGoHere" classes, even though they shouldn't
+	  exist, to fake out programs built with Microsoft's assembler.
+	* Configuration for the diagnostics routines.
+	* Fix out of tree builds.
+	* Cryptography classes for .NET Framework 1.2.
+	* Support for symbolic links and lnk files.
+	* Recursive lock-up in I18N when getting the current culture.
+	* Add GNUTLS support to DotGNU.SSL.
+	* Rearrange the "samples" directory to reduce clutter.
+	* System.Design stubs (Adam Ballai).
+	* Array serialization.
+	* Bugs in ResourceReader and ResourceWriter.
+	* Fill in some missing TODO's in remoting.
+
+0.6.0 (15 October 2003)
+
+	System.Windows.Forms:
+
+	* Redirection of events during grabs (Neil Cawse).
+	* Rewrite of client window handling for Win32 (Neil Cawse).
+	* ListBox speed and flicker issues (Brian Luft).
+	* TreeView, TrackBar (Neil Cawse).
+	* Fixes to TextBox, TabControl (Neil Cawse).
+	* New test cases in FormsTest (Neil Cawse).
+	* Modify TextBox.CanUndo to match spec (Adam Ballai).
+	* Stub ToolTip (Adam Ballai).
+	* Curve drawing (Thomas Fritzsche).
+	* Fix DrawArc angle bug (Thomas Fritzsche).
+	* ScrollBar layout fixes (Brian Luft).
+	* System.Drawing.Design namespace (Neil Cawse).
+	* System.Windows.Forms.Design namespace (Neil Cawse).
+	* Various small fixes and stubs in System.Drawing (Neil Cawse).
+	* WinCE compatibility alterations (Neil Cawse).
+	* Flicker fixes for buttons (Neil Cawse).
+	* Various small fixes to Windows.Forms classes (Neil Cawse).
+	* Hook bitmap loading into Xsharp and System.Drawing (Rhys Weatherley).
+	* Some MessageBox infrastructure (Rhys Weatherley).
+	* Add a way to select a non-standard toolkit (Rhys Weatherley).
+
+	Other:
+
+	* Continue serialization and remoting (Rhys Weatherley).
+	* Finish System.ComponentModel (Rhys Weatherley).
+	* Missing functionality in System.Diagnostics (Rhys Weatherley).
+	* System.Uri, System.Net fixes (Rhys Weatherley).
+	* Mark classes with "NonStandardExtra" that should be ignored by
+	  "csdocvalil" during validation (Rhys Weatherley).
+	* HebrewCalendar - ToDateTime should not be public (Rhys Weatherley).
+	* Report the autoconf target name via "Environment.OSVersion" (Rhys).
+	* Remove "-fminimize-parameters" as it isn't needed any more (Rhys).
+	* ISysWrapper assembly to prove debug symbol access (Rhys Weatherley).
+	* System.EnterpriseServices (Rhys Weatherley).
+	* Optimize "ClrType.TrimMembers" (Rhys Weatherley).
+	* Profile-related fixes throughout the tree (Rhys Weatherley).
+	* Fix seeking within a FileStream buffer (Rhys Weatherley).
+	* Finish off the implementation of "AsyncResult" (Rhys Weatherley).
+	* Sort the returns from "Enum.GetValues" and "Enum.GetNames" (Rhys).
+	* Missing functionality in System.Security.Policy (Rhys Weatherley).
+	* Add SharpZipLib to the tree (Rhys Weatherley).
+	* Fix country names in "kok" and "kok-IN" cultures (Rhys Weatherley).
+	* Fixes to compile with csc (Neil Cawse).
+	* Path.GetExtension should return "." in the extension (Rhys Weatherley).
+	* "ResX" classes in System.Resources (Rhys Weatherley).
+	* Add missing string resources and delete obsolete ones (Rhys Weatherley).
+	* HOWTO guide for translating resources (Rhys Weatherley).
+
+0.5.12 (6 September 2003)
+
+	System.Windows.Forms:
+
+	* TextBox (Mohan Embar, Neil Cawse).
+	* Fix delivery of key events from Xsharp (Rhys Weatherley).
+	* StatusBar, ComboBox (Simon Guindon).
+	* Text layout, font sizes (Neil Cawse).
+	* Handle client areas properly (Neil Cawse).
+	* Improvements to the region and clipping code (Neil Cawse).
+	* Label, TabControl, Menu (Neil Cawse).
+	* Toolkit support for mouse captures (Rhys Weatherley, Neil Cawse).
+	* Clipboard, ScrollBar, GroupBox (Cecilio Pardo).
+	* ButtonBase, ControlPaint, ThemePainter (Richard Baumann).
+	* RadioButton (Mario Luca Bernardi, Neil Cawse).
+	* Brush properties for pens (Rhys Weatherley).
+	* Infrastructure for images (Neil Cawse).
+	* Debug code for Xsharp event classes (Rhys Weatherley).
+
+	Other:
+
+	* Lots of simple TODO's throughout the code.
+	* Lots of signature-compatibility improvements.
+	* Examples and bug fixes for System.Reflection.Emit (Richard Baumann).
+	* Bug in "ClrType.TrimMembers" (Gopal V).
+	* Environment.GetFolderPath for Win32 (Yannis Bres).
+	* Continue serialization and remoting support.
+	* Fix culture lookup in Resource Manager.
+	* Remove stubbed tests, because they are confusing.
+	* Recursive directory creation.
+	* Conversion classes in System.ComponentModel.
+	* Stub out XML serialization classes (Richard Baumann).
+	* Update internalcalls for generic types.
+	* System.Configuration.Install and ilinstall.
+	* Bind "I18N-handlers.def" directly to "I18N.dll".
+	* Many new code pages, especially CJK, Mac, and EBCDIC.
+	* Rewrite "Path", "MemoryStream" in "System.IO".
+	* Remove obsolete Platform classes.
+	* Fully-qualified assembly names.
+	* HijriCalendar.
+	* Reading non-string resources.
+	* ResourceWriter.
+	* Serialization and de-serialization for many classes.
+	* Cleanups and missing classes in System.Net.
+	* Pass all string comparisons through the culture classes.
+	* Code page information for I18N TextInfo classes.
+	* Test cases and bug fixes for exception classes in "System".
+	* System.CodeDom.Compiler.
+
+0.5.10 (26 July 2003)
+
+	System.Windows.Forms:
+
+	* Form, TextBoxBase, Menu (Rhys Weatherley).
+	* StatusBar, CheckBox (Simon Guindon).
+	* ProgressBar, Panel, MessageBox (Gopal V).
+	* ImageList, ImageListStreamer, ToolBar, ToolBarButton, ComboBox,
+	  CommonDialog, FileDialog, OpenFileDialog, PictureBox, ScrollBar
+	  (Richard Baumann).
+	* LinkLabel (Ian Fung).
+	* Binding, BindingManagerBase, BindingCollection, CurrencyManager,
+	  ListControl (Cecilio Pardo).
+	* System.Drawing.Win32, TabControl, TabPage, TextBox (Neil Cawse).
+	* Change WndProc from "public" to "protected" (Rhys Weatherley).
+	* Missing "*EventHandler" and "*EventArgs" classes (Rhys Weatherley).
+	* "Darker" and "Lighter" methods in "Control Paint" (Rhys Weatherley).
+	* Modify the event loop so that control always goes back to winforms
+	  after an event is processed (Rhys Weatherley).
+	* Key event dispatching (Rhys Weatherley).
+	* Timers (Rhys Weatherley).
+	* Popup windows in Xsharp and winforms (Rhys Weatherley).
+	* Move theme handling to "System.Windows.Forms.Themes" (Rhys Weatherley).
+	* Layout parents when children change size (Simon Guindon).
+	* Region handling (Neil Cawse).
+
+	Other:
+
+	* Implement "Environment.OSVersion" for better platform detection (Rhys).
+	* Command-line count bug in "Process" (Yannis Bres).
+	* Add "-flatin1-charset" to all build files, to speed things up (Gopal V).
+	* Threading changes to match the engine (Thong Nguyen).
+	* Wide string support in Crt0 (Rhys Weatherley).
+	* Make default console writers synchronized (Thong Nguyen).
+	* "Socket.SupportsIPv6" (Gopal V).
+	* Detect byte encodings in "StreamReader" better (Thong Nguyen).
+	* Bug fixes to "XmlTextReader" (Adam Ballai).
+	* DotGNU.Images support library (Rhys Weatherley).
+	* Re-sync "System.Text.RegularExpressions" with original (Gopal V).
+	* Dashed pens in Xsharp (Rhys Weatherley).
+	* Xft font support in Xsharp (Rhys Weatherley).
+	* Multi-digit format specifiers in "String" (Gopal V).
+	* Beginnings of a Postscript driver for System.Drawing (Rhys Weatherley).
+	* Number formatting fixes (Gopal V).
+	* System.Reflection.Emit (Richard Baumann).
+	* System.CodeDom (Rhys Weatherley).
+	* File-based registry implementation (Rhys Weatherley).
+	* Remaining formatting methods in DateTime (Rhys Weatherley).
+
+0.5.8 (17 June 2003)
+
+	* Add the "Xsharp" library.
+	* Add the "System.Drawing" and "System.Drawing.Xsharp" libraries.
+	* Add the "System.Windows.Forms" library, wrapped around Xsharp.
+	* Allow "DllImportAttribute" to also be used on fields.
+	* Fixes to number formatting (David Corking).
+	* Fixes to "Web*" and "Http*" (Gopal V).
+	* Don't close the underlying stream in classes like BinaryReader,
+	  StreamWriter, etc, unless constructed locally (Gopal V).
+	* Accept '?' and '!' in XML text (Gopal V).
+	* Fake out asynchronous DNS lookups (Gopal V).
+	* Capacity management for "MemoryStream" (Thong Nguyen).
+	* Commit the Visual Basic support library under "Basic".
+	* Match extensions in wildcards correctly (Gopal V).
+	* Signature-compatibility improvements in the "System" assembly.
+	* Rewrite "Uri" to use regex parsing instead (Gopal V).
+	* "System.ComponentModel.Design", "System.IO", "System.Timers",
+	  "System.Web", "System.Win32", and "System.Configuration"
+	  namespaces in "System" assembly.
+	* IPv6 address support (Gopal V, Rhys Weatherley).
+	* IrDA support routines.
+	* New profile options for Serialization, Reflection.Emit, ComInterop,
+	  X509Certificates, Crypto, Permissions, PolicyObjects, Diagnostics,
+	  ComponentModel, ComponentModelDesign, IsolatedStorage, SmallConsole.
+	* SSL implementation, wrapped around "OpenSSL".
+	* Integrate SSL into "System.Net" (Gopal V).
+	* Move the culture and region name tables out of "mscorlib" into "I18N".
+	* Culture handling for date/time and number format information.
+	* Re-write the DateTime formatter and parser to use culture handling.
+	* Guid conversions in "XmlConvert" (Dennis Hayes).
+	* Test cases for "InteropServices" and "CompilerServices".
+	* Fix "Char.GetNumericValue" to return the correct value.
+	* Stub out XML stylesheet code (Gopal V).
+	* Bezier curves (Gopal V).
+	* Control, ButtonBase, Button, Label, and Form widgets.
+	* ProgressBar widget (Gopal V).
+	* Add the MS version numbers and public key values to that apps
+	  compiled against pnetlib will run on MS'es runtime engine without
+	  raising silly policy exceptions.
+
+0.5.6 (3 May 2003)
+
+	* Full signature-compatibility with .NET Framework SDK 1.1.
+	* ECMA-compatibility fixups across the entire code base.
+	* Add "UTF8Encoding.GetBytes" and "UnicodeEncoding.GetBytes".
+	* Era name values and date/time format lists.
+	* Missing classes underneath "System.Security", "System.Threading",
+	  "Microsoft.Win32.Registry", "System.Runtime.InteropServices",
+	  "System.Runtime.Serialization", "System.Diagnostics",
+	  "System.Runtime.Remoting", "System.IO.IsolatedStorage",
+	  "System.Reflection", "System.Globalization",
+	* Continuation of System.Xml implementation (Adam Ballai).
+	* DTD support and partial verification (Adam Ballai).
+	* Re-implement classes in "System.Net.Sockets", "System.Threading",
+	  and "System.IO".
+	* Thread pool implementation, with a single-threaded operation mode.
+	* Asynchronous I/O handling using the thread pool.
+	* Formatting of sbyte values (David Hoke).
+	* Implement type and member filters.
+	* Add HResult values to all exception classes.
+	* Fix "Hashtable.Keys" and "Hashtable.Values", which should return
+	  live collections, not copies.
+	* Error in "StreamReader.ReadChars" - the buffer was not being correctly
+	  moved down when it overflowed.
+	* Change instances of "protected internal" into "internal" because
+	  the former didn't do what we thought it did.
+	* Better regex support under "System.Private".
+	* Serialization support code for all exception classes.
+	* "ArgIterator.GetHashCode" should always hash to the same value,
+	  irrespective of the current position.
+	* Finally implement a working quicksort in "Array" and "ArrayList".
+	* Handle "NaN", "Infinity" and "-Infinity" in the number formatters.
+	* Use "Array.Clear" instead of "Array.Initialize" to clear sensitive
+	  cryptographic values, because "Array.Initialize" doesn't always
+	  give the expected result.
+	* Cut-down resource API for use in ECMA_COMPAT modes.
+	* Mark up the ECMA subsets "Reflection", "RuntimeInfrastructure",
+	  and "ExtendedNumerics" with their own #if symbols.
+	* Update all build profiles.
+	* Don't bind string resources to assemblies if we do not have support
+	  for loading them (i.e. "RuntimeInfrastructure" isn't present).
+	* Implement TODO's in "System.ComponentModel" (Rhys, Gopal V).
+	* Gregorian calendar variants "Japanese", "Korean", "Taiwan", and
+	  "ThaiBuddhist".
+	* Conversion to and from UTC file time values in DateTime.
+
+0.5.4 (29 March 2003)
+
+	* Stub out System.Diagnostics.SymbolStore (Gopal V).
+	* Use "" for the invariant culture name instead of "iv" in some areas.
+	* Null string fix for Console.WriteLine (Marcus Urban).
+	* Null name handling in NameValueCollection (Marcus Urban).
+	* DayOfWeek fixes (Yannis BRES).
+	* Various ECMA-compatibility mode fixes.
+	* Fixes to "Directory" and "Process" (Yannis BRES).
+	* Re-sync regular expression code with Mono (Gopal V).
+	* Type.FindMembers (Gopal V).
+	* Make the inheritance of SocketException variable for ECMA (Gopal V).
+	* Stub out some threading classes (Gopal V).
+	* Continue System.Xml implementation (Adam Ballai).
+	* Directory.CreateDirectory (Aditya P. Bansod).
+	* Extra methods for supporting generic types.
+	* Collection bug fixes.
+	* Parsing comma-separated enumerated values.
+	* "==" and "!=" operators for "Version" (Yannis BRES).
+	* Begin implementing a generic collections class library.
+	* Endian issues in IPAddress test cases (Jonathan Springer).
+	* Performance improvements to StringBuilder, XmlTextReader, I18N.
+	* Implement most of System.Reflection.Emit (Gopal V, Rhys Weatherley).
+	* Fix to NodeList iterator that was skipping the first child.
+	* Byte order mark detection in UnicodeEncoding.
+	* Add UCS-4 handler to System.Xml.
+	* Continue implementing JScript.
+	* DateTime parsing and formatting code (Michael Moore).
+	* Number parsing and formatting code (Jonathan Springer).
+	* Fill out the AppDomain class (Gopal V, Rhys Weatherley).
+
+0.5.2 (8 February 2003)
+
+	* Unit tests for wait events and reset events (Thong Nguyen).
+	* Continue System.Xml implementation (Adam Ballai, Gopal V).
+	* Debug assert routines.
+	* JScript implementation - parsing and evaluation for ECMAScript 3.
+	* Floating-point number formatting/parsing (Jonathan Springer).
+	* Missing bits and pieces in for third party libraries (Gopal V, Rhys).
+	* StreamWriter: default UTF-8 encoding should not have byte order marks.
+	* Two-phase build for System.dll, to support recursive dependency
+	  upon System.Xml.dll.
+	* Change the reallocation policy for System.Collections.ArrayList.
+	* DateTime formatting (Michael Moore).
+	* Handle empty string comparison correctly (Marcus Urban).
+
+0.5.0 (11 January 2003)
+
+	* Move "csunit", "csupport", and "samples" out of pnet into pnetlib.
+	* Make "csunit" more robust when running against the ECMA libraries.
+	* Prevent double-reporting of failures in "csunit".
+	* Update RPM spec files (Gopal V, Stephen Compall).
+	* Test cases and bug fixes for "System.Security.Cryptography".
+	* Remove files from the repository that are created by "auto_gen.sh".
+	* Allow zero-length copies in "Array.Copy".
+	* Number formatting and parsing (Jonathan Springer).
+	* Complete implementation of "System.Environment".
+	* Remove unnecessary preambles from UTF-8 and Unicode streams.
+	* Use "StreamReader" and "StreamWriter" for console streams.
+	* Implement missing functionality in "System.Activator".
+	* Date time formatting (Michael Moore).
+	* Fixes for "NameValueCollection" (Jeff Post).
+	* System.IO (Gopal V, Aditya P. Bansod, Craig Altenburg).
+	* System.Xml (Rhys Weatherley, Adam Ballai, others).
+	* System.ComponentModel (Rhys Weatherley, Gopal V).
+	* Marshal.PtrToStructure (Gopal V).
+	* Wait handles (Thong Nguyen).
+	* Various ECMA-compatibility fixes.
+	* Implement minor compatbility assemblies in "compat".
+	* Return an exit status of 1 when "csunit" fails.
+	* German resource translations (Rainer Groesslinger).
+	* Satellite assembly support for foreign language translations.
+	* Custom marshalling classes.
+	* Array and ArrayList sorting.
+	* Fixes for building with the mingw32 version of pnet.
+	* Integrate Mono's regular expression library (Gopal V).
+	* System.Net.WebRequest, WebResponse (Jason Lee).
+	* Make the I18N system robust against missing handler libraries.
+	* Stub out some Reflection.Emit classes (Gopal V).
+	* Various attributes and minor classes (Gopal V, Ian Fung, others).
+	* Enum formatting and conversion fixes (Jeff Post).
+	* Inhibit UTF-8 preambles on Console streams.
+
+0.4.8 (23 November 2002)
+
+	* Bring version numbers into sync with "pnet".
+	* Small bug in I18N.Common.ByteEncoding (Gonzalo Paniagua Javier).
+	* Implement "ToString" for reflection classes.
+	* Use the "InvokeMember" flag from "Activator.CreateInstance".
+	* Run regression tests from the in-tree built copy of pnetlib.
+	* Implement the rest of "System.Collections.Specialized".
+	* Missing non-ECMA attribute classes in "System.Reflection".
+	* Implement some of the easy "System.ComponentModel" classes.
+	* Missing byte count for "BinaryReader" and "BinaryWriter" (Gopal V).
+	* Implement "System.CodeDom" and "System.CodeDom.Compiler".
+	* "make install" now works (Gopal V).
+	* Bugs in "StringBuilder.Insert" (Jonathan Springer).
+	* Bug fixes to "StreamWriter" (Jeff Post and Adam Treat).
+	* More directory functions (Charlie Carnow).
+	* Test fixes (Jonathan Springer, Gopal V, Rhys Weatherley, etc)
+	* Globalization English fallbacks for ToUpper/ToLower (Gopal V).
+	* Fix enumerator logic for "System.Array" (Gopal V).
+	* Add I18N hooks for non-charset Globalization functionality.
+	* Fix "ArrayList.IndexRange" to match ECMA.
+	* Fixes to various "System.Net" classes (Gopal V).
+	* Bug fixes to "ArrayList".
+	* Fix makefile dependency checks so that csant-using components
+	  rebuild properly when source files change.
+	* Rename tests to make it clearer which test class failed.
+	* Move security-sensitive public internalcalls from runtime to System.
+	* ECMA compatibility fixes to reduce the number of validation errors.
+	* Private regular expression routines to support "Directory" (Gopal V).
+	* Test cases for cryptographic API's.
+	* Range check problem in "FileStream" constructor (Yannis BRES).
+	* Uri test case fixes (Gopal V).
+	* Make "mklist.sh" BSD-friendly.
+
+0.3.0 (5 November 2002)
+
+	* System.Uri fixes (Stephen Compall).
+	* System.Net.Sockets.TcpClient, TcpListener (Francis Rogers).
+	* System.Net.Dns (Gopal V).
+	* Test suite updates (lots of people).
+	* Rearrange test suite to make it more logical (Jonathan Springer).
+	* Remove csunit code from pnetlib, as it is now in pnet.
+	* Turn off metadata compiles, as it now builds with pnet.
+	* System.IO.Path (Gopal V).
+	* System.Reflection.Emit.TypeBuilder (Richard Baumann).
+	* System.Attribute.GetAttr (Gopal V).
+	* System.Collections.ArrayList.MoveNext (Gopal V).
+	* GetFilesInDirectory, GetPathRoot (Charles Schuller).
+	* File get time methods (Richard Baumann).
+	* Math.Max fix (Richard Baumann).
+	* Simple number formatting for floating-point values (Richard Baumann).
+
+0.2.8 (2 September 2002)
+
+	* System.Runtime.Serialization, System.Xml.
+	* Add "System.dll" to the references for "System.Xml.dll".
+	* Pass the correct type information to "Module.GetMethodImpl".
+	* Fixes to String.Split, System.IO.File, StringBuilder (Gopal V).
+	* Missing Receive method in "Socket" (Peter Minten).
+	* Patches to I18N for Mono integration.
+
+0.2.6 (25 July 2002)
+
+	* System.Xml.XmlReader (Charlie Carnow).
+	* "Marshal" class and supporting types to round out the PInvoke classes.
+	* Extra classes that are required by Gtk#.
+	* Be careful when comparing delegates so that we don't get the "==" and
+	  "!=" operators when we shouldn't be using them.
+	* Fix range checks in System.String.
+	* System.Security.Cryptography namespace.
+	* Replace the internalcall for "String.EqualRange" with
+	  "String.FindInRange" (based on a suggestion by Gopal V).
+	* System.Uri/MakeRelative (Rich Baumann, Stephen Compall).
+
+0.2.4 (27 June 2002)
+
+	* Harden various classes against missing functionality in the
+	  runtime engine, when the engine is used a reduced profile.
+	* SocketAddress mostly complete (Charlie Carnow).
+	* String resources now work.
+	* NotImplementedException, AsyncResult, WeakReference, GCHandle, GC.
+	* Updates to Delegate classes to support the runtime engine.
+
+0.2.2 (10 June 2002)
+
+	* Extra internalcalls for DirMethods (Abhaya Agarwal).
+	* System.IO.MemoryStream (Stephen Compall, Haran Shivanan).
+	* System.Net, System.Xml (Peter Minten).
+	* System.Uri (Stephen Compall).
+
+0.2.0 (11 May 2002)
+
+	* Bug fixes to System.Uri, System.IO.StringWriter (Stephen Compall).
+	* System.IO.StringReader, System.IO.MemoryStream (Stephen Compall).
+	* Test cases for System.String (Gopal V).
+	* Reversed "shift" value in ISCII code pages (Rhys Weatherley).
+	* System.IO.Directory (Abhaya Agarwal).
+	* System.Reflection.Emit, System.ArgIterator (Rhys Weatherley).
+	* System.Xml.XmlWriter (Peter Minten).
+	* Lots of small semantic analysis fixes (Rhys Weatherley).
+
+0.1.8 (20 April 2002)
+
+	* Bug fixes to System.Net (Peter Minten, Gopal V.).
+	* Bug fixes to System.Uri* (Stephen Compall).
+	* Complete String.Format.
+	* Binary access to stdio streams.
+	* Bug fixes to System.IO.
+	* Bug fixes to System.Reflection.
+	* New assembly System.Xml added (Peter Minten).
+	* Stack trace fixes for exceptions.
+	* Continue System.Resources implementation.
+	* Tweaks to socket API's.
+	* Howto on writing unit tests for csunit (Gopal V.).
+	* Continue implementation of encoding classes.
+	* Implemented a large number of Windows-like code page encodings,
+	  mostly among the 8-bit character sets.
+	* Split internationalization support into a separate "I18N" library,
+	  which is dynamically loaded by "mscorlib" as needed.
+	* Updates to System.Convert and dependencies.
+
+0.1.6 (27 March 2002)
+
+	* System.Net (Peter Minten, Gerard Toonstra, Gopal V).
+	* System.Uri* (Stephen Compall).
+	* Build logic for the "System" assembly (Rhys Weatherley).
+	* Bug fixes to System.Version, System.TimeSpan (Peter Minten).
+	* Updates to System.Threading.Timer* (Abhaya Agarwal).
+	* Partial implementation of String.Format (Abhaya Agarwal).
+	* Convert the build system to csant (Rhys Weatherley).
+
+0.1.4 (11 February 2002)
+
+	* Add the "make_patch.sh" script to help with patch management.
+	* "System.IO.Path", "System.IO.File", and "Platform.DirMethods"
+	  submissions from Charlie Carnow <carnow@gmx.net>.
+	* Fix the definition of "TextWriter.Write(char)", which is not supposed
+	  to be implemented in the base class.
+	* "System.IO.StringWriter" submissions from Stephen Compall
+	  <rushing@earthling.net>.
+	* Temporarily disable decimal digit handling in "NumberFormatter",
+	  so that integers don't get displayed as "N.00".
+	* Bug fixes to "String.IndexOf" and "String.LastIndexOf".
+	* Adjust the invariant number formatting information to match ECMA.
+	* "DateTime.Compare" from Abhaya Agarwal <abhayag@cse.iitk.ac.in>.
+	* Number formatting fixes for negative integers.
+
+0.1.2 (7 January 2002)
+
+	* File handle operations in "Platform".
+	* A new system for handling default messages in exception classes.
+	* "System.IO.*", "System.Guid", "System.Version", "System.Resources.*",
+	  "System.Reflection.Emit.*", "System.Collections.*", "System.Security.*".
+	* Change the resource system to use the "_(tag)" convention.
+	* Heavy modifications to the reflection interface.
+	* Use "#if !ECMA_COMPAT" to mark definitions that are not compatible
+	  with the ECMA specification.
+	* Implement the "csunit" program, which is the beginnings of a unit
+	  test framework for pnetlib.
+	* Fill in many of the missing gaps in the "System" namespace.
+	* Implement unicast and multicast delegates.
+	* Update the documentation for the native method interface, and fine-tune
+	  the pnetlib source code as we do so.
+    * General improvements for ECMA compatibility.
+	* Date and calendar functions.
+	* More culture-related classes in "System.Globalization.*".
+	* Move "internal" classes to "System.Private" to avoid pollution of
+	  the standardised parts of the library.
+	* Mark up the source tree with "TODO" attributes to assist with the
+	  generation of class status information.
+	* Added the "HACKING" file to describe how people can contribute.
+
+0.1.0 (27 November 2001)
+
+	* Continue documentation of native methods.
+	* Implement "System.Diagnostics" and "System.Text".
+	* Handle exception stack traces.
+	* Timezone handling for dealing with UTC vs local time issues.
+
+0.0.8 (17 November 2001)
+
+	* New classes in "System.Resources", "System.Threading",
+	  "System.Runtime.CompilerServices", and "System.Runtime.InteropServices".
+	* Bug fixes in "DateTime".
+	* New comparison functions in "String".
+	* Uncomment the "Write" methods in "System.IO.TextWriter" because
+	  we have the requisite support methods now.
+	* Use "CompilerServices.MethodImplAttribute" instead of the one
+	  in "InteropServices", to be consistent with the ECMA specification.
+	* Remove some obsolete classes.
+	* Convert the "native.txt" file into HTML and add some more information.
+
+0.0.6 (3 November 2001)
+
+	* Remove "System.Radix", which is no longer ECMA-compliant.
+	* Re-implement "Math" and "Random".
+	* Round out the "System" namespace.  Most ECMA classes are present,
+	  even if only in stub form.
+	* Implement a number of reflection-related classes.
+	* Change some "internalcall" methods to C# in "System.String".
+	* Remove a temporary hack in "System.Console" that caused it to
+	  bypass the stream subsystem.  Virtual methods work in "pnet" now,
+	  so we can use streams.
+
+0.0.4 (20 October 2001)
+
+	* Rewrote the "System.Collections" classes.
+	* A few more classes in "System", particularly array and string related.
+	* Implement enough of "System.Console" and "System.IO" to get
+	  "Hello World" style print examples working.
+
+0.0.2 (6 August 2001)
+
+	* Update classes so that the library compiles with Microsoft's
+	  Beta 2 compiler.
+	* A handful classes within the "System" namespace, and stubs for
+	  classes that "System" depends upon elsewhere.
+
+0.0.1 (9 April 2001)
+
+	* Initial release.  Library split from the main Portable.NET tree.
+	* Separate resource area created.
+	* Structure of Makefile's and build logic created.
+	* Integrated some contributions from Mike Krueger.
+	* Implemented a large number of classes from "System", together with
+	  skeletons from other namespaces to make the source compile correctly.

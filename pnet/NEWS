@@ -1,0 +1,2631 @@
+
+0.8.0 (3 March 2007)
+
+	JIT 
+	
+	* JIT_Coder opcodes implementation (Klaus Treichel, Aleksey Demakov,
+	  Kirill Kononenko)
+	* On Demand JIT Compilation (Klaus Treichel)
+	* JIT exception handling (Klaus Treichel, Kirill Kononenko)
+	* Method Inlining support (Klaus Treichel)
+	* Inlining internal calls, PInvoke and math (Klaus Treichel)
+	* Add marshaling support (Kirill Kononenko)
+	* Local and Thread Local variable support (Klaus Treichel)
+	* Reflection support (Klaus Treichel)
+	* Array optimisations (Klaus Treichel)
+	* Static ctor support (Klaus Treichel, Aleksey Demakov)
+	* Delegate and Async Delegate support (Klaus Treichel)
+	* Safepoints and builtin/managed Exceptions (Klaus Treichel)
+	* Null check reduction (Klaus Treichel)
+	* Finalizers and GC support (Klaus Treichel)
+	* Method and variable profiling (Klaus Treichel)
+	* Debugging and diagnostic functions (Klaus Treichel)
+
+	Runtime Engine
+
+	* New Debugger (Radek Polak)
+	* Typed allocations (Klaus Treichel)
+	* Array structure optimisations (Klaus Treichel)
+	* Static cctor manager (Klaus Treichel)
+	* Watching variables (Radek Polak)
+	* Spec fixes on String IndexOf and LastIndexOf (Russell Stuart)
+	* Array.Clear fixes (Radek Polak)
+	* Handle fixes for JIT support (Klaus Treichel)
+	* Verifier fixes (Gopal V)
+
+	Compiler & Tools
+
+	* Remove ann.live & ann.ref opcodes from ilasm (Klaus Treichel)
+	* Add readonly., no. and constrained. prefixes to ilasm (Klaus Treichel)
+	* Mcs flag support for csant (Marcus Urban)
+	* Struct constructor fixes (Kaushik Sreenivasan)
+	* ILGac fixes for win32 (Radek Polak)
+
+	Image
+
+	* Nested value type fixes (Klaus Treichel)
+	* Remove unused metadata locks (Klaus Treichel)
+	* Remove ann.live & ann.ref opcodes (Klaus Treichel)
+	* Add readonly., no. and constrained. prefixes (Klaus Treichel)
+	* Class Initializer flags for Static ctors (Klaus Treichel)
+
+
+	GC
+
+	* Import latest libgc from gcc (Rainer Groesslinger, Klaus Treichel)
+	* Weak references (Klaus Treichel)
+	* Memory leak fixes (Heiko Weiss)
+	* uClibc support (Radek Polak)
+
+	Platform
+
+	* Cygwin/win32 fixes (Yan Burman, Klaus Treichel, Radek Polak, 
+	  Roman Khirov)
+	* Timezone fixes (Roman Khirov, Peter Flaig)
+	* Profile fixes (Roman Khirov, Klaus Treichel)
+	* Socket fixes (Klaus Treichel, Heiko Weiss)
+
+	Build
+
+	* Make dist support (Robert Schwebel, Gopal V)
+	* Debian build fixes (Russell Stuart)
+	* Libffi and libgc build fixes (Klaus Treichel)
+	* Lookup paths for libjit (Klaus Treichel, Boris Manojlovic)
+	
+0.7.4 (15 January 2006)
+
+	Runtime engine:
+
+	* Use IL_MEMCPY in some places instead of ILMemCpy to get around
+	  problems with x86 and gcc optimization (Klaus Treichel).
+	* Modify internal engine API's to use the ILExecProcess instead of
+	  ILExecThread where appropriate (Klaus Treichel).
+	* Fix Type.GetInterface internalcall (Peter Flaig).
+	* Close error pipe in Process.StartProcess internalcall (Russell Stuart).
+	* Fix Math.RoundDouble to use correct power (Gerd Nick).
+	* Print a useful error message if libffi doesn't support closures
+	  (Kirill Kononenko).
+	* Unroller for x86_64 (Gopal V).
+	* Handle foreign threads that call into the engine (Klaus Treichel).
+	* Support for switching ILExecThread's between appdomains (Klaus Treichel).
+	* Fix GetNetBIOSMachineName (Heiko Weiss).
+	* Add some volatile keywords to make gcc do the right thing (Klaus T).
+	* Allow modification of initonly fields for compat (Peter Fristedt).
+	* Get around gcc -O3 bugs with computed goto (Gopal V).
+	* Tweak string equality for interned strings (Gopal V).
+	* Fixes to BuildIMT for parent interface implementations (Gopal V).
+	* Debugging code for IMT layout (Gopal V).
+	* Use current working dir for process starts (Radek Polak).
+	* Verifier bug when inlining getters that return static fields (Klaus T).
+	* Enhanced profiler implementation (Marc Haisenko).
+	* Fix that the constructors of array and string classes don't get
+	  the this parameter (Klaus Treichel).
+
+	JIT:
+
+	* Add --enable-jit to the configuration options (Klaus Treichel).
+	* Begin JIT coder implementation (Klaus Treichel, Radek Polak,
+	  Kirill Kononenko).
+	* Changes to layout engine for JIT (Klaus Treichel).
+	* Generation of function stubs and on-demand compilation in the
+	  layout engine (Klaus Treichel).
+
+	C# Compiler:
+
+	* Allow sizeof(primitive type) to be used in safe code (Jason Clouse).
+
+	Loader and Metadata:
+
+	* Link order fixes for x86_64 systems (Gopal V).
+	* Improvements to dll -> so mapping rules (Klaus Treichel).
+	* Add missing colon after /usr/lib64 for AMD64 systems so that libs
+	  in /usr/lib64 can be found (Marcus Urban).
+
+	Documentation:
+
+	* Document the enhanced method profiler (Marc Haisenko).
+
+	Platform Support:
+
+	* Mac OS X threading support (Peter Fristedt).
+	* Various bugs in threading code (Klaus Treichel, Thong Nguyen).
+	* Use response files if more than 8192 bytes on command-line (Gopal V).
+
+	Other:
+
+	* Fixes to "make dist" to make it work properly (Klaus Treichel).
+	* Update to current libffi (Klaus Treichel).
+	* Proper escaping of '[' in configure.in (Gopal V).
+	* Update libgc to version 6.6 (Klaus Treichel).
+
+0.7.2 (17 August 2005)
+
+	Runtime engine:
+
+	* Manual register allocation in CVM for x86-64 (Gopal V).
+	* Fix lookup logic for nested class names (Klaus Treichel).
+	* Fix deserialization of arrays (Klaus Treichel).
+
+	Linker:
+
+	* Missing newline in error message (Deryk Robosson).
+
+	Documentation:
+
+	* Texinfo bug in pnetasm.texi (Rainer Größlinger).
+	* Update cvmdoc.py to use Pythons re module (Rainer Größlinger).
+
+	Platform Support:
+
+	* BeOS thread support (Deryk Robosson).
+
+	Other:
+
+	* Fix type-punned alias warnings (Klaus Treichel).
+	* Update libgc to version 6.5 and apply our custom mods (Klaus Treichel).
+	* Update version of libffi to the latest (Klaus Treichel).
+	* Fix CSAntDirCombine and filename expansion on Win32 (Klaus Treichel).
+
+0.7.0 (11 June 2005)
+
+	Runtime engine:
+
+	* Implement a PPC unroller (Gopal V).
+	* New internalcalls for StringBuilder class (Klaus Treichel).
+	* Fix isinst to act more like castclass, as per spec (Klaus Treichel).
+	* Internalcalls to get errno information for Process (Hermann Weiss).
+	* Fix a possible engine lockup in the thread code (Klaus Treichel).
+	* Optimize CVM converter to not be called unnecessarily (Klaus Treichel).
+	* Fix an x86 register usage problem with memmove in interpreter (Klaus T).
+	* Optimize FindInRange for IndexOf and LastIndexOf (Klaus Treichel).
+	* Enhanced profiling support for the engine (Marc Haisenko).
+	* Added support for multiple engine instances (Klaus Treichel).
+
+	C# Compiler:
+
+	* Overflow bug in switch code generation (Gopal V).
+
+	Documentation:
+
+	* Improve the documentation for csant build file syntax (Stephen Compall).
+
+	Platform Support:
+
+	* Disable SIGPIPE for socket operations (Klaus Treichel).
+	* UDP broadcast support (Doru Budai).
+	* Install problem for ilranlib on Cygwin (Klaus Treichel).
+	
+	Other:
+
+	* Debian packaging updates (Russell Stuart).
+	* Configure option "--enable-interrupts" (Marc Haisenko).
+
+0.6.12 (16 January 2005)
+
+	Runtime engine:
+
+	* Beginning of PPC unroller implementation (Gopal V).
+
+	C# Compiler:
+
+	* Compatibility with /debug flags in csc (Gopal V).
+	* Handling of method/property/etc declarations that hide base
+	  class virtuals and access checks for same (Richard Baumann).
+
+	Documentation:
+
+	* Information on debugging the unroller with gdb (Gopal V).
+
+	Platform Support:
+
+	* Use a portable version of tparm to match Susv3 specs (Gopal V).
+	* Case sensitivity during comparisons (Klaus Treichel).
+	* EAX vs REG_EAX usage in interrupt_posix (Gopal V).
+	* Fix cache flush logic for PPC (Gopal V).
+	* Skip empty lines in "@file" response files (Stephen Compall).
+
+0.6.10 (30 October 2004)
+
+	Runtime engine:
+
+	* Null parameter names when emitting parameters (Gopal V).
+	* Various fixes to System.Reflection internalcalls (Gopal V).
+	* Thread suspend/resume (Thong Nguyen).
+	* Internalcalls for CustomAttributeBuilder (Rhys Weatherley).
+	* Use "fprem", not "fprem1" for x86 IL remainder (Rhys Weatherley).
+	* Handle vararg methods and delegates more centrally (Gopal V).
+	* System.Decimal division bug (Klaus Treichel).
+	* Do not inline loads from value types or crashes will occur (Gopal V).
+
+	C# Compiler:
+
+	* Work around some PPC64-related optimization problesm (Gopal V).
+	* Nested class "famorassem" handling (Gopal V).
+	* Fixes to enum initializers (Gopal V).
+
+	BF Compiler:
+
+	* Fix the behavior of BFOptimize() which currently destroys the
+	  parse tree (Gopal V).
+
+	Loader and Metadata:
+
+	* Prevent double loading of assemblies by using the full path (Gopal V).
+	* Use ILNativeUInt instead of "unsigned long" in il_types.h, which
+	  fixes some problems with 64-bit platforms (Rhys Weatherley).
+	* Properly import types before writing them out with SR.Emit (Gopal V).
+	* Add a flag to enable ignoring load errors (Rhys Weatherley).
+
+	Assembler:
+
+	* Forward references for data labels (Gopal V).
+
+	Platform Support:
+
+	* Get user name via uid, rather than getlogin (Carl-Adam Brengesjo).
+	* Enable threading for Solaris (Robin Kay).
+	* Fix boot time calculation at the nanosecond level (Gopal V).
+	* Bug in socket selection for infinite selects (Gopal V).
+	* Alter gen_errno.sh to handle errno codes that are split across
+	  multiple header files (Rhys Weatherley).
+	* Response file support in cpp for systems with limited command
+	  line lengths (Maciek Plewa).
+	* Socket flags for Solaris (Adam J. Tybor).
+	* Port socket code to hpux by including <sys/modem.h> (Gopal V).
+	* Fix daylight savings for Win32 (Carl-Adam Brengesjo).
+	* Libffi bug in x86-64, causing incorrect stack alignment (Gopal V).
+	* Serial I/O routines for Win32 (Gopal V).
+	* Timeouts in Unix version of serial reads (Adam Gibson).
+	* Various profile fixes (Gopal V).
+	* BeOS port (Tomas Wilhelmsson).
+	* Cris port (Simon Posnjak).
+	* Man page formatting problems (Peter Lund).
+
+	Other:
+
+	* Clean up Debian packaging (Russell Stuart).
+
+0.6.8 (8 August 2004)
+
+	Runtime engine:
+
+	* Module.GetTypes and Assembly.GetExportedTypes internalcall (Gopal V).
+	* Fixes to IL offset determination in the method cache (Gopal V).
+	* "synchronized" method handling (Thong Nguyen).
+	* Be careful not to notify finalizers during allocation (Thong Nguyen).
+	* Inlining of Math functions (Thong Nguyen).
+	* Inlining simple properties that get/set fields (Thong Nguyen).
+	* Various fixes in the finalizer code (Thong Nguyen).
+	* Thread aborting (Thong Nguyen).
+	* Using signals to detect NULL references and the like (Thong Nguyen).
+	* Thread execution contexts (Thong Nguyen).
+	* Dns and Socket internalcalls (Gopal V).
+	* GCAddrOfPinnedObject fixes (Llewellyn Pritchard).
+	* Extended console support (Rhys Weatherley).
+
+	C# Compiler:
+
+	* Correct line numbers for argumentvar nodes (Gopal V).
+	* Fixes to identifier resolution (Gopal V).
+	* Coercion fixes in the arguments to user-defined operators (Gopal V).
+	* Create nested classes in the proper order (Gopal V).
+	* Null values and IntPtr (Gopal V).
+	* Fixes for indexers on value types (Gopal V).
+	* Assign add operations involving strings and objects (Gopal V).
+	* Standalone assembly attributes (Rhys Weatherley).
+	* Resolve classes before allocating heap objects (Gopal V).
+	* Fix do ... while grammar to require a terminating ';' (Gopal V).
+	* Add the "-fhidebyname" and "-fhidebysig" options (Rhys Weatherley).
+	* Error message for private interface modifiers (Gopal V).
+	* Check for event types before performing add/remove operations (Gopal V).
+
+	C Compiler:
+
+	* Fix ILNode_GetType for C strings (Gopal V).
+	* Fix semantic analysis for member accesses (Gopal V).
+
+	Loader and Metadata:
+
+	* CompareUnicode not working correctly (Thong Nguyen).
+	* ILClassImplements on a class should return true for itself (T. Nguyen).
+	* Serialization of null strings in attribute blocks (Rhys Weatherley).
+	* Recognise "OptionalAttribute" and "DefaultValueAttribute" (Rhys W).
+	* Resolve classes in "TypeAssignCompatible" (Gopal V).
+	* Recognise generic classes in files generated by .NET 2.0 (Rhys W).
+
+	Linker:
+
+	* Resource linking problems (Llewellyn Pritchard).
+	* Obey "AssemblyVersionAttribute" if it is present (Rhys Weatherley).
+	* "-fmetadata-version" option (Rhys Weatherley).
+	* "-fculture" option (Rhys Weatherley).
+
+	Platform Support:
+
+	* Compilation fixes for 64-bit (Andrzej Dopierala).
+	* Utilities for lists and queues (Thong Nguyen).
+	* Various windows build fixes (Thong Nguyen).
+	* ILGetSinceRebootTime for non-Windows platforms (Thong Nguyen).
+	* Faster versions of volatile and interlocked functions (Thong Nguyen).
+	* Daylight savings problem (David Logan).
+	* Deal with trailing whitespace in response files (Rhys Weatherley).
+	* OpenBSD support (Saul Hazledine).
+	* Support for parallel builds (Gopal V).
+	* Fix interlock functions for amd64 (Gopal V).
+
+	Documentation:
+
+	* Update the HACKING file (Klaus Treichel).
+	* Typo in the ilgac manual (Richard Baumann).
+
+0.6.6 (29 May 2004)
+
+	Runtime engine:
+
+	* GetManifestResourceNames internalcall (Russell Stuart).
+	* Add the --trace option to ilrun (Gopal V).
+	* Fix some I4/I/M/T cases in the verifier (Rhys Weatherley, Gopal V).
+	* Fix to Directory.GetFiles internalcall (Russell Stuart).
+	* Many fixes and speedups to the monitor implementation (Thong Nguyen).
+	* Remap some gtk# dll references (Ilyak Kasnacheev).
+	* Automatically load assemblies during "GetType" (Gopal V).
+	* Handling for interruptes and aborts (Thong Nguyen).
+	* Verification of indirect method calls (Gopal V).
+	* Resolve classes properly before layout (Gopal V).
+	* Support for Interlocked* functions (Thong Nguyen).
+	* Looser association of real threads with engine threads, to make
+	  it easier to move to app domains in the future (Thong Nguyen).
+	* Asynchronous delegates (Thong Nguyen).
+	* Better shutdown logic for multi-threaded programs (Thong Nguyen).
+	* ILExecThreadBoxNoValue (Thong Nguyen).
+	* Dynamic invocation of methods with out/ref parameters (Thong Nguyen).
+	* Include inherited interfaces in return from "GetInterfaces" (Gopal V).
+	* Entry points must be in .exe's, not .dll's (Gopal V).
+	* Problems in OutputExceptionTable with nested try/catch (Rhys W).
+	* Fixes to make ilrun compile with gcc 3.4.0 (Norbert Bellow).
+	* Implement Thread.Abort (Thong Nguyen).
+	* Use interlocked increments for profile counts (Thong Nguyen).
+
+	C# Compiler:
+
+	* Stack underflow problem in codegen for "switch" (Rhys Weatherley).
+	* Problem with 8-bit characters in pre-processor lines (Rhys Weatherley).
+	* "/recurse" option for compiler compat mode (Gopal V).
+	* Fix semantic analysis for identifers and member accesses (Gopal V).
+	* Resolve aliases for fully qualified namespaces (Gopal V).
+	* "goto case" should emit a leave inside a "try" (Russell Stuart).
+	* Bug with ';' in #endregion directives (Russell Stuart).
+	* Handle "protected internal" across assemblies (Richard Baumann).
+	* Disambiguate static members and types with the same name (Gopal V).
+
+	C Compiler:
+
+	* Add dependency options to the pre-processor (-M, -MD, etc) (Rhys W).
+	* Fixes for bit field accesses (Rhys Weatherley).
+	* Complex structure initializers (Rhys Weatherley).
+	* Array access on managed arrays (Gopal V).
+
+	Linker:
+
+	* Strong alias linking for vararg methods (Rhys Weatherley).
+
+	Csant:
+
+	* Comma-separated lists of target dependencies (Russell Stuart).
+	* Directory deletion and copying (Russell Stuart).
+
+	Platform Support:
+
+	* Win32-specific filename expansion (Rhys Weatherley).
+	* Disable zlib under mingw32 because of dependency issues (Rhys W).
+	* Fixes for Win32 file operations (Thong Nguyen).
+	* Integrate libgc version 6.3alpha6 (Thong Nguyen).
+	* Overflow bugs in time routines (Thong Nguyen).
+	* ILGetSinceRebootTime for Windows (Thong Nguyen).
+
+0.6.4 (13 March 2004)
+
+	Runtime engine:
+
+	* Write Reflection.Emit binaries in "wb" mode.
+	* Set the execute bit on binaries written by Reflection.Emit.
+	* Fixes to unsafe-mode verification rules regarding pointers.
+	* Verification fixes for storing managed pointers via "stind.i".
+	* Modify internalcalls for "WaitAll" and "WaitAny" to work
+	  around "MarshalByRefObject" adding a new field.
+	* Internalcalls for file lengths and attributes (Russell Stuart).
+	* Pass pointer parameters to delegates correctly (Gopal V).
+
+	C# Compiler:
+
+	* Fixes to reference type coercion.
+	* "params" array matching only on the last parameter (Gopal V).
+	* Filter out instance members when searching nested parent scopes.
+	* Assignment of arrays to pointer variables in "fixed" statements.
+	* Implement pointer comparison, addition, and subtraction.
+
+	C Compiler:
+
+	* Rewrite the type system to use native layout.
+	* Thread-specific variables.
+	* Fix casts from function pointer types to "void *".
+	* Computed goto support.
+	* Register parameters of the form "register type".
+	* Fix semantic analysis for expression statements.
+	* Add C#-style casts and coercions.
+	* Make "long double" an alias for "double" because MS runtime engines
+	  don't handle the "native float" IL type correctly.
+	* Improve the visibility of C definitions to C# applications.
+	* Add some C# and Managed C++ syntax to aid with interoperation.
+	* Allow C# strings to be defined with S"foo".
+	* "using" and "using namespace" to import C# types into C programs.
+	* Output the parameter types for PInvoke declarations.
+	* Bug in the declaration of functions returning function pointers.
+	* Set the default PInvoke calling convention to "cdecl".
+	* Handle string initializations of the form {"foo"}.
+	* Convert constants of the form 123L into native ints, not int64.
+
+	Linker:
+
+	* Improve detection of unresolved references in C applications.
+	* Use C type names in error messages where appropriate.
+	* Use "OpenSystem.C.GlobalScopeAttribute" to export C# definitions
+	  into the global C scope.
+	* Use ordinary names like "libc" for C modules instead of "$Module$".
+	* Remove C "memory models", which aren't needed any more.
+
+	Loader and Metadata:
+
+	* Allow custom modifiers within a "byref" type.
+	* Look for "pinvoke.map" files when resolving PInvoke libraries.
+
+	Csant:
+
+	* Missing options for mcs compiles (Ilyak Kasnacheev).
+
+	Documentation:
+
+	* Rewrite the C user's guide and move it into "pnettools.texi".
+	* Update the C ABI specification to reflect changes to the C compiler.
+
+	Platform Support:
+
+	* Enable FreeBSD pthreads support (Adam Ballai).
+	* Use the tm_gmtoff field for timezones (Ole Guldberg Jensen).
+	* Explicitly invoke the shell when configuring libgc and libffi.
+	* Work around bugs with read-write locks on systems with NPTL.
+	* Use $(EXEEXT) on install lines that need it, for mingw32.
+	* Fixup SOCKETLIBS and suppress libm under mingw32 environments.
+
+	Other:
+
+	* Check in a copy of gcc's cpp so that we can avoid system cpp bugs.
+	* Add the "#using#" directive to cpp.
+	* Update the "pnet.spec.in" file (Russell Stuart).
+
+0.6.2 (3 January 2004)
+
+	Runtime engine:
+
+	* Fix the addresses in the unroll debug dump (Miroslaw Dobrzanski-Neumann).
+	* Correct StdRead return value (Stephen Compall).
+	* Pass environment variables to child processes.
+	* Fix "WaitForExit" timeouts, to prevent scheduler overload.
+	* Internalcalls for the new console implementation.
+	* Internalcalls for the new serial port classes.
+	* Allow relative paths in PInvoke module names.
+	* Recognise method pointers as type-I values in the verifier (Gopal V).
+	* File locking support (Stephen Compall).
+	* Add the RIPEMD-160 digest algorithm.
+	* Sign-extend 8-bit and 16-bit values during PInvoke, because some
+	  versions of "libffi" set the high bits to garbage.
+	* Proper marshalling of "float" and "double" parameters for delegates.
+	* Internalcalls to support symbolic links.
+	* Handle "*" and "&" in "Type.GetType" (Tony Garnock-Jones).
+	* Implement "StructureToPtrInternal".
+	* Fix endianess issues when converting the "hostent" address fields.
+	* Ignore the target object when invoking a static method (Gopal V).
+
+	C# Compiler:
+
+	* Handle keywords like "get", "add", "where", etc in a different
+	  way to make it easier to add more such keywords in the future.
+	* New syntax for C# 2.0 features (semantics not complete yet).
+	* Fix segv conditions in "GetIndexerName".
+	* Fix fall-through handling for "switch" statements (Gopal V).
+	* Static field accesses in the reflection routines.
+	* InfoMethods.GetProcessorCount internalcall.
+	* Inline IntPtr and pointer operations to avoid unnecessary runtime
+	  calls to explicit operators (speeds up PInvoke-using code).
+	* Report an error if "float[]" or "double[]" is used in a profile
+	  that does not have "System.Single" or "System.Double".
+	* Resolve local constants in attribute arguments.
+	* Increment and decrement operators for pointer operands.
+	* Bug in "sizeof" that caused it to always return a size of 1.
+	* Make line numbers work on versions of yacc that don't define
+	  the YYLTYPE macro (Gopal V).
+	* Fix the grammar's handling of "(X *)y" cast forms.
+	* Fix "a->b" assignment, which was leaving values on the stack
+	  when it should not have been.
+	* Allow explicit casts between IntPtr and pointer types.
+
+	Loader and Metadata:
+
+	* Look for system libraries in CSCC_LIB_PATH before local overrides,
+	  to avoid the need for "pnetlib.here" style hacks.
+	* Look in version-specific subdirectories for assemblies, to allow
+	  multiple versions to exist side by side.
+	* Add some support for object files that have a ".cormeta" section.
+	* Implement recursive assembly loading.
+	* Dynamic loading for modules.
+	* Set an exported type's scope correctly.
+	* Resolve exported type references to files.
+	* Support for Win32 resources.
+
+	Resources:
+
+	* Add the "-l" option to "resgen" to perform Latin1 to UTF-8 conversion.
+	* Add the "/compile" and "-compile" flags for backwards compatibility.
+	* Pad resource sections correctly.
+	* Fix some bugs in the handling of ".po" files in "resgen".
+	* Add the "--extract" option to help with extracting resource files
+	  from an assembly.
+	* Fix some alignment issues in the reading and writing of binary resources.
+
+	Csant:
+
+	* Perform profiles options to have non-boolean values.
+	* Add the <resgen> and <reslink> tags, to support resource building.
+	* Add the "--install" and "--uninstall" options, using "ilgac".
+	* Check the "if" attribute on <file> tags.
+
+	Platform Support:
+
+	* Platform abstractions for consoles and serial ports.
+	* Use the static version of "libz" under Win32 to avoid introducing
+	  an unnecessary dependency upon "mgwz.dll".
+	* Fixes for AIX and strict ANSI C compilers (Miroslaw Dobrzanski-Neumann).
+	* Check for "LC_ALL" before "LANG".
+	* Update the Unicode character tables to match Unicode 4.0.1.
+
+	Other:
+
+	* Dump the assembly version in the detailed output mode of "ilsize".
+	* Add the "ilgac" program to assist with version-specific installs.
+	* Dump versions, file, and resource delcarations from "ildd".
+	* Add the "-r" option to "ildd", to recursively print dependencies.
+	* Modify "clrwrap" so that it can implicitly get the name of the
+	  program to run from "argv[0]", which allows "clrwrap" to be used
+	  without an explicit wrapper script.
+	* Update "missing" so that it is no longer "too old or missing".
+	* Fix unqualified types in the IL examples (Gopal V).
+	* Dump the VS_VERSION_INFO block in "ildasm".
+
+0.6.0 (15 October 2003)
+
+	Runtime engine:
+
+	* Make the autoconf target string available to pnetlib so that
+	  the platform can be detected using "Environment.OSVersion".
+	* Marshal structures that contain delegate fields, for Win32 winforms.
+	* Internalcall for the zero-argument case of constructing value types.
+	* Add delegates to the GC handle table when they are marshalled, to
+	  prevent the object from being disposed while the closure is in use.
+
+	Common Compiler Issues:
+
+	* Be careful not to treat absolute pathnames as options in the
+	  csc/mcs-compatibility mode.
+	* Fixed a bug in "foreach" loops containing "break" in their body.
+
+	C Compiler:
+
+	* Improve the handling of boolean constant values.
+	* Constant coercions where the machine type does not change.
+	* Allow function pointer types to be coerced if they have the
+	  same basic "shape", differing only in pointer types.
+
+	Loader and Metadata:
+
+	* Don't add parameter name information to debug symbol data because
+	  it duplicates information already available in metadata.
+	* Put some infrastructure in place to support on-demand type loading.
+	* Fix a bug with debug overflow blocks that caused the wrong filename
+	  data to be written, causing odd names in stack traces.
+	* Add the link directory to the debug symbol table so that the
+	  full pathname of source files can be recovered by a debugger.
+	* Search for owned items in a way that avoids loading an item if
+	  it isn't actually the one that was sought.
+
+	Documentation:
+
+	* Ignore classes with "NonStandardExtra" in "csdocvalil".
+	* Document the "csant" XML file syntax in the texinfo documentation.
+	* Updates to the FAQ.
+	* Man page for "ilverify".
+
+	Platform Support:
+
+	* Socket support under "mingw32".
+	* Fixed a bug in "libffi" that caused it to generate invalid closures
+	  on some x86 platforms.
+
+	Other:
+
+	* Pass missing options to "mcs" from "csant".
+	* Fixes for building in non-full profiles.
+	* Remove some obsolete programs (ildiff, ildb, test_verify).
+
+0.5.12 (6 September 2003)
+
+	Runtime engine:
+
+	* Start adding a treecc-based marshalling system.
+	* Use the correct exceptions for missing PInvoke functions.
+	* Check for exact member matches before inexact ones (Richard Baumann).
+	* Interface name matching in the reflection code (Richard Baumann).
+	* Primitive conversions for "initobj" (Gopal V).
+	* Check in the beginnings of PPC and ia64 unrollers (Rhys, CH Gowri Kumar).
+	* Internalcall for "MethodInfo.GetBaseDefinition".
+	* "Assembly.Location" and "AppDomain.GetAssemblies" (Richard Baumann).
+	* Update generic internalcalls to match latest specification.
+	* Handle assembly names that end in ".dll" even when not expected to.
+	* Remove obsolete internalcalls that will be superceded by CAS.
+	* New internalcalls for "Assembly", "AssemblyName", and "Module".
+	* Add the "Thread.SpinWait" internalcall.
+	* Fix a lockup in the bytecode verifier.
+	* Internalcalls for Unicode case conversion and string comparison.
+	* Temporarily disable IMT's because of a hash table clash bug.
+	* New internalcalls for obtaining configuration directories.
+	* New Internalcall for "FormatterServices" to get serializable members.
+
+	Common Compiler Issues:
+
+	* Rearrange code generation for "switch" statements to prevent values
+	  being left on the stack during fall-through situations.
+	* Convert instances of "SecurityPermissionAttribute" into declarative
+	  security blobs in program metadata.
+
+	C# Compiler:
+
+	* Fix a problem where "final virtual" was being used on methods that
+	  weren't actually interface implementations.
+	* Report duplicates of "override" methods correctly.
+
+	C Compiler:
+
+	* Allow typedef names to be used as struct field names.
+	* Bug in the struct hash algorithm for primitive types.
+	* Ignore missing libraries when compiling C code.
+	* Additional error line to clarify "two or more types in declaration".
+	* Bug with "short int" in type definitions.
+	* Constant evaluation for conditional expressions.
+	* Allow "long double" to be used inside non-native structs and unions.
+	* Rearrange precedence so that "=" is higher than "?:".
+	* Work around bugs in MacOS X cpp's that cannot handle spaces.
+	* "GetType" and "GenValue" for compound statements, to support
+	  statement expressions.
+
+	VB Compiler:
+
+	* '$' is not a legal identifier character, only a suffix.
+
+	Disassembler:
+
+	* "--resolve-all" option (Gopal V).
+
+	Loader and Metadata:
+
+	* Add support for gzip'ed PE/COFF binaries.
+
+	Linker:
+
+	* Report multiply-defined symbols once for each instance.
+
+	Documentation:
+
+	* Man page for csant (Gopal V).
+	* Fix quoting of '&' throughout the documentation tools.
+	* Improve the quality of difference reports form il2doc and csdocvalil.
+	* Man page for cssrc2html (Andrew Mitchell, Rhys Weatherley).
+
+	Platform Support:
+
+	* mb/wc workarounds for MacOS X.
+	* Support routines for Unicode case conversion.
+	* Unicode case-sensitive string comparisons.
+
+	Other:
+
+	* Fix carry outs during decimal multiplication.
+
+0.5.10 (26 July 2003)
+
+	Runtime engine:
+
+	* Enable the verifier debug mode by default.
+	* Implement tail calls properly.
+	* Enum string formatting (Thong Nguyen, Gopal V).
+	* Run a final GC and finalizer pass before engine shutdown.
+	* Explicitly call the static constructor in the main class (Gopal V).
+	* Add the "-C" option to control the method cache size (Yannis Bres).
+	* Add stack traces to exception objects thrown by the engine.
+	* New monitor implementation (Thong Nguyen).
+	* Prevent the process from exiting until all user threads have
+	  been properly terminated (Thong Nguyen).
+	* Configuration switch for object or hashing monitors (Thong Nguyen).
+	* Internalcalls for threading (Thong Nguyen).
+	* De-initialize the GC properly at engine shutdown (Thong Nguyen).
+	* Move finalization to a separate thread (Thong Nguyen).
+	* Use atomic allocation for objects with no GC'able fields.
+	* Register finalizers for atomic objects (Thong Nguyen).
+	* Lock out the method cache while the unroller is running.
+	* Don't create an OS thread until "Thread.Start" (Thong Nguyen).
+	* Work around "va_list" problems under PPC GNU/Linux systems.
+	* Bytecode verifier fixes (Gopal V).
+	* Implement the generic unroller for x86 and ARM.
+	* Internalcalls for "System.Reflection.Emit" (Richard Baumann).
+	* Manual register assignment for PPC (two times speed up).
+	* Change interface dispatch to use Interface Method Tables (IMT's).
+	* Abandon finalization for objects that survive shutdown (Thong Nguyen).
+	* Reuse array types where possible to prevent memory leaks.
+	* Compute the right array offsets for multi-dimensional arrays (Gopal V).
+	* Handle "GetType" properly for array types (Gopal V).
+	* Promote primitive types during array references (Gopal V).
+	* Internalcalls for "System.Diagnostics.Process".
+	* Add a "--dumpconfig" option (Gopal V).
+	* Handle nested types properly in the internalcall table (Gopal V).
+	* Look for both ".exe" and ".EXE" file extensions.
+	* Fix stack merging for ternary control flows (Gopal V).
+
+	Common Compiler Issues:
+
+	* Incorrect code generation for casting "uint" to "byte".
+	* Speed up the detection of "-flatin1-charset" (Gopal V).
+	* Fixes to indirect casting (Gopal V).
+	* Add the "-winforms" convenience option (Gopal V).
+	* Grammar errors detected by Bison 1.75 (Gopal V).
+	* Add the "--version" option (Gopal V).
+	* Detect single-file plugins correctly in the front end.
+
+	C# Compiler:
+
+	* Some new syntax for calling C# from C - can simply declare an
+	  "extern" method inside the "__module" type.
+	* Report errors for "Finalize" methods that are not properly
+	  declared as destructors.
+	* Report an error for "override" members with no corresponding "virtual".
+	* "unchecked" is required for large "uint" to "int" conversions.
+	* Fully gather a type before moving to nested types (Gopal V).
+	* Handle escape sequences in the C# pre-processor better (Gopal V).
+	* Distinguish '<' used as an operator or in a generic type reference.
+	* Handle NaN properly for relational operators (Gopal V).
+
+	C Compiler:
+
+	* Flush global initializers between functions.
+	* Remove unnecessary dereferencing in "(*f)()" expressions.
+	* Semantic analysis problems in the third argument of "?:".
+	* Always allow casts to "void", regardless of source type.
+	* Permit "register" to appear in a formal parameter list.
+	* Decay array types are dereferencing with '*'.
+	* Clone all type modifiers when copying a "struct" type.
+	* Don't output type definitions for dangling class references.
+	* Anonymous enumerated types are always replaced with the underlying type.
+	* Code generation and semantic analysis for initializers.
+	* Force ".init" to be called from any function that references
+	  global variables, so that C# code can call C without going
+	  through the Crt0 initialization step first.
+	* Wide character constants and strings.
+	* Fix "sizeof(long double)" to use the correct boxing type.
+	* Fix "sizeof" to correctly measure the length of strings.
+	* Replace the clumsy "__invoke__" syntax with "T::method" instead.
+	* Quote cpp arguments on MacOS X.
+	* Add "error" declarations to the parser to improve error recovery.
+	* Move includes from ${prefix}/lib to ${prefix}/share to be consistent
+	  with Debian packaging guidelines.
+
+	Java Compiler:
+
+	* Wrap "for" statements in a scope block (Gopal V).
+
+	Assembler:
+
+	* Output debug information for local variables and their scopes.
+
+	Loader and Metadata:
+
+	* Scope problems - sometimes finding a nested class instead of global.
+	* Move the ".ildebug" section to the end of the image so it can be
+	  more easily stripped using "ilstrip".
+	* Forcibly change TypeRef's into TypeDef's in "ILClassCreate" to
+	  work around MS'es assembler which outputs same-assembly TypeRef's.
+	* Start adding support for ".rsrc" sections.
+	* Load "ParamDef" tokens on-demand.
+	* Modifications to support "System.Reflection.Emit" (Richard Baumann).
+	* Look for both ".dll" and ".DLL" file extensions.
+
+	Linker:
+
+	* Properly resolve nested types with the same names by different parents.
+	* Initializers and finalizers.
+	* Strip multiple '/' characters from the end of ar member names,
+	  because some archives have filenames ending in "//".
+	* Change the default output from "a.out.exe" to "a.out" or "a.exe",
+	  to be consistent with gcc.
+
+	Platform Support:
+
+	* Modify libffi so that it works for both cdecl and winapi.
+	* Always use "LoadLibrary" to load native DLL's under Win32.
+	* Recognize both '/' and '\' as pathname separators, to work around
+	  Windows programmers who don't use DirectorySeparatorChar like
+	  they should.
+	* Better detection in configure.in for the thread system (Thong Nguyen).
+	* Socket options (Gopal V).
+	* Change "MAX_THREADS" to 1024 in libgc (Thong Nguyen).
+	* Remove "ffitest" from the build because it breaks IA-64.
+	* Move the console input code to "support".
+
+	Other:
+
+	* Adjust hash tables to use prime sizes for better element spread.
+	* Add the "cssrc2html" program (Jeff Post).
+	* Modify "csdoc2html" to generate href's to "cssrc2html" (Jeff Post).
+	* Update the C ABI and users guide.
+	* Modify "ilheader" to match changes to the C compiler.
+	* Add "ilstrip" and "ilranlib" to round out the toolchain.
+	* All "cli-unknown-*" symlinks to make cscc look like a cross-compiler.
+
+0.5.8 (17 June 2003)
+
+	Runtime engine:
+
+	* Implement an unroller for ARM platforms.
+	* PInvoke lookups for global variables.
+	* Fix the CVM coder logic for vararg methods.
+	* Reduce the size of the CVM coder on embedded platforms.
+	* Improve the regexp internalcalls for sub-string matches (Gopal V).
+	* Correct stack traces for exceptions (Gopal V).
+	* Flip ILClass and ILClassPrivate in the object header so that
+	  virtual method lookups need one less pointer indirection.
+	* Implement some of the "Reflection.Emit" internalcalls.
+	* "IntPtr" and "UIntPtr" constructors give type I, not MV.
+	* New internalcall interface for "Marshal".
+	* Layout interfaces with no methods correctly.
+	* Move some long shifts out of line to prevent register spills.
+	* Fix the "sizeof" computation for pointer types.
+	* Verification bug with multi-dimensional arrays.
+	* Make "RuntimeMethodHandle.GetFunctionPointer" return a closure.
+	* Increase the maximum non-raw libffi argument count from 8 to 32.
+
+	Compiler:
+
+	* Serializing boxed enumerations (Gopal V).
+	* Force type-centric resolution of attributes names (Gopal V).
+	* Boolean conversions (Gopal V).
+	* Add support for "#line default" in the pre-processor (Gopal V).
+	* Avoid semantic analysis of method bodies in "csdoc" (Gopal V).
+	* Visual Basic language front-end.
+	* Java language front-end (Gopal V).
+	* Bf language front-end (Gopal V).
+	* Add the "specialname" attribute to event accessors.
+	* Do not allocate local variables for constants (Gopal V).
+	* Semantic analysis and code generation for "base[???]" (Gopal V).
+	* Better recognition of "Attribute" suffixes on type names.
+	* Pointer comparison and dereferencing.
+	* Recognise enumerators by interface where applicable (Gopal V).
+	* Add the "-fno-generics" option for code that uses "where" (Gopal V).
+	* Error handling for static constructors (Gopal V).
+	* Enum initializers using non-identical enum types (Gopal V).
+	* Print nested type names correctly in "CSTypeToName".
+	* Wrap "using" blocks in a local variable scope (Gopal V).
+	* Allow "unsafe" destructors (Gopal V).
+
+	Disassembler:
+
+	* Dump custom attributes and constants that are attached to parameters.
+
+	Loader and Metadata:
+
+	* Creating parameters without names (Gopal V).
+	* Detect enumerated types across image boundaries during de-serialization.
+	* On-demand loading of various token types.
+
+	Linker:
+
+	* Embedding public keys in images.
+	* Creating public key tokens when linking against images with public keys.
+
+	Platform Support:
+
+	* Use the Win32 version of ILSpawnProcess in both cygwin and non-cygwin.
+	* Better support for cross-compilation in "configure.in".
+	* Work around a broken definition of "dirent" on Solaris systems.
+	* Socket option support functions (Gopal V).
+	* Make the code friendlier to m68k-palmos (doesn't link yet due to > 64k).
+	* Socket support for IPv6 and IrDA.
+	* Dynamic library support under MacOS X (Ian Fung).
+	* Use ".dylib" instead of ".so" for MacOS X (Ian Fung).
+
+	Other:
+
+	* "il2doc" utility program, for converting IL binaries into XML.
+	* Don't generate TODO for auto-stubbed interfaces and abstracts (Gopal V).
+	* DTD for the CVM documentation syntax (James Michael DuPont).
+
+0.5.6 (3 May 2003)
+
+	Runtime engine:
+
+	* Internalcalls to support CAS-based security.
+	* Revised internalcalls for socket support.
+	* Add more functionality to the regex internalcalls, to expose
+	  the full GNU regex syntax to C# libraries.
+	* Stub internalcalls for "FormatterServices", "Process", "TimeMethods".
+	* Off-by-1 bugs in vararg packing.
+	* Fix "ArgIterator.GetNextArg" for unmanaged C++ code.
+	* Set the correct array bounds for multi-dimensional arrays with
+	  lower bound specifications.
+	* Disable finalizers while laying out classes, to prevent deadlocks.
+	* Set exception stack traces at the point of throw, not create.
+	* Fixes for the "kernel" and "compact" profiles.
+	* Support for thread-static values.
+	* Check for long overflow correctly.
+	* Restore 2D "index1" correctly when bounds check fails on "index2".
+	* Add "String[]" to the set of types recognized for PInvoke handling.
+
+	C# Compiler:
+
+	* Add the ILOp_UShr opcode to support Java compilation (Gopal V).
+	* Handle empty "__arglist" parameter lists correctly.
+	* Don't use "RuntimeHelpers.InitializeArray" for zero-sized arrays.
+	* Incorrect "ILGenSimple" in JVM code generator (Gopal V).
+	* Recognize "where" as an identifier in some circumstances.
+	* Error messages for missing event implementations (Gopal V).
+	* Resolve multiple indexer definitions in a class (Gopal V).
+	* Serialization of enum values in attributes (Gopal V).
+
+	C Compiler:
+
+	* Fix recognition of types like "short int" and "unsigned short int".
+	* Convert struct fields with type "X[]" into "X[0]".
+	* Permit enum's to be used to declare bit fields.
+	* Constant evaluation for the "sizeof" operator.
+
+	Assembler:
+
+	* Allow additional vararg call sites to be added after a class
+	  has been marked as "completed".
+	* Set the permissions on exe files to "+x".
+
+	Loader and Metadata:
+
+	* Recognize boxing conversions in "ILTypeAssignCompatible".
+	* Map "ComImportAttribute" to the "import" typedef flag.
+	* Add a temporary hack to remap Gtk# library dependencies.
+
+	Platform Support:
+
+	* Use 32-bit arithmetic for RC2 under ARM because it has problems
+	  with unsigned 16-bit arithmetic.
+	* Implement data cache flushing for ARM.
+
+	Other:
+
+	* Class size estimation in "ilsize" to give a rough indication of the
+	  runtime memory requirements of a class.
+	* Make ildd more useful at showing the assemblies and modules used.
+
+0.5.4 (29 March 2003)
+
+	Runtime engine:
+
+	* Support for custom marshalling.
+	* DirMethods.CreateDirectory internalcall (Aditya P. Bansod).
+	* Bug in decimal division (Jonathan Springer).
+	* Fix the unpacking of enumerated values in internalcalls.
+	* Re-design method profiling (CH Gowri Kumar).
+	* Inline StringBuilder.Append(char) and Char.IsWhiteSpace(char)
+	  because they are heavily used in text processing code.
+	* Modify inline method detection logic to use a table.
+	* Box and unbox "float" and "double" correctly.
+	* Handle typed references for "dup" and "pop".
+	* Stub out internalcalls for "System.Reflection.Emit".
+
+	C# Compiler:
+
+	* Pipe the output of "cscc-cs" and "cscc-c-s" directly into the
+	  assembler, to reduce the need for temporary files.
+	* Add the "-fminimize-parameters" option to the compiler, which
+	  removes ParamDef blocks that are set to trivial values and hence
+	  reduces the runtime memory requirements.
+	* Re-order static constructors so that explicit definitions are
+	  placed last (Gopal V).
+	* Performance improvements to the lexer.
+	* Marshalling information for delegate parameters.
+	* Parser support for Generic C# (no semantic analysis yet).
+	* Generate BeginInvoke and EndInvoke declarations on delegates.
+	* Detect nested namespaces that aren't defined by "using" clauses.
+	* Enforce abstract class and method restrictions.
+	* Don't allow aliases to refer to other aliases.
+	* Fix operator resolution involving implicit int -> uint coercions.
+	* Pointer coercions, casts, arithmetic, and array operations.
+	* Resolve ambiguities between types and properties with the same name.
+	* Fix ambiguity problems related to finding the same method along
+	  multiple interface inheritance paths.
+	* Support interface implementations from parent classes.
+	* Quietly skip documentation comments in attribute lists.
+	* Improved error reporting for field declarations (Gopal V).
+	* Read-only variables can be assigned in psuedo-constructors (Gopal V).
+
+	C Compiler:
+
+	* ECMA-compatibility fixes to the struct output routines.
+	* Better name generation for anonymous structs and unions.
+	* Allow struct's with no fields.
+
+	Assembler, Disassembler & Linker:
+
+	* Support for Generic IL extensions.
+	* Handle object files generated by Visual C++ a little better.
+	* Custom attribute owner syntax.
+	* Compatibility fixes in the IL assembly support code.
+	* Dump odd identifier characters in octal, not hex.
+	* Use left-recursion to parse ".data" declarations (Gopal V).
+	* Column numbers in ".line" directives.
+
+	Documentation:
+
+	* Dump attribute and event information from "csdoc".
+
+	Loader and Metadata:
+
+	* Smooth out the overhead of back-patching to improve performance
+	  of NFS-mounted C# compiles.
+	* Load minor tables such as Constant, FieldRVA, etc on-demand.
+	* Performance and data structure improvements.
+	* Support for Generic IL extensions.
+	* Improvements to error messages for unresolved externals.
+	* Report all metadata token errors; not just the first one.
+	* Support for export type definitions.
+	* Shift the name information out of ILClass to support on-demand loading.
+	* Recognize ".data" as a static data section in addition to ".sdata".
+	* Loading images from memory buffers instead of files.
+
+	Platform Support:
+
+	* Updates to libffi for ppc.
+	* Primitives for monitor operations.
+	* Remove script dependency on /tmp because it creates Win32 problems.
+	* Other Darwin-related fixes (Jonathan Springer).
+	* Directory routines for Win32 (Tobias Oberstein).
+
+	Csant:
+
+	* Handle ".." references in file sets properly.
+	* Base directory fixes for some tags.
+	* Mono-compatibility fixes.
+	* Dynamic library support for Win32 (Aditya P. Bansod).
+	* Mixed-endian "double" support for ARM processors.
+
+	Other:
+
+	* Begin implementation of a "mscoree" emulation.
+	* More detailed reporting in "ilsize".
+	* Debian compatibility fixes (Stephen Compall).
+
+0.5.2 (8 February 2003)
+
+	Runtime engine:
+
+	* Verification of "newobj" when used with single-dimensional arrays.
+	* 64-bit fixes for CVM opcode "ldtoken".
+	* Marshalling for the LPWSTR type.
+	* Support code for custom marshalling (not finished yet).
+	* Return the full pathname for argv[0] from "GetCommandLineArgs()".
+	* Pad the "System_Array" header for 64-bit platforms.
+	* Fix CVM opcode "get2d", which was computing the wrong offset.
+
+	C# Compiler:
+
+	* Structs with no fields should be 1-sized, not 0-sized.
+	* Fixes to implicit handling of "Attribute" suffixes (Gopal V, Rhys).
+	* Ordering issues when resolving "const" fields (Gopal V).
+	* Better error reporting for missing types (Gopal V).
+	* Fixes to "foreach" loops containing "continue" (Gopal V).
+	* Don't warn for decimal constants that start with 0 any more.
+	* Allow libraries to directly or indirectly depend upon themselves.
+
+	Assembler & Disassembler:
+
+	* Force the use of "instance" on instructions that always take
+	  instance methods as arguments (Gopal V, Rhys Weatherley).
+	* Set ".maxstack" to 8 by default instead of 0.
+	* Round-tripping support for public key declarations.
+	* Dump the contents of the ".data" and ".tls" sections in "ildasm".
+
+	Documentation:
+
+	* Fix a sprintf-related segfault in "csdoc2stub" (Gopal V).
+	* Correct XML output for enums in "csdoc" (Gopal V).
+	* Add directory entries to texinfo documentation (Stephen Compall).
+
+	Loader and Metadata:
+
+	* Handle missing shared objects during PInvoke operations (Gopal V).
+	* Recursive parent type dependencies.
+	* Begin adding the infrastructure for on-demand token loading.
+
+	Csant:
+
+	* Add the "mkdir" and "copy" tasks.
+	* Add the "-c" option, which emulates <csc> in terms of <compile>.
+	* Prefer *.csant files over *.build files.
+
+	Platform Support:
+
+	* Work-around problems when compiling rc2.c under alpha.
+	* Update libffi and libgc to the most recent versions.
+	* Change the definition of "ILInt8" to support platforms that
+	  have unsigned "char" types (e.g. s390, arm).
+
+	Other:
+
+	* Add "-fno-inline-functions" to the "engine" build process, to work
+	  around problems with -O3 vs -O2 compiles.
+
+0.5.0 (11 January 2003)
+
+	Runtime engine:
+
+	* Internalcalls for querying information about the runtime engine.
+	* Inline 2D array operations to remove the method call overhead.
+	* Internalcalls for "System.IO" (Gopal V, Aditya P. Bansod).
+	* Fixes to "System.String" internalcalls (Jonathan Springer, Rhys).
+	* Implement "GetValue" and "SetValue" for fields (Gopal V, Rhys).
+	* "Marshal.PtrToStruct" (Gopal V).
+	* Verifier fixes for native pointers and arrays (Gopal V).
+	* Pop garbage from the stack when "leave" is seen (Gopal V).
+	* Better reporting for exceptions that cannot be converted into strings.
+	* Intern strings at verification time, not use time.
+	* Fixes to "System.Enum" internalcalls (Jeff Post).
+	* Deserialize attributes properly.
+
+	C# Compiler:
+
+	* Ensure that value types are never zero-sized even if they don't
+	  have any fields.
+	* Negation of int64 constants when converting literal fields.
+	* Reset the "overflowInsns" value when jumping into another context
+	  so that the destination value is used, not the source value.
+	* Allow "this" to be used as an l-value within value types.
+	* Reduction in strength optimizations (Gopal V).
+	* Use of enum constants in function calls (Gopal V).
+	* Array initializers (Gopal V, Rhys Weatherley).
+	* Problems in best method candidate resolution (Gopal V).
+	* "base.X" property set calls.
+	* Recognize "null" properly in member accesses (Gopal V).
+	* Adjustments to how "-nostdlib" works (Gopal V).
+	* Delegate creation expressions (Gopal V).
+	* Implement the "using" and "fixed" statements (Gopal V).
+	* Use type-specific semantic analysis for "typeof" (Gopal V).
+	* Implement the pointer address-of operator (Gopal V).
+	* Support for "extern" properties (Gopal V).
+	* Fixes for no-argument attributes and attributes whose classes do
+	  not end in "Attribute" (Gopal V).
+	* Revamp error message reporting for virtual overrides (Gopal V).
+	* Inhibit infinite loops in operator resolution (Gopal V).
+	* Order of compilation issues for nested classes (Gopal V).
+	* Force local variables to be initialized with ".locals init".
+	* Work around C# compilers that use the underlying type for enums.
+
+	C Compiler:
+
+	* Implicit coercions between C and C# string types in interop code.
+
+	Assembler:
+
+	* Fix parsing of octal escape sequences.
+	* Turn the assembler into a library that can be directly linked
+	  into the "cscc" compiler front-end.
+
+	Disassembler:
+
+	* Fixed word order in dumping of the "ldc.i8" operand.
+	* Round-tripping fixes.
+
+	Documentation:
+
+	* Man page for ildb.
+	* Generate better-formatted code in "csdoc2stub" (Gopal V).
+
+	Linker:
+
+	* Resource-only satellite assembly support.
+	* Handle multiple definitions of struct types in C object files.
+	* Favour struct definitions in a C library over the program's version.
+
+	Loader and Metadata:
+
+	* Fix relocation information in the Win32 exe stub.
+	* Add native offsets to fields so that we can eventually support
+	  marshalling of structures with different IL/native layouts.
+	* Correct encoding of marshal types with unspecified array elements.
+	* Multi-dimensional array encodings.
+	* Revove duplicate entries from the PropertyMap and EventMap tables.
+	* Allow zero-length strings in the "#Strings" blob.
+
+	Cryptopgraphy:
+
+	* Ignore parity bits when comparing Triple-DES keys.
+	* Implement the cryptographically secure random number generator.
+	* Robustness fixes for NULL algorithm handles.
+
+	Csant:
+
+	* Extra properties for cscc plugin locations.
+	* Add the "delete" task (Gopal V).
+	* Implement "if" conditionals for file sets (Gopal V).
+
+	Platform Support:
+
+	* Fix overflow-tested multiplication of 64-bit values to stop truncation.
+	* Wait events (Thong Nguyen).
+	* Work around bugs in "isinf" on certain platforms.
+	* Rename instances of "errno" to "error" to avoid problems on
+	  platforms where "errno" is a macro.
+	* Add support for mingw32 builds under Windows.
+	* Integrate glibc's regex so that we have a consistent set of regex
+	  handling routines across the stack.
+	* Centralize path searching so the install location can be made
+	  variable on Win32 systems.
+	* Win32-specific directory routines.
+	* Implement globbing for systems that don't do it automtically.
+
+	Other:
+
+	* Update RPM spec files (Gopal V, Stephen Compall).
+	* Add "--disable-optimizations" to "configure" (James McParlane).
+	* Fix "fopen" call in resgen for CRLF systems (David Dawkins).
+	* Out of tree builds for libffi and libgc (Stephen Compall).
+	* Remove files from the tree that are created by "auto_gen.sh"
+	  and "configure".
+	* Remove the need for "acconfig.h" (David Dawkins, Rhys Weatherley).
+	* Move "csunit" and "csupport" to the pnetlib repository.
+	* Remove all pre-compiled assemblies from the pnet repository because
+	  pnetlib can now build cleanly from source using cscc.
+	* Microsoft-style command-line options for various tools.
+	* Install libgc and libffi.
+
+0.4.8 (23 November 2002)
+
+	Runtime engine:
+
+	* Better handling for uncaught exceptions to prevent misleading
+	  "virtual memory exhausted" indications.
+	* Resolve explicit assembly references in "Type.GetType".
+	* Allow any method to suppress finalization on an object (Gopal V).
+	* Fix internalcalls for String and StringBuilder (Jonathan Springer).
+	* Bug fix to verification of "stobj" (Gopal V).
+	* Registration of third-party internalcalls (Gopal V).
+	* Regular expression handling (Gopal V).
+	* Verification of tail calls on 64-bit systems (C H Gowri Kumar).
+	* "HostToNetworkOrder" problems with "gcc -O2".
+
+	C# Compiler:
+
+	* Coerce the correct node in array initializers (Robert Hwang).
+	* IndexerName attributes on properties (Gopal V).
+	* Make sure that the finally block of a "try" statement covers
+	  the catch clauses as well as the statement body.
+	* Raise an error when attempting to define a private virtual.
+	* Infer the correct machine type for value type "new" calls (Gopal V).
+	* Foreach statements without IEnumerable (Gopal V).
+	* Perform constant coercion before operator lookup (Gopal V).
+	* ECMA fixes for reducing method candidate sets.
+	* References to types without an explicit "using" (Jonathan Springer).
+	* Indexers that have "params" arguments (Gopal V).
+	* Warn when a non-extern constructor has no body (Gopal V).
+	* Fixes to value type casting (Gopal V).
+	* Parameter coercion for user-defined binary operators (Gopal V).
+	* Use "callvirt" for instance methods even if not virtual.
+	* Alias support for "using" declarations (Gopal V).
+	* Multi-step coercions for user-defined operators (Gopal V).
+	* Numeric type promotion for "bool" values (Gopal V).
+	* Process static constructors in textual order (Jonathan Springer).
+	* Access modifier fixes for nested types (Robert Hwang).
+	* Fix line numbers on replacement nodes (Gopal V).
+	* Improve errors when base class constructors cannot be resolved.
+	* Use "rem.un" for unsigned integer types.
+	* Strength reduction for multiply and divide operators (Gopal V).
+	* Use "ldlen" to get the length of single-dimensional arrays.
+	* Better error recovery for syntax errors in the C# grammar.
+	* Remove the obsolete "value" flag from structure types.
+	* Interface, modifier, and attribute fixes for ECMA compatibility.
+	* Add the "DefaultMember" attribute to classes that have indexers.
+
+	C Compiler:
+
+	* Fix the use of "&" on local arrays.
+
+	Documentation:
+
+	* Recognise the name forms of attribute targets in "csdocvalil".
+	* References to attributes in foreign assemblies in "csdocvalil".
+
+	Loader and Metadata:
+
+	* Convert pointer and byref types into synthetic classes.
+	* Recognise "Serializable", "NonSerialized", and "IndexerName"
+	  as special builtin attributes.
+
+	Platform Support:
+
+	* Portability fixes to time and directory handling.
+	* Determine the current culture from the "LANG" variable.
+	* Use "execvp" to spawn child processes instead of "execv".
+
+	Other:
+
+	* Emulate parts of the NUnit API in "csunit" to assist with the
+	  migration of NUnit test cases.
+	* Improve source file listing capabilities in "ildb".
+	* Type sizes and alignment in libffi for ia64 (C H Gowri Kumar).
+
+0.4.6 (5 November 2002)
+
+	Runtime engine:
+
+	* Reversed test in "ComputeInterfaceTable".
+	* Internalcalls for DNS lookup (Gopal V).
+	* Fix verification of "calli" signatures.
+	* Use the correct PC when entering a method using "calli".
+	* Suppress GC finalization during "ConvertMethod", because it can
+	  cause dead locks if garbage collection happens during method
+	  conversion.
+    * Use explicit field layout information even if the class is
+	  not marked for layout.
+	* Truncation bug in "String.Replace" internalcall (Gopal V).
+	* Deserialize attributes when accessed via reflection (Gopal V).
+	* Handle out of memory in the memory cache a bit better.
+	* DirMethods.GetFilesInDirectory (Charles Schuller).
+	* File/directory time internalcalls (Richard Baumann).
+	* Number formatting internalcalls for floating-point (Richard Baumann).
+
+	Compiler:
+
+	* Redesign the representation of "CSSemValue" to make it easier to
+	  change to meet new requirements in the future.
+	* Look for parameter blocks on the actual method, not the reference.
+	* Implicitly coerce zero to enumerated types in binary operators.
+	* Fixes to type handling in the C compiler.
+	* Compile attributes to their serialized form properly.
+	* Make sure that "this" is included when accessing value type members.
+	* Normalize delegates to use the "native int" type in their signatures.
+	* Convert "out" parameters into l-values, not s-values, to be
+	  consistent with other C# compilers.
+	* Better flow analysis to detect when a block ends in "return",
+	  "break", "continue", etc.
+	* Rearrange how "base.X" is compiled, to fix long-standing bugs.
+	* Name and coercion bugs related to "IntPtr" and "UIntPtr".
+	* Fix semantic analysis for string and object comparisons.
+	* Scan interface parents when looking for the iterator methods used
+	  by "foreach".
+	* Use the array form of a "params" parameter inside a method,
+	  not the element form.
+	* Allow casting amongst unmanaged pointers and integer types
+	  within unsafe blocks (Jonathan Springer).
+	* Equality and inequality operators for unmanaged pointers
+	  (Jonathan Springer).
+	* Use "Exception" on default type-less "catch" clauses (Gopal V).
+	* Change "new" errors for duplicates into warnings (Gopal V).
+	* Operation assignment fixes for small integer types (Jonathan Springer).
+	* Builtin << and >> operators for enums (Gopal V).
+	* "goto case" and "goto default" (Gopal V).
+	* Some early ideas for Parrot code generation.
+	* Fix constant coercion in arguments and expressions (Jonathan Springer
+	  and Gopal V).
+	* Recognise identifiers as types when appropriate (Jonathan Springer).
+	* Treat Object as an implicit parent of interfaces when searching
+	  for members (Gopal V).
+	* Introduce the "ILNode_SemAnalysisType" node operation to deal
+	  with modes that only look for types (Jonathan Springer).
+	* Save and restore the current method when doing "jump" semantic
+	  analysis on the members of an enum type (Robert Hwang).
+	* Fixes to unboxing (Gopal V).
+	* Fix lexical analysis for UTF-8 characters in strings.
+	* Don't generate overflow instructions for floating point (Gopal V).
+	* base.X handling for properties (Gopal V).
+	* IndexerName attribute (Gopal V).
+	* Fix floating-point casts (Robert Hwang).
+	* Work around order of compilation issues for "ParamArrayAttribute".
+
+	Assembler:
+
+	* Fix jump target squashing in the presence of "switch" instructions.
+	* JVM assembler output improved (Sylvain Pasche).
+	* Fixes for multiple exception handlers associated with a block.
+
+	Loader and Metadata:
+
+	* Serialization write support.
+	* Move forward-referenced fields to the end of the class when they
+	  are defined, to ensure that the source field order is preserved.
+
+	Platform Support:
+
+	* Bug in the conversion of C# file access modes into POSIX "O_" flags.
+	* Correct daylight savings adjustments (Richard Baumann).
+
+	Other:
+
+	* Add the "ilheader" utility, which can generate .h files for
+	  importing C# assemblies into cscc-compiled C applications.
+	* Dump stand-alone signatures correctly in "dumpasm".
+	* Add full method signatures to "ilverify" output (Jonathan Springer).
+	* Use the cygwin path functions to generate the correct Win32 paths
+	  to pass to "csc" from "csant".
+	* Bison 1.5 and 1.75 compatibility fixes (Sasa Jovanic, Jonathan Springer).
+
+0.4.4 (2 September 2002)
+
+	Runtime engine:
+
+	* Verifier fix: "rethrow" can be used even if the stack isn't empty.
+	* Verifier fix: correct the stack height adjustment for "sizeof".
+	* Implement the "Module.GetModuleType" internalcall.
+	* Correctly detect PInvoke'd delegate types.
+	* Reset "finalLen" before the final phase of "String.Replace".
+	* AssignCompatible: resolve classes before checking for compatibility.
+	* Allow managed pointers to be turned into any kind of unmanaged
+	  pointer in unsafe code.
+	* Implement the CVM "ldrva" instruction, to support C string globals.
+	* Shift the C# command-line creation logic into "libILEngine.a".
+	* Return the correct array for "TaskMethods.GetCommandLineArgs".
+	* Implement "Marshal.AllocHGlobal" using "calloc" instead of "malloc".
+	* Remove redundant "nop" statements from the x86 code unroller.
+	* Fix the padding of "CVMWord" so that it is 4 on all i386 platforms.
+	* _ILCallPackVaParams: copy the "va_list" using memcpy, because a
+	  direct structure copy won't work on platforms that define "va_list"
+	  as an array type.
+	* Reversed array bounds check in "lib_array.c".
+
+	Compiler:
+
+	* Attribute target specifications.
+	* Fully qualify method references for properties and events.
+	* Don't copy the class attributes to the default constructor.
+	* Parsing, semantic analysis, and code generation for the C language.
+	* Support for the "cpp" pre-processor in the compiler common code.
+	* Fix stack height adjument for "return" code generator.
+	* Set the correct line numbers when replacing l-value nodes during
+	  semantic analysis.
+	* Bug in the "+=" string concatenation operator.
+	* Implement array initializers in "new" expressions.
+	* Process ".il" files with the assembler from the compiler front-end.
+	* Bug fixes and adjustments to the code generator to support C code.
+	* Push into a loop context during semantic analysis of "foreach".
+	* Add the "__module" and "__long_double" keywords to the C# compiler,
+	  to support integration with C code.
+	* "-nostdlib" now turns off the standard library assemblies, but not
+	  the standard library search path.
+	* Properly cast the element type to the variable type in "foreach".
+
+	Documentation and Samples:
+
+	* Document the C application binary interface and create a C user's guide.
+
+	Assembler:
+
+	* Allow global fields and methods to be mixed with ordinary types.
+	* Change the "<Module>" type to "public" if it contains public globals.
+	* Move dangling globals to the "<ModuleExtern>" type.
+
+	Linker:
+
+	* Link ".sdata" and ".tls" sections.
+	* Sort the field, method, and parameter tables at the end of the
+	  link or assembly process, instead of between each top-level class.
+	* Link support for C object modules.
+	* Explode ".a" files to their contents at link time.
+	* Fix linking and loading behaviour of vararg methods across assembly
+	  boundaries.
+	* Automatically link against recursively-referenced assemblies.
+	* Add link objects to the linker context in a single pass before
+	  processing their contents.
+	* Renaming private types to prevent clashes between definitions in
+	  multiple C object files.
+
+	Loader and Metadata:
+
+	* Store the correct signature in a "MemberRef" when it is loaded.
+	* Add extra padding at the beginning of a PE/COFF image to support
+	  programs with 4 or more sections.
+
+	Platform Support:
+
+	* Bug fixes to hash table iterators.
+	* Hack "libgc/mark.c" to work around cygwin 1.3 problems.
+
+	Other:
+
+	* Create the "OpenSystem.C" library, which provides C compiler intrinsics.
+	* Correct a bug in the opcode definition of "stind.i".
+
+0.4.2 (25 July 2002)
+
+	Runtime engine:
+
+	* Marshal "ref String[]" parameters, to support Gtk#.
+	* Internalcalls for "Marshal", "CryptoMethods", "Thread".
+	* Fix verification of "ldobj" when native int types are used.
+	* Replace the internalcall for "String.EqualRange" with
+	  "String.FindInRange" (based on a suggestion by Gopal V).
+
+	C# Compiler:
+
+	* Delegate creation expressions and "+="/"-=" operators.
+	* Semantic analysis and code generator for events.
+	* Add the "-gtk" and "-gnome" options to the compiler, to pre-select
+	  all of the libraries necessary for Gtk# and Gnome#.
+	* Code generation for casting pointer values.
+	* Integrate the linker directly into the compiler so that it isn't
+	  necessary to call out to a separate process to do the link.
+	* Handle "-E" properly.
+	* Fix level detection for delegates, so that nested delegate types
+	  are declared correctly.
+	* Quick and dirty support for the "DllImport" attribute.
+	* Fix code generation for the "ldelema" instruction, which should
+	  have a type argument.
+	* Jump to the type when doing forward-declaration of enumerated fields,
+	  so that default field values are processed in the correct order.
+	* Stack clobbering bug in "foreach" compilation fixed.
+
+	Documentation and Samples:
+
+	* Doxygen configuration file (C H Gowri Kumar).
+	* gtk-sharp.HOWTO file, which describes using Portable.NET with Gtk#.
+	* Table generation bugs in csdoc2html and csdoc2texi (Gopal V).
+
+	Assembler:
+
+	* Allow assembly references to be specified implicity to better handle
+	  transitive assembly dependencies.
+
+	Linker:
+
+	* Fixed a bug in the handling of assembly names that contained ".",
+	  but did not end in ".dll".  e.g. "System.Xml".
+	* Set the permissions on executable files to "+x".
+	* Memory corruption bug in the conversion of method signatures with
+	  more than 3 parameters.
+
+	Loader and Metadata:
+
+	* Prepend "lib" to the name of a shared object if it isn't present.
+	* Modify the assembly resolution algorithm so that it can tolerate
+	  Mono assemblies on the path and select the Portable.NET versions.
+	* Minor bug in "ILDebugIterInit" that caused debug loading to lock up.
+
+	Csant:
+
+	* Add the "csdoc" task to generate XML-ized documentation with csdoc.
+	* Separate source and build directories to support out of tree builds.
+	* Implement property substitution in task parameters.
+	* Off by 1 bug in the processing of the "excludes" list.
+	* Add the "basedir" attribute to "file", to override the default.
+	* Add the "sanewarnings" attribute, to turn off annoying compiler
+	  warning messages that don't mean anything.
+
+	Platform Support:
+
+	* Small fixes to various files for 64-bit platform support.
+	* Host detection for GNU/Hurd (Andrew Mitchell).
+	* Cryptographic algorithms: SHA-256, SHA-384, SHA-512, AES, RC2,
+	  DES, and Triple-DES.
+	* Big number arithmetic routines, to support RSA and DSA.
+	* Remove "test -ot" from build scripts, because older versions of
+	  Solaris do not understand it.
+
+	Other:
+
+	* Make the assembly search patch logic consistent across all tools.
+	* Support for out of tree builds (Stephen Compall).
+	* Added the "ildd" program, which prints assembly and PInvoke
+	  dependencies.
+	* Change instances of the word "namespace" to "nspace" in the headers,
+	  to make it easier to use the libraries from C++ code.
+	* Copy "csunit" from pnetlib to pnet and make it more automake-friendly.
+	* New debian packaging scripts (Andrew Mitchell).
+
+0.4.0 (27 June 2002)
+
+	Runtime engine:
+
+	* Implement a profile system that allows the engine to be built in
+	  various configurations, with certain features enabled or disabled.
+	* Object finalization.
+	* Throw "NotImplementedException" if an internalcall method is missing,
+	  or if an unsupported instruction is executed.
+	* Throw "MissingMethodException" if a PInvoke method is missing.
+	* Build and throw exceptions that are inserted by the verifier.
+	* LookupClass: detect classes in the "System" namespace correctly.
+	* Split "lib_platform.c" into multiple files, one per class, to
+	  make it easier to subset the feature set in profiles.
+	* Internalcalls for "TaskMethods", "Stdio", "RuntimeHelpers", "GC",
+	  "GCHandle", "Delegate", "WaitHandle", "Mutex", "TypedReference".
+	* Check for correct "box" operations in the verifier when primitive
+	  types are involved.
+	* Corrected the type inferencing for shift operations in the verifier.
+	* New CVM instructions: "monitor_enter", "monitor_exit", "local_alloc".
+	* Managed pointers can be assigned to any pointer destination when
+	  verifying in unsafe mode.
+	* Synchronous delegate support.
+	* Hook in the engine to support breakpoint debugging.
+	* The IL "break" instruction should verify as "nop", not "invalid".
+
+	C# Compiler:
+
+	* Helper function to resolve property names (Gopal V).
+	* Implement semantic analysis and code generation for "foreach"
+	  when collections are involved (Gopal V).
+	* #ifdef around missing YYEOF on some systems (found by Sammy Mannaert
+	  <nstalkie@chello.be>).
+	* Handle forward declarations of constants properly.
+
+	Documentation and Samples:
+
+	* Document how the runtime engine can be stripped down to run
+	  on embedded systems.
+	* Bug fix to "FullNameSP" generation in "csdoc".
+	* New "csdoc2hier" program, for dumping class heirarchies.
+	* Report the library that a type/member is declared within.
+
+	Assembler:
+
+	* Apply fixups to class references in exception catch blocks.
+	* Set the default parent class to "System.Object" if unspecified.
+
+	Debugger:
+
+	* Loading and running of applications (no breakpoints yet).
+	* Synthesise source for classes that lack debug symbol information.
+
+	Loader and Metadata:
+
+	* Create a "small" opcode table for use in the verifier, which does
+	  not need the names of the opcodes.
+	* Fix back-patching of field RVA's.
+	* Never link program items to themselves.
+
+	Platform Support:
+
+	* Update libffi sources from the gcc CVS repository.
+	* Fix a pre-processor problem in libffi on Solaris.
+	* Work around versions of grep and sed that aren't fully GNU-ish.
+	* Replacement garbage collector for low-memory environments.
+	* Add some debug code to allow memory usage to be tracked.
+	* Use a temporary file in "gen_errno.sh" instead of stdin, because
+	  some C compilers cannot read source from standard input (e.g. hpux).
+	* Detect the "nsl" and "socket" libraries on platforms that need them.
+	* Centralise Ansi encoding routines into "support".
+
+	Other:
+
+	* Add "pnet_build.sh", for assisting people who wish to automate builds.
+	* Implemented the "clrwrap" program, which makes it easier to run
+	  IL-format binaries on Unix systems, by way of a small wrapper script.
+	* Add missing ".h" files to the install list for "include".
+	* Support definition profiles in "csant" to assist with subsetting pnetlib.
+	* Repurpose "ilcheck" for checking PInvoke calls (Gopal V).
+
+0.3.8 (10 June 2002)
+
+	Runtime engine:
+
+	* Use gcc's computed goto facility to speed up the interpreter.
+	* Implement a code unrolling facility to translate common CVM
+	  instruction sequences into x86 machine code.
+	* Combine "call" and "call_extern" into a single instruction.
+	* Convert "frame" and "exceptHeight" values in call frames into
+	  pointers, to reduce the overhead of method calls.
+	* Don't reset "exceptHeight" on entry to a method, because it will
+	  be overwritten anyway if it is needed, and ignored if not.
+	* Optimise loads and stores of bool/byte local varaibles.
+	* Profile variable usage.
+	* Modifications to allow internalcalls to work without libffi.
+	* Variable argument support.
+	* Throw "System.Security.VerificationException" when the verifier fails.
+	* Handle type expansion (e.g. char->int) in internalcalls and PInvokes.
+	* Code generation and interpreter problems with branches and switches.
+	* Abstract the details of generating and unpacking CVM instructions
+	  to make it easier to switch between threaded interpreter types.
+	* Fixes to subclass relationship testing in the verifier, when multiple
+	  execution paths are coalesced.
+	* Centralise CVM configuration into "engine/cvm_config.h".
+	* Convert the "tail/call" sequence into a separate "tail_call" instruction.
+	* Begin implementing indirect method calls (incomplete).
+	* Use the "raw" libffi mode if it is available, because it is faster.
+	* Short-cut the execution of method call instructions to avoid an
+	  unnecessary call to "_ILConvertMethod" if the method is already
+	  converted.
+	* New rules for PInvoke parameter and return type marshalling.
+	* Internalcall for "Assembly.GetTypes" (Gopal V).
+	* Add the "-P" debug option to ilrun, which dumps the method cache
+	  and GC heap sizes on program exit.
+	* Begin integrating thread support (incomplete).
+
+	C# Compiler:
+
+	* Local constant declarations (Gopal V).
+	* "-fsave-asm" will save the output even if the assembler fails.
+	* Semantic analysis and code generation for "base" expressions (Gopal V).
+	* Special-case "foreach" for string iteration.
+	* Rewrite "ILNodeEndsInReturn" so that it uses a treecc operation
+	  instead of hard-coded node testing.
+	* Fixes to code generation for "switch" statements.
+
+	Documentation and Samples:
+
+	* Add ilrun.1 to the build system.
+	* Document the "direct" format for CVM instructions.
+	* Document the new PInvoke marshal rules in "doc/pinvoke.html".
+	* HTTP server sample - httpsrv (Gopal V).
+
+	Assembler:
+
+	* Fixes to assembly of "switch" instructions.
+
+	Diassembler:
+
+	* Remove "// unsafe" reporting, as it was not strictly accurate.
+
+	Loader and Metadata:
+
+	* Fix the handling of "vararg" call sites throughout the stack.
+	* Use the "secure" bit in loaded images to determine if explicit
+	  class layout is allowed.
+
+	Platform Support:
+
+	* MacOSX portability problems in IL_WRITE_XXX macros in "il_values.h"
+	  (Glen Chambers).
+	* MacOSX patches to libffi (Glen Chambers).
+	* Removed bogus option from libgc that broke hpux (James Mc Parlane).
+	* Use "isfinite" on hpux (James Mc Parlane).
+	* Ported entire stack to MacOSX.
+	* Detect missing CODESET on NetBSD.
+	* Turn off -O2 in "tests" because it causes compiler lock-ups on
+	  platforms with insufficent memory.
+	* Implement true mmap-based page allocation for ILPageAlloc and friends.
+	* Begin implementing "wait handles" in the threading sub-system.
+
+	Other:
+
+	* Removed "ilrun_opt", because "ilrun" is now just as fast.
+	* Move some lesser used utility programs to "noinst" to prevent
+	  cluttering of install directories.
+	* Updates to the build system to be more friendly to automake 1.5.
+	* Added debian packaging support (Andrew Mitchell).
+
+0.3.6 (11 May 2002)
+
+	Runtime engine:
+
+	* Implement "pread_this" and "pwrite_this" CVM instructions to
+	  speed up common field access operations.
+	* Method profiling.
+	* Recognise invalid program entry points.
+	* Stub "Reflection.Emit" internalcalls.
+	* Make sure that "ilverify" loads the assembly dependencies.
+	* Insert stack traces into exception objects that are created
+	  by the engine.
+	* Implement stack resizing and overflow checks (Jonathan Springer).
+	* Internalcalls for "ArgIterator" and "TypedReference".
+	* Wrong pointer used to get field names in "Enum.GetEnumName".
+
+	C# Compiler:
+
+	* Compile against the correct system library (builtin vs pnetlib).
+	* Semantic analysis and code generation for the array "new" operator.
+	* Correct handling of "beforefieldinit" on classes.
+	* Output the correct security attributes to mark assemblies as "unsafe".
+	* Do not insert coercions into the result type of an operator.
+	* Don't call "yyerrok" at EOF, because it will cause an infinite loop.
+	* Recognise "ThrowExpr" and "LineInfo" as "return" statements.
+	* Add extra scope nodes to handle local variables with the same
+	  name in different lexical contexts.
+	* Begin semantic analysis for attributes (not yet complete).
+	* Non-static field initializers.
+	* Code generation for "ref" and "out" argument variables.
+	* New keywords to be compatible with features of Microsoft's C# compiler:
+	  "__arglist", "__makeref", "__reftype", and "__refvalue".
+	* Improve method, field, and property handling for value types.
+	* Semantic analysis for the array case of "foreach".
+	* Add the "-fsave-asm" option to assist with debugging.
+	* Do not generate branch instructions at the end of a "then" case
+	  that ends in a "return" statement.
+	* Reversed test in code generation for "!".
+
+	Documentation and Samples:
+
+	* csdoc2test: create test stubs from ECMA documentation (Gopal V).
+	* csdocvalil: process multiple "-fimage" options.
+	* engine/HACKING: document the engine architecture more fully.
+	* codepage.cs: add command-line options to dump the contents
+	  of a code page.
+	* csdoc: bug fixes to XML output generation.
+
+	Linker:
+
+	* Fix linking of synthetic types.
+
+	Loader and Metadata:
+
+	* Scan up the class hierarchy when resolving MemberRef's for "base.X"
+	  expressions.
+	* Resolve the class before determining if it is enumerated or a delegate.
+	* Bug fix to ILWriterTextWrite that caused invalid data to be written.
+	* Fix attribute parsing in "ser_parse.c".
+	* Recognise builtin attribute like "DllImport", "MarshalAs", etc, and
+	  convert them into the proper metadata definitions (not linked into
+	  the compiler yet).
+
+	Platform Support:
+
+	* Begin adding threading primitives to "support" (not linked into
+	  the engine yet).
+	* Implement "Socket.Select" (Charlie Carnow).
+	* Print an error when a child process exits with a signal to catch
+	  SEGV's within the compiler toolchain.
+	* Make the socket code use a consistent address format.
+
+	Other:
+
+	* csant: pass "/noconfig" to csc to stop it linking in the Microsoft
+	  "System.dll" and "System.Xml.dll" assemblies instead of ours.
+	* Rename source files with duplicate names to get around problems
+	  with setting breakpoints in gdb.
+	* libgc: fix a Win32-ism that was affecting Cygwin builds.
+	* libffi: update to latest version from gcc CVS tree.
+
+0.3.4 (20 April 2002)
+
+	Runtime engine:
+
+	* Auto-generate the "internalcall" tables using "ilinternal".
+	* Complete "binfmt" kernel registration code.
+	* New method cache.
+	* Modify call and exception instructions to accomodate
+	  the method cache changes.
+	* Integrate debug line number support into the engine.
+	* Pass debug offset and line number information to pnetlib
+	  for use in stack traces.
+	* Implemented internalcall's for "ClrResourceStream", "SocketMethods",
+	  "DefaultEncoding", "Array", "Assembly", "Type".
+	* Manifest resources and files.
+	* Properly initialize the locale on entry to "ilrun".
+	* Detect the code page that corresponds to libc's locale.
+	* Verifier fixes to "switch" and "newobj".
+	* Additional CVM and verifier debug code.
+	* Use the underlying type of an enumeration to load and store locals
+	  with CVM instructions.
+	* Fix the stack arrangement when internal exceptions are thrown.
+	* Implement a better policy for deciding whether an assembly is allowed
+	  to use security-senstivie features such as internalcall, PInvoke,
+	  manifest files, etc.
+	* Fix the interface lookup code in "call.c" when the interface is
+	  implemented by a parent of the current class.
+	* Add the new CVM instruction "type_from_handle" to inline calls
+	  to "Type.GetTypeFromHandle".
+	* Implement CVM instruction profiling to help study engine performance.
+
+	C# Compiler:
+
+	* Additional debug line number information.
+	* Fixes to operator overloading for "IntPtr" and "UIntPtr".
+	* Remove a shift/reduce conflict in "ArrayInitializer" related
+	  to trailing commas.
+
+	Documentation and Samples:
+
+	* Updated FAQ.
+	* Embed XML documentation into the CVM interpreter for all
+	  CVM instructions.
+	* Add a Python script to convert the CVM XML into HTML (Gopal V).
+	* Added "samples/except.cs" to demonstrate exception stack traces.
+	* Added "samples/codepage.cs" to demonstrate code page handling.
+	* Changes to the documentation stub generator (Gopal V).
+
+	Assembler:
+
+	* Handle debug line number information.
+
+	Debugger:
+
+	* Help system works.
+	* Simple gdb-like commands for xxgdb integration.
+
+	Linker:
+
+	* Align RVA's during exception block linking.
+
+	Loader and Metadata:
+
+	* Debug reading and writing support.
+	* Manifest file support.
+	* On-demand loading of images by assembly name.
+
+	Other:
+
+	* Integrated sources for libgc version 6.1alpha4.
+	* Minor tweaks to the automake/autoconf build system.
+	* Added an "init.d" script to "doc" - contributed by Gopal V.
+	* Fixes to "csant" to handle multiple resource files with "csc".
+	* Added a "--public-only" option to "ilfind" to assist pnetlib builds.
+	* Add maintainer mode to the autoconf system to work around
+	  autotools version problems.
+
+0.3.2 (27 March 2002)
+
+	Runtime engine:
+
+	* InternalCall methods for "Platform.FileMethods" (Gopal.V, Charlie.C,
+	  and Rhys.W).
+	* Add binfmt registration and unregistration code.
+
+	C# Compiler:
+
+	* Remove a floating-point recognition case from the lexer because
+	  it was confusing the parser, and because it wasn't standard.
+	* Always favour non-params cases of methods when resolving candidates.
+	* Coerce the "this" parameter to method invocations properly.
+	* Rearrange the "cscc" directory to separate common code, plug-in
+	  handling, and the C#-specific pieces of the compiler.
+	* Implement Java-style labelled loops and switches in the code generator.
+	* Collect up static constructor fragments for each class.
+	* Add non-literal field initializers to static constructors.
+	* Array initializers.
+	* Detect duplicate definitions of methods and properties.
+	* Type gathering for nested types.
+	* Check for interface implementation errors in source programs.
+	* Set the "override" flag on finalizers.
+	* Modify name resultion so that a field declaration of the form
+	  "T T" will be treated propertly.
+	* Check for correct use of "abstract" and "extern".
+	* Fix line numbers on declaration nodes so that errors are reported
+	  for the first line of a declaration, not the last.
+	* Always look for declared types in the program before the libraries,
+	  just in case the program overrides a library type.
+	* Add the "-fmetadata-only" option to the compiler.
+	* Implement builtin operators for enumerated types.
+	* Pass "-ftarget-assembly-name" and "-fstdlib-name" to all tools.
+
+	Documentation:
+
+	* Updates to "engine/HACKING" (Gopal.V).
+	* Document the location of CVS snapshots in "HACKING".
+	* New "csdoc2stub" program to generate C# stub classes (Gopal.V).
+
+	Assembler:
+
+	* Syntax changes to support Java bytecode.
+	* Implement the ".data" directive to support array initializers.
+	* Handle classes with no explicit parent correctly.
+
+	Disassembler:
+
+	* Java method body support.
+
+	Linker:
+
+	* Add the missing "--no-stdlib" option.
+	* Bug fixes to attribute linking.
+
+	Loader and Metadata:
+
+	* Improve the Java class loader.
+	* New functions to support interface method searches.
+	* New functions for accessing user data on "ILClass" objects.
+
+	Other:
+
+	* Type comparison fixes in "ildiff" (Gopal.V).
+	* New "ilcheck" program for checking for missing InternalCalls (Gopal.V).
+	* Csant fixes to make it capable of building pnetlib.
+
+0.3.0 (11 February 2002)
+
+	Runtime engine:
+
+	* Implement native methods for "Platform.TaskMethods" and
+	  "Platform.DirMethods".
+	* Bug fixes for the CVM "switch" instruction.
+	* Bugs in "ldarg" and "ldloc" when "byref" types were present.
+	* Fix the implementation of "String.Replace".
+	* Bug in the CVM "return_n" instruction which caused it to
+	  return the wrong stack words.
+
+	C# Compiler:
+
+	* Lexer fixes for identifiers, verbatim string literals, hexadecimal
+	  characters, octal characters.
+	* Add the "volatile" field modifier.
+	* Validate the type of initialization expressions against constants.
+	* Fixes to the representation of constant blobs.
+	* Store decimal constants as "DecimalConstantAttribute".
+	* Update the pre-processor's condition syntax to match the latest
+	  C# language specification.
+	* Various fixes to the pre-processor directives.
+	* Expand constant fields inline.
+	* Compilation of properties, fields, casts, increment, decrement,
+	  "as", "is", "new", "typeof", "switch".
+	* Parser fixes for events, modifiers.
+	* Duplicate testing for fields, enumerated constants, and properties.
+	* Improve the coercion and cast API's to allow for subsetting.
+	* Implement more implicit and explicit conversions.
+	* Convert between Java and C# string objects where required.
+	* Default constructors.
+	* Use the values of literal constant fields during type gathering.
+	* Array access operators.
+	* Filter method groups to remove methods in base classes with
+	  identical signatures.
+	* Indexers.
+	* Fixes to interface declarations.
+	* Synchronous delegates.
+	* Bug fixes to string equality and inequality handling.
+	* Optimise checks of strings against "null" to use reference testing
+	  instead of operator calls.
+	* Report errors when instance members are accessed from static members.
+
+	Documentation:
+
+	* Add the top-level HACKING file to the tree.
+
+	Assembler:
+
+	* Add the "nullref" field initializer.
+
+	Linker:
+
+	* Fix forward references to methods and fields.
+	* Make sure that the converted type is used in method and field
+	  comparisons, not the original type.
+
+	Loader and Metadata:
+
+	* Ignore PE/COFF sections that are zero bytes in size when
+	  calculating minimum and maximum addresses ranges.
+	* Make the "il_types.h" API more opaque, and implement several new
+	  helper functions that are useful for the compiler.
+
+	Other:
+
+	* New helper functions for UTF-8 and UTF-16 string processing.
+	* More portability fixes for Solaris 8.
+	* Change all tools to output help message to stdout instead of
+	  stderr, to be consistent with the GNU Coding Standards.
+	* Alter the Fibonacci example, and add the "getenv" example.
+	* Implement the missing "ILDecimalFromDouble" function.
+
+0.2.8 (7 January 2002)
+
+	Runtime engine:
+
+	* Updates to the internalcall methods to match changes to pnetlib.
+	* Implement the reflection API's.
+	* Implement array cloning properly in "Object.MemberwiseClone".
+	* Method invocation via reflection to support unit testing in pnetlib.
+	* Fix the status handling for "Main": it used to think that an
+	  exception was thrown sometimes when it wasn't.
+	* The range for exception blocks was incorrect in the bytecode verifier.
+	* Throw a "missing method" exception when the verifier fails.
+
+	C# Compiler:
+
+	* Fix a shift/reduce conflict in the grammar which caused it to
+	  complain about casts to array types.
+	* Insert the "%split" keyword into the treecc definitions where
+	  large operations may otherwise cause gcc 3.0 to crash.
+
+	Documentation:
+
+	* Parse and format excluded base types in the ECMA specification.
+	* Implement "csdocvalil", to validate pnetlib against the ECMA spec.
+	  Output formats are text and XML.
+
+	Other:
+
+	* Terminology changes in the README to make it FSF-compatible.
+	* Implement the MD5 and SHA1 hash algorithms.
+	* Modify GUID generation to redistribute entropy using SHA1.
+	* Turn off HAVE_CONFIG_H prior to including readline headers,
+	  to prevent confusion.
+	* Configuration updates to detect the thread model similarly to libgc.
+	* Alter the ChangeLog format to make it Emacs-friendly.
+	* Move assignment-compatibility testing into "image".
+	* Some more 32-bit vs 64-bit fixes.
+
+0.2.6 (27 November 2001)
+
+	Runtime engine:
+
+	* Internalcall methods for "System.Diagnostics".
+	* Make asmfix a bit more tolerant of odd assemblers.
+	* Enable the use of asmfix to generate an optimised version of
+	  the CVM interpreter loop on x86 platforms.
+	* Align "ILTypedRef" structures properly on 64-bit platforms.
+	* Push "ffi_call" arguments onto a separate native argument stack
+	  so that they can be handled faster and with the correct alignment.
+	* Implement true PInvoke for calling external libraries.
+	* Rewrite the path searching code for assemblies and external libraries.
+	* Implement the "NativeTypeSizes" and "DllImportMap" attributes to
+	  assist with the ugly business of PInvoke on non-Windows platforms.
+	* Compile the host information from "configure" into "image/link.c"
+	  so that it knows which external library to use when resolving uses
+	  of the PInvoke mechanism.
+	* Fixed a value type bug in "newobj".
+	* Add user-specified search paths to the "ilrun" command-line.
+	* Better support for UTC vs local time.
+	* Exception handling in the verifier, CVM coder, and CVM interpreter.
+	* Bug fixes to "GetTypeName" in "lib_type.c".
+	* Print a message if "Main" throws an uncaught exception.
+	* Internalcall methods needed to support "System.Text.StringBuilder".
+	* Better detection for cygwin in "image/filemap.c".  Fix due to
+	  Volker Hahn <Volker.Hahn@bytesteps.net>.
+	* Inline common methods as CVM instructions.
+	* Fixes to the verifier that were discovered during unit testing.
+
+	C# Compiler:
+
+	* Output a warning message when "-fsyntax-check" is used to remind
+	  people that the compiler isn't finished.
+
+	Assembler:
+
+	* Enable short instruction squashing in the assembler.
+	* Fix a bug that caused the assembler to use "ldarg" instead of
+	  "ldloc" in some situations.
+
+	Other:
+
+	* Implement a large number (>3000) of unit tests for the verifier.
+	* Begin implementing the "csdocvalil" program, to help validate
+	  pnetlib against the ECMA's XML documentation for the C# library.
+	* Update the FAQ.
+
+0.2.4 (17 November 2001)
+
+	Runtime engine:
+
+	* Verifiable method pointers.
+	* Add the Hans-Boehm garbage collector to the code, and link
+	  it into the engine as the new object memory allocator.
+	* Support for interface method layout and calling in the engine.
+	* Alternative call API that passes arguments in structures rather
+	  than in vararg parameters.
+	* Internalcall methods for "System.Threading".
+	* Fix branch and label code in the CVM coder.
+	* Type lookup routines, to complement class and method lookups.
+	* Pass command-line parameters down to the "Main" method.
+	* Lay out static fields after the main class has been laid out,
+	  to resolve layout circularity problems.
+	* Internalcall methods for "System.CompilerServices".
+	* Handle "this" parameters for value type methods properly.
+	* Dump method entry and exit when CVM "dump mode" is enabled.
+	* Dump the stack contents when CVM "dump mode" is enabled.
+	* Minor fixes to "box", "switch", "dup", and "pop" instructions.
+	* Move the engine string API's into "lib_string.c" so that they
+	  can be implemented more efficiently.
+	* Implement string intern'ing.
+	* More internalcall methods for "System.String".
+	* Experiment with increasing the speed of the engine by
+	  post-processing gcc's output to optimise it better.
+
+	C# Compiler:
+
+	* Overflow testing for constant casts.
+	* Load library images so that external definitions can be resolved.
+	* Improve method overloading to handle multiple candidates better.
+	* Make sure that the "System" namespace is always included by default.
+	* Disable the builtin library if the external "mscorlib" was loaded.
+	* Proper handling of "params" and non-"params" parameter expansion.
+	* Modify method and type output code so that definitions are
+	  properly qualified with their assembly.
+	* Invoke the linker to link the final executable.
+
+	Disassembler:
+
+	* Dump a readable version of attribute values in the disassembler.
+	* Dump the text version of the XML within security blobs.
+	* Try to print the assembly name rather than the module name
+	  when dumping class names, because the assembly name is a
+	  truer representation of where the class came from.
+
+	Other:
+
+	* Clean up the code to remove all references to the obsolete
+	  "ILValue" and "ILValueType" types.
+	* Add some more functions to "support" to improve engine portability.
+	* Better detection of the default alignment on the system.
+	* Make "ILNativeInt" and "ILNativeUInt" the same size as native
+	  pointers, to be consistent with ECMA requirements.
+	* Implement the "csant" build utility program.
+	* Fix the parsing and writing of array shapes in "image".
+	* Don't report "runtime" methods as native in "ilnative", because
+	  they are normally used for delegates which aren't strictly native
+	  in the same sense as PInvoke and internalcall methods are.
+	* Modify the Fibonacci example program so that it is compiled all
+	  the way down to an executable with the C# compiler.
+	* Fix the handling of "vararg" call site signatures.
+	* Add "ILCmdLineExpand", which can expand references to response
+	  files in the specified command-line.  This allows the compiler
+	  tools to process very large command-lines.
+
+0.2.2 (3 November 2001)
+
+	* Synthetic class structures for array types.
+	* Implement constructors for single-dimensional arrays.
+	* Add a mini-disassembler for CVM, to assist with debugging.
+	* Add "internalcall" methods for "System.Math", "System.Single",
+	  "System.Double", "System.Type", "System.RuntimeType", "System.String,
+	  "System.Threading.Monitor", and miscellaneous "Platform" classes.
+	* Fixes to the assembler's lexer and member resolution code.
+	* Handle "object" and "string" correctly in the assembler.
+	* Numeric values for Unicode characters.
+	* Improve the speed of "internalcall" method lookup.
+	* Unicode-based lookup routines for classes.
+	* Properly handle '<see langword="x">' in "csdoc".
+	* Implement the CVM instructions related to objects, comparisons,
+	  arrays, object construction, virtual methods,
+	* Implement and document the linker.
+
+0.2.0 (20 October 2001)
+
+	* Better code generation for "return" statements.
+	* Semantic analysis and code generation for "try", "lock", and
+	  "throw" statements.
+	* Code generation for "foreach" statements.
+	* Continue the implementation of the bytecoder verifier.
+	  Most instructions are handled now.
+	* Fix the instruction format for the "unaligned" instruction.
+	* Centralise the recognition and handling of value types within "image".
+	* Improve system type resolution within "image".
+	* Add two special images: system and synthetic, which are assigned
+	  special roles within the runtime engine.
+	* Implement the "Converted Virtual Machine", or CVM, whose bytecode is
+	  more efficient to execute than raw IL.
+	* Implement the CVM coder, which converts IL into CVM bytecode.
+	* Remove "interpreter.c" which is now obsolete.
+	* Java-style type and method lookup routines, which allow strings like
+	  "(oSystem.String;i)V" to be used as signatures.
+	* New format for call frames, method user data, and the thread state.
+	* A helper library for hash tables, to support better code reuse.
+	* Rewrite the class lookup routines to use the new-style hash tables.
+	* System type lookup in the engine always uses the special "system"
+	  image, to prevent applications redirecting the builtin types.
+	* Simple object allocation.
+	* Implement the "internalcall" methods for "Object", "String", "Array",
+	  "Decimal", and "Stdio".
+	* Hook "ilrun.c" through to the engine so that it is now possible
+	  to run simple "Hello World" style examples.
+	* Perform dynamic linking for member references.
+	* Layout for static fields.
+
+0.1.8 (04 October 2001)
+
+	* Begin implementation of ildb, the IL debugger.  Not much working yet.
+	* Begin implementation of the bytecode verifier for the engine.
+	* Continue implementation of csdoc: mostly done now.
+	* Implement a shell for converting the csdoc XML format into
+	  a variety of other documentation formats.
+	* Implement "csdoc2texi" and "csdoc2html" using the above shell.
+	* New member lookup routines in the C# compiler that better
+	  match the requirements of the C# specification.
+	* Redesign the handling of namespaces in the C# compiler.
+	* Semantic analysis for fields within objects that are not "this".
+	* Static and instance properties.
+	* New semantic kind called CS_SEMKIND_SVALUE (set value), for
+      representing properties that only have a "set" method.
+	* Update the documentation and man pages to describe "csdoc",
+	  "csdoc2texi", "csdoc2html", and the XML documentation format.
+	* Parse class constants as a special case of fields.
+	* Dump the constant value of a field to the assembly stream.
+	* Invocation support for static, instance, and virtual methods that
+	  do not have overloaded variants.
+	* Base class initializers.
+	* Rearrange the code of "resgen" to make it easier to maintain.
+	* Add .po support to "resgen".
+	* Add "ildiff" to the tree.  Contributed by Gopal V <gopalv82@yahoo.com>.
+	* Method overload resolution code.
+	* Support for "ref", "out", and "params" arguments to methods.
+	* Code generation for taking the address of an item (ILNode_GenRef).
+	* Fix the importing of classes from the builtin system library.
+	* Namespaces with names "X.Y.Z" are expanded properly in the parser.
+	* Enumerated type declarations.
+
+0.1.6 (11 September 2001)
+
+	* Convert operator declarations into method nodes.
+	* Convert indexer declarations into property nodes.
+	* Convert constructors and destructors into method nodes.
+	* Rearrange the C# grammar to allow better reuse of node types.
+	* Semantic analysis for identifier nodes.
+	* Add "System.TypedReference" to the set of builtin compiler types.
+	* New scope item kinds for methods, fields, local variables, etc.
+	* Handle primitive types in the C# grammar in a better way.
+	* Semantic analysis for types, fields, methods, and properties.
+	* Make sure that library types are properly imported in the code generator.
+	* Move unsafe warnings and errors out of the grammar and into
+	  semantic analysis.
+	* Type gathering for fields, methods, and properties.
+	* Code generation for fields, methods, and properties.
+	* Never allow unsafe constructs when the output is JVM bytecode.
+	* Convert "void" into a first-class type to simplify the grammar.
+	  Places where "void" is disallowed is now caught in semantic analysis.
+	* Unsafe statement blocks.
+	* Semantic analysis and code generation for "ToBool", including
+	  user-defined boolean conversions.
+	* Add node information to all scope items to assist error reporting.
+	* Keep track of the current class and method during semantic analysis.
+	* Semantic analysis and code generation for local variables.
+	* Wrap method bodies in a "NewScope" node to provide correct scoping.
+	* Semantic analysis for return statements.
+	* Semantic analysis and code generation fixes for C# operators.
+	* Semantic analysis and code generation fixes for C# constants.
+	* Semantic analysis and code generation for object/static field access.
+	* Track source line numbers for the -g compiler option.
+	* Better error reporting in the C# compiler.
+	* Semantic analysis and code generation for "typeof" and "sizeof".
+	* Improvements to the cast and coercion logic.
+	* Reimplement the numeric promotion rules for the builtin binary and
+	  unary operators.
+	* Added "auto_gen.sh" to assist people who are building from CVS.
+	* Bug fixes in "support/decimal.c".
+	* Change the implementation of array types so that multi-dimensional
+	  arrays are handled correctly.
+	* Use the keyword ".library" in the assembler to refer to the C#
+	  standard library assembly (usually "mscorlib").
+	* Convert the JVM output routines in the compiler to output JL assembly
+	  code instead of binary bytecode.
+	* Modify the assembler to support the JL syntax.
+	* Compilation of classes, fields, and methods to JL assembly code.
+	* Modify the compiler's default overflow checking state to off.
+	* More documentation of the assembler syntax.
+	* Started implementation of "csdoc", which converts C# source code
+	  into an XML document representing the program documentation.
+	* Modifications to "resgen" to support the Beta2 binary resource
+	  format, and the XML-based resource format.
+
+0.1.4 (21 August 2001)
+
+	* Converted ChangeLog into the GNU format and moved the previous
+	  ChangeLog into NEWS.
+	* Convert tool documentation into texinfo format: "pnettools.texi".
+	* Fixed various manpage bugs, and moved some information to texinfo.
+	* pnet.spec file contributed by "mdaniel".
+	* Output basic module, assembly, and class information from the
+	  C# compiler to the assembly code stream.
+	* Remove some obsolete source and documentation files.
+	* Applied a patch from Norman Stevens that adds most of the remaining
+	  node creation functionality to the C# compiler.
+	* Implement a Java .class and .jar file loader that converts Java
+	  binaries into IL metadata on the fly.
+	* Undo the hack that was added to "ilnative" in 0.1.0 because it is
+	  no longer required.
+	* Suppress the "class" prefix when dumping class names in catch clauses
+	  within the disassembler.  Found by Gary L. Sun, <gsun@inetnow.net>.
+	* Fix a bug in the disassembler that caused multiple "class" prefixes
+	  to be added to nested class names.  Found by Gary L. Sun.
+	* Remove the '[' form of floating point constants from the assembler,
+	  because the ECMA-compliant '(' form will do the right thing now.
+	  Requested by Gary L. Sun.
+	* Avoid following cross-image links when dumping parent names in
+	  the C# compiler.
+	* Change all references to the obsolete ".io" file format to ".obj".
+	* Implement and document new name mangling rules for C# -> JVM.
+	* Remove all code pertaining to Beta 1 support because it is obsolete.
+	* Implement class layout of fields and methods in the runtime engine.
+	* Fix the "libffi" make so that it will always build the static library.
+
+Versions 0.0.1 to 0.1.2 used a non-GNU ChangeLog format for reporting
+changes.  The change information has been copied below.
+
+0.1.2 (13 August 2001)
+
+	* Began building the linker library, for use by "ilalink" and "cscc".
+	* Fixed the handling of "MarshalledType" in the assembler so that
+	  the correct parameter records are created.
+	* Implement ".override" and ".param" in the assembler.
+	* Updated attribute names in the assembler to ECMA compliance.
+	* Added the "ILMethodGetCode", "ILMethodGetExceptions", and
+	  "ILMethodFreeExceptions" functions to "il_program.h", to handle
+	  pulling apart a method's code area.  Updated "ildasm" to use
+	  these functions instead of its own.
+	* Added support for integer label names in the assembler.
+	* Exception blocks in the assembler.
+	* Wrote the "debug.html" document, to describe a proposed mechanism
+	  for representing debug information in IL image files.
+	* Added debug section support to the "image" routines.
+	* Events and properties in the assembler.
+	* Rearrange the assembler grammar to centralise the handling
+	  of method references, and to remove shift/reduce conflicts.
+	* Dump the calling conventions of a property from its get or set
+	  method, because property signatures do not include the conventions.
+	* Fixed a nasty memory corruption bug in "image/create.c" due to
+	  a reversed test.
+	* Handle TypeDef parents that are later in the table than their children.
+	* Implement call stack frame handling in the runtime engine.
+	* Integrated some more C# compiler patches and Makefile.am modifications
+	  from Norman Stevens <norman@arcady.u-net.com>.
+	* Implement TypeRef and MemberRef compaction in "image/compact.c".
+	* Add token fixup support to the assembler and image routines, to
+	  fix up token references after compaction.
+	* Fix the class scope handling.
+	* Make the assembler less sensitive to changes in token codes that
+	  result from sorting and compacting metadata tables.
+	* Fix configure.in so that it looks in "$PREFIX/bin" for "treecc"
+	  prior to searching the path.
+	* Sort metadata tables that require it (constant, custom attr, etc).
+
+0.1.1 (27 July 2001)
+
+    * Create metadata structures within the assembler.
+	* Get the assembler to the point of processing simple examples.
+	* Minor changes to the metadata reading API and the disassembler
+	  to address issues exposed by the assembler implementation.
+	* Completed the first pass implementation of the image writing routines.
+	* Added a 15 July 2001 snapshot of libffi to the tree.  The code was
+	  obtained from the CVS server at "http://sources.redhat.com/libffi".
+	* Wrote "doc/pinvoke.html" to describe possible PInvoke mechanisms
+	  for Unix.  Working with the Mono group to create a common standard.
+	* Implemented type and signature encoding.
+	* Dynamic linking support in the "image/link.c" file.
+	* Added an extra parameter to "ILImageLoad" to assist with dynamic linking.
+	* Fixes for various Beta2-related bugs found in "ildasm" by Volker Hahn.
+	* Output method code from the assembler to a final image file.
+	* Recognize and dump the entry point method in the disassembler.
+	* Dump token codes in "ildasm" for instructions that take a token.
+	* Proper dumping of import scopes within "ildasm", including nesting.
+	* Add all of the weird Microsoft-specific sections that make it
+	  possible for valid IL binaries to run under Windows.
+	* Change from /dev/random to /dev/urandom in the GUID generation code
+	  because /dev/random can block while collecting entropy.  We apply
+	  extra randomisation to the output of /dev/urandom to compensate.
+	* Fix the code section determination logic in "_ILImageGetSection"
+	  because Microsoft has re-ordered the IL sections in such a way
+	  that it broke my previous code.
+	* Map all PE/COFF sections into memory, even if they don't contain
+	  IL-related information.  We need to do this because it is
+	  indeterminate where Microsoft's compilers will put the IL code.
+	* Add the "ILImageMapRVA" function to locate method code.
+	* Fix the dumping of CMOD_OPT and CMOD_REQD types in "dump_type.c".
+	  The wrong union field was being used to dump the modified type.
+	* Added support to the C# pre-processor, scanner, and grammer to
+	  parse doc comments in the input.
+	* Continuation of the metadata API documentation in "pnetimg.texi".
+	* Changed "pinvokeimpl(?)" to "pinvokeimpl()" in the disassembler
+	  as there are some cases where PInvoke can be specified without
+	  explicit linkage information.
+	* Integrated some C# compiler patches from Norman Stevens
+	  <norman@arcady.u-net.com> related to constant declarations.
+
+0.1.0 (16 July 2001)
+
+    * Improved the metadata API routines in "image" considerably.
+    * Types such as ILModule/ILModuleRef, ILAssembly/ILAssemblyRef, etc
+      have been collapsed into common types that work for both local and
+      referenced tokens.
+    * Moved most of the memory management for an image from ILContext
+      to ILImage so that all token structures can be discarded when
+      an image is unloaded from the system.
+    * Support for the ECMA/Beta2 metadata formats.
+    * Changed constant names in "il_meta.h" to match the ECMA specs.
+    * New flags in the assembler to match ECMA metadata additions.
+    * Changes to the opcode list to match the ECMA specification.
+    * Cleaned out some old documentation and README material that
+      was no longer relevant.
+    * Metadata index writing support in "image".
+    * Implemented the "ilrun" program, to act as the core of the
+      future runtime engine.
+    * "ilnative" now recognises methods with no IL code as "internalcall"
+      even if that flag has not been specified.  This is a temporary work
+      around for a weird compile issue in "pnetlib" when Microsoft's "csc"
+      is used to compile "internalcall" methods.  Will fix later.
+    * Implemented parse code for the remaining metadata token types in "image".
+    * Completed the implementation of "ildasm".
+    * Modified "ilasm_grammar.y" and "cs_grammar.y" for byacc-compatibility.
+    * Implemented synthetic classes in "image".  These are classes that
+      correspond to types such as "array of X", "pointer to X", etc.
+
+0.0.6 (11 July 2001)
+
+    * Scope handling in the C# compiler.
+    * Patched "include/il_values.h" to eliminate an annoying warning
+      on Mac OS X related to the "long double" type, which PPC doesn't
+      really have.  Thanks to Jason Titus <jazzmantitus@yahoo.com>
+      for finding this.
+    * Improved type gathering in the C# compiler.
+    * Metadata writing support in "image/*".
+    * Did some work on making the code compile under Visual Studio 6.0.
+      This is still a work in progress.
+    * Implemented the "ilfind" utility.
+    * Move file mapping functions from "image/pecoff_loader.c" to
+      "support/filemap.c".
+    * Use Windows-specific API's to perform file mapping under Windows,
+      because they work better than Cygwin's mmap implementation.
+    * Changed the representation of the "decimal" type to more closely
+      match that used by the "System.Decimal" class in the C# library.
+    * Created an "ILSpawnProcess" function in "support/spawn.c" to
+      isolate the code for spawning child processes from the compiler.
+    * Fixed the values of some of the IL_META_VARIANTTYPE_* constants.
+    * Re-write of "codegen" and "cscc" to use the "treecc" utility
+      for the compiler core.
+    * Added Java bytecode generation routines to the compiler, so that
+      C# code can eventually be compiled to run on the JVM.
+
+0.0.5 (9 April 2001)
+
+    * Build the metadata structures within the assembler.
+    * Implement some Unicode support routines in "support".
+    * Move the C# library into a separate "pnetlib" tree.
+    * Implement the "resgen" resource generation utility.
+    * Convert the command-line parser in the various programs
+      into a common library in "support".
+    * Fixed many bugs in the C# compiler to turn it into
+      a pretty good C# syntax checker.
+    * Changed the way semantic analysis is carried out in
+      the compiler.
+    * Implemented a new plugin mechanism for "cscc" which works
+      better for languages like C# which need to compile many
+      source files at once to get all of the program definitions.
+    * Expanded the man page for cscc(1).
+
+0.0.4 (26 March 2001)
+
+    * The "doc/metadata.html" file has been fleshed out with lots of
+      information that has been discovered about the metadata section.
+    * Implemented memory pool and memory stack allocators to improve the
+      performance of code that allocate lots of small structures, such
+      as the compiler and the program loader.
+    * Define and implement the core types in "image" that represent
+      classes, methods, fields, etc.
+    * Metadata index parsing.
+    * Write the "ilnative" utility which dumps the native methods
+      that are used in an IL binary.
+    * The disassembler now basically works, with only a few gaps to fill.
+
+0.0.3   Limited release (12 March 2001)
+        First freshmeat.net release (14 March 2001)
+
+    * Build the parse tree for C# programs.
+    * Build a table of builtin types and operators in the C# compiler.
+    * Write man pages for ilasm, ildasm, and cscc.
+    * The disassembler can dump the contents of methods, but because
+      we still don't know the format of metadata, we can't yet display
+      which methods correspond to which contents.
+    * PE/COFF writing code in "image/writer.c".
+    * GUID generation code in "support/guid.c".
+    * Implemented the "ilsize" utility.
+    * Some code generation logic in "ilasm".
+    * Converted "doc/metadata.txt" into "doc/metadata.html".
+    * Added some scripts to the "tools" directory to make releases smoother.
+
+0.0.2   Limited release (4 March 2001)
+
+    * Massive overhaul of the weak typing system based around "ILValue".
+      Operations on "ILValue" have been centralised into "support" so
+      that both the runtime and compiler can use the same value system.
+    * Implementation of support routines for the "decimal" type.
+    * Implemented a handful of "System" classes.
+    * Compiler front-end, lexical analyser, and syntactic analysis.
+    * Support for compiler plug-ins for other languages.
+    * Make the lexical analyser Unicode and UTF-8 aware.
+
+0.0.1   Limited release (21 February 2001)
+
+    * Disassembler can dump IL binaries in hex.
+    * Assembler can understand the syntax, but cannot convert into code yet.
+    * IL binary loading working, except for metadata-related parts.
+    * Fragments of runtime, compiler, and other tools.

@@ -1,0 +1,854 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(include/il_opcodes.h)
+
+dnl Determine the build, host, and target system types.
+AC_CANONICAL_SYSTEM
+
+dnl Use gnu extensions where avaiable
+AC_GNU_SOURCE
+
+dnl Initialize automake.
+AM_INIT_AUTOMAKE(pnet, 0.8.1)
+AM_CONFIG_HEADER(include/il_config.h)
+AM_MAINTAINER_MODE
+
+# Tell everyone if we are crosscompiling
+AM_CONDITIONAL(CROSS_COMPILING, test $cross_compiling = yes)
+
+AC_PATH_PROG(SYSTEM_AR, ar)
+
+dnl Option to disable cygwin1.dll under Windows.
+dnl case "$host$" in
+dnl 	*-*-cygwin*) def_cygwin=false ;;
+dnl 	*)           def_cygwin=true ;;
+dnl esac
+def_cygwin=true
+AC_SUBST(SOCKETLIBS)
+AC_SUBST(WINLIBS)
+AC_ARG_ENABLE(cygwin,
+[  --enable-cygwin         Enable cygwin1.dll under Windows],
+[case "${enableval}" in
+  yes) cygwin=true ;;
+  no)  cygwin=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-cygwin) ;;
+esac],[cygwin=$def_cygwin])
+if test x$cygwin = xfalse ; then
+  CC="gcc -mno-cygwin"
+  # to pass -mno-cygwin to configure of libffi and libgc
+  export CC
+  SOCKETLIBS="-lwsock32"
+  WINLIBS="-lole32"
+  suppress_libm=yes
+else
+  suppress_libm=no
+  case "$host" in
+  	*-*-mingw*)
+      SOCKETLIBS="-lwsock32"
+      WINLIBS="-lole32"
+      suppress_libm=yes
+	;;
+	*) ;;
+  esac
+fi
+
+dnl Checks for programs.
+AC_PROG_AWK
+AC_PROG_CC
+AC_PROG_CXX
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_LIBTOOL_WIN32_DLL
+AC_PROG_LIBTOOL
+AC_PROG_YACC
+AM_PROG_LEX
+
+AC_PATH_PROG(TREECC, treecc,, ${prefix}/bin:$PATH)
+if test -z "$TREECC" ; then
+    echo "treecc is required to build and can be obtained from"
+    echo "http://www.southern-storm.com.au"
+    exit 1
+fi
+TREECC_VERSION=`"$TREECC" -v | (read name version rest; echo $version)`
+AC_SUBST(TREECC_VERSION)
+
+dnl Check for endianess of the target
+AC_C_BIGENDIAN([AC_DEFINE([IL_WORDS_BIGENDIAN], 1, [Define if the target system is big endian])],
+			   [AC_DEFINE([IL_WORDS_LITTLEENDIAN], 1, [Define if the target system is little endian])],
+			   [AC_DEFINE([IL_WORDS_UNKNOWNENDIAN], 1, [Define if endianess of the target system could not be detected])],
+			   [AC_DEFINE([IL_WORDS_MIXEDENDIAN], 1, [Define if the target system is neither big nor little endian])])
+
+if test x$cross_compiling = xyes ; then
+	AC_PATH_PROG(ILASM, ilasm)
+else
+	ILASM="\$(top_builddir)/ilasm/ilasm"
+fi
+AC_SUBST(ILASM)
+
+dnl Disable typed allocation with libgc.
+def_typedalloc=true
+AC_ARG_ENABLE(typedalloc,
+[  --enable-typedalloc     Enable typed allocation with libgc],
+[case "${enableval}" in
+  yes) typedalloc=true ;;
+  no) typedalloc=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-typedalloc) ;;
+esac], [typedalloc=$def_typedalloc])
+
+dnl Disable interrupt based checks by default
+def_interrupts=false
+AC_ARG_ENABLE(interrupts,
+[  --enable-interrupts     Enable interrupt based NullReference and other checks],
+[case "${enableval}" in
+  yes)	interrupts=true ;;
+  no)	interrupts=false ;;
+  *)	AC_MSG_ERROR(bad value ${enableval} for --enable-interrupts) ;;
+esac],[interrupts=$def_interrupts])
+if test x$interrupts = xtrue ; then
+  AC_DEFINE(USE_INTERRUPT_BASED_CHECKS, 1, [Use interrupt based NullReference and other checks])
+fi
+
+dnl Enable use of thread local storage.
+AC_ARG_ENABLE(tls, AS_HELP_STRING([--enable-tls], [Use compiler supported thread local storage]),
+[case "${enableval}" in
+  yes)	tls=true ;;
+  no)	tls=false ;;
+  *)	AC_MSG_ERROR(bad value ${enableval} for --enable-tls) ;;
+esac],[tls=false])
+if test x$tls = xtrue ; then
+  AC_DEFINE(USE_COMPILER_TLS, 1, [Use compiler supported thread local storage])
+fi
+
+dnl Check for file extensions.
+AC_EXEEXT
+AC_OBJEXT
+
+dnl The --without-libgc option can be used to disable libgc.
+AC_ARG_WITH(libgc,
+[  --without-libgc         disable libgc support],
+[
+	withgc=no
+],
+[
+	withgc=yes
+])
+
+dnl check which type of engine should be built
+
+AC_ARG_WITH(cvm, AC_HELP_STRING([--with-cvm], [Use the CVM interpreter]),
+[
+	AC_DEFINE([IL_USE_CVM], 1, [Use the CVM interpreter])
+	withcvm=yes
+],
+[
+	withcvm=no
+])
+
+dnl this should check correctly for libjit
+
+AC_DEFUN([AC_LIBJIT], [
+	if $search_libjit
+	then
+		if test -f $1/$2
+		then
+			AC_MSG_RESULT($1/$2)
+			JIT_LIBS="$3"
+			JIT_INCLUDE="$4"
+			search_libjit=false
+			jit=true
+		fi
+	fi
+])
+
+AC_DEFUN([AC_SEARCH_LIBJIT], [
+	AC_MSG_CHECKING([location of libjit])
+	AC_LIBJIT(../libjit/include/jit,jit.h, -ljit -L../../libjit/jit, -I../../libjit/include, "../libjit")
+	AC_LIBJIT(/usr/include/jit, jit.h, -ljit, -I/usr/include, "/usr")
+	AC_LIBJIT(/usr/local/include/jit, jit.h, -ljit, -I/usr/local/include, "/usr/local")
+])
+
+AC_SUBST(JIT_LIBS)
+AC_SUBST(JIT_INCLUDE)
+search_libjit=false
+AC_ARG_WITH(jit,
+[  --with-jit             Use the Just In Time compiler],
+[
+	if test x$withval = xyes ; then
+		search_libjit=true
+		AC_DEFINE([IL_USE_JIT], 1, [Use the just in time compiler])
+		withjit=yes
+	elif test x$withval != xyes ; then
+		JIT_LIBS="$LIBS -L$withval/lib -ljit"
+		JIT_INCLUDE="-I$withval/include"
+		search_libjit=false
+		AC_DEFINE([IL_USE_JIT], 1, [Use the just in time compiler])
+		withjit=yes
+	fi
+],
+[
+	withjit=no
+])
+
+dnl Make sure one engine type is selected
+
+if test x$withjit = xyes ; then
+	if test x$withcvm = xyes ; then
+		AC_MSG_ERROR(Only one engine type can be selected. Either --with-jit or --with-cvm.)
+	fi
+elif test x$withjit = xno ; then
+	if test x$withcvm = xno ; then
+		AC_DEFINE([IL_USE_CVM], 1, [Use the CVM interpreter])
+		withcvm=yes
+	fi
+fi
+
+if $search_libjit
+then
+        AC_SEARCH_LIBJIT()
+fi
+dnl end of libjit check
+
+dnl The --with-profile=NAME option is used to change the build profile.
+AC_SUBST(PROFILE_NAME)
+AC_ARG_WITH(profile,
+[  --with-profile=NAME     use build profile NAME],
+[
+	if test -f "${srcdir}/profiles/${withval}" ; then
+		PROFILE_NAME="${withval}"
+	else
+		AC_MSG_ERROR(unknown build profile ${withval})
+	fi
+],
+[
+	PROFILE_NAME=full
+])
+
+#
+# NOTE! This (--disable-optimizations argument) should be able to be removed when the gcc optimizer bug goes away.......
+#
+AC_ARG_ENABLE(optimizations,  
+[  --disable-optimizations disables all CFLAGS that have been passed into ./configure via the environment or 
+                          by the PROG_CC macro. The result is that CFLAGS is replaced by the default '-g'. 
+                          This is useful in bypassing the apparent bugs in gcc's optimizer.], 
+[
+	CFLAGS="-g"
+])
+
+dnl This code was borrowed from "libgc" to test for the correct
+dnl thread package to use, and to notify the garbage collector's
+dnl "gc.h" file of the correct features to enable.  See the
+dnl "libgc/configure.in" file for Copyright and other information.
+
+AC_MSG_CHECKING([for threads package to use])
+AC_ARG_ENABLE(threads, [  --enable-threads=TYPE   choose threading package],
+  THREADS=$enableval, THREADS=no)
+
+dnl Force pthreads for GNU/Linux and win32 threads for Cygwin systems.
+if test "$THREADS" = "no"; then
+	GC_THREADS=no	
+	case "$host" in
+     	x86-*-linux* | ia64-*-linux* | i586-*-linux* | i686-*-linux*)
+			THREADS=posix
+			;;
+     	*-*-linux*)
+			THREADS=posix
+			;;
+	*-*-mingw*|*-*-cygwin*)
+			THREADS=win32
+			;;
+	*-freebsd*)
+			THREADS=posix
+			;;
+	*-*-netbsd*)
+			THREADS=posix
+			;;
+	*-*-darwin*)
+			THREADS=posix
+			;;
+	*-*-beos*)
+			THREADS=beos
+			;;	
+	esac
+fi
+
+if test "$THREADS" = "no" ; then
+    AC_MSG_CHECKING([for thread model used by GCC])
+    THREADS=`$CC -v 2>&1 | sed -n 's/^Thread model: //p'`
+fi	
+
+AC_MSG_RESULT([$THREADS])
+	
+THREADLIBS=
+case "$THREADS" in
+ no | none | single)
+    THREADS=none
+    ;;
+ posix | pthreads)
+    THREADS=posix
+    THREADLIBS=-lpthread
+    case "$host" in
+     x86-*-linux* | ia64-*-linux* | i586-*-linux* | i686-*-linux* | x86_64-*-linux*)
+	AC_DEFINE(GC_LINUX_THREADS, 1, [Define to use libgc linux thread support])
+	AC_DEFINE(_REENTRANT, 1, [Define for re-entrant thread support])
+        if test "${enable_parallel_mark}"; then
+	  AC_DEFINE(PARALLEL_MARK, 1, [Define for parallel marking])
+	fi
+	AC_DEFINE(THREAD_LOCAL_ALLOC, 1, [Define for thread local allocation])
+	;;
+     *-*-linux*)
+	AC_DEFINE(GC_LINUX_THREADS, 1, [Define to use libgc linux thread support])
+	AC_DEFINE(_REENTRANT, 1, [Define for re-entrant thread support])
+	;;
+     *-*-hpux*)
+	AC_MSG_WARN("Only HP/UX 11 threads are supported.")
+	AC_DEFINE(GC_HPUX_THREADS, 1, [Define to use libgc hpux thread support])
+	AC_DEFINE(_POSIX_C_SOURCE,199506L, [Define to the level of POSIX support desired])
+	if test "${enable_parallel_mark}" = yes; then
+	  AC_DEFINE(PARALLEL_MARK, 1, [Define for parallel marking])
+	fi
+	AC_DEFINE(THREAD_LOCAL_ALLOC, 1, [Define for thread local allocation])
+	THREADLIBS="-lpthread -lrt"
+	;;
+     *-*-freebsd*)
+	AC_MSG_WARN("FreeBSD does not yet fully support threads with Boehm GC.")
+	AC_DEFINE(GC_FREEBSD_THREADS, 1, [Define to use libgc freebsd thread support])
+	INCLUDES="$INCLUDES -pthread"
+	THREADLIBS=-pthread
+	;;
+     *-*-openbsd*)
+	AC_DEFINE(GC_OPENBSD_THREADS, 1, [Define to use libgc openbsd thread support])
+	INCLUDES="$INCLUDES -pthread"
+	THREADLIBS=-pthread
+	;;
+	*-*-netbsd*)
+	AC_DEFINE(GC_NETBSD_THREADS, 1, [Define to use libgc netbsd thread support])
+	INCLUDES="$INCLUDES -pthread"
+	THREADLIBS="-lpthread -lrt"
+	AC_DEFINE(_REENTRANT, 1, [Define to use the reentrant versions of library functions])
+	AC_DEFINE(_PTHREADS, 1, [Define to enable pthread support])
+	;;
+	*-*-darwin*)
+	AC_DEFINE(GC_DARWIN_THREADS, 1, [Define to use libgc darwin thread support])
+	INCLUDES="$INCLUDES -pthread"
+	THREADLIBS=-lpthread
+	;;
+     *-*-solaris*)
+	AC_DEFINE(GC_SOLARIS_THREADS, 1, [Define to use libgc solaris thread support])
+	AC_DEFINE(GC_SOLARIS_PTHREADS, 1, [Define to use libgc solaris pthread support])
+	THREADLIBS="-lpthread -lrt"
+	;;
+     *-*-irix*)
+	AC_DEFINE(GC_IRIX_THREADS, 1, [Define to use libgc irix thread support])
+	;;
+    esac
+    ;;
+ win32)
+    AC_DEFINE(GC_WIN32_THREADS, 1, [Define to use libgc win32 thread support])
+    ;;
+ dgux386)
+    THREADS=dgux386
+    # Use pthread GCC  switch
+    THREADLIBS=-pthread
+    if test "${enable_parallel_mark}"; then
+	AC_DEFINE(PARALLEL_MARK, 1, [Define for parallel marking])
+    fi
+    AC_DEFINE(THREAD_LOCAL_ALLOC, 1, [Define for thread local allocation])
+    AC_DEFINE(GC_DGUX386_THREADS, 1, [Define to use libgc dgux386 thread support])
+    AC_DEFINE(DGUX_THREADS, 1, [Define to use libgc dgux thread support])
+    # Enable _POSIX4A_DRAFT10_SOURCE with flag -pthread
+    INCLUDES="-pthread $INCLUDES"
+    ;;
+ decosf1 | irix | mach | os2 | solaris | dce | vxworks)
+    AC_MSG_ERROR(thread package $THREADS not yet supported)
+    ;;
+ beos)
+    AC_DEFINE([HAVE_BEOS_THREADS],1,[Use BeOS TLC])
+    ;;
+ *)
+    AC_MSG_ERROR($THREADS is an unknown thread package)
+    ;;
+esac
+
+dnl End of borrowed code.
+
+dnl Checks for libraries.
+AC_SUBST(REGEXLIBS)
+if test "x$suppress_libm" = "xno" ; then
+	AC_CHECK_LIB(m, sin)
+fi
+AC_CHECK_LIB(dl, dlopen)
+AC_CHECK_LIB(socket, connect)
+AC_CHECK_LIB(nsl, gethostbyname)
+AC_CHECK_LIB(rt, clock_gettime)
+have_libz=no
+if test "x$suppress_libm" = "xno" ; then
+	AC_CHECK_LIB(z, inflate,
+				 [have_libz=yes
+				  LIBS="-lz $LIBS"], [])
+else
+	dnl Use the static version of zlib under mingw32 to avoid a
+	dnl dependency upon "mgwz.dll".  Disabled for now because
+	dnl the "-Bstatic" trick doesn't work on recent mingw32's.
+	dnl AC_CHECK_LIB(z, inflate,
+	dnl 			 [have_libz=yes
+	dnl 	 		  LIBS="-Bstatic -lz -Bdynamic $LIBS"], [])
+	:
+fi
+if test "x$have_libz" = "xyes" ; then
+	AC_DEFINE(HAVE_LIBZ, 1, [Define if you have the z library (-lz).])
+fi
+
+dnl Checks for header files.
+AC_HEADER_STDC
+AC_HEADER_SYS_WAIT
+AC_HEADER_TIME
+AC_CHECK_HEADERS(string.h strings.h memory.h stdlib.h math.h fcntl.h)
+AC_CHECK_HEADERS(stdarg.h varargs.h sys/mman.h unistd.h sys/stat.h pwd.h)
+AC_CHECK_HEADERS(sys/time.h sys/types.h dlfcn.h ieeefp.h wchar.h)
+AC_CHECK_HEADERS(sys/socket.h netinet/in.h langinfo.h locale.h sys/ioctl.h)
+AC_CHECK_HEADERS(sys/select.h netdb.h sys/cygwin.h dirent.h sys/utime.h utime.h)
+AC_CHECK_HEADERS(linux/types.h limits.h inttypes.h stddef.h sys/param.h)
+AC_CHECK_HEADERS(sys/file.h sys/wait.h malloc.h stdbool.h)
+AC_CHECK_HEADERS(setjmp.h sys/ucontext.h direct.h)
+AC_CHECK_HEADERS(sys/sysinfo.h sys/sysctl.h)
+AC_CHECK_HEADERS(netinet/tcp.h netinet/udp.h)
+AC_CHECK_HEADERS([linux/irda.h], [], [],
+[[#ifdef HAVE_SYS_SOCKET_H
+#include <sys/socket.h>
+#endif
+#ifdef HAVE_LINUX_TYPES_H
+#include <linux/types.h>
+#endif]])
+AC_CHECK_HEADERS(sys/utsname.h zlib.h termios.h sys/termios.h sys/modem.h)
+AC_CHECK_HEADERS(termcap.h curses.h)
+AC_CHECK_HEADERS([term.h], [], [],
+[[#ifdef HAVE_CURSES_H
+#include <curses.h>
+#endif]])
+AC_CHECK_HEADERS(execinfo.h)
+
+dnl Collect up the libraries that we need for termcap access.
+AC_SUBST(TERMCAPLIBS)
+TERMCAPLIBS=""
+if ! test "x$THREADS" = "xwin32" ; then
+	TERMINFOLIBS=""
+	maybe_termcap=no
+	maybe_terminfo=no
+	AC_CHECK_LIB(termcap, tgetflag, [TERMCAPLIBS="-ltermcap"
+	maybe_termcap=yes])
+	AC_CHECK_LIB(curses, tigetflag, [TERMINFOLIBS="-lcurses"
+	maybe_terminfo=yes],
+	[AC_CHECK_LIB(ncurses, tigetflag, [TERMINFOLIBS="-lncurses"
+	maybe_terminfo=yes])])
+	if test "x$maybe_termcap" = "xyes" ; then
+		if test "x$ac_cv_header_termcap_h" = "xyes" ; then
+			maybe_terminfo=no
+			AC_DEFINE(IL_USE_TERMCAP, 1, [Define to use the termcap library.])
+		else
+			TERMCAPLIBS=""
+		fi
+	fi
+	if test "x$maybe_terminfo" = "xyes" ; then
+		TERMCAPLIBS="$TERMINFOLIBS"
+		AC_DEFINE(IL_USE_TERMINFO, 1, [Define to use the terminfo library.])
+	fi
+fi
+
+dnl Check for "sin6_scope_id".
+AC_TRY_COMPILE([#include "confdefs.h"
+#include <netinet/in.h>
+], [struct sockaddr_in6 addr; addr.sin6_scope_id = 0;], AC_DEFINE(HAVE_SIN6_SCOPE_ID, 1, [Define if you have the sin6_scope_id member in struct sockaddr_in6]))
+
+dnl A macro that helps detect the size of types in a cross-compile environment.
+AC_DEFUN([AC_COMPILE_CHECK_SIZEOF],
+[changequote(<<, >>)dnl
+dnl The name to #define.
+define(<<AC_TYPE_NAME>>, translit(sizeof_$1, [a-z *], [A-Z_P]))dnl
+dnl The cache variable name.
+define(<<AC_CV_NAME>>, translit(ac_cv_sizeof_$1, [ *], [_p]))dnl
+changequote([, ])dnl
+AC_MSG_CHECKING(size of $1)
+AC_CACHE_VAL(AC_CV_NAME,
+[for ac_size in 4 8 1 2 12 16 $2 ; do # List sizes in rough order of prevalence.
+  AC_TRY_COMPILE([#include "confdefs.h"
+#include <sys/types.h>
+], [switch (0) case 0: case (sizeof ($1) == $ac_size):;], AC_CV_NAME=$ac_size)
+  if test x$AC_CV_NAME != x ; then break; fi
+done
+])
+if test x$AC_CV_NAME = x ; then
+  AC_CV_NAME=0
+fi
+AC_MSG_RESULT($AC_CV_NAME)
+AC_DEFINE_UNQUOTED(AC_TYPE_NAME, $AC_CV_NAME, [The number of bytes in type $1])
+undefine([AC_TYPE_NAME])dnl
+undefine([AC_CV_NAME])dnl
+])
+
+dnl Checks for typedefs, structures, and compiler characteristics.
+AC_C_CONST
+AC_COMPILE_CHECK_SIZEOF(int, 4)
+AC_COMPILE_CHECK_SIZEOF(long, 4)
+AC_COMPILE_CHECK_SIZEOF(long long, 8)
+AC_COMPILE_CHECK_SIZEOF(float, 4)
+AC_COMPILE_CHECK_SIZEOF(double, 8)
+AC_COMPILE_CHECK_SIZEOF(long double, 12)
+AC_COMPILE_CHECK_SIZEOF(void *, 4)
+
+dnl BeOS is one unicode enabled system which doesn't define mbstate_t
+AC_MSG_CHECKING(for mbstate_t usability)
+AC_TRY_COMPILE([#include "confdefs.h"
+#ifdef HAVE_WCHAR_H
+#include <wchar.h>
+#endif
+], [mbstate_t exists; ] , AC_DEFINE([HAVE_MBSTATE_T], 1 , 
+			  		[Define if mbstate_t is present 'HAVE_MBSTATE_T' ]) mbstate_present=yes, mbstate_present=no)
+AC_MSG_RESULT($mbstate_present)
+dnl Check for computed goto support in the compiler.
+AC_MSG_CHECKING(for computed goto support)
+AC_TRY_COMPILE([], [
+	static void *labels[] = {&&label0, &&label1, &&label2};
+	unsigned char *pc = 0;
+	goto *labels[*pc];
+	label0: ;
+	label1: ;
+	label2: ;
+], AC_DEFINE(HAVE_COMPUTED_GOTO, 1, [Define if you have support for computed gotos]) compgoto=yes, compgoto=no)
+AC_MSG_RESULT($compgoto)
+AC_MSG_CHECKING(for pic computed goto support)
+AC_TRY_COMPILE([], [
+	static int labelOffsets[] =
+		{&&label0 - &&label0, &&label1 - &&label0, &&label2 - &&label0};
+	unsigned char *pc = 0;
+	goto *(&&label0 + labelOffsets[*pc]);
+	label0: ;
+	label1: ;
+	label2: ;
+], AC_DEFINE(HAVE_PIC_COMPUTED_GOTO, 1, [Define if you have PIC support for computed gotos]) piccompgoto=yes, piccompgoto=no)
+AC_MSG_RESULT($piccompgoto)
+
+dnl Check to see if we are using gcc or not.
+if test x$GCC = xyes ; then
+	if test x$withjit = xyes ; then
+		CFLAGS="$CFLAGS -fno-omit-frame-pointer -Wall"
+	else
+		CFLAGS="$CFLAGS -Wall"
+	fi
+fi
+
+dnl Check for "tm_gmtoff" in "struct tm".
+AC_CACHE_CHECK([for tm_gmtoff in struct tm], ac_cv_struct_tm_gmtoff,
+[AC_TRY_COMPILE([#include <sys/types.h>
+#include <time.h>], [struct tm t; t.tm_gmtoff;],
+ac_cv_struct_tm_gmtoff=yes, ac_cv_struct_tm_gmtoff=no)])
+if test $ac_cv_struct_tm_gmtoff = yes; then
+  AC_DEFINE(HAVE_TM_GMTOFF, 1, [Define if struct tm contains tm_gmtoff])
+fi
+
+dnl Check to see whether cc accepts "-no-cpp-precomp" or not.
+AC_CACHE_CHECK(whether ${CC-cc} accepts -no-cpp-precomp, ac_cv_prog_cc_precomp,
+[echo 'int main(){return 0;}' > conftest.c
+if test -z "`${CC-cc} -no-cpp-precomp -o conftest conftest.c 2>&1`"; then
+  ac_cv_prog_cc_precomp=yes
+else
+  ac_cv_prog_cc_precomp=no
+fi
+rm -f conftest*
+])
+if test $ac_cv_prog_cc_precomp = yes ; then
+	CFLAGS="$CFLAGS -no-cpp-precomp"
+	AC_DEFINE(HAVE_CPP_PRECOMP, 1, [Define if pre-compiling cpp is present])
+fi
+
+dnl Check to see whether cc accepts "-fno-unit-at-a-time" or not.
+AC_SUBST(NO_UNIT_AT_A_TIME)
+AC_CACHE_CHECK(whether ${CC-cc} accepts -fno-unit-at-a-time, ac_cv_prog_cc_no_unit_at_a_time,
+[echo 'int main(){return 0;}' > conftest.c
+if test -z "`${CC-cc} -fno-unit-at-a-time -o conftest conftest.c 2>&1`"; then
+  ac_cv_prog_cc_no_unit_at_a_time=yes
+else
+  ac_cv_prog_cc_no_unit_at_a_time=no
+fi
+rm -f conftest*
+])
+if test $ac_cv_prog_cc_no_unit_at_a_time = yes ; then
+	NO_UNIT_AT_A_TIME="-fno-unit-at-a-time"
+else
+	NO_UNIT_AT_A_TIME=""
+fi
+
+dnl Check to see whether cc accepts "-fno-gcse" or not.
+AC_SUBST(NO_GCSE)
+AC_CACHE_CHECK(whether ${CC-cc} accepts -fno-gcse, ac_cv_prog_cc_no_gcse,
+[echo 'int main(){return 0;}' > conftest.c
+if test -z "`${CC-cc} -fno-gcse -o conftest conftest.c 2>&1`"; then
+  ac_cv_prog_cc_no_gcse=yes
+else
+  ac_cv_prog_cc_no_gcse=no
+fi
+rm -f conftest*
+])
+if test $ac_cv_prog_cc_no_gcse = yes ; then
+	NO_GCSE="-fno-gcse"
+else
+	NO_GCSE=""
+fi
+
+dnl Check to see whether cc accepts "-fno-inline-functions" or not.
+AC_SUBST(NO_INLINE_FUNCTIONS)
+AC_CACHE_CHECK(whether ${CC-cc} accepts -fno-inline-functions, ac_cv_prog_cc_no_inline_functions,
+[echo 'int main(){return 0;}' > conftest.c
+if test -z "`${CC-cc} -fno-inline-functions -o conftest conftest.c 2>&1`"; then
+  ac_cv_prog_cc_no_inline_functions=yes
+else
+  ac_cv_prog_cc_no_inline_functions=no
+fi
+rm -f conftest*
+])
+if test $ac_cv_prog_cc_no_inline_functions = yes ; then
+	NO_INLINE_FUNCTIONS="-fno-inline-functions"
+else
+	NO_INLINE_FUNCTIONS=""
+fi
+
+dnl Check to see whether cc accepts "-fno-inline-small-functions" or not.
+AC_CACHE_CHECK(whether ${CC-cc} accepts -fno-inline-small-functions, ac_cv_prog_cc_no_inline_small_functions,
+[echo 'int main(){return 0;}' > conftest.c
+if test -z "`${CC-cc} -fno-inline-small-functions -o conftest conftest.c 2>&1`"; then
+  ac_cv_prog_cc_no_inline_small_functions=yes
+else
+  ac_cv_prog_cc_no_inline_small_functions=no
+fi
+rm -f conftest*
+])
+if test $ac_cv_prog_cc_no_inline_small_functions = yes ; then
+	NO_INLINE_FUNCTIONS="$NO_INLINE_FUNCTIONS -fno-inline-small-functions"
+fi
+
+dnl Check to see whether cc accepts "-fno-inline-functions-called-once" or not.
+AC_CACHE_CHECK(whether ${CC-cc} accepts -fno-inline-functions-called-once, ac_cv_prog_cc_no_inline_functions_called_once,
+[echo 'int main(){return 0;}' > conftest.c
+if test -z "`${CC-cc} -fno-inline-functions-called-once -o conftest conftest.c 2>&1`"; then
+  ac_cv_prog_cc_no_inline_functions_called_once=yes
+else
+  ac_cv_prog_cc_no_inline_functions_called_once=no
+fi
+rm -f conftest*
+])
+if test $ac_cv_prog_cc_no_inline_functions_called_once = yes ; then
+   NO_INLINE_FUNCTIONS="$NO_INLINE_FUNCTIONS -fno-inline-functions-called-once"
+fi
+
+dnl Checks for library functions.
+AC_FUNC_MEMCMP
+AC_CHECK_FUNCS(memset memcmp memchr memcpy memmove bcopy bzero bcmp)
+AC_CHECK_FUNCS(isnan isinf finite fmod strtod mmap munmap getpagesize)
+AC_CHECK_FUNCS(stat lstat vfprintf waitpid wait fork execv open)
+AC_CHECK_FUNCS(getpid qsort unlink remove getcwd getwd)
+AC_CHECK_FUNCS(get_current_dir_name dlopen strerror fcntl ftruncate)
+AC_CHECK_FUNCS(acos asin atan atan2 ceil cos cosh exp floor remainder)
+AC_CHECK_FUNCS(log log10 pow rint sin sinh sqrt tan tanh round trunc)
+AC_CHECK_FUNCS(wctomb wcrtomb mbtowc mbrtowc nl_langinfo setlocale)
+AC_CHECK_FUNCS(clock_gettime clock_nanosleep)
+AC_CHECK_FUNCS(usleep nanosleep)
+AC_CHECK_FUNCS(gethostbyname gethostbyaddr isatty getpwuid geteuid)
+AC_CHECK_FUNCS(opendir readdir readdir_r closedir chdir access)
+AC_CHECK_FUNCS(cygwin_conv_to_win32_path snprintf rename utime)
+AC_CHECK_FUNCS(mkdir ioctl setsockopt getsockopt uname mkstemp mktemp)
+AC_CHECK_FUNCS(tcgetattr readlink symlink rmdir strsignal)
+AC_CHECK_FUNCS(chmod umask)
+AC_CHECK_FUNCS(signal sigaction abort exit _exit)
+AC_CHECK_FUNCS(setjmp longjmp  _setjmp _longjmp sigsetjmp siglongjmp __sigsetjmp)
+AC_CHECK_FUNCS(sysinfo sysctl)
+AC_CHECK_FUNCS(gethostname)
+AC_CHECK_FUNC(gettimeofday, 
+[
+    HAVE_GETTIMEOFDAY=yes
+    AC_DEFINE(HAVE_GETTIMEOFDAY, 1, [Define whether gettimeofday is available on this system])
+])
+AC_FUNC_ALLOCA
+AC_CHECK_FUNCS(backtrace backtrace_symbols)
+
+AC_MSG_CHECKING([whether to use enhanced profiler])
+AC_ARG_ENABLE(enhanced-profiling,
+[  --enable-enhanced-profiling	enables the "enhanced" profiler which can measure the time spent in a
+                          method. This profiler can be turned on and off at runtime.],
+[
+	if test x"$HAVE_GETTIMEOFDAY" = x"yes" ; then
+		AC_DEFINE(ENHANCED_PROFILER, 1, [Define whether to use the enhanced profiler])
+		AC_MSG_RESULT([yes])
+	else
+		AC_MSG_RESULT([no: gettimeofday not available !])
+	fi
+], [
+	AC_MSG_RESULT([no])
+])
+
+dnl check for F_SETLKW fcntl function.
+AC_CACHE_CHECK(for F_SETLKW fcntl function, ac_cv_f_setlkw,
+               [AC_TRY_COMPILE(
+[#ifdef HAVE_FCNTL_H
+#include <fcntl.h>
+#endif],
+							   [int myvar = F_SETLKW;],
+							   ac_cv_f_setlkw=yes,
+							   ac_cv_f_setlkw=no)])
+dnl This is the version that uses AC_CHECK_DECL, which isn't
+dnl available in autoconf-2.13.  Unlock if/when we change.
+dnl               [AC_CHECK_DECL(F_SETLKW, ac_cv_f_setlkw=yes,
+dnl                                        ac_cv_f_setlkw=no,
+dnl[#ifdef HAVE_FCNTL_H
+dnl#include <fcntl.h>
+dnl#endif])])
+if test x"${ac_cv_f_setlkw}" = xyes; then
+    AC_DEFINE(HAVE_F_SETLKW, 1, [Defined if we have the F_SETLKW function argument to fcntl])
+fi
+
+dnl Add the thread libraries to the end of the link line.
+LIBS="$LIBS $THREADLIBS"
+AC_CHECK_FUNCS(pthread_mutex_timedlock sem_timedwait pthread_cond_timedwait)
+
+dnl Determine if we should compile in the tools.
+AC_ARG_ENABLE(tools,
+[  --disable-tools         Remove the developer tools from the build],
+[case "${enableval}" in
+  yes) tools=true ;;
+  no)  tools=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-tools) ;;
+esac],[tools=true])
+AM_CONDITIONAL(PNET_TOOLS, test x$tools = xtrue)
+
+dnl Check for building on a multi os system
+if test x$GCC = xyes ; then
+	multi_os_directory=`$CC -print-multi-os-directory`
+	case $multi_os_directory in
+	  .) ;; # Avoid trailing /.
+	  *) libdir=$libdir/$multi_os_directory ;;
+	esac
+fi
+AC_SUBST(libdir)
+
+AC_SUBST(FFILIBS)
+dnl Check which libffi version to use.
+dnl internal == the version in the libffi subdir
+dnl system   == the version that comes with the distro.
+dnl             The ffi development package needs to be installed.
+dnl choose   == default Checks if the ffi.h header file is available and uses
+dnl             the the version that comes with the system in this case.
+dnl             If ffi.h is not found the internal version is used.
+dnl no       == don't use libffi
+AC_ARG_WITH(libffi,
+			AC_HELP_STRING([--with-libffi], [choose which libffi version to use. no = disable libffi support]),
+[
+	withffi=$withval
+],
+[
+	case "$host" in
+    	*-*-hpux*)		withffi=no ;;
+    	hppa*-*-*)		withffi=no ;;
+		        *)		withffi=choose ;;
+	esac
+])
+
+if test x$withcvm = xyes ; then
+	case "$withffi" in
+		no)
+			FFILIBS=""
+			;;
+		internal)
+			FFILIBS='$(top_builddir)/libffi/.libs/libffi.a'
+			AC_DEFINE(HAVE_LIBFFI, 1, [Define if you are using libffi])
+			;;
+		system)
+			AC_CHECK_HEADER([ffi.h],
+				[AC_DEFINE(HAVE_LIBFFI, 1, [Define if you are using libffi])],
+				[AC_MSG_ERROR([Couldn't find the system ffi.h header])])
+			AC_CHECK_LIB(ffi, ffi_prep_cif,
+				[FFILIBS='-lffi'],
+				[AC_MSG_ERROR([Couldn't find the system ffi shared library])])
+			;;
+		choose)
+			AC_CHECK_HEADER([ffi.h],
+				[AC_DEFINE(HAVE_LIBFFI, 1, [Define if you are using libffi])
+				 AC_CHECK_LIB(ffi, ffi_prep_cif, [FFILIBS='-lffi'],
+				 [AC_MSG_ERROR([Couldn't find the system ffi shared library])])
+				 withffi=system
+				],
+				[FFILIBS='$(top_builddir)/libffi/.libs/libffi.a'
+				 withffi=internal
+				 AC_DEFINE(HAVE_LIBFFI, 1, [Define if you are using libffi])
+				])
+			;;
+		*)	AC_MSG_ERROR([Invalid argument passed to --with-libffi])
+			;;
+	esac
+else
+	withffi=no
+	FFILIBS=""
+fi
+AM_CONDITIONAL(USING_LIBFFI, test x$withffi = xinternal)
+
+dnl Set up libgc-related variables.
+AC_SUBST(GCLIBS)
+if test x$withgc = xyes ; then
+	GCLIBS='$(top_builddir)/libgc/.libs/libgc.a'
+	AC_DEFINE(HAVE_LIBGC, 1, [Define if you are using libgc])
+	if test x$typedalloc = xtrue ; then
+		AC_DEFINE(IL_USE_TYPED_ALLOCATION, 1, [Define if you are using typed allocation with libgc])
+	fi
+else
+	GCLIBS=""
+fi
+AM_CONDITIONAL(USING_LIBGC, test x$withgc = xyes)
+
+if test x$withffi = xinternal; then
+	AC_CONFIG_SUBDIRS(libffi)
+fi
+
+if test x$withgc = xyes; then
+	if test "$GC_THREADS" = "no"; then
+		ac_configure_args="$ac_configure_args --enable-threads=$THREADS"
+	fi
+	AC_CONFIG_SUBDIRS(libgc)
+fi
+
+AC_OUTPUT([
+Makefile
+include/Makefile
+support/Makefile
+image/Makefile
+dumpasm/Makefile
+engine/Makefile
+ilasm/Makefile
+ildasm/Makefile
+ilalink/Makefile
+ilsize/Makefile
+ilnative/Makefile
+ilheader/Makefile
+ilfind/Makefile
+ildd/Makefile
+codegen/Makefile
+cscc/Makefile
+cscc/common/Makefile
+cscc/csharp/Makefile
+cscc/c/Makefile
+cscc/vb/Makefile
+cscc/java/Makefile
+cscc/bf/Makefile
+cscc/cpp/Makefile
+resgen/Makefile
+ilstrip/Makefile
+ilranlib/Makefile
+ilgac/Makefile
+csdoc/Makefile
+csant/Makefile
+clrwrap/Makefile
+samples/Makefile
+doc/Makefile
+tests/Makefile
+pnet.spec
+profiles/Makefile])
+
+dnl Local variables:
+dnl tab-width: 4
+dnl end:

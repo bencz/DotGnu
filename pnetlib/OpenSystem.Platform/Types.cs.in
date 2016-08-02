@@ -1,0 +1,78 @@
+/*
+ * Types.cs - Declare system-dependent type sizes.
+ *
+ * Copyright (C) 2004  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software, you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY, without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program, if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+namespace OpenSystem.Platform
+{
+
+// Types that are intended to be the same size as the corresponding
+// C types in the underlying native operating system.
+
+public enum CChar     : @X_char@      { Zero }
+public enum SChar     : @X_schar@     { Zero }
+public enum UChar     : @X_uchar@     { Zero }
+public enum Short     : @X_short@     { Zero }
+public enum UShort    : @X_ushort@    { Zero }
+public enum Int       : @X_int@       { Zero }
+public enum UInt      : @X_uint@      { Zero }
+public enum Long      : @X_long@      { Zero }
+public enum ULong     : @X_ulong@     { Zero }
+public enum LongLong  : @X_longlong@  { Zero }
+public enum ULongLong : @X_ulonglong@ { Zero }
+public enum size_t    : @X_size_t@    { Zero }
+public enum ssize_t   : @X_ssize_t@   { Zero }
+public enum off_t     : @X_off_t@     { Zero }
+public enum off64_t   : @X_off64_t@   { Zero }
+public enum time_t    : @X_time_t@    { Zero }
+public enum ino_t     : @X_ino_t@     { Zero }
+public enum ino64_t   : @X_ino64_t@   { Zero }
+public enum uid_t     : @X_uid_t@     { Zero }
+public enum gid_t     : @X_gid_t@     { Zero }
+public enum pid_t     : @X_pid_t@     { Zero }
+public enum mode_t    : @X_mode_t@    { Zero }
+public enum dev_t     : @X_dev_t@     { Zero }
+public enum nlink_t   : @X_nlink_t@   { Zero }
+
+}; // namespace OpenSystem.Platform
+
+namespace OpenSystem.Platform.X11
+{
+
+// Types that are useful to applications that use "libX11" and friends.
+
+public enum XPixel    : @X_ulong@     { Zero }
+public enum XID       : @X_ulong@     { Zero }
+public enum XMask     : @X_ulong@     { Zero }
+public enum XAtom     : @X_ulong@     { Zero }
+public enum XVisualID : @X_ulong@     { Zero }
+public enum XTime     : @X_ulong@     { CurrentTime }
+public enum XWindow   : @X_ulong@     { Zero }
+public enum XDrawable : @X_ulong@     { Zero }
+public enum XFont     : @X_ulong@     { Zero }
+public enum XPixmap   : @X_ulong@     { Zero, ParentRelative }
+public enum XCursor   : @X_ulong@     { Zero }
+public enum XColormap : @X_ulong@     { Zero }
+public enum XGContext : @X_ulong@     { Zero }
+public enum XAppGroup : @X_ulong@     { Zero }
+public enum XKeySym   : @X_ulong@     { Zero }
+public enum XKeyCode  : @X_uchar@     { Zero }
+public enum XBool     : @X_int@       { False, True }
+public enum XStatus   : @X_int@       { Zero }
+
+}; // namespace OpenSystem.Platform.X11

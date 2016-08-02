@@ -1,0 +1,13 @@
+<?xml version="1.0"?>
+<project name="pnetlib System.Configuration.Install resources (en_US)" default="all">
+	<target name="all">
+
+		<resgen output="System.Configuration.Install.resources">
+			<resources>
+				<includes name="**/*.txt"/>
+				<excludes name="tempres.txt"/>
+			</resources>
+		</resgen>
+
+	</target>
+</project>

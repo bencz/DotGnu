@@ -1,0 +1,7 @@
+./ident2.cs:24: parse error, expecting an identifier, at or near `0'
+./ident2.cs:25: parse error, expecting an identifier, at or near `@'
+./ident2.cs:26: parse error, expecting an identifier, at or near `struct'
+./ident2.cs:26: parse error, expecting an identifier, at or near `{'
+./ident2.cs:27: invalid character in identifier
+./ident2.cs:28: invalid character in identifier
+./ident2.cs:31: parse error, expecting an identifier, at or near `á'

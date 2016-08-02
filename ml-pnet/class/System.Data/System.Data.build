@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+
+<project name="System.Data" default="all">
+	<target name="all">
+		<compile target="library"
+				 output="System.Data.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="true"
+				 installasdefault="true">
+
+			<sources basedir="${mono.sources}/class/System.Data/">
+				<includes name="**/*.cs"/> 
+				<includes name="../../build/common/Consts.cs"/>
+				<includes name="../../build/common/Locale.cs"/>
+				<includes name="../../build/common/MonoTODOAttribute.cs"/> 
+				<excludes name="Mono.Data.SqlExpressions/Parser.cs"/>
+				<excludes name="System.Data/Res.cs"/>
+				<excludes name="System.Data.Common/DbConvert.cs"/>
+				<excludes name="System.Data.ProviderBase.jvm/**"/>
+				<excludes name="System.Data.OleDb.jvm/**"/>
+				<excludes name="System.Data.SqlClient.jvm/**"/>
+				<excludes name="System.Data.SqlTypes.jvm/**"/>
+				<excludes name="Test/**"/>
+				<file basedir="./" name="Parser.cs"/>
+				<excludes name="System.Data.OleDb/TestGDA.cs"/>
+				<excludes name="System.Data.OleDb/TestOleDb.cs"/>
+			</sources>
+
+			<references>
+				<file name="System.dll"/>
+				<file name="System.Xml.dll"/>
+				<file name="../Mono.Data.Tds/Mono.Data.Tds.dll"/>
+				<file name="../Mono.Security/Mono.Security.dll"/>
+				<file name="System.EnterpriseServices.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=neutral"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+		</compile>
+	</target>
+</project>

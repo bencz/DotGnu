@@ -1,0 +1,5 @@
+./constructor2.cs:24: constructor name does not match class name
+./constructor2.cs:40: no matching constructor for base class initialization
+./constructor2.cs:49: no matching constructor
+./constructor2.cs:65: no accessible base class constructors
+./constructor2.cs:68: called object is not a method or delegate

@@ -1,0 +1,22 @@
+line 3: %node needs_typedef no_parent 0
+line 5: %node needs_parent unknown_parent 0
+line 7: %node bad_fields no_parent 4
+parse2.tst:9: field definition block expected
+line 9: %node bad_fields2 no_parent 4
+parse2.tst:11: type name expected
+parse2.tst:11: field declaration expected
+parse2.tst:11: `;' expected
+line 11: %field x int no_value 0
+line 12: %field y int no_value 0
+line 15: %node bad_fields3 no_parent 4
+parse2.tst:17: default values can only be specified for `%nocreate' fields
+line 17: %field x int 0 0
+line 18: %field y int 0 1
+parse2.tst:19: literal code constant expected
+line 19: %field z int no_value 1
+parse2.tst:19: `;' expected
+parse2.tst:19: field name expected
+parse2.tst:20: literal code constant expected
+line 20: %field w int no_value 1
+parse2.tst:3: base node type `needs_typedef' must be declared with %typedef
+parse2.tst:5: node type `unknown_parent' is not declared

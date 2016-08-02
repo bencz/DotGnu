@@ -1,0 +1,6 @@
+#!/bin/sh
+
+update-alternatives --install /usr/bin/ilasm ilasm /usr/bin/ilasm.pnet 30 --slave /usr/share/man/man1/ilasm.1.gz ilasm.1.gz /usr/share/man/man1/ilasm.pnet.1.gz
+
+#DEBHELPER#
+

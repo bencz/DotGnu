@@ -1,0 +1,4 @@
+./method8.cs:27: declaration of `m1' conflicts with an existing member
+./method8.cs:31: declaration of `m1' conflicts with an existing member
+./method8.cs:63: warning: declaration of `m3' hides an inherited member, and `new' was not present
+./method8.cs:70: warning: declaration of `m4' overrides an inherited member, and `override' was not present

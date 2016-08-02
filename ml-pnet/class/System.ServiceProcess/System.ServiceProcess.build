@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+
+<project name="System.ServiceProcess" default="all">
+	<target name="all">
+		<compile target="library"
+				 output="System.ServiceProcess.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="true"
+				 installasdefault="true">
+
+			<sources basedir="${mono.sources}/class/System.ServiceProcess">
+				<includes name="**/*.cs"/> 
+				<includes name="../../build/common/Consts.cs"/>
+				<includes name="../../build/common/Locale.cs"/>
+				<includes name="../../build/common/MonoTODOAttribute.cs"/> 
+				<excludes name="Test/**"/>
+			</sources>
+
+			<references>
+				<file name="System.dll"/>
+				<file name="System.Configuration.Install.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=ms"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+
+		</compile>
+	</target>
+</project>

@@ -1,0 +1,24 @@
+pnet-libclr (0.6.8-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Russell Stuart <russell-debian@stuart.id.au>  Thu,  2 Sep 2004 04:19:32 +1000
+
+pnet-runtime (0.4.8-1) unstable; urgency=low
+
+  * Build to sync with pnet version number
+
+ -- Andrew Mitchell <ajmitch@dunedin.lug.net.nz>  Fri, 22 Nov 2002 20:11:28 +1300
+
+pnet-runtime (0.4.5.20021105-2) unstable; urgency=low
+
+  * CVS Snapshot
+
+ -- Andrew Mitchell <ajmitch@dunedin.lug.net.nz>  Tue,  5 Nov 2002 15:18:52 +1300
+
+pnet-runtime (0.4.5.20021104-1) unstable; urgency=low
+  
+  * Initial release built from pnetlib
+
+ -- Andrew Mitchell <ajmitch@dunedin.lug.net.nz>  Mon,  4 Nov 2002 09:56:58 +1300
+

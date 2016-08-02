@@ -1,0 +1,48 @@
+
+Code review for System.Runtime.Serialization
+============================================
+
+Last updated: 4 June 2003
+
+Classes that need tests
+-----------------------
+
+Formatter
+FormatterConverter
+FormatterServices
+ObjectIDGenerator (done)
+ObjectManager
+SerializationException (done)
+SerializationInfo
+SerializationInfoEnumerator
+SurrogateSelector
+Formatters.SoapFault
+Formatters.Binary.BinaryFormatter
+
+Classes that were validated using manual inspection and csdocvalil
+------------------------------------------------------------------
+
+IDeserializationCallback
+IFormatter
+IFormatterConverter
+IObjectReference
+ISerializable
+ISerializationSurrogate
+ISurrogateSelector
+SerializationBinder
+SerializationEntry
+StreamingContext
+StreamingContextStates
+Formatters.FormatterAssemblyStyle
+Formatters.FormatterTypeStyle
+Formatters.IFieldInfo
+Formatters.ISoapMessage
+Formatters.ServerFault
+Formatters.SoapMessage
+Formatters.TypeFilterLevel
+
+Classes that are deliberately not implemented and don't need testing
+--------------------------------------------------------------------
+
+Formatters.InternalRM
+Formatters.InternalST

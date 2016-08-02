@@ -1,0 +1,1275 @@
+%both %{
+/*
+ * gen_marshal.tc - Generate marshalling code from PInvoke/internalcall's.
+ *
+ * Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+%}
+
+/*
+ * Set up the treecc options the way we want them.
+ */
+%option no_track_lines
+%option no_singletons
+%option reentrant
+%option kind_in_vtable
+%option prefix = "ILM_"
+%option state_type = "ILM_State"
+
+%decls %{
+
+#include "engine.h"
+
+/*
+ * Declare the "ILM_Context" structure.
+ */
+typedef struct
+{
+	ILCoder		   *coder;			/* Coder to write the final code to */
+	ILMethod	   *method;			/* The method being converted */
+	ILType		   *signature;		/* The method signature */
+	int				isInternal;		/* This is an internalcall method */
+	int				useRawCalls;	/* Non-zero to use raw libffi calls */
+	int				isConstructor;	/* This is a constructor expansion */
+	int				hasReturn;		/* Non-zero if a libffi return value */
+	int				mayBeCtor;		/* May be a constructor */
+
+} ILM_Context;
+
+%}
+
+%{
+#include "gen_marshal.h"
+#include "il_opcodes.h"
+
+/*
+ * Import from "verify.c".
+ */
+ILEngineType _ILTypeToEngineType(ILType *type);
+
+%}
+
+/*
+ * Root of the node hierarchy.
+ */
+%node ILM_Node %typedef %abstract
+%node ILM_LValue ILM_Node %abstract
+
+/*
+ * Access method arguments and local variables.
+ */
+%node ILM_Argument ILM_LValue =
+{
+	ILType *type;
+	ILUInt32 argNum;
+}
+%node ILM_ArgumentCtor ILM_Argument
+%node ILM_Local ILM_LValue =
+{
+	ILType *type;
+	%nocreate ILUInt32 localNum = {IL_MAX_UINT32};
+}
+
+/*
+ * Access a field within a structure.
+ */
+%node ILM_Field ILM_LValue =
+{
+	ILM_Node *expr;
+	ILField *field;
+}
+
+/*
+ * Expressions.
+ */
+%node ILM_Unary ILM_Node %abstract =
+{
+	ILM_Node *expr;
+}
+%node ILM_Binary ILM_Node %abstract =
+{
+	ILM_Node *expr1;
+	ILM_Node *expr2;
+}
+%node ILM_Assign ILM_Binary
+%node ILM_AssignCtor ILM_Binary
+%node ILM_Return ILM_Unary =
+{
+	ILType *type;
+}
+%node ILM_ReturnCtor ILM_Unary
+%node ILM_Convert ILM_Unary =
+{
+	int opcode;
+}
+%node ILM_ConvertCustom ILM_Unary =
+{
+	int opcode;
+	ILUInt32 customNameLen;
+	ILUInt32 customCookieLen;
+	void *customName;
+	void *customCookie;
+}
+%node ILM_AddressOf ILM_Unary =
+{
+	ILType *type;
+	%nocreate ILUInt32 localNum = {IL_MAX_UINT32};
+}
+
+/*
+ * Push an argument value onto the stack in a form ready for "libffi".
+ */
+%node ILM_FfiThread ILM_Node
+%node ILM_FfiThis ILM_Node
+%node ILM_FfiArgument ILM_Node =
+{
+	ILM_Node *expr;
+	ILType *type;
+	%nocreate ILUInt32 localNum = {IL_MAX_UINT32};
+}
+%node ILM_FfiReturnArgument ILM_Node =
+{
+	ILType *type;
+	ILM_Node *returnLocal;
+	%nocreate ILUInt32 localNum = {IL_MAX_UINT32};
+}
+
+/*
+ * Push the address of the return value onto the stack for "libffi".
+ * Note: the "returnLocal" node must be the same as for "FfiReturnArgument".
+ *
+ * The correct sequence for "libffi" nodes is as follows:
+ *
+ *			FfiThread
+ *			FfiThis
+ *			FfiReturnArgument
+ *			FfiArgument
+ *			...
+ *			FfiArgument
+ *			FfiReturn
+ *			FfiCall
+ */
+%node ILM_FfiReturn ILM_Node =
+{
+	ILType *type;
+	ILM_Node *returnLocal;
+}
+
+/*
+ * Call a "libfii" function.
+ */
+%node ILM_FfiCall ILM_Node =
+{
+	void *fn;
+	void *cif;
+	void *ctorfn;
+	void *ctorcif;
+}
+
+/*
+ * "try ... finally ..." block to make sure that cleanup operations are
+ * performed to free temporary buffers, custom-marshaled values, etc.
+ */
+%node ILM_TryFinally ILM_Node =
+{
+	ILM_Node *tryBlock;
+	ILM_Node *finallyBlock;
+	ILM_Node *returnExpr;
+	ILType *returnType;
+}
+
+/*
+ * Simple method block, with no "try ... finally ...".
+ */
+%node ILM_Method ILM_Unary
+
+/*
+ * Compound statements.
+ */
+%node ILM_CompoundStmt ILM_Unary %typedef =
+{
+	%nocreate ILM_CompoundStmt *next = {0};
+}
+%node ILM_Compound ILM_Node =
+{
+	%nocreate ILM_CompoundStmt *stmts = {0};
+	%nocreate ILM_CompoundStmt *last = {0};
+}
+
+/*
+ * Operations on nodes.
+ */
+%operation %virtual void ILM_AllocLocals(ILM_Node *node, ILM_Context *context)
+%operation %virtual void ILM_ClearLocals(ILM_Node *node, ILM_Context *context)
+%operation %virtual void ILM_GenValue(ILM_Node *node, ILM_Context *context)
+%operation %virtual void ILM_Prepare(ILM_LValue *node, ILM_Context *context)
+%operation %virtual void ILM_Store(ILM_LValue *node, ILM_Context *context)
+%operation %virtual void ILM_GenRef(ILM_LValue *node, ILM_Context *context)
+
+/*
+ * Allocate local variables for all expressions in the code tree.
+ */
+ILM_AllocLocals(ILM_Argument),
+ILM_AllocLocals(ILM_FfiThread),
+ILM_AllocLocals(ILM_FfiThis),
+ILM_AllocLocals(ILM_FfiCall)
+{
+	/* Nothing to do here */
+}
+ILM_AllocLocals(ILM_Local)
+{
+	if(node->localNum == IL_MAX_UINT32)
+	{
+		node->localNum = ILCoderAllocExtraLocal(context->coder, node->type);
+	}
+}
+ILM_AllocLocals(ILM_Field)
+{
+	ILM_AllocLocals(node->expr, context);
+}
+ILM_AllocLocals(ILM_Unary)
+{
+	ILM_AllocLocals(node->expr, context);
+}
+ILM_AllocLocals(ILM_Binary)
+{
+	ILM_AllocLocals(node->expr1, context);
+	ILM_AllocLocals(node->expr2, context);
+}
+ILM_AllocLocals(ILM_AddressOf)
+{
+	ILM_AllocLocals(node->expr, context);
+	if(!ILM_isa(node->expr, ILM_LValue))
+	{
+		node->localNum = ILCoderAllocExtraLocal(context->coder, node->type);
+	}
+}
+ILM_AllocLocals(ILM_FfiArgument)
+{
+	ILM_AllocLocals(node->expr, context);
+	if(!(context->useRawCalls))
+	{
+		if(!ILM_isa(node->expr, ILM_Argument) &&
+		   !ILM_isa(node->expr, ILM_Local))
+		{
+			/* We need a temporary local variable to store the value
+			   in a way that we can take its address */
+			node->localNum = ILCoderAllocExtraLocal(context->coder, node->type);
+		}
+	}
+}
+ILM_AllocLocals(ILM_FfiReturnArgument)
+{
+	ILType *returnType = ILTypeGetEnumType(node->type);
+	ILM_AllocLocals(node->returnLocal, context);
+	if(ILType_IsValueType(returnType) && context->isInternal)
+	{
+		if(!(context->useRawCalls))
+		{
+			/* We need an extra local for the pointer to the return value */
+			node->localNum = ILCoderAllocExtraLocal(context->coder, ILType_Int);
+		}
+	}
+}
+ILM_AllocLocals(ILM_FfiReturn)
+{
+	ILM_AllocLocals(node->returnLocal, context);
+}
+ILM_AllocLocals(ILM_TryFinally)
+{
+	ILM_AllocLocals(node->tryBlock, context);
+	ILM_AllocLocals(node->finallyBlock, context);
+	if(node->returnExpr)
+	{
+		ILM_AllocLocals(node->returnExpr, context);
+	}
+}
+ILM_AllocLocals(ILM_Compound)
+{
+	ILM_CompoundStmt *stmt = node->stmts;
+	while(stmt != 0)
+	{
+		ILM_AllocLocals(stmt->expr, context);
+		stmt = stmt->next;
+	}
+}
+
+/*
+ * Clear local variable allocations for a code generation restart.
+ * This is used with constructors that need to generate two method
+ * bodies: one for regular execution, and another for construction.
+ */
+ILM_ClearLocals(ILM_Argument),
+ILM_ClearLocals(ILM_FfiThread),
+ILM_ClearLocals(ILM_FfiThis),
+ILM_ClearLocals(ILM_FfiCall)
+{
+	/* Nothing to do here */
+}
+ILM_ClearLocals(ILM_Local)
+{
+	node->localNum = IL_MAX_UINT32;
+}
+ILM_ClearLocals(ILM_Field)
+{
+	ILM_ClearLocals(node->expr, context);
+}
+ILM_ClearLocals(ILM_Unary)
+{
+	ILM_ClearLocals(node->expr, context);
+}
+ILM_ClearLocals(ILM_Binary)
+{
+	ILM_ClearLocals(node->expr1, context);
+	ILM_ClearLocals(node->expr2, context);
+}
+ILM_ClearLocals(ILM_AddressOf)
+{
+	ILM_ClearLocals(node->expr, context);
+	node->localNum = IL_MAX_UINT32;
+}
+ILM_ClearLocals(ILM_FfiArgument)
+{
+	ILM_ClearLocals(node->expr, context);
+	node->localNum = IL_MAX_UINT32;
+}
+ILM_ClearLocals(ILM_FfiReturnArgument)
+{
+	ILM_ClearLocals(node->returnLocal, context);
+	node->localNum = IL_MAX_UINT32;
+}
+ILM_ClearLocals(ILM_FfiReturn)
+{
+	ILM_ClearLocals(node->returnLocal, context);
+}
+ILM_ClearLocals(ILM_TryFinally)
+{
+	ILM_ClearLocals(node->tryBlock, context);
+	ILM_ClearLocals(node->finallyBlock, context);
+	if(node->returnExpr)
+	{
+		ILM_ClearLocals(node->returnExpr, context);
+	}
+}
+ILM_ClearLocals(ILM_Compound)
+{
+	ILM_CompoundStmt *stmt = node->stmts;
+	while(stmt != 0)
+	{
+		ILM_ClearLocals(stmt->expr, context);
+		stmt = stmt->next;
+	}
+}
+
+/*
+ * Generate code for arguments.
+ */
+ILM_GenValue(ILM_Argument)
+{
+	ILCoderLoadArg(context->coder, node->argNum, node->type);
+}
+ILM_Prepare(ILM_Argument)
+{
+	/* Nothing to do here */
+}
+ILM_Store(ILM_Argument)
+{
+	ILEngineType type = _ILTypeToEngineType(node->type);
+	ILCoderStoreArg(context->coder, node->argNum, type, node->type);
+}
+ILM_GenRef(ILM_Argument)
+{
+	ILCoderAddrOfArg(context->coder, node->argNum);
+}
+
+/*
+ * Generate code for constructor arguments.
+ */
+ILM_GenValue(ILM_ArgumentCtor)
+{
+	if(context->isConstructor)
+	{
+		ILCoderLoadArg(context->coder, node->argNum - 1, node->type);
+	}
+	else
+	{
+		ILCoderLoadArg(context->coder, node->argNum, node->type);
+	}
+}
+ILM_Prepare(ILM_ArgumentCtor)
+{
+	/* Nothing to do here */
+}
+ILM_Store(ILM_ArgumentCtor)
+{
+	ILEngineType type = _ILTypeToEngineType(node->type);
+	if(context->isConstructor)
+	{
+		ILCoderStoreArg(context->coder, node->argNum - 1, type, node->type);
+	}
+	else
+	{
+		ILCoderStoreArg(context->coder, node->argNum, type, node->type);
+	}
+}
+ILM_GenRef(ILM_ArgumentCtor)
+{
+	if(context->isConstructor)
+	{
+		ILCoderAddrOfArg(context->coder, node->argNum - 1);
+	}
+	else
+	{
+		ILCoderAddrOfArg(context->coder, node->argNum);
+	}
+}
+
+/*
+ * Generate code for local variables.
+ */
+ILM_GenValue(ILM_Local)
+{
+	ILCoderLoadLocal(context->coder, node->localNum, node->type);
+}
+ILM_Prepare(ILM_Local)
+{
+	/* Nothing to do here */
+}
+ILM_Store(ILM_Local)
+{
+	ILEngineType type = _ILTypeToEngineType(node->type);
+	ILCoderStoreLocal(context->coder, node->localNum, type, node->type);
+}
+ILM_GenRef(ILM_Local)
+{
+	ILCoderAddrOfLocal(context->coder, node->localNum);
+}
+
+/*
+ * Generate code for field references.  The "expr" argument must
+ * evaluate to some kind of pointer expression, never to "MV".
+ */
+ILM_GenValue(ILM_Field)
+{
+	ILType *fieldType;
+	ILM_GenValue(node->expr, context);
+	fieldType = ILField_Type(node->field);
+	ILCoderLoadField(context->coder, ILEngineType_O, ILType_Void,
+					 node->field, fieldType);
+}
+ILM_Prepare(ILM_Field)
+{
+	ILM_GenValue(node->expr, context);
+}
+ILM_Store(ILM_Field)
+{
+	ILType *fieldType = ILField_Type(node->field);
+	ILEngineType type = _ILTypeToEngineType(fieldType);
+	ILCoderStoreField(context->coder, ILEngineType_O, ILType_Void,
+					  node->field, fieldType, type);
+}
+ILM_GenRef(ILM_Field)
+{
+	ILM_GenValue(node->expr, context);
+	ILCoderLoadFieldAddr(context->coder, ILEngineType_O, ILType_Void,
+					     node->field, ILField_Type(node->field));
+}
+
+/*
+ * Generate code for assignment statements.
+ */
+ILM_GenValue(ILM_Assign)
+{
+	ILM_Prepare((ILM_LValue *)(node->expr1), context);
+	ILM_GenValue(node->expr2, context);
+	ILM_Store((ILM_LValue *)(node->expr1), context);
+}
+ILM_GenValue(ILM_AssignCtor)
+{
+	/* Only need the assignment if we are returning the pointer */
+	if(context->isConstructor)
+	{
+		ILM_Prepare((ILM_LValue *)(node->expr1), context);
+		ILM_GenValue(node->expr2, context);
+		ILM_Store((ILM_LValue *)(node->expr1), context);
+	}
+}
+
+/*
+ * Generate value code for a "libffi" thread push - used by internalcalls.
+ */
+ILM_GenValue(ILM_FfiThread)
+{
+	ILCoderStartFfiArgs(context->coder);
+	if(context->isInternal)
+	{
+		ILCoderPushThread(context->coder, context->useRawCalls);
+	}
+}
+
+/*
+ * Generate value code for a "libffi" this push.
+ */
+ILM_GenValue(ILM_FfiThis)
+{
+	if(context->isConstructor || !ILType_HasThis(context->signature))
+	{
+		/* This method doesn't need a "this" pointer passed to it */
+		return;
+	}
+	if(context->isInternal)
+	{
+		/* Check the "this" value for null so that the engine
+		   internalcall method doesn't have to worry about it */
+		ILCoderLoadArg(context->coder, 0, ILType_Int);
+		ILCoderCheckNull(context->coder);
+		if(!(context->useRawCalls))
+		{
+			ILCoderPop(context->coder, ILEngineType_I, ILType_Int);
+			ILCoderLoadNativeArgAddr(context->coder, 0);
+		}
+	}
+	else if(context->useRawCalls)
+	{
+		/* Push the value directly onto the system stack */
+		ILCoderLoadArg(context->coder, 0, ILType_Int);
+	}
+	else
+	{
+		/* Push the address of "this" onto the native argument stack */
+		ILCoderLoadNativeArgAddr(context->coder, 0);
+	}
+}
+
+/*
+ * Generate value code for a "libffi" argument.
+ */
+ILM_GenValue(ILM_FfiArgument)
+{
+	if(context->useRawCalls)
+	{
+		/* Push the value directly onto the stack */
+		ILM_GenValue(node->expr, context);
+	}
+	else if(ILM_isa(node->expr, ILM_ArgumentCtor) && context->isConstructor)
+	{
+		/* Push the address of the argument onto the native stack */
+		ILCoderLoadNativeArgAddr
+			(context->coder, ((ILM_ArgumentCtor *)(node->expr))->argNum - 1);
+	}
+	else if(ILM_isa(node->expr, ILM_Argument))
+	{
+		/* Push the address of the argument onto the native stack */
+		ILCoderLoadNativeArgAddr
+			(context->coder, ((ILM_Argument *)(node->expr))->argNum);
+	}
+	else if(ILM_isa(node->expr, ILM_Local))
+	{
+		/* Push the address of the local onto the native stack */
+		ILCoderLoadNativeLocalAddr
+			(context->coder, ((ILM_Local *)(node->expr))->localNum);
+	}
+	else
+	{
+		/* Store the value into a local variable and take its address */
+		ILM_GenValue(node->expr, context);
+		ILCoderStoreLocal(context->coder, node->localNum,
+						  _ILTypeToEngineType(node->type), node->type);
+		ILCoderLoadNativeLocalAddr(context->coder, node->localNum);
+	}
+}
+
+/*
+ * Generate value code for a "libffi" return argument.  This is used
+ * with internalcall methods, where we might have to push a pointer
+ * to the return value as the first real argument for struct types.
+ */
+ILM_GenValue(ILM_FfiReturnArgument)
+{
+	ILType *returnType = ILTypeGetEnumType(node->type);
+	if(ILType_IsValueType(returnType) && context->isInternal)
+	{
+		/* Take the address of the return local */
+		ILM_GenRef((ILM_LValue *)(node->returnLocal), context);
+
+		/* If we aren't using raw calls, then store the pointer */
+		if(!(context->useRawCalls))
+		{
+			ILCoderStoreLocal(context->coder, node->localNum,
+							  ILEngineType_I, ILType_Int);
+			ILCoderLoadNativeLocalAddr(context->coder, node->localNum);
+		}
+	}
+}
+
+/*
+ * Generate value code to push the address of the "libffi" return value.
+ */
+ILM_GenValue(ILM_FfiReturn)
+{
+	ILType *returnType = ILTypeGetEnumType(node->type);
+
+	/* Push the address of the argument array for raw calls */
+	if(context->useRawCalls)
+	{
+		ILCoderPushRawArgPointer(context->coder);
+	}
+
+	/* Push the address of the return value */
+	context->hasReturn = 0;
+	if(returnType != ILType_Void)
+	{
+		if(!(context->isInternal) || !ILType_IsValueType(returnType))
+		{
+			ILCoderAddrOfLocal
+				(context->coder, ((ILM_Local *)(node->returnLocal))->localNum);
+			context->hasReturn = 1;
+		}
+	}
+	else if(context->isConstructor)
+	{
+		ILCoderAddrOfLocal
+			(context->coder, ((ILM_Local *)(node->returnLocal))->localNum);
+		context->hasReturn = 1;
+	}
+}
+
+/*
+ * Generate value code for a "libffi" call instruction.
+ */
+ILM_GenValue(ILM_FfiCall)
+{
+	if(context->isConstructor)
+	{
+		ILCoderCallFfi(context->coder, node->ctorfn, node->ctorcif,
+					   context->useRawCalls, context->hasReturn);
+	}
+	else
+	{
+		ILCoderCallFfi(context->coder, node->fn, node->cif,
+					   context->useRawCalls, context->hasReturn);
+	}
+}
+
+/*
+ * Return a value from a method.
+ */
+ILM_GenValue(ILM_Return)
+{
+	if(node->type != ILType_Void)
+	{
+		ILM_GenValue(node->expr, context);
+	}
+	ILCoderReturnInsn(context->coder, _ILTypeToEngineType(node->type),
+					  node->type);
+}
+
+/*
+ * Return a value from a constructor method.
+ */
+ILM_GenValue(ILM_ReturnCtor)
+{
+	if(context->isConstructor)
+	{
+		/* This is the constructor form of the method */
+		ILM_GenValue(node->expr, context);
+		ILCoderReturnInsn(context->coder, ILEngineType_I, ILType_Int);
+	}
+	else
+	{
+		/* This is the regular call form of the method */
+		ILCoderReturnInsn(context->coder, ILEngineType_Invalid, ILType_Void);
+	}
+}
+
+/*
+ * Generate value code for a CVM conversion opcode.
+ */
+ILM_GenValue(ILM_Convert)
+{
+	ILM_GenValue(node->expr, context);
+	ILCoderConvert(context->coder, node->opcode);
+}
+
+/*
+ * Generate value code for a custom marshalling conversion.
+ */
+ILM_GenValue(ILM_ConvertCustom)
+{
+	ILM_GenValue(node->expr, context);
+	ILCoderConvertCustom(context->coder, node->opcode,
+						 node->customNameLen, node->customCookieLen,
+						 node->customName, node->customCookie);
+}
+
+/*
+ * Generate value code for an "address of" operator.
+ */
+ILM_GenValue(ILM_AddressOf)
+{
+	if(ILM_isa(node->expr, ILM_LValue))
+	{
+		ILM_GenRef((ILM_LValue *)(node->expr), context);
+	}
+	else
+	{
+		/* Store the value in a local variable before taking its address */
+		ILM_GenValue(node->expr, context);
+		ILCoderStoreLocal(context->coder, node->localNum,
+						  _ILTypeToEngineType(node->type), node->type);
+		ILCoderAddrOfLocal(context->coder, node->localNum);
+	}
+}
+
+/*
+ * Generate code for a "try ... finally ..." block.
+ */
+ILM_GenValue(ILM_TryFinally)
+{
+	ILException exception;
+
+	/* Create a fake exception list for the "finally" clause */
+	ILMemZero(&exception, sizeof(exception));
+	exception.flags = IL_META_EXCEPTION_FINALLY;
+	exception.tryOffset = 0;
+	exception.tryLength = 1;
+	exception.handlerOffset = 1;
+	exception.handlerLength = 1;
+
+	/* Set up the method frame to handle exceptions */
+	ILCoderSetupExceptions(context->coder, &exception, 0);
+
+	/* Mark the start of the "try" block */
+	ILCoderLabel(context->coder, 0);
+	ILCoderStackRefresh(context->coder, 0, 0);
+
+	/* Output the body of the "try" block */
+	ILM_GenValue(node->tryBlock, context);
+
+	/* Call the "finally" block and then jump to the end of the method */
+	ILCoderJsr(context->coder, 1);
+	ILCoderBranch(context->coder, IL_OP_LEAVE, 2,
+				  ILEngineType_I4, ILEngineType_I4);
+
+	/* Mark the end of the "try" block and the start of the "finally" block */
+	ILCoderLabel(context->coder, 1);
+	ILCoderStackRefresh(context->coder, 0, 0);
+
+	/* Output the body of the "finally" block */
+	ILM_GenValue(node->finallyBlock, context);
+	ILCoderRetFromJsr(context->coder);
+
+	/* Mark the end of the "finally" block */
+	ILCoderLabel(context->coder, 2);
+	ILCoderStackRefresh(context->coder, 0, 0);
+
+	/* Output the "return" instruction for the method */
+	if(context->isConstructor)
+	{
+		if(node->returnExpr)
+		{
+			ILM_GenValue(node->returnExpr, context);
+		}
+		ILCoderReturnInsn(context->coder, ILEngineType_I, ILType_Int);
+	}
+	else
+	{
+		if(node->returnType != ILType_Void && node->returnExpr)
+		{
+			ILM_GenValue(node->returnExpr, context);
+		}
+		ILCoderReturnInsn(context->coder,
+						  _ILTypeToEngineType(node->returnType),
+						  node->returnType);
+	}
+
+	/* Mark the end of the method */
+	ILCoderMarkEnd(context->coder);
+
+	/* Output the exception matching table */
+	ILCoderTryHandlerStart(context->coder, 0, 1);
+	ILCoderJsr(context->coder, 1);
+	ILCoderThrow(context->coder, 0);
+	ILCoderTryHandlerEnd(context->coder);
+	ILCoderTryHandlerStart(context->coder, 0, IL_MAX_UINT32);
+	ILCoderThrow(context->coder, 0);
+	ILCoderTryHandlerEnd(context->coder);
+}
+
+/*
+ * Generate code for a compound statement.
+ */
+ILM_GenValue(ILM_CompoundStmt)
+{
+	ILM_GenValue(node->expr, context);
+}
+ILM_GenValue(ILM_Compound)
+{
+	ILM_CompoundStmt *stmt = node->stmts;
+	while(stmt != 0)
+	{
+		ILM_GenValue(stmt->expr, context);
+		stmt = stmt->next;
+	}
+}
+
+/*
+ * Generate code for a simple method body.
+ */
+ILM_GenValue(ILM_Method)
+{
+	ILM_GenValue(node->expr, context);
+	ILCoderMarkEnd(context->coder);
+}
+
+%end %{
+
+/*
+ * Add a member to a compound statement.
+ */
+static void ILM_Compound_Add(ILM_State *state, ILM_Node *compound,
+							 ILM_Node *stmt)
+{
+	if(compound && stmt)
+	{
+		ILM_Compound *cmp = (ILM_Compound *)compound;
+		ILM_CompoundStmt *wrapper;
+		wrapper = ILM_CompoundStmt_create(state, stmt);
+		if(wrapper)
+		{
+			if(cmp->last)
+			{
+				cmp->last->next = wrapper;
+			}
+			else
+			{
+				cmp->stmts = wrapper;
+			}
+			cmp->last = wrapper;
+		}
+	}
+}
+
+/*
+ * Import from "cvmc_setup.c".
+ */
+int _ILCVMCanUseRawCalls(ILMethod *method, int isInternal);
+
+/*
+ * Augmented ILM_State, including an out of memory indicator.
+ */
+typedef struct
+{
+	ILM_State	state;
+	int			outOfMemory;
+
+} ILM_State_Ext;
+
+/*
+ * Initialize the native method compilation state.
+ */
+static void InitNativeMethod(ILM_Context *context, ILM_State_Ext *state,
+							 ILCoder *coder, ILMethod *method)
+{
+	ILM_nodeinit(&(state->state));
+	state->outOfMemory = 0;
+	context->coder = coder;
+	context->method = method;
+	context->signature = ILMethod_Signature(method);
+	context->isInternal = ILMethod_IsInternalCall(method);
+	context->useRawCalls = _ILCVMCanUseRawCalls(method, context->isInternal);
+	context->isConstructor = 0;
+	context->hasReturn = 0;
+	context->mayBeCtor = ILMethodIsConstructor(method);
+}
+
+/*
+ * Shutdown the native method compilation state.
+ */
+static void ShutdownNativeMethod(ILM_State *state)
+{
+	ILM_nodeclear(state);
+}
+
+/*
+ * Marshal a native method parameter.
+ */
+static ILM_Node *MarshalNativeParameter(ILM_Context *context, ILM_State *state,
+										unsigned long paramNum,
+										ILType *argType, ILM_Node *node,
+										ILM_Node *cleanup, ILPInvoke *pinv)
+{
+#ifdef IL_CONFIG_PINVOKE
+	ILUInt32 marshalType;
+	char *customName;
+	int customNameLen;
+	char *customCookie;
+	int customCookieLen;
+#endif
+
+	/* Resolve enumerated type references first */
+	argType = ILTypeGetEnumType(argType);
+
+	/* Value types are passed by reference to internalcalls */
+	if(context->isInternal && ILType_IsValueType(argType))
+	{
+		node = ILM_AddressOf_create(state, node, argType);
+	}
+
+#ifdef IL_CONFIG_PINVOKE
+
+	/* Process the PInvoke marshalling information */
+	if(!(context->isInternal) &&
+	   (marshalType = ILPInvokeGetMarshalType(pinv, context->method, paramNum,
+	   										  &customName, &customNameLen,
+											  &customCookie,
+											  &customCookieLen, argType))
+			!= IL_META_MARSHAL_DIRECT)
+	{
+		switch(marshalType)
+		{
+			case IL_META_MARSHAL_ANSI_STRING:
+			{
+				node = ILM_Convert_create(state, node, COP_PREFIX_STR2ANSI);
+			}
+			break;
+
+			case IL_META_MARSHAL_UTF8_STRING:
+			{
+				node = ILM_Convert_create(state, node, COP_PREFIX_STR2UTF8);
+			}
+			break;
+
+			case IL_META_MARSHAL_UTF16_STRING:
+			{
+				node = ILM_Convert_create(state, node, COP_PREFIX_STR2UTF16);
+			}
+			break;
+
+			case IL_META_MARSHAL_FNPTR:
+			{
+				node = ILM_Convert_create
+					(state, node, COP_PREFIX_DELEGATE2FNPTR);
+			}
+			break;
+
+			case IL_META_MARSHAL_ARRAY:
+			{
+				node = ILM_Convert_create(state, node, COP_PREFIX_ARRAY2PTR);
+			}
+			break;
+
+			case IL_META_MARSHAL_REF_ANSI_ARRAY:
+			{
+				node = ILM_Convert_create
+					(state, node, COP_PREFIX_REFARRAY2ANSI);
+			}
+			break;
+
+			case IL_META_MARSHAL_REF_UTF8_ARRAY:
+			{
+				node = ILM_Convert_create
+					(state, node, COP_PREFIX_REFARRAY2UTF8);
+			}
+			break;
+
+			case IL_META_MARSHAL_CUSTOM:
+			{
+				node = ILM_ConvertCustom_create
+					(state, node, COP_PREFIX_TOCUSTOM,
+				     (ILUInt32)(ILInt32)customNameLen,
+				     (ILUInt32)(ILInt32)customCookieLen,
+				     (void *)customName,
+				     (void *)customCookie);
+			}
+			break;
+
+			case IL_META_MARSHAL_ANSI_ARRAY:
+			{
+				node = ILM_Convert_create
+					(state, node, COP_PREFIX_ARRAY2ANSI);
+			}
+			break;
+
+			case IL_META_MARSHAL_UTF8_ARRAY:
+			{
+				node = ILM_Convert_create
+					(state, node, COP_PREFIX_ARRAY2UTF8);
+			}
+			break;
+		}
+	}
+
+#endif /* IL_CONFIG_PINVOKE */
+
+	/* Return the adjusted node to the caller */
+	return node;
+}
+
+/*
+ * Marshal a native method return.
+ */
+static ILM_Node *MarshalNativeReturn(ILM_Context *context, ILM_State *state,
+									 ILType *returnType, ILM_Node *node,
+									 ILM_Node *cleanup)
+{
+	/* TODO */
+	return node;
+}
+
+/*
+ * Compile a native method declaration to a node tree.
+ */
+static ILM_Node *CompileNativeMethod(ILM_Context *context, ILM_State *state,
+									 void *fn, void *cif,
+									 void *ctorfn, void *ctorcif)
+{
+	ILType *signature = context->signature;
+	ILType *returnType = ILTypeGetReturn(signature);
+	ILM_Node *compound;
+	ILM_Node *cleanup;
+	ILM_Node *returnLocal;
+	ILM_Node *exceptReturn;
+	unsigned long numParams;
+	unsigned long paramNum;
+	ILUInt32 argNum;
+	ILType *argType;
+	ILM_Node *argNode;
+	ILPInvoke *pinv;
+
+	/* Create the main compound statement for the method */
+	compound = ILM_Compound_create(state);
+
+	/* Create the cleanup compound statement for the method */
+	cleanup = ILM_Compound_create(state);
+
+	/* Push the thread information first */
+	ILM_Compound_Add(state, compound, ILM_FfiThread_create(state));
+
+	/* Push the "this" information next */
+	ILM_Compound_Add(state, compound, ILM_FfiThis_create(state));
+
+	/* Get the PInvoke information for the method */
+	if(context->isInternal)
+	{
+		pinv = 0;
+	}
+	else
+	{
+		pinv = ILPInvokeFind(context->method);
+	}
+
+	/* Create a local variable to hold the return value */
+	/* TODO: the type may be different if it is structure-marshalled */
+	if(context->mayBeCtor)
+	{
+		returnLocal = ILM_Local_create(state, ILType_Int);
+	}
+	else
+	{
+		returnLocal = ILM_Local_create(state, returnType);
+	}
+
+	/* Push return argument information if necessary */
+	ILM_Compound_Add(state, compound, ILM_FfiReturnArgument_create
+			(state, returnType, returnLocal));
+
+	/* Push the arguments for the native method */
+	numParams = ILTypeNumParams(signature);
+	if(ILType_HasThis(signature))
+	{
+		argNum = 1;
+	}
+	else
+	{
+		argNum = 0;
+	}
+	for(paramNum = 1; paramNum <= numParams; ++paramNum)
+	{
+		argType = ILTypeGetParam(signature, paramNum);
+		if(context->mayBeCtor)
+		{
+			argNode = ILM_ArgumentCtor_create(state, argType, argNum);
+		}
+		else
+		{
+			argNode = ILM_Argument_create(state, argType, argNum);
+		}
+		argNode = MarshalNativeParameter
+			(context, state, paramNum, argType, argNode, cleanup, pinv);
+		ILM_Compound_Add(state, compound, argNode);
+		++argNum;
+	}
+
+	/* Push the address of the return local */
+	ILM_Compound_Add(state, compound, ILM_FfiReturn_create
+			(state, returnType, returnLocal));
+
+	/* Call the method using "libffi" */
+	ILM_Compound_Add
+		(state, compound, ILM_FfiCall_create(state, fn, cif, ctorfn, ctorcif));
+
+	/* De-marshal the return value */
+	if(!(context->mayBeCtor) && returnType != ILType_Void)
+	{
+		argNode = MarshalNativeReturn
+			(context, state, returnType, returnLocal, cleanup);
+	}
+	else
+	{
+		argNode = returnLocal;
+	}
+
+	/* Push the value on the stack and return */
+	exceptReturn = 0;
+	if(cleanup && ((ILM_Compound *)cleanup)->stmts)
+	{
+		if(context->mayBeCtor)
+		{
+			exceptReturn = ILM_Local_create(state, ILType_Int);
+			ILM_Compound_Add
+				(state, compound, ILM_AssignCtor_create
+						(state, exceptReturn, argNode));
+		}
+		else if(returnType != ILType_Void)
+		{
+			exceptReturn = ILM_Local_create(state, returnType);
+			ILM_Compound_Add
+				(state, compound, ILM_Assign_create
+						(state, exceptReturn, argNode));
+		}
+	}
+	else if(context->mayBeCtor)
+	{
+		ILM_Compound_Add
+			(state, compound, ILM_ReturnCtor_create(state, argNode));
+	}
+	else
+	{
+		ILM_Compound_Add
+			(state, compound, ILM_Return_create(state, argNode, returnType));
+	}
+
+	/* Wrap the method in a "try ... finally ..." block if there
+	   are cleanup operations that need to be performed */
+	if(cleanup && ((ILM_Compound *)cleanup)->stmts)
+	{
+		compound = ILM_TryFinally_create
+			(state, compound, cleanup, exceptReturn, returnType);
+	}
+	else
+	{
+		compound = ILM_Method_create(state, compound);
+	}
+
+	/* Return the compound statement to the caller */
+	return compound;
+}
+
+/*
+ * Handle out of memory conditions from the treecc node allocator.
+ */
+void ILM_nodefailed(ILM_State *state)
+{
+	((ILM_State_Ext *)state)->outOfMemory = 1;
+}
+
+/*
+ * Convert a PInvoke or internalcall method declaration into code.
+ */
+int _ILMarshalSetupExtern(ILCoder *coder, unsigned char **start,
+						  ILMethod *method, void *fn, void *cif)
+{
+	ILM_Context context;
+	ILM_State_Ext state;
+	ILM_Node *node;
+
+	/* Initialize the native method state */
+	InitNativeMethod(&context, &state, coder, method);
+
+	/* Compile the method into a treecc node tree */
+	node = CompileNativeMethod(&context, &(state.state), fn, cif, 0, 0);
+	if(state.outOfMemory)
+	{
+		ShutdownNativeMethod(&(state.state));
+		return 0;
+	}
+
+	/* TODO: method header code */
+
+	/* Allocate the local variables */
+	ILM_AllocLocals(node, &context);
+
+	/* Generate the code */
+	ILM_GenValue(node, &context);
+
+	/* TODO: method footer code */
+
+	/* Clean up and exit */
+	ShutdownNativeMethod(&(state.state));
+	return 0;
+}
+
+/*
+ * Convert a PInvoke or internalcall constructor declaration into code.
+ */
+int _ILMarshalSetupExternCtor(ILCoder *coder, unsigned char **start,
+						      ILMethod *method, void *fn, void *cif,
+						      void *ctorfn, void *ctorcif)
+{
+	ILM_Context context;
+	ILM_State_Ext state;
+	ILM_Node *node;
+
+	/* Initialize the native method state */
+	InitNativeMethod(&context, &state, coder, method);
+
+	/* Compile the method into a treecc node tree */
+	node = CompileNativeMethod(&context, &(state.state),
+							   fn, cif, ctorfn, ctorcif);
+	if(state.outOfMemory)
+	{
+		ShutdownNativeMethod(&(state.state));
+		return 0;
+	}
+
+	/* TODO: output the constructor jump-over block */
+
+	/* TODO: method header code */
+
+	/* Allocate the local variables */
+	ILM_AllocLocals(node, &context);
+
+	/* Generate the code */
+	ILM_GenValue(node, &context);
+
+	/* Reset for the constructor form of the method */
+	ILM_ClearLocals(node, &context);
+	context.isConstructor = 1;
+	ILM_AllocLocals(node, &context);
+
+	/* Generate the constructor code */
+	ILM_GenValue(node, &context);
+
+	/* TODO: method footer code */
+
+	/* Clean up and exit */
+	ShutdownNativeMethod(&(state.state));
+	return 0;
+}
+
+%}

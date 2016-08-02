@@ -1,0 +1,5 @@
+Makefile
+Makefile.in
+.deps
+runtime.resources
+tempres.txt

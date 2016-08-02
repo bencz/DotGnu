@@ -1,0 +1,75 @@
+
+Guide to translating pnetlib to non-English languages
+-----------------------------------------------------
+
+This file describes what a translator needs to know to translate
+Portable.NET's C# library from English to some other language.
+
+English files
+-------------
+
+The English versions of the string resources are found in the directory
+"pnetlib/resources/en_US" within the source tree.  Under this directory
+there are several sub-directories for each major system component:
+
+    runtime, System, System.Xml, System.Drawing, I18N, etc
+
+Each of these directories contain "*.txt" files with the actual resources.
+For example, "pnetlib/resources/en_US/runtime" contains the following files:
+
+    Arg.txt, Cast.txt, Crypto.txt, DivZero.txt, Emit.txt, Exception.txt,
+    Format.txt, Invalid.txt, IO.txt, NotSupp.txt, Overflow.txt, Reflection.txt,
+    Remoting.txt, Security.txt, Serialize.txt
+
+Some files, like "Arg.txt", appear in multiple directories, but with
+different contents.  Each one must be translated separately.
+
+The files themselves contain lines of the form "tag=value", where "tag"
+is a tag that uniquely identifies the string within the system, and
+"value" is the actual string value.  Here is an excerpt from
+"pnetlib/resources/en_US/IO.txt":
+
+    IO_StreamClosed=Stream is already closed
+    IO_FileAccess=Invalid file access value specified
+    IO_FileMode=Invalid file mode value specified
+
+The tag must not be translated: only the text after the "=" sign should be
+translated.
+
+Some values may contain substrings of the form "{0}", "{1}", etc.  These
+indicate placeholders for values that will be substituted into the string
+at runtime.  You can rearrange them into a different order if necessary,
+as long as you preserve the correct number.
+
+Lines that begin with '#' are comments and should not be translated.
+
+Language names and how resources are located
+--------------------------------------------
+
+For each language, there will normally be a "neutral" version, plus variants
+for other zones.  e.g. "de_DE" is the neutral version for "German, as spoken
+in Germany".  "de_AT" would be "German, as spoken in Austria".  The standard
+locale naming system of "<language>_<country>" is used.
+
+Normally you would translate to the neutral language, and then provide a
+smaller set of resource files for a variant.
+
+When the system needs a resource, it first looks for a string in the variant
+resources, then in the neutral resources, and finally falls back to the
+English version.  There is no need to provide variant resources for
+every string - only those that differ from the neutral language.
+
+When translating to a new language, you should first create a directory
+underneath "pnetlib/resources" for the neutral language.  Then, copy across
+all of the directories and "*.txt" files from "pnetlib/resources/en_US".
+You can now begin translating.
+
+Create a similar set of directories for variant languages if you need them.
+
+Character sets
+--------------
+
+The standard character set for string resources is UTF-8, but we will
+accept other character sets, such as Latin-1, and Shift-JIS, because we
+can easily convert them into UTF-8.  Just be sure to tell us what
+character set you used.

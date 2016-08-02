@@ -1,0 +1,182 @@
+#
+# Arg.txt - Resources for argument errors.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Arg_MustBeBoolean=Object must be of type Boolean
+Arg_MustBeByte=Object must be of type Byte
+Arg_MustBeSByte=Object must be of type SByte
+Arg_MustBeChar=Object must be of type Char
+Arg_MustBeInt16=Object must be of type Int16
+Arg_MustBeUInt16=Object must be of type UInt16
+Arg_MustBeInt32=Object must be of type Int32
+Arg_MustBeUInt32=Object must be of type UInt32
+Arg_MustBeInt64=Object must be of type Int64
+Arg_MustBeUInt64=Object must be of type UInt64
+Arg_MustBeDecimal=Object must be of type Decimal
+Arg_MustBeSingle=Object must be of type Single
+Arg_MustBeDouble=Object must be of type Double
+Arg_MustBeDateTime=Object must be of type DateTime
+Arg_MustBeTimeSpan=Object must be of type TimeSpan
+Arg_MustBeString=Object must be of type String
+Arg_MustBeSameEnum=Enumerated objects must be of the same type
+Arg_MustBeEnum=Must be an enumerated type
+Arg_InvalidEnumValue=Invalid enumerated value for this type
+Arg_InvalidEnumName=Invalid enumerated value string for this type
+Arg_MustBeResourceSet=Object must be of type ResourceSet
+Arg_MustBeVersion=Object must be of type Version
+Arg_MustBeGuid=Object must be of type Guid
+Arg_InvalidBase=Base must be 2, 8, 10, or 16
+Arg_UnknownTypeCode=Unknown type code
+Arg_InvalidHexStyle=Invalid hexadecimal number style
+Arg_DecBitCtor=Invalid bit array supplied to Decimal constructor
+Arg_NotNull=Argument cannot be null
+Arg_NotNullName=Argument {0} cannot be null
+Arg_OutOfRange=Argument is out of range
+Arg_OutOfRangeValue=Argument value: {0}
+Arg_DateTimeRange=DateTime value is out of range
+Arg_SearchCompare=Values were not comparable during search
+Arg_RankMustBe1=Array rank must be 1
+Arg_RankMustBe2=Array rank must be 2
+Arg_RankMustBe3=Array rank must be 3
+Arg_InvalidArrayRange=Array range is invalid
+Arg_MustBeType=Supplied value must be a valid runtime type
+Arg_MustHaveOneElement=Array must have at least 1 element
+Arg_MustBeSameSize=The two arrays must have the same size
+Arg_MustBeSameRank=The two arrays must have the same number of dimensions
+Arg_InvalidArrayIndex=Array index is invalid
+Arg_LowBoundsMustMatch=The lower bounds of the two arrays must match
+Arg_ShortItemsArray=The items array is shorter than the keys array
+Arg_ABMustBeComparable=a or b must implement IComparable
+Arg_CannotReduceCapacity=Cannot reduce the capacity of an array list below its current length
+Arg_NotANumber=Floating-point argument is not a number
+Arg_InsufficientSpace=Insufficient array space for requested operation
+Arg_EndsWithResources=The specified base name must not end in ".resources"
+Arg_VersionFields=The specified version field count is invalid
+Arg_GuidArray8=The Guid byte buffer should have 8 items
+Arg_GuidArray16=The Guid byte buffer should have 16 items
+Arg_NonPrimitiveArray=The supplied array does not contain primitive elements
+Arg_DelegateMethod=Missing method for delegate creation
+Arg_DelegateMismatch=The specified delegates are not of the same type
+Arg_NotDelegate=The specified type is not a delegate type
+Arg_DelegateSignature=The delegate and method do not have the same signature
+Arg_DelegateAccess=The caller does not have permission to access the delegate method
+Arg_MakeTypedRef=A non-zero list of fields is required to make a typed reference
+Arg_MakeTypedRefFields=The fields for a typed reference must be runtime fields
+Arg_InvalidEra=Invalid era value for calendar method
+Arg_NoEraYear=No era year exists for the supplied parameters
+Arg_ExistingEntry=There is already an existing entry with the specified key
+Arg_BitArrayLengths=The lengths of the two bit arrays are not identical
+Arg_NotFound=The specified value was not found
+Arg_Value0To99=The specific value must be between 0 and 99 inclusive
+Arg_Value0To3=The specific value must be between 0 and 3 inclusive
+Arg_Value0To15=The specific value must be between 0 and 15 inclusive
+Arg_Value0To4=The specific value must be between 0 and 4 inclusive
+Arg_Value0To2=The specific value must be between 0 and 2 inclusive
+Arg_Value0To9=The specific value must be between 0 and 9 inclusive
+Arg_Value1To9=The specific value must be between 1 and 9 inclusive
+Arg_Array7Elems=The specified array must have 7 elements
+Arg_Array13Elems=The specified array must have 13 elements
+Arg_InvalidCalendar=Invalid calendar for the current culture
+Arg_CalendarWeekRule=Invalid calendar week rule value
+Arg_DayOfWeek=Invalid day of week value
+Arg_InvalidXMLTag=Invalid XML element tag name
+Arg_InvalidXMLText=Invalid XML element text
+Arg_InvalidXMLAttrName=Invalid XML attribute name
+Arg_InvalidXMLAttrValue=Invalid XML attribute value
+Arg_DuplicateXMLAttr=There already exists an XML attribute with the specified name
+Arg_PermissionState=Invalid security permission state value
+Arg_PermissionVersion=Incorrect version for permission object
+Arg_InvalidUTF8=Invalid UTF8 byte sequence
+Arg_WeakRefCollected=Weak reference has already been garbage collected
+Arg_MustBeCoreLib=The specified assembly must be the core library
+Arg_InvalidRegion=Invalid region name or identifier
+Arg_DateTimeFormatChar=Invalid DateTime formatting character
+Arg_PermissionMismatch=Mismatched permission objects
+Arg_EnvironmentAccess=Invalid environment permission access value
+Arg_FileIOAccess=Invalid file I/O permission access value
+Arg_SecurityFlag=Invalid security permission flag value
+Arg_ReflectionFlag=Invalid reflection permission flag value
+Arg_FileDialogAccess=Invalid file dialog permission access value
+Arg_InvalidSite=Invalid site permission value
+Arg_WindowFlag=Invalid window permission flag value
+Arg_ClipboardFlag=Invalid clipboard permission flag value
+Arg_PublicKeyBlob=Invalid public key blob value
+Arg_RegistryAccess=Invalid registry permission access value
+Arg_PermissionsExecution=Allow program execution permissions
+Arg_PermissionsFullTrust=Allow all permissions
+Arg_PermissionsInternet=Allow access to the internet
+Arg_PermissionsLocalIntranet=Allow access to the local intranet
+Arg_PermissionsNothing=Deny all permissions
+Arg_PermissionsSkipVerification=Allow the program to skip verification
+Arg_InvalidAsync=Invalid object supplied for async read/write operation
+Arg_InvalidHive=Invalid registry hive
+Arg_SynchronizationFlag=Invalid synchronization flag value
+Arg_PointerType=The supplied argument was not a pointer type
+Arg_PointerValue=The supplied argument was not a pointer value
+Arg_InvalidSoapValue=The supplied string is not a valid SOAP value
+Arg_SecurityZone=The supplied security zone value was invalid
+Arg_CannotMarshalStruct=The supplied structure type could not be marshaled
+Arg_NotGenericMethod=The specified method is not generic
+Arg_GenericParameterCount=The generic parameter counts do not match
+Arg_InvalidUnityObject=Invalid unity object encountered during deserialization
+Arg_InvalidMemberObject=Invalid member object encountered during deserialization
+Arg_InvalidUrl=Invalid URL
+Arg_InvalidMembershipCondition=Invalid code group membership condition
+Arg_InvalidRegex=Invalid regular expression
+Arg_ResourceAlreadyPresent=The specified resource is already present
+Arg_InvalidColor=Invalid console color value
+Arg_LowSurrogate=Invalid low surrogate
+Arg_HighSurrogate=Invalid high surrogate
+Arg_InvalidMidpointRounding=Invalid midpoint rounding mode
+ArgRange_DecimalScale=Decimal scale factor must be between 0 and 28, inclusive
+ArgRange_YMD=Year, month, day specification is out of range
+ArgRange_HMS=Hour, minute, second specification is out of range
+ArgRange_DateTimeTicks=Ticks value for DateTime is out of range
+ArgRange_TimeSpan=TimeSpan value is out of range
+ArgRange_Array=Array position or length is out of range
+ArgRange_NonNegative=Value must not be negative
+ArgRange_NonNegOrNegOne=Value must be positive, 0, or -1
+ArgRange_PositiveNonZero=Value must be positive and non zero
+ArgRange_NegativeOrZero=Value must be negative or zero
+ArgRange_Negative=Value must be negative
+ArgRange_StringIndex=String index is out of range
+ArgRange_StringRange=String range is out of range
+ArgRange_RoundDigits=Rounding digit count must be between 0 and 15, inclusive
+ArgRange_MinValueGtMaxValue=minValue is greater than maxValue
+ArgRange_StringNonEmpty=String value must not be empty
+ArgRange_MaxStrCapacity=Maximum string capacity must be 1 or greater
+ArgRange_StrCapacity=Invalid string capacity
+ArgRange_StrBuilderLength=Invalid string builder length
+ArgRange_Year=Year value is out of range
+ArgRange_Month=Month value is out of range
+ArgRange_Day=Day value is out of range
+ArgRange_HashLoadFactor=Invalid hash table load factor
+ArgRange_QueueGrowFactor=Invalid growth factor for queues
+ArgRange_GCGeneration=GC generation is out of range
+ArgRange_HijriAdjustment=Hijri adjustment values must be between -2 and 2
+ArgRange_HijriDate=Date value is out of range for the Hijri calendar
+ArgRange_BufferSize=Buffer size is out of range
+ArgRange_DateTimeRange=DateTime value is out of range
+ArgRange_BeepFrequency=Frequency must be between 37 and 32767 Hertz
+ArgRange_XCoordinate=X co-ordinate is out of range
+ArgRange_YCoordinate=Y co-ordinate is out of range
+ArgRange_Width=Width is out of range
+ArgRange_Height=Height is out of range
+ArgRange_CursorSize=Cursor size must be between 1 and 100
+ArgRange_LowSurrogate=Value must be a valid low surrogate
+ArgRange_HighSurrogate=Value must be a valid high surrogate

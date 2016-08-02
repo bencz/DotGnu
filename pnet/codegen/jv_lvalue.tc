@@ -1,0 +1,1028 @@
+/*
+ * jv_lvalue.tc - Identifier and l-value code generator for Java.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/*
+ * Stub out identifier operations.  Identifier nodes must
+ * be replaced with real l-value nodes prior to code generation.
+ */
+JavaGenValue(ILNode_Identifier),
+JavaGenValue(ILNode_QualIdent),
+JavaGenValue(ILNode_GenericQualIdent)
+{
+	return ILMachineType_Void;
+}
+JavaGenDiscard(ILNode_Identifier),
+JavaGenDiscard(ILNode_QualIdent),
+JavaGenDiscard(ILNode_GenericQualIdent),
+JavaGenThen(ILNode_Identifier),
+JavaGenThen(ILNode_QualIdent),
+JavaGenThen(ILNode_GenericQualIdent),
+JavaGenElse(ILNode_Identifier),
+JavaGenElse(ILNode_QualIdent),
+JavaGenElse(ILNode_GenericQualIdent)
+{
+}
+
+/*
+ * Generate discard code for local and argument variables.
+ */
+JavaGenDiscard(ILNode_LocalVar),
+JavaGenDiscard(ILNode_ArgumentVar),
+JavaGenDiscard(ILNode_RefArgumentVar)
+{
+	/* Nothing needs to be done here */
+}
+
+/*
+ * Generate discard code for a member access operator.
+ */
+JavaGenDiscard(ILNode_MemberAccess)
+{
+	/* Evaluate the object expression for its side-effects */
+	JavaGenDiscard(node->expr1, info);
+}
+
+/*
+ * Generate discard code for a base access operator.
+ */
+JavaGenDiscard(ILNode_BaseAccess)
+{
+	/* Nothing needs to be done here */
+}
+
+/*
+ * Generate discard code for a field dereference operator.
+ */
+JavaGenDiscard(ILNode_DerefField)
+{
+	/* Evaluate the object expression for its side-effects */
+	JavaGenDiscard(node->expr1, info);
+}
+
+/*
+ * Generate discard code for a static field reference.
+ */
+JavaGenDiscard(ILNode_StaticField)
+{
+	/* Nothing to do here */
+}
+
+/*
+ * Generate discard code for a member field reference.
+ */
+JavaGenDiscard(ILNode_MemberField)
+{
+	/* Evaluate the object expression for its side-effects only */
+	JavaGenDiscard(node->expr, info);
+}
+
+/*
+ * Generate discard code for an array access node.
+ */
+JavaGenDiscard(ILNode_ArrayAccess)
+{
+	/* Evaluate the sub-expressions for their side-effects only */
+	JavaGenDiscard(node->array, info);
+	JavaGenDiscard(node->indices, info);
+}
+
+/*
+ * Generate discard code for an indexer access node.
+ */
+JavaGenDiscard(ILNode_IndexerAccess)
+{
+	/* Evaluate the sub-expressions for their side-effects only */
+	JavaGenDiscard(node->object, info);
+	JavaGenDiscard(node->indices, info);
+}
+
+/*
+ * Generate value code for a local variable.
+ */
+JavaGenValue(ILNode_LocalVar)
+{
+	JavaGenLoadLocal(info, node->index, node->machineType);
+	JavaGenAdjust(info, JavaGenTypeSize(node->machineType));
+	return node->machineType;
+}
+
+/*
+ * Generate value code for an argument variable.
+ */
+JavaGenValue(ILNode_ArgumentVar),
+JavaGenValue(ILNode_RefArgumentVar)
+{
+	JavaGenLoadArg(info, node->index, node->machineType);
+	JavaGenAdjust(info, JavaGenTypeSize(node->machineType));
+	return node->machineType;
+}
+
+/*
+ * Generate value code for a member access operator.
+ */
+JavaGenValue(ILNode_MemberAccess)
+{
+	/* TODO */
+	return node->machineType;
+}
+
+/*
+ * Generate value code for a base access operator.
+ */
+JavaGenValue(ILNode_BaseAccess)
+{
+	JavaGenSimple(info, JAVA_OP_ALOAD_0);
+	JavaGenAdjust(info, 1);
+ 	return ILMachineType_ObjectRef;
+}
+
+/*
+ * Generate value code for a base element operator.
+ */
+JavaGenValue(ILNode_BaseElement)
+{
+	/* TODO */
+	return node->machineType;
+}
+
+/*
+ * Generate value code for a field dereference operator.
+ */
+JavaGenValue(ILNode_DerefField)
+{
+	/* TODO */
+	return node->machineType;
+}
+
+%output "cg_lvalue.c"
+%{
+
+/*
+ * Validate a value type instance from a field or array element.
+ *
+ * Because JVM does not really support value types, we have some
+ * issues when objects and arrays that contain value types are
+ * constructed.  To get around this, we must check for "null" and
+ * then replace "null" values with a newly initialized value.
+ */
+static void ValidateValueType(ILGenInfo *info, ILMachineType machineType,
+							  ILType *actualType)
+{
+	ILLabel label = ILLabel_Undefined;
+	char *className;
+
+	/* Bail out if the machine type does not indicate a managed value */
+	if(machineType != ILMachineType_Decimal &&
+	   machineType != ILMachineType_ManagedValue)
+	{
+		return;
+	}
+
+	/* Check the value on the stack top for "null" */
+	JavaGenSimple(info, JAVA_OP_DUP);
+	JavaGenAdjust(info, 1);
+	JavaGenJump(info, JAVA_OP_IFNONNULL, &label);
+	JavaGenAdjust(info, -1);
+
+	/* Pop the "null" value and create an instance of the value type */
+	JavaGenSimple(info, JAVA_OP_POP);
+	className = JavaGetClassName(info, ILTypeToClass(info, actualType));
+	JavaGenNewObj(info, className);
+	JavaGenSimple(info, JAVA_OP_DUP);
+	JavaGenAdjust(info, 1);
+	JavaGenCallCtor(info, className, "<init>", "()V");
+	JavaGenAdjust(info, -1);
+	ILFree(className);
+
+	/* Output the label that was used to skip the initialization */
+	JavaGenLabel(info, &label);
+}
+
+%}
+
+/*
+ * Generate value code for a static field reference.
+ */
+JavaGenValue(ILNode_StaticField)
+{
+	ILMachineType type = ILTypeToMachineType(ILField_Type(node->field));
+	JavaGenFieldRef(info, JAVA_OP_GETSTATIC, node->field);
+	JavaGenAdjust(info, JavaGenTypeSize(type));
+	ValidateValueType(info, type, ILField_Type(node->field));
+	return type;
+}
+
+/*
+ * Generate value code for a member field reference.
+ */
+JavaGenValue(ILNode_MemberField)
+{
+	ILMachineType type = ILTypeToMachineType(ILField_Type(node->field));
+	JavaPrepareForThisAccess(info, node->expr, ILField_Owner(node->field));
+	JavaGenFieldRef(info, JAVA_OP_GETFIELD, node->field);
+	JavaGenAdjust(info, JavaGenTypeSize(type) - 1);
+	ValidateValueType(info, type, ILField_Type(node->field));
+	return type;
+}
+
+/*
+ * Generate value code for a static property reference.
+ */
+JavaGenValue(ILNode_StaticProperty)
+{
+	ILMethod *getter = ILProperty_Getter(node->property);
+	ILType *signature = ILProperty_Signature(node->property);
+	ILMachineType type = ILTypeToMachineType(ILTypeGetReturn(signature));
+	JavaGenCallMethod(info, getter, info->stackHeight);
+	JavaGenAdjust(info, JavaGenTypeSize(type) - 1);
+	return type;
+}
+
+/*
+ * Generate value code for a member property reference.
+ */
+JavaGenValue(ILNode_MemberProperty)
+{
+	ILMethod *getter = ILProperty_Getter(node->property);
+	ILType *signature = ILProperty_Signature(node->property);
+	ILMachineType type = ILTypeToMachineType(ILTypeGetReturn(signature));
+	long saveStack = info->stackHeight;
+	JavaPrepareForThisAccess(info, node->expr,
+							 ILProperty_Owner(node->property));
+	JavaGenCallMethod(info, getter, saveStack);
+	JavaGenAdjust(info, JavaGenTypeSize(type) - 1);
+	return type;
+}
+
+/*
+ * Generate value code for an array access node.
+ */
+JavaGenValue(ILNode_ArrayAccess)
+{
+	ILMachineType machineType = ILTypeToMachineType(node->elemType);
+	int rank, dim, posn;
+	ILNode *indexNode;
+
+	/* Multi-dimensional arrays are represented as a tree
+	   of single-dimensional arrays which we must index
+	   into one at a time */
+	JavaGenValue(node->array, info);
+	rank = ILTypeGetRank(node->arrayType);
+	for(dim = 0; dim < rank; ++dim)
+	{
+		posn = rank - dim;
+		indexNode = node->indices;
+		while(posn > 1)
+		{
+			indexNode = ((ILNode_ArgList *)indexNode)->expr1;
+			--posn;
+		}
+		if(yyisa(indexNode, ILNode_ArgList))
+		{
+			indexNode = ((ILNode_ArgList *)indexNode)->expr2;
+		}
+		JavaGenValue(indexNode, info);
+		if((dim + 1) < rank)
+		{
+			JavaGenSimple(info, JAVA_OP_AALOAD);
+			JavaGenAdjust(info, -1);
+		}
+	}
+
+	/* Index into the final array dimension to get the value */
+	JavaGenLoadArray(info, machineType);
+	JavaGenAdjust(info, -2 + JavaGenTypeSize(machineType));
+	ValidateValueType(info, machineType, node->elemType);
+	return machineType;
+}
+
+/*
+ * Generate value code for an indexer access node.
+ */
+JavaGenValue(ILNode_IndexerAccess)
+{
+	long saveStack = info->stackHeight;
+	JavaGenValue(node->object, info);
+	JavaGenValue(node->indices, info);
+	JavaGenCallMethod(info, node->getMethod, saveStack);
+	info->stackHeight = saveStack + JavaGenTypeSize(node->machineType);
+	return node->machineType;
+}
+
+/*
+ * Prepare to store into a local variable.
+ */
+JavaPrepare(ILNode_LocalVar),
+JavaPrepare(ILNode_ArgumentVar),
+JavaPrepare(ILNode_RefArgumentVar)
+{
+	/* No preparation is needed for locals or arguments */
+	return node->machineType;
+}
+
+/*
+ * Prepare to store into a member access destination.
+ */
+JavaPrepare(ILNode_MemberAccess)
+{
+	/* TODO */
+	return node->machineType;
+}
+
+/*
+ * Prepare to store into a base access destination.
+ */
+JavaPrepare(ILNode_BaseAccess)
+{
+	/* TODO */
+	return node->machineType;
+}
+
+/*
+ * Prepare to store into a base element destination.
+ */
+JavaPrepare(ILNode_BaseElement)
+{
+	/* TODO */
+	return node->machineType;
+}
+
+/*
+ * Prepare to store into a field dereference destination.
+ */
+JavaPrepare(ILNode_DerefField)
+{
+	/* TODO */
+	return node->machineType;
+}
+
+/*
+ * Prepare to store into a static field reference.
+ */
+JavaPrepare(ILNode_StaticField)
+{
+	/* Nothing needs to be done here */
+	return ILTypeToMachineType(ILField_Type(node->field));
+}
+
+/*
+ * Prepare to store into a member field reference.
+ */
+JavaPrepare(ILNode_MemberField)
+{
+	JavaPrepareForThisAccess(info, node->expr, ILField_Owner(node->field));
+	return ILTypeToMachineType(ILField_Type(node->field));
+}
+
+/*
+ * Prepare to store into a static property reference.
+ */
+JavaPrepare(ILNode_StaticProperty)
+{
+	/* Nothing needs to be done here */
+	ILType *signature = ILProperty_Signature(node->property);
+	return ILTypeToMachineType(ILTypeGetReturn(signature));
+}
+
+/*
+ * Prepare to store into a member property reference.
+ */
+JavaPrepare(ILNode_MemberProperty)
+{
+	ILType *signature = ILProperty_Signature(node->property);
+	JavaPrepareForThisAccess(info, node->expr,
+							 ILProperty_Owner(node->property));
+	return ILTypeToMachineType(ILTypeGetReturn(signature));
+}
+
+/*
+ * Prepare to store to an array access node.
+ */
+JavaPrepare(ILNode_ArrayAccess)
+{
+	ILMachineType machineType = ILTypeToMachineType(node->elemType);
+	int rank, dim, posn;
+	ILNode *indexNode;
+
+	/* Multi-dimensional arrays are represented as a tree
+	   of single-dimensional arrays which we must index
+	   into one at a time */
+	JavaGenValue(node->array, info);
+	rank = ILTypeGetRank(node->arrayType);
+	for(dim = 0; dim < rank; ++dim)
+	{
+		posn = rank - dim;
+		indexNode = node->indices;
+		while(posn > 1)
+		{
+			indexNode = ((ILNode_ArgList *)indexNode)->expr1;
+			--posn;
+		}
+		if(yyisa(indexNode, ILNode_ArgList))
+		{
+			indexNode = ((ILNode_ArgList *)indexNode)->expr2;
+		}
+		JavaGenValue(indexNode, info);
+		if((dim + 1) < rank)
+		{
+			JavaGenSimple(info, JAVA_OP_AALOAD);
+			JavaGenAdjust(info, -1);
+		}
+	}
+
+	/* The final array dimension is on the stack, together
+	   with the index into it */
+	return machineType;
+}
+
+/*
+ * Prepare to store to an indexer access node.
+ */
+JavaPrepare(ILNode_IndexerAccess)
+{
+	node->saveStack = info->stackHeight;
+	JavaGenValue(node->object, info);
+	JavaGenValue(node->indices, info);
+	return node->machineType;
+}
+
+/*
+ * Get and prepare to store into a local variable.
+ */
+JavaGetAndPrepare(ILNode_LocalVar)
+{
+	int size = JavaGenTypeSize(node->machineType);
+	JavaGenLoadLocal(info, node->index, node->machineType);
+	JavaGenAdjust(info, size);
+	if(leave)
+	{
+		JavaGenDup(info, node->machineType);
+	}
+	return node->machineType;
+}
+
+/*
+ * Get and prepare to store into an argument variable.
+ */
+JavaGetAndPrepare(ILNode_ArgumentVar),
+JavaGetAndPrepare(ILNode_RefArgumentVar)
+{
+	int size = JavaGenTypeSize(node->machineType);
+	JavaGenLoadArg(info, node->index, node->machineType);
+	JavaGenAdjust(info, size);
+	if(leave)
+	{
+		JavaGenDup(info, node->machineType);
+	}
+	return node->machineType;
+}
+
+/*
+ * Get and prepare to store into a member access destination.
+ */
+JavaGetAndPrepare(ILNode_MemberAccess)
+{
+	/* TODO */
+	return node->machineType;
+}
+
+/*
+ * Get and prepare to store into a base access destination.
+ */
+JavaGetAndPrepare(ILNode_BaseAccess)
+{
+	/* TODO */
+	return node->machineType;
+}
+
+/*
+ * Get and prepare to store into a base element destination.
+ */
+JavaGetAndPrepare(ILNode_BaseElement)
+{
+	/* TODO */
+	return node->machineType;
+}
+
+/*
+ * Get and prepare to store into a field dereference destination.
+ */
+JavaGetAndPrepare(ILNode_DerefField)
+{
+	/* TODO */
+	return node->machineType;
+}
+
+/*
+ * Get and prepare to store into a static field reference.
+ */
+JavaGetAndPrepare(ILNode_StaticField)
+{
+	ILMachineType type = ILTypeToMachineType(ILField_Type(node->field));
+	JavaGenFieldRef(info, JAVA_OP_GETSTATIC, node->field);
+	JavaGenAdjust(info, JavaGenTypeSize(type));
+	ValidateValueType(info, type, ILField_Type(node->field));
+	if(leave)
+	{
+		JavaGenDup(info, type);
+	}
+	return type;
+}
+
+/*
+ * Get and prepare to store into a member field reference.
+ */
+JavaGetAndPrepare(ILNode_MemberField)
+{
+	ILMachineType type = ILTypeToMachineType(ILField_Type(node->field));
+	int size = JavaGenTypeSize(type);
+
+	/* Generate the object reference */
+	JavaPrepareForThisAccess(info, node->expr, ILField_Owner(node->field));
+
+	/* Duplicate it and get the current value */
+	JavaGenDup(info, type);
+	JavaGenFieldRef(info, JAVA_OP_GETFIELD, node->field);
+	JavaGenAdjust(info, size - 1);
+	ValidateValueType(info, type, ILField_Type(node->field));
+
+	/* If the value should be left on the stack, then duplicate it */
+	if(leave)
+	{
+		if(size == 1)
+		{
+			JavaGenSimple(info, JAVA_OP_DUP_X1);
+		}
+		else if(size == 2)
+		{
+			JavaGenSimple(info, JAVA_OP_DUP2_X1);
+		}
+		JavaGenAdjust(info, size);
+	}
+
+	/* Return the field's machine type to the caller */
+	return type;
+}
+
+/*
+ * Get and prepare to store into a static property reference.
+ */
+JavaGetAndPrepare(ILNode_StaticProperty)
+{
+	ILMethod *getter = ILProperty_Getter(node->property);
+	ILMachineType type = ILTypeToMachineType
+		(ILTypeGetReturn(ILProperty_Signature(node->property)));
+	JavaGenCallMethod(info, getter, info->stackHeight);
+	JavaGenAdjust(info, JavaGenTypeSize(type));
+	if(leave)
+	{
+		JavaGenDup(info, type);
+	}
+	return type;
+}
+
+/*
+ * Get and prepare to store into a member property reference.
+ */
+JavaGetAndPrepare(ILNode_MemberProperty)
+{
+	ILMethod *getter = ILProperty_Getter(node->property);
+	ILType *signature = ILProperty_Signature(node->property);
+	ILType *propType = ILTypeGetReturn(signature);
+	ILMachineType type = ILTypeToMachineType(propType);
+	int size = JavaGenTypeSize(type);
+	long saveStack;
+
+	/* Generate the object reference */
+	saveStack = info->stackHeight;
+	JavaPrepareForThisAccess(info, node->expr,
+							 ILProperty_Owner(node->property));
+
+	/* Duplicate the object reference and get the current value */
+	JavaGenSimple(info, JAVA_OP_DUP);
+	JavaGenAdjust(info, 1);
+	JavaGenCallMethod(info, getter, saveStack);
+	JavaGenAdjust(info, size - 1);
+
+	/* Duplicate the current value if necessary */
+	if(leave)
+	{
+		if(size == 1)
+		{
+			JavaGenSimple(info, JAVA_OP_DUP_X1);
+		}
+		else if(size == 2)
+		{
+			JavaGenSimple(info, JAVA_OP_DUP2_X1);
+		}
+		JavaGenAdjust(info, size);
+	}
+
+	/* Return the property's machine type to the caller */
+	return type;
+}
+
+/*
+ * Get and prepare to store to an array access node.
+ */
+JavaGetAndPrepare(ILNode_ArrayAccess)
+{
+	ILMachineType machineType = ILTypeToMachineType(node->elemType);
+	int size = JavaGenTypeSize(machineType);
+	int rank, dim, posn;
+	ILNode *indexNode;
+
+	/* Multi-dimensional arrays are represented as a tree
+	   of single-dimensional arrays which we must index
+	   into one at a time */
+	JavaGenValue(node->array, info);
+	rank = ILTypeGetRank(node->arrayType);
+	for(dim = 0; dim < rank; ++dim)
+	{
+		posn = rank - dim;
+		indexNode = node->indices;
+		while(posn > 1)
+		{
+			indexNode = ((ILNode_ArgList *)indexNode)->expr1;
+			--posn;
+		}
+		if(yyisa(indexNode, ILNode_ArgList))
+		{
+			indexNode = ((ILNode_ArgList *)indexNode)->expr2;
+		}
+		if((dim + 1) == rank)
+		{
+			/* Duplicate the values for the final array dimension */
+			JavaGenSimple(info, JAVA_OP_DUP);
+			JavaGenAdjust(info, 1);
+			JavaGenValue(indexNode, info);
+			JavaGenSimple(info, JAVA_OP_DUP_X1);
+			JavaGenAdjust(info, 1);
+		}
+		else
+		{
+			/* Index into the array for all other dimensions */
+			JavaGenValue(indexNode, info);
+			JavaGenSimple(info, JAVA_OP_AALOAD);
+			JavaGenAdjust(info, -1);
+		}
+	}
+
+	/* Get the value from the final array dimension */
+	JavaGenLoadArray(info, machineType);
+	JavaGenAdjust(info, -2 + size);
+	ValidateValueType(info, machineType, node->elemType);
+
+	/* Push it down the stack if it must be left after the store */
+	if(leave)
+	{
+		if(size == 1)
+		{
+			JavaGenSimple(info, JAVA_OP_DUP_X2);
+			JavaGenAdjust(info, 1);
+		}
+		else if(size == 2)
+		{
+			JavaGenSimple(info, JAVA_OP_DUP2_X2);
+			JavaGenAdjust(info, 2);
+		}
+	}
+
+	/* Finished */
+	return machineType;
+}
+
+/*
+ * Get and prepare to store to an indexer access node.
+ */
+JavaGetAndPrepare(ILNode_IndexerAccess)
+{
+	unsigned tempObjectVar;
+	unsigned tempValueVar;
+	unsigned *tempIndexVars;
+	int numArgs, argNum, posn;
+	ILNode *indexNode;
+	ILType *signature;
+	ILMachineType objectMachineType;
+	int objectSize;
+	ILType *indexType;
+	ILMachineType indexMachineType;
+
+	/* Save the current stack position so "Store" knows what to pop */
+	node->saveStack = info->stackHeight;
+
+	/* Get the signature for the "get" method, so that we know
+	   what types to use to temporarily save the index values */
+	signature = ILMethod_Signature(node->getMethod);
+
+	/* Get temporary variables for the object and the indices */
+	tempObjectVar = ILGenTempTypedVar(info, node->objectType);
+	numArgs = 1;
+	indexNode = node->indices;
+	while(yyisa(indexNode, ILNode_ArgList))
+	{
+		++numArgs;
+		indexNode = ((ILNode_ArgList *)indexNode)->expr1;
+	}
+	tempIndexVars = (unsigned *)ILMalloc(sizeof(unsigned) * numArgs);
+	if(!tempIndexVars)
+	{
+		ILGenOutOfMemory(info);
+	}
+	for(argNum = 0; argNum < numArgs; ++argNum)
+	{
+		tempIndexVars[argNum] = ILGenTempTypedVar
+				(info, ILTypeGetParam(signature, argNum + 1));
+	}
+
+	/* Get the object reference and save it */
+	JavaGenValue(node->object, info);
+	objectMachineType = ILTypeToMachineType(node->objectType);
+	objectSize = JavaGenTypeSize(objectMachineType);
+	JavaGenDup(info, objectMachineType);
+	JavaGenStoreLocal(info, tempObjectVar, objectMachineType);
+	JavaGenAdjust(info, -objectSize);
+
+	/* Get the index values and save them */
+	for(argNum = 0; argNum < numArgs; ++argNum)
+	{
+		posn = numArgs - argNum;
+		indexNode = node->indices;
+		while(posn > 1)
+		{
+			indexNode = ((ILNode_ArgList *)indexNode)->expr1;
+			--posn;
+		}
+		if(yyisa(indexNode, ILNode_ArgList))
+		{
+			indexNode = ((ILNode_ArgList *)indexNode)->expr2;
+		}
+		indexType = ILTypeGetParam(signature, argNum + 1);
+		indexMachineType = ILTypeToMachineType(indexType);
+		JavaGenValue(indexNode, info);
+		JavaGenDup(info, indexMachineType);
+		JavaGenStoreLocal(info, tempIndexVars[argNum], indexMachineType);
+		JavaGenAdjust(info, -JavaGenTypeSize(indexMachineType));
+	}
+
+	/* Do we need to leave the current value on the stack? */
+	if(leave)
+	{
+		/* Get the indexer element and save it */
+		tempValueVar = ILGenTempTypedVar(info, node->elemType);
+		indexMachineType = ILTypeToMachineType(node->elemType);
+		JavaGenCallMethod(info, node->getMethod, node->saveStack);
+		info->stackHeight = node->saveStack + JavaGenTypeSize(indexMachineType);
+		JavaGenDup(info, indexMachineType);
+		JavaGenStoreLocal(info, tempValueVar, indexMachineType);
+		JavaGenAdjust(info, -JavaGenTypeSize(indexMachineType));
+
+		/* Account for the extra value that we will be leaving behind */
+		node->saveStack += JavaGenTypeSize(indexMachineType);
+
+		/* Reload all saved values back onto the stack */
+		JavaGenLoadLocal(info, tempObjectVar, objectMachineType);
+		JavaGenAdjust(info, objectSize);
+		for(argNum = 0; argNum < numArgs; ++argNum)
+		{
+			indexType = ILTypeGetParam(signature, argNum + 1);
+			indexMachineType = ILTypeToMachineType(indexType);
+			JavaGenLoadLocal(info, tempIndexVars[argNum], indexMachineType);
+			JavaGenAdjust(info, JavaGenTypeSize(indexMachineType));
+		}
+		indexMachineType = ILTypeToMachineType(node->elemType);
+		JavaGenLoadLocal(info, tempValueVar, indexMachineType);
+		JavaGenAdjust(info, JavaGenTypeSize(indexMachineType));
+
+		/* Release the extra temporary variable that we used */
+		ILGenReleaseTempVar(info, tempValueVar);
+	}
+	else
+	{
+		/* Reload the values onto the stack and get the indexer element */
+		JavaGenLoadLocal(info, tempObjectVar, objectMachineType);
+		JavaGenAdjust(info, objectSize);
+		for(argNum = 0; argNum < numArgs; ++argNum)
+		{
+			indexType = ILTypeGetParam(signature, argNum + 1);
+			indexMachineType = ILTypeToMachineType(indexType);
+			JavaGenLoadLocal(info, tempIndexVars[argNum], indexMachineType);
+			JavaGenAdjust(info, JavaGenTypeSize(indexMachineType));
+		}
+		JavaGenCallMethod(info, node->getMethod, node->saveStack);
+		indexMachineType = ILTypeToMachineType(node->elemType);
+		info->stackHeight = node->saveStack + JavaGenTypeSize(indexMachineType);
+	}
+
+	/* Release the temporary variables */
+	ILGenReleaseTempVar(info, tempObjectVar);
+	for(argNum = 0; argNum < numArgs; ++argNum)
+	{
+		ILGenReleaseTempVar(info, tempIndexVars[argNum]);
+	}
+	ILFree(tempIndexVars);
+	return node->machineType;
+}
+
+/*
+ * Store into a local variable.
+ */
+JavaStore(ILNode_LocalVar)
+{
+	int size = JavaGenTypeSize(node->machineType);
+	if(leave)
+	{
+		JavaGenDup(info, node->machineType);
+	}
+	JavaGenStoreLocal(info, node->index, node->machineType);
+	JavaGenAdjust(info, -size);
+}
+
+/*
+ * Store into an argument variable.
+ */
+JavaStore(ILNode_ArgumentVar),
+JavaStore(ILNode_RefArgumentVar)
+{
+	int size = JavaGenTypeSize(node->machineType);
+	if(leave)
+	{
+		JavaGenDup(info, node->machineType);
+	}
+	JavaGenStoreArg(info, node->index, node->machineType);
+	JavaGenAdjust(info, -size);
+}
+
+/*
+ * Store into a member access destination.
+ */
+JavaStore(ILNode_MemberAccess)
+{
+	/* TODO */
+}
+
+/*
+ * Store into a base access destination.
+ */
+JavaStore(ILNode_BaseAccess)
+{
+	/* TODO */
+}
+
+/*
+ * Store into a base element destination.
+ */
+JavaStore(ILNode_BaseElement)
+{
+	/* TODO */
+}
+
+/*
+ * Store into a field dereference destination.
+ */
+JavaStore(ILNode_DerefField)
+{
+	/* TODO */
+}
+
+/*
+ * Store into a static field reference.
+ */
+JavaStore(ILNode_StaticField)
+{
+	ILMachineType type = ILTypeToMachineType(ILField_Type(node->field));
+	int size = JavaGenTypeSize(type);
+	if(leave)
+	{
+		JavaGenDup(info, type);
+	}
+	JavaGenFieldRef(info, JAVA_OP_PUTSTATIC, node->field);
+	JavaGenAdjust(info, -size);
+}
+
+/*
+ * Store into a member field reference.
+ */
+JavaStore(ILNode_MemberField)
+{
+	ILMachineType type = ILTypeToMachineType(ILField_Type(node->field));
+	int size = JavaGenTypeSize(type);
+
+	/* Duplicate the value on the stack if we need it afterwards */
+	if(leave)
+	{
+		if(size == 1)
+		{
+			JavaGenSimple(info, JAVA_OP_DUP_X1);
+		}
+		else if(size == 2)
+		{
+			JavaGenSimple(info, JAVA_OP_DUP2_X1);
+		}
+		JavaGenAdjust(info, size);
+	}
+
+	/* Store the value into the field */
+	JavaGenFieldRef(info, JAVA_OP_PUTFIELD, node->field);
+	JavaGenAdjust(info, -(size + 1));
+}
+
+/*
+ * Store into a static property reference.
+ */
+JavaStore(ILNode_StaticProperty)
+{
+	ILMethod *setter = ILProperty_Setter(node->property);
+	ILType *signature = ILProperty_Signature(node->property);
+	ILType *propType = ILTypeGetReturn(signature);
+	ILMachineType type = ILTypeToMachineType(propType);
+	int size = JavaGenTypeSize(type);
+	if(leave)
+	{
+		JavaGenDup(info, type);
+	}
+	JavaGenCallMethod(info, setter, info->stackHeight - 1 - size);
+	JavaGenAdjust(info, -(size + 1));
+}
+
+/*
+ * Store into a member property reference.
+ */
+JavaStore(ILNode_MemberProperty)
+{
+	ILMethod *setter = ILProperty_Setter(node->property);
+	ILType *signature = ILProperty_Signature(node->property);
+	ILType *propType = ILTypeGetReturn(signature);
+	ILMachineType type = ILTypeToMachineType(propType);
+	int size = JavaGenTypeSize(type);
+
+	/* Duplicate the top of stack if necessary */
+	if(leave)
+	{
+		if(size == 1)
+		{
+			JavaGenSimple(info, JAVA_OP_DUP_X1);
+		}
+		else if(size == 2)
+		{
+			JavaGenSimple(info, JAVA_OP_DUP2_X1);
+		}
+		JavaGenAdjust(info, size);
+	}
+
+	/* Store the value into the property */
+	JavaGenCallMethod(info, setter, info->stackHeight - 1 - size);
+	JavaGenAdjust(info, -(size + 1));
+}
+
+/*
+ * Store into an array access node.
+ */
+JavaStore(ILNode_ArrayAccess)
+{
+	ILMachineType machineType = ILTypeToMachineType(node->elemType);
+	JavaGenStoreArray(info, machineType);
+	JavaGenAdjust(info, -2 - JavaGenTypeSize(machineType));
+}
+
+/*
+ * Store into an indexer access node.
+ */
+JavaStore(ILNode_IndexerAccess)
+{
+	if(leave)
+	{
+		unsigned tempVar = ILGenTempTypedVar(info, node->elemType);
+		int size = JavaGenTypeSize(node->machineType);
+		JavaGenDup(info, node->machineType);
+		JavaGenStoreLocal(info, tempVar, node->machineType);
+		JavaGenAdjust(info, -size);
+		JavaGenCallMethod(info, node->setMethod, node->saveStack);
+		info->stackHeight = node->saveStack;
+		JavaGenLoadLocal(info, tempVar, node->machineType);
+		JavaGenAdjust(info, size);
+		ILGenReleaseTempVar(info, tempVar);
+	}
+	else
+	{
+		JavaGenCallMethod(info, node->setMethod, node->saveStack);
+		info->stackHeight = node->saveStack;
+	}
+}

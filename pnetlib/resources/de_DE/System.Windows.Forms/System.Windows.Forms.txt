@@ -1,0 +1,40 @@
+#
+# System.Windows.Forms.txt - Resources for the "System.Windows.Forms" assembly.
+#
+# Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+SWF_CouldNotActivate=Konnte das angegebene Control nicht aktivieren
+SWF_SettingTopLevelParent=Kann den Parent von Fensetern auf oberster Ebene nicht setzen
+SWF_CircularityDetected=Das Setzen dieses Parents wuerde eine Kreisbeziehung erzeugen
+SWF_ControlDisposed=Das Control wurde bereits entsorgt (disposed)
+SWF_InvalidControlIndex=Der Control Index ist ausserhalb des gueltigen Bereichs
+SWF_NotAControl=Der angegebene Wert ist kein Control
+SWF_ControlNotAChild=Das angegeben Control ist kein Child von diesem
+SWF_NonNegative=Der Wert darf nicht negativ sein
+SWF_MenuItemIndex=Menu Item Index ist ausserhalb des gueltigen Bereichs
+SWF_InvalidMenuItem=Der angegebene Wert ist kein Menue Item
+SWF_ItemAlreadyInUse=Das Menue Item wurde bereits einem Menue hinzugefuegt
+SWF_MessageBox_OK=OK
+SWF_MessageBox_Cancel=Abbrechen
+SWF_MessageBox_Abort=&Beenden
+SWF_MessageBox_Retry=&Wiederholen
+SWF_MessageBox_Ignore=&Ignorieren
+SWF_MessageBox_Yes=&Ja
+SWF_MessageBox_No=&Nein
+SWF_InvalidInterval=Ungueltige Timer Intervall Angabe
+Invalid_CollectionModified=Die Collection wurde veraendert
+Invalid_BadEnumeratorPosition=Der Enumerator ist auf kein Element positioniert

@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<project name="pnetlib System.Windows.Forms resources (de_DE)" default="all">
+	<target name="all">
+
+		<resgen output="System.Windows.Forms.de.resources"
+				latin1="true">
+
+			<resources>
+				<includes name="**/*.txt"/>
+				<excludes name="tempres.txt"/>
+			</resources>
+
+		</resgen>
+
+		<reslink output="System.Windows.Forms.resources.dll"
+				 language="de"
+				 version="${FRAMEWORK_VERSION}"
+				 metadataVersion="${METADATA_VERSION}"
+				 install="true"
+				 installasdefault="${INSTALL_AS_DEFAULT}">
+
+			<resources>
+				<includes name="**/*.resources"/>
+			</resources>
+
+		</reslink>
+
+	</target>
+</project>

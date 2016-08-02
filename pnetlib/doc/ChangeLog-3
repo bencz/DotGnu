@@ -1,0 +1,2107 @@
+
+2003-05-01  Gopal.V  <gopalv82@symonds.net>
+	
+	* System/ComponentModel/EventDescriptorCollection.cs,
+	System/ComponentModel/EventDescriptor.cs,
+	System/ComponentModel/MarshalByValueComponent.cs: Stubs of non-ECMA
+	classes to support external libraries.
+
+	* System/ComponentModel/ICustomTypeDescriptor: Uncomment some of
+	the interface which was dependent on EventDescriptor classes.
+
+2003-04-27  Adam Ballai  <minddog@cannibutter.com>
+	
+	* System.Xml/ElementList.cs: Implement GetEnumerator and Item(int). 
+
+2003-04-25  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/IO.txt, resources/en_US/runtime/Invalid.txt,
+	runtime/System/IO/IsolatedStorage/IsolatedStorage.cs,
+	runtime/System/IO/IsolatedStorage/IsolatedStorageFile.cs:
+	fill out the implementation of "System.IO.IsolatedStorage".
+
+	* runtime/System/AppDomain.cs, runtime/System/Reflection/Assembly.cs:
+	missing functionality in "Assembly".
+
+	* runtime/*: signature-compatibility fixes to a large number
+	of classes.
+
+2003-04-24  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Text/ASCIIEncoding.cs,
+	runtime/System/Text/Latin1Encoding.cs: return "String.Empty" for a
+	zero-length array range in "GetString"; use '?' for high characters
+	in "ASCIIEncoding.GetChars".
+
+	* runtime/System/Convert.cs: signature-compatibility fixes.
+
+	* runtime/System/DateTime.cs: convert to and from UTC file times.
+
+	* resources/en_US/runtime/NotSupp.txt, runtime/System/Type.cs,
+	runtime/System/Globalization/CompareInfo.cs,
+	runtime/System/Globalization/CultureInfo.cs,
+	runtime/System/Globalization/TextInfo.cs,
+	runtime/System/IO/BinaryWriter.cs,
+	runtime/System/Reflection/IReflect.cs: signature-compatibility fixes.
+
+	* resources/en_US/runtime/IO.txt, runtime/Platform/DirMethods.cs,
+	runtime/Platform/FileMethods.cs, runtime/System/IO/Directory.cs,
+	runtime/System/IO/DirectoryInfo.cs, runtime/System/IO/File.cs,
+	runtime/System/IO/FileInfo.cs, runtime/System/IO/FileSystemInfo.cs,
+	runtime/System/IO/IOException.cs, runtime/System/IO/TextWriter.cs:
+	rewrite and/or improve various classes in "System.IO".
+
+	* resources/en_US/runtime/IO.txt, runtime/System/IO/FileStream.cs,
+	runtime/System/IO/Stream.cs, runtime/System/IO/StringReader.cs,
+	runtime/System/IO/StringWriter.cs,
+	runtime/System/IO/IsolatedStorage/IsolatedStorageFile.cs:
+	more improvements to the "System.IO" namespace.
+
+2003-04-23  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Runtime/InteropServices/BestFitMappingAttribute.cs,
+	runtime/System/Runtime/InteropServices/ComCompatibleVersionAttribute.cs,
+	runtime/System/Runtime/InteropServices/TypeLibVersionAttribute.cs,
+	runtime/System/Runtime/Serialization/Formatters/TypeFilterLevel.cs:
+	new classes in .NET Framework SDK 1.1.
+
+	* runtime/*: minor tweaks to a lot of classes to make them more
+	signature compatible with .NET Framework SDK 1.1.
+
+	* System/Uri.cs, System/Net/Sockets/NetworkStream.cs,
+	System.Xml/XmlConvert.cs, runtime/System/ArgumentOutOfRangeException.cs,
+	runtime/System/Array.cs, runtime/System/DateTime.cs,
+	runtime/System/IO/FileStream.cs, runtime/System/IO/Path.cs,
+	runtime/System/IO/Stream.cs, runtime/System/IO/StreamReader.cs,
+	runtime/System/Reflection/ClrResourceStream.cs,
+	runtime/System/Reflection/MethodAttributes.cs,
+	runtime/System/Security/Cryptography/CryptoStream.cs:
+	ECMA-compatibility fixes.
+
+	* resources/en_US/runtime/Overflow.txt, runtime/System/Activator.cs,
+	runtime/System/AppDomain.cs, runtime/System/AppDomainSetup.cs,
+	runtime/System/ArgumentException.cs, runtime/System/Array.cs,
+	runtime/System/Decimal.cs, runtime/System/Delegate.cs,
+	runtime/System/Double.cs, runtime/System/Int32.cs,
+	runtime/System/MarshalByRefObject.cs,
+	runtime/System/MissingFieldException.cs,
+	runtime/System/MissingMemberException.cs,
+	runtime/System/MissingMethodException.cs,
+	runtime/System/MulticastDelegate.cs,
+	runtime/System/Threading/Thread.cs: more signature-compatibility
+	tweaks.
+
+2003-04-22  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/IO.txt, runtime/System/IO/FileStream.cs,
+	runtime/System/IO/IsolatedStorage/IsolatedStorageFileStream.cs:
+	add the "Name" property to "System.IO.FileStream".
+
+	* resources/en_US/runtime/Arg.txt,
+	runtime/System/Globalization/GregorianVariantCalendar.cs,
+	runtime/System/Globalization/HijriCalendar.cs,
+	runtime/System/Globalization/JapaneseCalendar.cs,
+	runtime/System/Globalization/KoreanCalendar.cs,
+	runtime/System/Globalization/TaiwanCalendar.cs,
+	runtime/System/Globalization/ThaiBuddhistCalendar.cs:
+	implement Gregorian variant calendars such as Japanese, Korean, etc;
+	stub out the Hijri calendar implementation.
+
+	* runtime/System/Globalization/StringInfo.cs,
+	runtime/System/Globalization/TextElementEnumerator.cs:
+	add "StringInfo" and "TextElementEnumerator".
+
+	* runtime/System/Security/Principal/GenericIdentity.cs,
+	runtime/System/Security/Principal/GenericPrincipal.cs,
+	runtime/System/Security/Principal/WindowsAccountType.cs,
+	runtime/System/Security/Principal/WindowsBuiltInRole.cs,
+	runtime/System/Security/Principal/WindowsIdentity.cs,
+	runtime/System/Security/Principal/WindowsImpersonationContext.cs,
+	runtime/System/Security/Principal/WindowsPrincipal.cs:
+	missing classes in "System.Security.Principal".
+
+	* resources/en_US/runtime/Arg.txt,
+	resources/en_US/runtime/Exception.txt,
+	resources/en_US/runtime/Format.txt,
+	runtime/System/Security/Policy/FileCodeGroup.cs,
+	runtime/System/Security/Policy/FirstMatchCodeGroup.cs,
+	runtime/System/Security/Policy/Hash.cs,
+	runtime/System/Security/Policy/HashMembershipCondition.cs,
+	runtime/System/Security/Policy/NetCodeGroup.cs,
+	runtime/System/Security/Policy/PermissionRequestEvidence.cs,
+	runtime/System/Security/Policy/PolicyException.cs,
+	runtime/System/Security/Policy/PolicyLevel.cs,
+	runtime/System/Security/Policy/Publisher.cs,
+	runtime/System/Security/Policy/PublisherMembershipCondition.cs,
+	runtime/System/Security/Policy/Site.cs,
+	runtime/System/Security/Policy/SiteMembershipCondition.cs,
+	runtime/System/Security/Policy/StrongName.cs,
+	runtime/System/Security/Policy/StrongNameMembershipCondition.cs,
+	runtime/System/Security/Policy/UnionCodeGroup.cs,
+	runtime/System/Security/Policy/Url.cs,
+	runtime/System/Security/Policy/UrlMembershipCondition.cs,
+	runtime/System/Security/Policy/Zone.cs,
+	runtime/System/Security/Policy/ZoneMembershipCondition.cs:
+	missing classes in "System.Security.Policy".
+
+	* runtime/System/Activator.cs, runtime/System/ArgIterator.cs,
+	runtime/System/Array.cs, runtime/System/BitConverter.cs,
+	runtime/System/Environment.cs, runtime/System/Exception.cs,
+	runtime/System/ResolveEventArgs.cs, runtime/System/Type.cs,
+	runtime/System/TypeInitializationException.cs,
+	runtime/System/TypedReference.cs, runtime/System/UIntPtr.cs:
+	fix some minor signature problems in the "System" namespace.
+
+2003-04-21  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Globalization/Calendar.cs,
+	tests/runtime/Testruntime.cs,
+	tests/runtime/System/Globalization/Makefile,
+	tests/runtime/System/Globalization/SuiteGlobalization.cs,
+	tests/runtime/System/Globalization/TestCalendar.cs,
+	tests/runtime/System/Globalization/TestGregorianCalendar.cs,
+	tests/runtime/System/Globalization/TestHebrewCalendar.cs,
+	tests/runtime/System/Globalization/TestJulianCalendar.cs:
+	test cases and bug fixes for some calendar methods.
+
+	* runtime/System/LogLevel.cs,
+	runtime/System/Globalization/CharacterInfo.cs,
+	runtime/System/Reflection/MethodSemanticsAttributes.cs,
+	runtime/System/Runtime/Remoting/Message.cs,
+	runtime/System/Security/Cryptography/RijndaelManagedTransformMode.cs:
+	remove or hide obsolete classes that are no longer part of
+	the public API for "runtime".
+
+	* runtime/System/LoaderOptimizationAttribute.cs,
+	runtime/System/MTAThreadAttribute.cs: add missing classes in
+	the "System" namespace.
+
+2003-04-20  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/ComponentModel/AttributeCollection.cs,
+	System/ComponentModel/BaseNumberConverter.cs,
+	System/ComponentModel/Component.cs,
+	System/ComponentModel/ComponentCollection.cs,
+	System/ComponentModel/Container.cs,
+	System/ComponentModel/DesignerCategoryAttribute.cs,
+	System/ComponentModel/EditorAttribute.cs,
+	System/ComponentModel/EditorBrowsableAttribute.cs,
+	System/ComponentModel/IBindingList.cs,
+	System/ComponentModel/ITypeDescriptorContext.cs,
+	System/ComponentModel/InvalidEnumArgumentException.cs,
+	System/ComponentModel/ListBindableAttribute.cs,
+	System/ComponentModel/ListChangedEventArgs.cs,
+	System/ComponentModel/LocalizableAttribute.cs,
+	System/ComponentModel/Makefile,
+	System/ComponentModel/NotifyParentPropertyAttribute.cs,
+	System/ComponentModel/ReadOnlyAttribute.cs,
+	System/ComponentModel/RecommendedAsConfigurableAttribute.cs,
+	System/ComponentModel/RefreshPropertiesAttribute.cs,
+	System/ComponentModel/ToolboxItemAttribute.cs,
+	System/ComponentModel/WarningException.cs,
+	System/ComponentModel/Win32Exception.cs,
+	resources/en_US/System/Exception.txt: implement some of
+	the TODO's in "System.ComponentModel".
+
+2003-04-19  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Arg.txt,
+	resources/en_US/runtime/Exception.txt,
+	resources/en_US/runtime/NotSupp.txt,
+	runtime/Platform/TimeMethods.cs,
+	runtime/System/ContextMarshalException.cs,
+	runtime/System/ContextStaticObject.cs,
+	runtime/System/DateTime.cs, runtime/System/DllNotFoundException.cs,
+	runtime/System/ICustomFormatter.cs, runtime/System/TimeZone.cs,
+	runtime/System/Globalization/DaylightTime.cs,
+	runtime/System/IO/FileStream.cs,
+	runtime/System/IO/IsolatedStorage/INormalizeForIsolatedStorage.cs,
+	runtime/System/IO/IsolatedStorage/IsolatedStorage.cs,
+	runtime/System/IO/IsolatedStorage/IsolatedStorageException.cs,
+	runtime/System/IO/IsolatedStorage/IsolatedStorageFile.cs,
+	runtime/System/IO/IsolatedStorage/IsolatedStorageFileStream.cs,
+	runtime/System/IO/IsolatedStorage/IsolatedStorageScope.cs,
+	runtime/System/IO/IsolatedStorage/Makefile,
+	runtime/System/Reflection/Assembly.cs,
+	runtime/System/Reflection/AssemblyNameProxy.cs,
+	runtime/System/Reflection/CustomAttributeFormatException.cs,
+	runtime/System/Reflection/MemberFilter.cs
+	runtime/System/Reflection/ModuleResolveEventHandler.cs,
+	runtime/System/Reflection/Pointer.cs,
+	runtime/System/Reflection/ReflectionTypeLoadException.cs,
+	runtime/System/Reflection/TypeDelegator.cs,
+	runtime/System/Reflection/TypeFilter.cs,
+	runtime/System/Reflection/Emit/MethodRental.cs: add various
+	missing classes.
+
+	* resources/en_US/runtime/Arg.txt, runtime/System/Runtime/Remoting/*:
+	stub the remainder of the "System.Runtime.Remoting" namespace.
+
+	* runtime/System/Runtime/Serialization/SurrogateSelector.cs,
+	runtime/System/Runtime/Serialization/Formatters/FormatterAssemblyStyle.cs,
+	runtime/System/Runtime/Serialization/Formatters/FormatterTypeStyle.cs,
+	runtime/System/Runtime/Serialization/Formatters/IFieldInfo.cs,
+	runtime/System/Runtime/Serialization/Formatters/ISoapMessage.cs,
+	runtime/System/Runtime/Serialization/Formatters/InternalRM.cs,
+	runtime/System/Runtime/Serialization/Formatters/InternalST.cs,
+	runtime/System/Runtime/Serialization/Formatters/Makefile,
+	runtime/System/Runtime/Serialization/Formatters/ServerFault.cs,
+	runtime/System/Runtime/Serialization/Formatters/SoapFault.cs,
+	runtime/System/Runtime/Serialization/Formatters/SoapMessage.cs,
+	runtime/System/Runtime/Serialization/Formatters/Binary/BinaryFormatter.cs,
+	runtime/System/Runtime/Serialization/Formatters/Binary/Makefile:
+	stub out missing classes under "System.Runtime.Serialization".
+
+2003-04-18  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/ThreadStaticAttribute.cs: add the class
+	"System.ThreadStaticAttribute" to the library.
+
+2003-04-17  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* profiles/*, resources/*, runtime/*: stub out a large number of
+	classes under the "System.Runtime.Remoting" namespace; add the
+	"CONFIG_REMOTING" define to selection compilation of remoting.
+
+2003-04-16  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Exception.cs: don't load the stack trace in
+	the "Exception" constructor, because the runtime engine now
+	sets the stack trace when the exception object is thrown.
+
+	* System.Xml/XmlTextWriter.cs: add "StartFlag" to the set of
+	states that are allowed when writing an element, so that it
+	is possible to write the global element immediately without
+	first outputting an XML declaration (Bug #2637).
+
+	* runtime/System/Reflection/ClrResourceStream.cs: we still need
+	the "ClrResourceStream" class, even if reflection is turned off,
+	so that we can load string resources.
+
+	* System/S.cs, System.Xml/S.cs, runtime/System/AttributeTargets.cs,
+	runtime/System/DateTime.cs, runtime/System/Delegate.cs,
+	runtime/System/Object.cs, runtime/System/RuntimeFieldHandle.cs,
+	runtime/System/RuntimeTypeHandle.cs, runtime/System/Type.cs,
+	runtime/System/_AppDomain.cs,
+	runtime/System/Diagnostics/PackedStackFrame.cs,
+	runtime/System/Diagnostics/StackFrame.cs,
+	runtime/System/Reflection/ClrHelpers.cs,
+	runtime/System/Reflection/ClrType.cs,
+	runtime/System/Resources/BuiltinResourceSet.cs,
+	runtime/System/Resources/ECMAResourceManager.cs,
+	runtime/System/Resources/IResourceReader.cs,
+	runtime/System/Resources/IResourceWriter.cs,
+	runtime/System/Resources/MissingManifestResourceException.cs,
+	runtime/System/Resources/NeutralResourcesLanguageAttribute.cs,
+	runtime/System/Resources/ResourceManager.cs,
+	runtime/System/Resources/ResourceReader.cs,
+	runtime/System/Resources/ResourceSet.cs,
+	runtime/System/Resources/ResourceWriter.cs,
+	runtime/System/Resources/SatelliteContractVersionAttribute.cs,
+	runtime/System/Text/Encoding.cs: modifications to allow the library
+	to be built with the "RuntimeInfrastructure" subset turned off.
+
+	* configure.in, profiles/tiny: add the "tiny" profile, which turns
+	off "RuntimeInfrastructure" - only "BCL" is left.
+
+	* profiles/compact, profiles/compact-fp, profiles/ecma,
+	profiles/full, profiles/kernel, profiles/kernel-fp,
+	profiles/tiny, profiles/tiny-fp: clean up the profile files and
+	add some additional profiles for floating-point variants.
+
+	* System/System.build, System.Xml/Xml.build, runtime/runtime.build:
+	don't bind the string resources to the assemblies if we don't
+	have "RuntimeInfrastructure" to enable loading them.
+
+	* I18N/Common/Manager.cs,
+	runtime/System/Globalization/CharacterInfo.cs,
+	runtime/System/Globalization/CompareInfo.cs,
+	runtime/System/Globalization/CultureInfo.cs,
+	runtime/System/Globalization/CultureTypes.cs,
+	runtime/System/Globalization/RegionInfo.cs,
+	runtime/System/Globalization/TextInfo.cs,
+	runtime/System/Globalization/_I18NCompareInfo.cs,
+	runtime/System/Globalization/_I18NCultureHandler.cs,
+	runtime/System/Globalization/_I18NTextInfo.cs,
+	runtime/System/Private/CultureName.cs,
+	runtime/System/Private/CultureNameTable.cs,
+	runtime/System/Private/RegionName.cs,
+	runtime/System/Private/RegionNameTable.cs,
+	runtime/System/Resources/ResourceManager.cs: remove the bulk
+	of the culture handling if reflection is disabled because there
+	is no way to load the I18N handlers if reflection is not present.
+
+	* I18N/*: change the license on the I18N code back to GPL+linking.
+
+2003-04-15  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Array.cs, runtime/System/Convert.cs,
+	tests/runtime/System/TestArray.cs: test cases and bug fixes
+	for "Array.Copy"; implement primitive type conversions in
+	ECMA_COMPAT mode.
+
+	* JScript/Execute/TypeCode.cs, runtime/System/TypeCode.cs:
+	mark "System.TypeCode" as non-ECMA and add a shadow copy of
+	"TypeCode" to "JScript" so that it still works in ECMA mode.
+
+	* I18N/Common/Strings.cs, System/S.cs, System.Xml/S.cs,
+	runtime/System/Resources/ECMAResourceManager.cs,
+	runtime/System/Resources/IResourceReader.cs,
+	runtime/System/Resources/IResourceWriter.cs,
+	runtime/System/Resources/MissingManifestResourceException.cs,
+	runtime/System/Resources/NeutralResourcesLanguageAttribute.cs,
+	runtime/System/Resources/README.ECMA,
+	runtime/System/Resources/ResourceManager.cs,
+	runtime/System/Resources/ResourceReader.cs,
+	runtime/System/Resources/ResourceSet.cs,
+	runtime/System/Resources/ResourceWriter.cs,
+	runtime/System/Resources/SatelliteContractVersionAttribute.cs,
+	tests/System.Xml/TestXmlException.cs: mark the contents of
+	"System.Resources" as non-ECMA and introduce a cut-down resource
+	API for use in ECMA_COMPAT mode in the other assemblies.
+
+	* System/Collections/Specialized/StringCollection.cs,
+	System/Collections/Specialized/StringDictionary.cs,
+	System/Collections/Specialized/StringEnumerator.cs,
+	System.Xml/XmlImplementation.cs, runtime/System/AppDomain.cs,
+	runtime/System/Array.cs, runtime/System/AttributeTargets.cs,
+	runtime/System/Console.cs, runtime/System/Convert.cs,
+	runtime/System/Decimal.cs, runtime/System/Environment.cs,
+	runtime/System/Exception.cs, runtime/System/GC.cs,
+	runtime/System/LoaderOptimization.cs, runtime/System/LogLevel.cs,
+	runtime/System/Math.cs, runtime/System/MissingMemberException.cs,
+	runtime/System/PlatformID.cs, runtime/System/Random.cs,
+	runtime/System/String.cs, runtime/System/Version.cs,
+	runtime/System/Collections/ArrayList.cs, runtime/System/IO/Path.cs,
+	runtime/System/IO/TextWriter.cs,
+	runtime/System/Runtime/CompilerServices/RuntimeHelpers.cs,
+	runtime/System/Text/StringBuilder.cs,
+	runtime/System/Threading/Interlocked.cs,
+	runtime/System/Threading/Monitor.cs,
+	runtime/System/Threading/Timeout.cs: various ECMA-compatibility fixes.
+
+	* runtime/System/AppDomain.cs,
+	runtime/System/Array.cs,
+	runtime/System/AssemblyLoadEventArgs.cs,
+	runtime/System/AssemblyLoadEventHandler.cs,
+	runtime/System/AttributeTargets.cs,
+	runtime/System/BadImageFormatException.cs,
+	runtime/System/CannotUnloadAppDomainException.cs,
+	runtime/System/EntryPointNotFoundException.cs,
+	runtime/System/FieldAccessException.cs,
+	runtime/System/MemberAccessException.cs,
+	runtime/System/MethodAccessException.cs,
+	runtime/System/MissingFieldException.cs,
+	runtime/System/MissingMemberException.cs,
+	runtime/System/MissingMethodException.cs,
+	runtime/System/RuntimeFieldHandle.cs,
+	runtime/System/RuntimeMethodHandle.cs,
+	runtime/System/RuntimeTypeHandle.cs,
+	runtime/System/String.cs,
+	runtime/System/Type.cs,
+	runtime/System/TypeLoadException.cs,
+	runtime/System/TypeUnloadedException.cs,
+	runtime/System/UnhandledExceptionEventArgs.cs,
+	runtime/System/UnhandledExceptionEventHandler.cs,
+	runtime/System/Reflection/Assembly.cs,
+	runtime/System/Reflection/ClrType.cs,
+	runtime/System/Reflection/MethodBase.cs,
+	runtime/System/Reflection/Module.cs,
+	runtime/System/Runtime/InteropServices/CallingConvention.cs,
+	runtime/System/Runtime/InteropServices/CharSet.cs,
+	runtime/System/Runtime/InteropServices/DllImportAttribute.cs,
+	runtime/System/Runtime/InteropServices/FieldOffsetAttribute.cs,
+	runtime/System/Runtime/InteropServices/GCHandle.cs,
+	runtime/System/Runtime/InteropServices/GCHandleType.cs,
+	runtime/System/Runtime/InteropServices/ICustomAdapter.cs,
+	runtime/System/Runtime/InteropServices/ICustomFactory.cs,
+	runtime/System/Runtime/InteropServices/ICustomMarshaler.cs,
+	runtime/System/Runtime/InteropServices/InAttribute.cs,
+	runtime/System/Runtime/InteropServices/LayoutKind.cs,
+	runtime/System/Runtime/InteropServices/Marshal.cs,
+	runtime/System/Runtime/InteropServices/MarshalAsAttribute.cs,
+	runtime/System/Runtime/InteropServices/OutAttribute.cs,
+	runtime/System/Runtime/InteropServices/StructLayoutAttribute.cs,
+	runtime/System/Runtime/InteropServices/UnmanagedType.cs,
+	runtime/System/Threading/Thread.cs: mark up members of the
+	"RuntimeInfrastructure" subset of ECMA with CONFIG_RUNTIME_INFRA.
+
+	* JScript/JScript.build, JScript/jsrun.cs, JScript/jsstub.cs,
+	System.Xml/XmlConvert.cs, csunit/TestCase.cs,
+	runtime/Platform/SysCharInfo.cs, runtime/System/Char.cs,
+	runtime/System/Console.cs, runtime/System/Convert.cs,
+	runtime/System/DateTime.cs, runtime/System/Decimal.cs,
+	runtime/System/Double.cs, runtime/System/Math.cs,
+	runtime/System/NotFiniteNumberException.cs,
+	runtime/System/Random.cs, runtime/System/Single.cs,
+	runtime/System/TimeSpan.cs, runtime/System/IO/TextWriter.cs,
+	runtime/System/Private/NumberParser.cs,
+	runtime/System/Private/NumberFormat/CustomFormatter.cs,
+	runtime/System/Private/NumberFormat/Formatter.cs,
+	runtime/System/Private/NumberFormat/GeneralFormatter.cs,
+	runtime/System/Private/NumberFormat/RoundTripFormatter.cs,
+	runtime/System/Private/NumberFormat/ScientificFormatter.cs,
+	runtime/System/Runtime/CompilerServices/DecimalConstantAttribute.cs,
+	runtime/System/Text/StringBuilder.cs,
+	runtime/System/Threading/Interlocked.cs,
+	runtime/System/Threading/Monitor.cs,
+	tests/JScript/TestJScript.build, tests/JScript/TestJScript.cs,
+	tests/System.Xml/TestXmlConvert.cs,
+	tests/runtime/System/TestDecimal.cs,
+	tests/runtime/System/TestDouble.cs, tests/runtime/System/TestString.cs:
+	mark up members of the "ExtendedNumerics" subset of ECMA with
+	CONFIG_EXTENDED_NUMERICS.
+
+	* I18N/Common/Manager.cs, JScript/Execute/Convert.cs,
+	JScript/Execute/ScriptObject.cs, JScript/Execute/Support.cs,
+	JScript/Jsc/BinaryOp.cs, JScript/Jsc/Equality.cs,
+	JScript/Jsc/StrictEquality.cs, runtime/System/Activator.cs,
+	runtime/System/Attribute.cs, runtime/System/Delegate.cs,
+	runtime/System/Enum.cs, runtime/System/MulticastDelegate.cs,
+	runtime/System/Type.cs, runtime/System/TypedReference.cs,
+	runtime/System/ValueType.cs, runtime/System/Diagnostics/StackFrame.cs,
+	runtime/System/Diagnostics/StackTrace.cs,
+	runtime/System/Globalization/CompareInfo.cs,
+	runtime/System/Private/DefaultBinder.cs,
+	runtime/System/Reflection/AmbiguousMatchException.cs,
+	runtime/System/Reflection/Assembly.cs,
+	runtime/System/Reflection/AssemblyVersionAttribute.cs,
+	runtime/System/Reflection/Binder.cs,
+	runtime/System/Reflection/BindingFlags.cs,
+	runtime/System/Reflection/ClrConstructor.cs,
+	runtime/System/Reflection/ClrEvent.cs,
+	runtime/System/Reflection/ClrField.cs,
+	runtime/System/Reflection/ClrHelpers.cs,
+	runtime/System/Reflection/ClrMethod.cs,
+	runtime/System/Reflection/ClrParameter.cs,
+	runtime/System/Reflection/ClrProperty.cs,
+	runtime/System/Reflection/ClrReflectionAttribute.cs,
+	runtime/System/Reflection/ClrResourceStream.cs,
+	runtime/System/Reflection/ClrType.cs,
+	runtime/System/Reflection/ConstructorInfo.cs,
+	runtime/System/Reflection/EventAttributes.cs,
+	runtime/System/Reflection/EventInfo.cs,
+	runtime/System/Reflection/FieldAttributes.cs,
+	runtime/System/Reflection/FieldInfo.cs,
+	runtime/System/Reflection/ICustomAttributeProvider.cs,
+	runtime/System/Reflection/IReflect.cs,
+	runtime/System/Reflection/InterfaceMapping.cs,
+	runtime/System/Reflection/InvalidFilterCriteriaException.cs,
+	runtime/System/Reflection/ManifestResourceInfo.cs,
+	runtime/System/Reflection/MemberInfo.cs,
+	runtime/System/Reflection/MemberTypes.cs,
+	runtime/System/Reflection/MethodAttributes.cs,
+	runtime/System/Reflection/MethodBase.cs,
+	runtime/System/Reflection/MethodImplAttributes.cs,
+	runtime/System/Reflection/MethodInfo.cs,
+	runtime/System/Reflection/MethodSemanticsAttributes.cs,
+	runtime/System/Reflection/Missing.cs,
+	runtime/System/Reflection/Module.cs,
+	runtime/System/Reflection/ParameterAttributes.cs,
+	runtime/System/Reflection/ParameterInfo.cs,
+	runtime/System/Reflection/ParameterModifier.cs,
+	runtime/System/Reflection/PropertyAttributes.cs,
+	runtime/System/Reflection/PropertyInfo.cs,
+	runtime/System/Reflection/ResourceAttributes.cs,
+	runtime/System/Reflection/ResourceLocation.cs,
+	runtime/System/Reflection/TargetException.cs,
+	runtime/System/Reflection/TargetInvocationException.cs,
+	runtime/System/Reflection/TargetParameterCountException.cs,
+	runtime/System/Reflection/TypeAttributes.cs,
+	runtime/System/Resources/ResourceManager.cs,
+	runtime/System/Runtime/InteropServices/Marshal.cs,
+	runtime/System/Runtime/Remoting/Messaging/AsyncResult.cs,
+	runtime/System/Security/PermissionSet.cs,
+	runtime/System/Security/Permissions/ReflectionPermission.cs,
+	runtime/System/Security/Permissions/ReflectionPermissionAttribute.cs,
+	runtime/System/Security/Permissions/ReflectionPermissionFlag.cs,
+	runtime/System/Text/Encoding.cs: mark up members of the
+	"Reflection" ECMA subset with CONFIG_REFLECTION.
+
+	* JScript/JScript.build, System/System.build, System.Xml/Xml.build,
+	compat/compat.build, csunit/csunit.build, csupport/csupport.build,
+	profiles/compact, profiles/ecma, profiles/full, profiles/kernel,
+	runtime/runtime.build: suppress debug line information in the
+	"compact" and "kernel" profiles, to save memory on embedded systems.
+
+	* Makefile.am, configure.in: don't build certain directories in
+	the "kernel" profile, because it doesn't support reflection.
+
+2003-04-14  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/ArgIterator.cs: make "ArgIterator.GetHashCode"
+	produce the same value regardless of the current position.
+
+	* tests/runtime/System/SuiteSystem.cs,
+	tests/runtime/System/TestArgIterator.cs: test cases for the
+	"ArgIterator" class.
+
+	* tests/runtime/System/TestArgIterator.cs: test cases for static
+	vararg methods.
+
+	* runtime/System/Array.cs, tests/runtime/System/SuiteSystem.cs,
+	tests/runtime/System/TestArray.cs: test cases and bug fixes for
+	"Array.BinarySearch".
+
+	* runtime/System/Array.cs, runtime/System/Collections/ArrayList.cs,
+	tests/runtime/System/TestArray.cs: use quicksort for sorting
+	Array and ArrayList instances.
+
+	* runtime/System/Private/NumberFormat/CurrencyFormatter.cs,
+	runtime/System/Private/NumberFormat/FixedPointFormatter.cs,
+	runtime/System/Private/NumberFormat/Formatter.cs,
+	runtime/System/Private/NumberFormat/NumberFormatter.cs,
+	runtime/System/Private/NumberFormat/PercentFormatter.cs,
+	runtime/System/Private/NumberFormat/RoundTripFormatter.cs,
+	runtime/System/Private/NumberFormat/ScientificFormatter.cs:
+	handle NaN, +Infinity, and -Infinity in the number formatters.
+
+	* runtime/System/Guid.cs: adjust "Guid.GetHashCode" so that it
+	is compatible with other CLI implementations.
+
+	* runtime/System/Guid.cs: alternative hex form for Guid's.
+
+	* runtime/System/Array.cs (InnerSort): indicate IComparer
+	failures with InvalidOperationException, not ArgumentException.
+
+	* runtime/System/Security/Cryptography/CBCDecrypt.cs,
+	runtime/System/Security/Cryptography/CryptoAPITransform.cs,
+	runtime/System/Security/Cryptography/CryptoStream.cs,
+	runtime/System/Security/Cryptography/DESCryptoServiceProvider.cs,
+	runtime/System/Security/Cryptography/DSACryptoServiceProvider.cs,
+	runtime/System/Security/Cryptography/DSAParameters.cs,
+	runtime/System/Security/Cryptography/ECBDecrypt.cs,
+	runtime/System/Security/Cryptography/FromBase64Transform.cs,
+	runtime/System/Security/Cryptography/HMACSHA1.cs,
+	runtime/System/Security/Cryptography/HashAlgorithm.cs,
+	runtime/System/Security/Cryptography/KeyedHashAlgorithm.cs,
+	runtime/System/Security/Cryptography/MACTripleDES.cs,
+	runtime/System/Security/Cryptography/PKCS1MaskGenerationMethod.cs,
+	runtime/System/Security/Cryptography/PasswordDeriveBytes.cs,
+	runtime/System/Security/Cryptography/RC2CryptoServiceProvider.cs,
+	runtime/System/Security/Cryptography/RSACryptoServiceProvider.cs,
+	runtime/System/Security/Cryptography/RSAParameters.cs,
+	runtime/System/Security/Cryptography/RijndaelManaged.cs,
+	runtime/System/Security/Cryptography/SymmetricAlgorithm.cs,
+	runtime/System/Security/Cryptography/TripleDESCryptoServiceProvider.cs:
+	use "Array.Clear" instead of "Array.Initialize" to clear sensitive
+	values in the cryptographic routines.
+
+	* tests/runtime/System/TestArray.cs: test cases for "Array.Clear".
+
+2003-04-12  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/System.build,
+	System/CodeDom/Compiler/CodeCompiler.cs,
+	System/Diagnostics/EventLogTraceListener.cs,
+	System/Diagnostics/ICollectData.cs,
+	System/Diagnostics/PerformanceCounterManager.cs,
+	System/Diagnostics/Process.cs,
+	System/Diagnostics/ProcessModule.cs,
+	System/Diagnostics/ProcessModuleCollection.cs,
+	System/Diagnostics/ProcessStartInfo.cs,
+	System/Diagnostics/ProcessThread.cs,
+	System/Diagnostics/ProcessThreadCollection.cs,
+	resources/en_US/System/Arg.txt,
+	resources/en_US/System/Invalid.txt,
+	resources/en_US/System/NotSupp.txt,
+	resources/en_US/runtime/Exception.txt,
+	runtime/System/PlatformNotSupportedException.cs: implement the
+	process start/management classes.
+
+	* System/Diagnostics/DefaultTraceListener.cs,
+	System/Diagnostics/EventLogPermission.cs,
+	System/Diagnostics/EventLogPermissionAttribute.cs,
+	System/Diagnostics/EventLogPermissionEntry.cs,
+	System/Diagnostics/EventLogPermissionEntryCollection.cs,
+	System/Security/Permissions/Makefile,
+	System/Security/Permissions/ResourcePermissionBase.cs,
+	System/Security/Permissions/ResourcePermissionBaseEntry.cs,
+	resources/en_US/System/Arg.txt, resources/en_US/System/Invalid.txt:
+	implement event log permission classes; exit when assertions fail.
+
+2003-04-11  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/runtime.build,
+	runtime/System/Diagnostics/DebuggableAttribute.cs,
+	runtime/System/Diagnostics/Debugger.cs,
+	runtime/System/Diagnostics/DebuggerHiddenAttribute.cs,
+	runtime/System/Diagnostics/DebuggerStepThroughAttribute.cs,
+	runtime/System/Diagnostics/StackFrame.cs,
+	runtime/System/Diagnostics/StackTrace.cs,
+	runtime/System/Diagnostics/SymbolStore/ISymbolBinder.cs,
+	runtime/System/Diagnostics/SymbolStore/ISymbolDocument.cs,
+	runtime/System/Diagnostics/SymbolStore/ISymbolDocumentWriter.cs,
+	runtime/System/Diagnostics/SymbolStore/ISymbolMethod.cs,
+	runtime/System/Diagnostics/SymbolStore/ISymbolNamespace.cs,
+	runtime/System/Diagnostics/SymbolStore/ISymbolReader.cs,
+	runtime/System/Diagnostics/SymbolStore/ISymbolScope.cs,
+	runtime/System/Diagnostics/SymbolStore/ISymbolVariable.cs,
+	runtime/System/Diagnostics/SymbolStore/ISymbolWriter.cs,
+	runtime/System/Diagnostics/SymbolStore/SymAddressKind.cs,
+	runtime/System/Diagnostics/SymbolStore/SymDocumentType.cs,
+	runtime/System/Diagnostics/SymbolStore/SymLanguageType.cs,
+	runtime/System/Diagnostics/SymbolStore/SymLanguageVendor.cs,
+	runtime/System/Diagnostics/SymbolStore/SymbolToken.cs:
+	add ECMA_COMPAT to non-ECMA classes under System.Diagnostics;
+	implement remaining TODO's.
+
+	* System/Diagnostics/BooleanSwitch.cs,
+	System/Diagnostics/CounterCreationData.cs,
+	System/Diagnostics/CounterCreationDataCollection.cs,
+	System/Diagnostics/CounterSample.cs,
+	System/Diagnostics/CounterSampleCalculator.cs,
+	System/Diagnostics/Debug.cs,
+	System/Diagnostics/DefaultTraceListener.cs,
+	System/Diagnostics/EntryWrittenEventArgs.cs,
+	System/Diagnostics/EntryWrittenEventHandler.cs,
+	System/Diagnostics/EventLog.cs,
+	System/Diagnostics/EventLogEntry.cs,
+	System/Diagnostics/EventLogEntryCollection.cs,
+	System/Diagnostics/EventLogEntryType.cs,
+	System/Diagnostics/EventLogInstaller.cs,
+	System/Diagnostics/EventLogPermissionAccess.cs,
+	System/Diagnostics/FileVersionInfo.cs,
+	System/Diagnostics/InstanceData.cs,
+	System/Diagnostics/InstanceDataCollection.cs,
+	System/Diagnostics/InstanceDataCollectionCollection.cs,
+	System/Diagnostics/Makefile,
+	System/Diagnostics/MonitoringDescriptionAttribute.cs,
+	System/Diagnostics/PerformanceCounter.cs,
+	System/Diagnostics/PerformanceCounterCategory.cs,
+	System/Diagnostics/PerformanceCounterPermissionAccess.cs,
+	System/Diagnostics/PerformanceCounterType.cs,
+	System/Diagnostics/ProcessPriorityClass.cs,
+	System/Diagnostics/ProcessWindowStyle.cs,
+	System/Diagnostics/Switch.cs,
+	System/Diagnostics/TextWriterTraceListener.cs,
+	System/Diagnostics/ThreadPriorityLevel.cs,
+	System/Diagnostics/ThreadState.cs,
+	System/Diagnostics/ThreadWaitReason.cs,
+	System/Diagnostics/Trace.cs,
+	System/Diagnostics/TraceLevel.cs,
+	System/Diagnostics/TraceListener.cs,
+	System/Diagnostics/TraceListenerCollection.cs,
+	System/Diagnostics/TraceSwitch.cs,
+	resources/en_US/System/Arg.txt,
+	resources/en_US/System/Invalid.txt: implement missing classes in
+	the "System.Diagnostics" namespace within the "System" assembly.
+
+2003-04-07  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Runtime/Serialization/SerializationInfo.cs:
+	add missing "CLSCompliant(false)" attributes.
+
+	* runtime/System/Exception.cs: implementation serialization
+	support code for "System.Exception".
+
+	* runtime/*: add serialization support to all of the exception
+	classes in "runtime".
+
+	* System/UriFormatException.cs,
+	System/ComponentModel/Win32Exception.cs,
+	System/Configuration/ConfigurationException.cs,
+	System/Net/WebException.cs, System/Net/Sockets/SocketException.cs,
+	System.Xml/XmlException.cs, System.Xml/Schema/XmlSchemaException.cs:
+	add serialization support to exception classes in "System" and
+	"System.Xml".
+
+	* runtime/System/Resources/ResourceManager.cs: implement
+	"GetNeutralResourcesLanguage" and "GetSatelliteContractVersion".
+
+	* resources/en_US/runtime/Makefile.am,
+	resources/en_US/runtime/Security.txt,
+	runtime/System/Security/Policy/AllMembershipCondition.cs,
+	runtime/System/Security/Policy/ApplicationDirectory.cs,
+	runtime/System/Security/Policy/ApplicationDirectoryMembershipCondition.cs,
+	runtime/System/Security/Policy/CodeGroup.cs,
+	runtime/System/Security/Policy/Evidence.cs,
+	runtime/System/Security/Policy/IIdentityPermissionFactory.cs,
+	runtime/System/Security/Policy/IMembershipCondition.cs,
+	runtime/System/Security/Policy/PolicyStatement.cs,
+	runtime/System/Security/Policy/PolicyStatementAttribute.cs:
+	implement some of the missing classes in "System.Security.Policy";
+	fill out the implementation of "Evidence".
+
+2003-04-06  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/Platform/RegexpMethods.cs, runtime/System/IO/Directory.cs,
+	runtime/System/Private/Regex.cs, runtime/System/Private/RegexMatch.cs,
+	runtime/System/Private/RegexMatchOptions.cs,
+	runtime/System/Private/RegexSyntax.cs,
+	runtime/System/Private/Regexp.cs: implement a better regular
+	expression library.
+
+2003-04-05  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/Microsoft/Win32/RegistryKey.cs,
+	runtime/System/Reflection/Emit/EnumBuilder.cs,
+	runtime/System/Reflection/Emit/ILGenerator.cs,
+	runtime/System/Reflection/Emit/MethodBuilder.cs,
+	runtime/System/Security/MiniXml.cs,
+	runtime/System/Security/SecurityManager.cs,
+	runtime/System/Security/Permissions/PrincipalPermission.cs,
+	runtime/System/Security/Permissions/PublisherIdentityPermissionAttribute.cs,
+	runtime/System/Threading/IOCompletionCallback.cs: fix minor
+	semantic compile errors discovered by csc.
+
+	* runtime/*, System.Xml/*: change instances of "protected internal"
+	into "internal", because "protected internal" doesn't actually
+	do what I thought it did.
+
+2003-04-05  Adam Ballai  <minddog@cannibutter.com>
+
+	* System.Xml/XmlDocument.cs,
+	  System.Xml/XmlParserContext.cs,
+	  System.Xml/XmlStreamReader.cs,
+	  System.Xml/XmlTextReader.cs:
+	  Added DTD support and partial verification 
+	  and updated behavior of inline DTD.
+
+2003-04-05  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Exception.txt,
+	runtime/System/ApplicationException.cs, runtime/System/Exception.cs,
+	runtime/System/SystemException.cs, runtime/System/Type.cs,
+	runtime/System/Reflection/InvalidFilterCriteriaException.cs:
+	implement type filters.
+
+	* runtime/*, System/*, System.Xml/*: add the appropriate HResult
+	values to all exception classes.
+
+	* resources/en_US/runtime/Serialize.txt,
+	runtime/System/Runtime/Serialization/FormatterServices.cs,
+	runtime/System/Runtime/Serialization/ObjectManager.cs: implement
+	missing functionality in "System.Runtime.Serialization".
+
+	* runtime/System/Collections/Hashtable.cs: fix bug #3048 - "Keys"
+	and "Values" properties of "Hashtable" should return a live view
+	of the collection, not a copy.
+
+	* runtime/System/IO/StreamReader.cs (ReadChars): error in
+	buffer management when shifting unused down.
+
+	* runtime/System/Runtime/CompilerServices/AccessedThroughPropertyAttribute.cs,
+	runtime/System/Runtime/CompilerServices/CallConvCdecl.cs,
+	runtime/System/Runtime/CompilerServices/CallConvFastcall.cs,
+	runtime/System/Runtime/CompilerServices/CallConvStdcall.cs,
+	runtime/System/Runtime/CompilerServices/CallConvThiscall.cs,
+	runtime/System/Runtime/CompilerServices/CompilationRelaxationsAttribute.cs,
+	runtime/System/Runtime/CompilerServices/CompilerGlobalScopeAttribute.cs,
+	runtime/System/Runtime/CompilerServices/CustomConstantAttribute.cs,
+	runtime/System/Runtime/CompilerServices/DateTimeConstantAttribute.cs,
+	runtime/System/Runtime/CompilerServices/DiscardableAttribute.cs,
+	runtime/System/Runtime/CompilerServices/IDispatchConstantAttribute.cs,
+	runtime/System/Runtime/CompilerServices/IUnknownConstantAttribute.cs,
+	runtime/System/Runtime/CompilerServices/IndexerNameAttribute.cs,
+	runtime/System/Runtime/CompilerServices/MethodCodeType.cs,
+	runtime/System/Runtime/CompilerServices/RequiredAttributeAttribute.cs,
+	runtime/System/Runtime/CompilerServices/RuntimeHelpers.cs,
+	runtime/System/Runtime/CompilerServices/CSharp/IndexerNameAttribute.cs,
+	runtime/System/Runtime/CompilerServices/CSharp/Makefile:
+	mark non-ECMA classes in "System.Runtime.CompilerServices".
+
+2003-04-04  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/Microsoft/Win32/IRegistryKeyProvider.cs,
+	runtime/Microsoft/Win32/MemoryKeyProvider.cs,
+	runtime/Microsoft/Win32/Registry.cs,
+	runtime/Microsoft/Win32/RegistryKey.cs,
+	runtime/Microsoft/Win32/Win32KeyProvider.cs: implement the Win32
+	version of the registry routines.
+
+	* runtime/Microsoft/Win32/Win32KeyProvider.cs: use the correct
+	form of the "preservesig" attributes.
+
+	* runtime/System/Runtime/InteropServices/*: add a large number
+	of missing non-ECMA classes in the "System.Runtime.InteropServices"
+	namespace.
+
+2003-04-03  Gopal.V  <gopalv82@symonds.net>
+
+	* runtime/System/IO/Directory.cs, resources/en_US/runtime/IO.txt:
+	Implement recursive directory creation for CreateDirectory().
+	(fixes Bug #3089).
+
+	* runtime/System/IO/DirectoryInfo.cs: Uncomment the Directory
+	Creation code now that Directory.CreateDirectory() works.
+	(fixes Bug #3090).
+
+2003-04-03  David Hoke  <d_hoke@hotmail.com>
+	
+	* runtime/System/Private/NumberFormat/GeneralFormatter.cs: Apply
+	one liner patch to fix formatting of SByte . (Gopal)
+
+2003-04-03  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Net/Sockets/NetworkStream.cs, System/Net/Sockets/Socket.cs,
+	System/Net/Sockets/SocketOptionName.cs,
+	System/Platform/SocketMethods.cs, resources/en_US/System/Arg.txt,
+	resources/en_US/System/IO.txt, resources/en_US/System/NotSupp.txt,
+	runtime/System/IO/Stream.cs, runtime/System/Threading/ThreadPool.cs:
+	re-implement "NetworkStream" and "Socket".
+
+	* System/Net/Sockets/Socket.cs: wrong return types for
+	"EndSend" and "EndSendTo".
+
+	* System/Net/Sockets/TcpClient.cs, System/Net/Sockets/TcpListener.cs,
+	resources/en_US/System/Arg.txt, resources/en_US/System/Invalid.txt:
+	rewrite the "TcpClient" and "TcpListener" classes.
+
+	* System/Net/Sockets/TcpClient.cs, System/Net/Sockets/UdpClient.cs,
+	resources/en_US/System/Invalid.txt: add the "UdpClient" class.
+
+	* resources/en_US/runtime/Arg.txt, resources/en_US/runtime/IO.txt,
+	resources/en_US/runtime/Invalid.txt,
+	runtime/Microsoft/Win32/IRegistryKeyProvider.cs,
+	runtime/Microsoft/Win32/MemoryKeyProvider.cs,
+	runtime/Microsoft/Win32/Registry.cs,
+	runtime/Microsoft/Win32/RegistryHive.cs,
+	runtime/Microsoft/Win32/RegistryKey.cs,
+	runtime/Microsoft/Win32/Win32KeyProvider.cs: emulate the Win32
+	registry classes using an in-memory database that is discarded
+	when the program exits.
+
+2003-04-02  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Threading/AutoResetEvent.cs,
+	runtime/System/Threading/ManualResetEvent.cs: mark the
+	"AutoResetEvent" and "ManualResetEvent" classes as sealed
+	and non-ECMA.
+
+	* runtime/System/Threading/Timer.cs: timer threads should
+	be background threads.
+
+	* runtime/System/Threading/Thread.cs,
+	runtime/System/Threading/Timer.cs: add a new internallcall,
+	"CanStartThreads", for detecting whether the runtime engine
+	can really start threads or not.
+
+	* tests/runtime/System/Threading/SuiteThreading.cs,
+	tests/runtime/System/Threading/TestAutoResetEvent.cs,
+	tests/runtime/System/Threading/TestManualResetEvent.cs,
+	tests/runtime/System/Threading/TestWaitHandle.cs: disable
+	wait handle tests in ECMA_COMPAT mode.
+
+	* resources/en_US/runtime/Arg.txt, runtime/System/IO/FileStream.cs,
+	runtime/System/IO/Stream.cs: implement asynchronous methods for
+	"Stream" and "FileStream"; protect "FileStream" operations with a
+	lock to prevent invalid states in threaded applications.
+
+	* runtime/System/Threading/AutoResetEvent.cs,
+	runtime/System/Threading/ISignal.cs,
+	runtime/System/Threading/ManualResetEvent.cs,
+	runtime/System/Threading/Timer.cs: add the internal "ISignal"
+	interface to mark wait handles that implement signalling;
+	use "ISignal" to perform dispose notifies in "Timer".
+
+	* resources/en_US/runtime/Invalid.txt,
+	runtime/System/Threading/ApartmentState.cs,
+	runtime/System/Threading/CompressedStack.cs,
+	runtime/System/Threading/IOCompletionCallback.cs,
+	runtime/System/Threading/LockCookie.cs,
+	runtime/System/Threading/NativeOverlapped.cs,
+	runtime/System/Threading/Overlapped.cs,
+	runtime/System/Threading/ReaderWriterLock.cs,
+	runtime/System/Threading/RegisteredWaitHandle.cs: implement
+	missing classes in the "System.Threading" namespace.
+
+	* runtime/System/Threading/RegisteredWaitHandle.cs,
+	runtime/System/Threading/ThreadPool.cs,
+	runtime/System/Threading/Timer.cs,
+	runtime/System/Threading/WaitCallback.cs,
+	runtime/System/Threading/WaitOrTimerCallback.cs: implement the
+	"ThreadPool" class.
+
+	* System/Threading/ThreadExceptionEventArgs.cs,
+	System/Threading/ThreadExceptionEventHandler.cs: add two
+	"System.Threading" classes that live in the "System" assembly.
+
+	* System/IO/Stream.cs: queue asynchronous I/O requests to the
+	completion queue in the "ThreadPool" class.
+
+	* runtime/System/AppDomain.cs: remove an unnecessary TODO.
+
+	* System/Net/Sockets/AddressFamily.cs,
+	System/Net/Sockets/LingerOption.cs,
+	System/Net/Sockets/MulticastOption.cs,
+	System/Net/Sockets/ProtocolFamily.cs,
+	System/Net/Sockets/ProtocolType.cs,
+	System/Net/Sockets/SelectMode.cs,
+	System/Net/Sockets/SocketFlags.cs,
+	System/Net/Sockets/SocketOptionLevel.cs,
+	System/Net/Sockets/SocketOptionName.cs,
+	System/Net/Sockets/SocketShutdown.cs,
+	System/Net/Sockets/SocketType.cs: clean up some of the minor
+	classes in "System.Net.Sockets".
+
+2003-04-01  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Arg.txt,
+	runtime/System/Security/Permissions/FileIOPermission.cs,
+	runtime/System/Security/Permissions/PermissionSetAttribute.cs,
+	runtime/System/Security/Permissions/PrincipalPermission.cs,
+	runtime/System/Security/Permissions/PublisherIdentityPermission.cs,
+	runtime/System/Security/Permissions/PublisherIdentityPermissionAttribute.cs,
+	runtime/System/Security/Permissions/RegistryPermission.cs,
+	runtime/System/Security/Permissions/RegistryPermissionAccess.cs,
+	runtime/System/Security/Permissions/RegistryPermissionAttribute.cs,
+	runtime/System/Security/Permissions/StrongNameIdentityPermission.cs,
+	runtime/System/Security/Permissions/StrongNameIdentityPermissionAttribute.cs,
+	runtime/System/Security/Permissions/StrongNamePublicKeyBlob.cs,
+	runtime/System/Security/Permissions/UIPermission.cs,
+	runtime/System/Security/Permissions/UIPermissionAttribute.cs,
+	runtime/System/Security/Permissions/UIPermissionClipboard.cs,
+	runtime/System/Security/Permissions/UIPermissionWindow.cs:
+	implement the remainder of the non-ECMA permission classes.
+
+	* runtime/System/AppDomain.cs, runtime/System/Threading/Thread.cs:
+	implement missing ECMA TODO's in "System.Threading.Thread".
+
+	* runtime/System/IO/File.cs, runtime/System/IO/Directory.cs:
+	remove "TODO" from the "SetCreationTime" methods because they
+	are actually implemented.
+
+	* System/Net/SocketAddress.cs, System/Net/SocketPermission.cs,
+	System/Net/SocketPermissionAttribute.cs,
+	resources/en_US/System/Arg.txt: implement socket permission
+	classes; add "SocketAddress.GetHashCode()".
+
+	* System/Net/DnsPermission.cs: implement the missing functionality
+	in "System.Net.DnsPermission".
+
+	* System/Net/SocketPermission.cs, runtime/System/Security/MiniXml.cs,
+	runtime/System/Security/SecurityElement.cs,
+	runtime/System/Security/Permissions/EnvironmentPermission.cs,
+	runtime/System/Security/Permissions/FileIOPermission.cs,
+	runtime/System/Security/Permissions/PrincipalPermission.cs,
+	runtime/System/Security/Permissions/RegistryPermission.cs,
+	runtime/System/Security/Permissions/SiteIdentityPermission.cs,
+	runtime/System/Security/Permissions/StrongNameIdentityPermission.cs,
+	runtime/System/Security/Permissions/UrlIdentityPermission.cs:
+	implement the mini XML parser for "SecurityElement"; make sure
+	that permission values are properly escaped when adding them
+	to "SecurityElement" objects.
+
+	* runtime/System/Threading/Timer.cs: rewrite the "Timer" class.
+
+2003-03-31  Adam Ballai  <minddog@cannibutter.com>
+
+	* System.Xml/XmlTextReader.cs,
+	System.Xml/XmlDocument.cs,
+	tests/System.Xml/TestXmlDocument.cs: Fix for bug(3012) and more
+	implemented methods in XmlDocument.
+
+2003-03-31  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* resources/en_US/runtime/Arg.txt,
+	runtime/System/Security/Permissions/EnvironmentPermission.cs,
+	runtime/System/Security/Permissions/EnvironmentPermissionAccess.cs,
+	runtime/System/Security/Permissions/EnvironmentPermissionAttribute.cs,
+	runtime/System/Security/Permissions/FileIOPermission.cs,
+	runtime/System/Security/Permissions/FileIOPermissionAccess.cs,
+	runtime/System/Security/Permissions/FileIOPermissionAttribute.cs,
+	runtime/System/Security/Permissions/IUnrestrictedPermission.cs,
+	runtime/System/Security/Permissions/ReflectionPermission.cs,
+	runtime/System/Security/Permissions/ReflectionPermissionAttribute.cs,
+	runtime/System/Security/Permissions/SecurityPermission.cs:
+	implement the rest of the ECMA-compatible permissions classes.
+
+	*
+	resources/en_US/runtime/Arg.txt,
+	runtime/System/Security/Permissions/EnvironmentPermissionAttribute.cs,
+	runtime/System/Security/Permissions/FileDialogPermission.cs,
+	runtime/System/Security/Permissions/FileDialogPermissionAccess.cs,
+	runtime/System/Security/Permissions/FileDialogPermissionAttribute.cs,
+	runtime/System/Security/Permissions/FileIOPermissionAttribute.cs,
+	runtime/System/Security/Permissions/IsolatedStorageContainment.cs,
+	runtime/System/Security/Permissions/IsolatedStorageFilePermission.cs,
+	runtime/System/Security/Permissions/IsolatedStorageFilePermissionAttribute.cs,
+	runtime/System/Security/Permissions/IsolatedStoragePermission.cs,
+	runtime/System/Security/Permissions/IsolatedStoragePermissionAttribute.cs,
+	runtime/System/Security/Permissions/PermissionSetAttribute.cs,
+	runtime/System/Security/Permissions/ReflectionPermissionAttribute.cs,
+	runtime/System/Security/Permissions/SecurityPermissionAttribute.cs:
+	add non-ECMA permission classes; handle "Unrestricted" on attributes
+	properly during "CreatePermission".
+
+	* runtime/System/Security/Permissions/PrincipalPermission.cs,
+	runtime/System/Security/Permissions/PrincipalPermissionAttribute.cs:
+	add princpal permission classes.
+
+	* resources/en_US/runtime/Exception.txt,
+	runtime/System/Security/ClrPermissions.cs,
+	runtime/System/Security/ClrSecurity.cs,
+	runtime/System/Security/CodeAccessPermission.cs,
+	runtime/System/Security/PermissionSet.cs: redesign the internalcall
+	interface for code access security (CAS) so that most of the work
+	happens in the C# code, not the runtime engine.
+
+	* resources/en_US/runtime/Arg.txt,
+	runtime/System/Security/Permissions/SiteIdentityPermission.cs,
+	runtime/System/Security/Permissions/SiteIdentityPermissionAttribute.cs,
+	runtime/System/Security/Permissions/UrlIdentityPermission.cs,
+	runtime/System/Security/Permissions/UrlIdentityPermissionAttribute.cs,
+	runtime/System/Security/Permissions/ZoneIdentityPermission.cs,
+	runtime/System/Security/Permissions/ZoneIdentityPermissionAttribute.cs:
+	more non-ECMA permissions classes.
+
+2003-03-30  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Text/UTF8Encoding.cs,
+	runtime/System/Text/UnicodeEncoding.cs: add the "GetBytes(String)"
+	method to UTF8Encoding and UnicodeEncoding, for ECMA-compatibility.
+
+	* runtime/System/Globalization/DateTimeFormatInfo.cs: handle
+	era name values; return the full date/time format list.
+
+	* resources/en_US/runtime/Arg.txt,
+	runtime/System/Globalization/DateTimeFormatInfo.cs: handle
+	different formatting characters for date/time format lists.
+
+	* resources/en_US/runtime/Arg.txt,
+	resources/en_US/runtime/Exception.txt,
+	resources/en_US/runtime/Invalid.txt,
+	resources/en_US/runtime/NotSupp.txt,
+	runtime/System/Security/AllowPartiallyTrustedCallersAttribute.cs,
+	runtime/System/Security/CodeAccessPermission.cs,
+	runtime/System/Security/IEvidenceFactory.cs,
+	runtime/System/Security/IPermission.cs,
+	runtime/System/Security/ISecurityEncodable.cs,
+	runtime/System/Security/ISecurityPolicyEncodable.cs,
+	runtime/System/Security/IStackWalk.cs,
+	runtime/System/Security/NamedPermissionSet.cs,
+	runtime/System/Security/PermissionSet.cs,
+	runtime/System/Security/PolicyLevelType.cs,
+	runtime/System/Security/SecurityElement.cs,
+	runtime/System/Security/SecurityManager.cs,
+	runtime/System/Security/SecurityZone.cs,
+	runtime/System/Security/SuppressUnmanagedCodeSecurityAttribute.cs,
+	runtime/System/Security/UnverifiableCodeAttribute.cs,
+	runtime/System/Security/XmlSyntaxException.cs,
+	runtime/System/Security/Permissions/CodeAccessSecurityAttribute.cs,
+	runtime/System/Security/Permissions/EnvironmentPermissionAttribute.cs,
+	runtime/System/Security/Permissions/FileIOPermissionAttribute.cs,
+	runtime/System/Security/Permissions/ReflectionPermissionAttribute.cs,
+	runtime/System/Security/Permissions/ReflectionPermissionFlag.cs,
+	runtime/System/Security/Permissions/SecurityAttribute.cs,
+	runtime/System/Security/Permissions/SecurityPermission.cs,
+	runtime/System/Security/Permissions/SecurityPermissionAttribute.cs:
+	add missing classes and definitions under "System.Security".
+
+2003-03-29  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/AppDomain.cs,
+	runtime/System/CrossAppDomainDelegate.cs,
+	runtime/System/_AppDomain.cs,
+	runtime/System/Reflection/Assembly.cs,
+	runtime/System/Runtime/InteropServices/GuidAttribute.cs,
+	runtime/System/Security/Policy/PolicyLevel.cs,
+	runtime/System/Security/Principal/IIdentity.cs,
+	runtime/System/Security/Principal/IPrincipal.cs,
+	runtime/System/Security/Principal/PrincipalPolicy.cs:
+	implement the missing parts of the "AppDomain" class.
+
+	* runtime/System/Security/Permissions/SecurityAction.cs:
+	misspelt enum member.
+
+	* runtime/System/IO/Path.cs: rename "PathSeparatorChar" to
+	"PathSeparator", to be ECMA-compatible.
+
+	* configure.in, NEWS: update version and news for the 0.5.4 release.
+
+	* configure.in: update working version to "0.5.5".
+
+2003-03-28  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* tests/System.Xml/TestXmlTextWriter.cs: ECMA fix for test case.
+
+	* runtime/System/Reflection/Emit/ConstructorBuilder.cs,
+	runtime/System/Reflection/Emit/FieldBuilder.cs,
+	runtime/System/Reflection/Emit/ILGenerator.cs,
+	runtime/System/Reflection/Emit/LocalBuilder.cs,
+	runtime/System/Reflection/Emit/MethodBuilder.cs,
+	runtime/System/Reflection/Emit/ModuleBuilder.cs,
+	runtime/System/Reflection/Emit/ParameterBuilder.cs,
+	runtime/System/Reflection/Emit/PropertyBuilder.cs,
+	runtime/System/Reflection/Emit/TypeBuilder.cs: continue implementation
+	of the Reflection.Emit API.
+
+	* runtime/System/String.cs, tests/runtime/System/TestString.cs:
+	minor compatibility fixes in System.String.
+
+2003-03-22  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Reflection/Emit/AssemblyBuilder.cs,
+	runtime/System/Reflection/Emit/ConstructorBuilder.cs,
+	runtime/System/Reflection/Emit/EnumBuilder.cs,
+	runtime/System/Reflection/Emit/FieldBuilder.cs,
+	runtime/System/Reflection/Emit/ILGenerator.cs,
+	runtime/System/Reflection/Emit/LocalBuilder.cs,
+	runtime/System/Reflection/Emit/MethodBuilder.cs,
+	runtime/System/Reflection/Emit/ModuleBuilder.cs,
+	runtime/System/Reflection/Emit/ParameterBuilder.cs,
+	runtime/System/Reflection/Emit/PropertyBuilder.cs,
+	runtime/System/Reflection/Emit/TypeBuilder.cs: continue
+	implementation of Reflection.Emit; primarily methods
+	and IL code generation.
+
+	* runtime/System/Reflection/Emit/ConstructorBuilder.cs,
+	runtime/System/Reflection/Emit/EventBuilder.cs,
+	runtime/System/Reflection/Emit/FieldBuilder.cs,
+	runtime/System/Reflection/Emit/ILGenerator.cs,
+	runtime/System/Reflection/Emit/MethodBuilder.cs,
+	runtime/System/Reflection/Emit/PropertyBuilder.cs,
+	runtime/System/Reflection/Emit/SignatureHelper.cs,
+	runtime/System/Reflection/Emit/TypeBuilder.cs: implement
+	signature building routines for Reflection.Emit; modify
+	field, event, method, and property creation to use the
+	signature building routines.
+
+	* runtime/System/Reflection/Emit/AssemblyBuilder.cs,
+	runtime/System/Reflection/Emit/ConstructorBuilder.cs,
+	runtime/System/Reflection/Emit/EventBuilder.cs,
+	runtime/System/Reflection/Emit/FieldBuilder.cs,
+	runtime/System/Reflection/Emit/ILGenerator.cs,
+	runtime/System/Reflection/Emit/MethodBuilder.cs,
+	runtime/System/Reflection/Emit/ModuleBuilder.cs,
+	runtime/System/Reflection/Emit/PropertyBuilder.cs,
+	runtime/System/Reflection/Emit/SignatureHelper.cs,
+	runtime/System/Reflection/Emit/TypeBuilder.cs: harden and secure
+	the Reflection.Emit API against multi-threaded access.
+
+	* runtime/System/Reflection/Emit/IDetachItem.cs: new internal
+	interface for use in detaching everything after a save.
+
+2003-03-20  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Reflection/ClrField.cs,
+	runtime/System/Reflection/Emit/AssemblyBuilder.cs,
+	runtime/System/Reflection/Emit/EventBuilder.cs,
+	runtime/System/Reflection/Emit/FieldBuilder.cs,
+	runtime/System/Reflection/Emit/ModuleBuilder.cs,
+	runtime/System/Reflection/Emit/PropertyBuilder.cs,
+	runtime/System/Reflection/Emit/TypeBuilder.cs,
+	runtime/System/Reflection/Emit/UnmanagedMarshal.cs:
+	continue implementation of Reflection.Emit; events, fields,
+	properties, and marshalling.
+
+2003-03-18  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Reflection/Emit/EnumBuilder.cs,
+	runtime/System/Reflection/Emit/ILGenerator.cs,
+	runtime/System/Reflection/Emit/ModuleBuilder.cs,
+	runtime/System/Reflection/Emit/TypeBuilder.cs: continue the
+	implementation of the Reflection.Emit API.
+
+	* runtime/System/AppDomain.cs,
+	runtime/System/Reflection/Emit/AssemblyBuilder.cs,
+	runtime/System/Reflection/Emit/ModuleBuilder.cs: define dynamic
+	assemblies and modules.
+
+2003-03-17  Jonathan Springer  <jonathan.springer@verizon.net>
+
+	* runtime/System/Private/NumberParser.cs,
+	runtime/System/Private/NumberFormat/Formatter.cs,
+	runtime/System/Private/NumberFormat/RoundTripFormatter.cs,
+	test/runtime/System/TestDouble.cs:  Further refinements and bug-fixes
+	for floating point formatting and parsing.
+
+2003-03-17  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* JScript/Builtins/GlobalObject.cs,
+	JScript/Builtins/StringConstructor.cs,
+	JScript/Builtins/StringObject.cs, JScript/Builtins/StringPrototype.cs,
+	JScript/Execute/EngineInstance.cs: begin implementing the JScript
+	"String" class.
+
+	* runtime/System/BitConverter.cs,
+	runtime/System/Reflection/Emit/ILGenerator.cs,
+	runtime/System/Reflection/Emit/Label.cs,
+	runtime/System/Reflection/Emit/LocalBuilder.cs: implement some of
+	the IL generation methods for Reflection.Emit.
+
+2003-03-11  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/String.cs: Fix minor bug in LastIndexOf(char).
+
+2003-03-09  Adam Ballai <minddog@cannibutter.com>
+
+	* System.Xml/XmlTextReader.cs,
+	System.Xml/XmlStreamReader.cs,
+	tests/System.Xml/TestXmlTextReader.cs: Added framework for UCS4
+	support.
+
+2003-03-09  Mike Peters <mpeters@aktifkablo.net>
+
+	* runtime/System/Private/NumberFormat/GeneralFormatter.cs: One liner
+	fix for formatting bytes as decimals. (Gopal)
+
+2003-03-09  Gopal.V  <gopalv82@symonds.net>
+
+	* runtime/System/BadImageFormatException.cs,
+	runtime/System/IO/FileLoadException.cs: Add the stubs for non-ECMA 
+	FusionLog property.
+
+	* runtime/System/Type.cs: Add the various builtin member filters and 
+	implement them partially.
+
+	* runtime/System/AppDomain.cs: Add the stubs and redirects for all
+	the DefineDynamicAssembly overriden methods.
+	
+	* runtime/System/AppDomain.cs: Fix compiler error for missing 
+	Using statements.
+
+	* runtime/System/Reflection/Emit/ILGenerator.cs: Incorrect type for
+	argument to MarkSequencePoint.
+	
+2003-03-07  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* JScript/Builtins/GlobalObject.cs, JScript/Execute/Convert.cs,
+	JScript/Parser/JSScanner.cs, tests/JScript/TestGlobal.cs,
+	tests/JScript/TestJScript.cs: implementation and test cases for
+	the functions in the JScript global object.
+
+	* JScript/Builtins/ArrayConstructor.cs,
+	JScript/Builtins/BuiltinFunction.cs,
+	JScript/Builtins/FunctionConstructor.cs,
+	JScript/Builtins/FunctionObject.cs,
+	JScript/Builtins/FunctionPrototype.cs,
+	JScript/Builtins/ObjectConstructor.cs,
+	JScript/Execute/ScriptFunction.cs, JScript/Jsc/Globals.cs,
+	JScript/Nodes/JExpr.tc, JScript/Parser/JSParser.cs: implement
+	builtin function invocation support; make Call/Construct re-entrant.
+
+	* JScript/Builtins/BuiltinFunction.cs, tests/JScript/TestGlobal.cs:
+	handle builtin functions that have odd numbers of parameters.
+
+	* JScript/Builtins/ArrayConstructor.cs,
+	JScript/Builtins/ArrayObject.cs: implement parts of the JScript
+	"Array" class.
+
+2003-03-06  Michael Moore <mtmoore@uga.edu>
+
+	* runtime/System/Private/DateTimeFormat/ParsedDateTime.cs: ECMA update 
+	for Parse()/ParseExact(). Only if a date is not specified should the 
+	DateTimeStyles.NoCurrentDateDefault have an effect on the returned 
+	DateTime object. So, !hasDate was added to the if clause determining 
+	if the object should use styles.
+	(Gopal,Patch #1157)
+
+2003-03-06  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Text/UnicodeEncoding.cs: wrong buffer index used
+	to detect byte order marks.
+
+	* System.Xml/UCS4Encoding.cs: implement the UCS-4 encoding for
+	use by the System.Xml library.
+
+	* JScript/Builtins/FunctionObject.cs: properly handle the
+	"return" statement in script evaluations.
+
+2003-03-05  Adam Ballai <minddog@cannibutter.com>
+
+	* System.Xml/XmlTextWriter.cs: filestream in 
+	read mode instead of write.
+	* System.Xml/XmlTextReader.cs, 
+	tests/System.Xml/TestXmlTextReader.cs: fix for apostrophes,
+	implemented GetRemainder, and Clean. Added Test case
+	for GetRemainder
+
+2003-03-05  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Xml/NodeList.cs: fix node iterator, which was skipping
+	the first child (bug #2692).
+
+2003-03-02  Gopal.V  <gopalv82@symonds.net>
+
+	* runtime/System/Collections/Hashtable.cs: add the set method for the
+	Hashtable.comparer protected field.
+
+2003-03-01  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/Reflection/Emit/AssemblyBuilder.cs,
+	runtime/System/Reflection/Emit/PropertyBuilder.cs: Stub out 
+	these two classes of Reflection.Emit namespace.
+
+	* runtime/System/Reflection/Emit/OpCodes.cs: fix typo in the
+	fields (Cgt_un to Cgt_Un).
+
+	* runtime/System/Reflection/Emit/EventBuilder.cs,
+	runtime/System/Reflection/Emit/ModuleBuilder.cs: Even more
+	stubs for Reflection.Emit namespace.
+
+2003-03-01  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* Generics/Generics.html, Generics/TreeBase.cs,
+	Generics/TreeDictionary.cs, Generics/TreeSet.cs: add tree-based
+	collections to the generics library.
+
+	* Generics/ArrayList.cs, Generics/Generics.html, Generics/RangeList.cs:
+	fix the implementation of ArrayList.IndexOf; add the RangeList class.
+
+	* Generics/Generics.html, Generics/LinkedList.cs,
+	Generics/SinglyLinkedList.cs: implement SinglyLinkedList; fix
+	a bug in the iterator for LinkedList.
+
+2003-02-28  Gopal.V  <gopalv82@symonds.net>
+
+	* runtime/System/Reflection/Emit/MethodBuilder.cs,
+	runtime/System/Reflection/Emit/ConstructorBuilder.cs,
+	runtime/System/Reflection/Emit/FieldBuilder.cs,
+	runtime/System/Reflection/Emit/CustomAttributeBuilder.cs:
+	Stub out some more of Reflection.Emit.
+	
+	* runtime/System/Reflection/MethodImplAttributes.cs: fix
+	typo in enum names.
+
+2003-02-26  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* JScript/Builtins/FunctionPrototype.cs,
+	JScript/Execute/ActivationObject.cs, JScript/Execute/JSObject.cs,
+	JScript/Execute/WithScope.cs, runtime/System/Globalization/Calendar.cs:
+	fix abstract method override bugs.
+
+2003-02-25  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* Generics/DictionaryEnumeratorAdapter.cs,
+	Generics/DictionaryEnumeratorWrapper.cs,
+	Generics/FixedSizeDictionary.cs, Generics/Hashtable.cs,
+	Generics/IDictionaryIterator.cs, Generics/ReadOnlyDictionary.cs,
+	Generics/SynchronizedDictionary.cs: remove the "Entry" property
+	from "IDictionaryIterator", because it is identical to "Current".
+
+	* Generics/ArrayQueue.cs, Generics/ArrayStack.cs,
+	Generics/FixedSizeQueue.cs, Generics/FixedSizeStack.cs,
+	Generics/IQueue.cs, Generics/IStack.cs,
+	Generics/LinkedList.cs, Generics/ReadOnlyQueue.cs,
+	Generics/ReadOnlyStack.cs, Generics/SynchronizedQueue.cs,
+	Generics/SynchronizedStack.cs: add "Clear" and "Contains" to
+	the IQueue and IStack interfaces.
+
+	* Generics/FixedSizeSet.cs, Generics/ISet.cs, Generics/ListSet.cs,
+	Generics/ReadOnlySet.cs, Generics/SynchronizedSet.cs: add set
+	collections to the generics library.
+
+	* Generics/SynchronizedCollection.cs, Generics/SynchronizedDeque.cs,
+	Generics/SynchronizedDictionary.cs, Generics/SynchronizedList.cs,
+	Generics/SynchronizedQueue.cs, Generics/SynchronizedSet.cs,
+	Generics/SynchronizedStack.cs: lock the SyncRoot when cloning.
+
+	* Generics/ArrayList.cs, Generics/ArrayQueue.cs,
+	Generics/ArrayStack.cs, Generics/CollectionWrapper.cs,
+	Generics/DictionaryWrapper.cs, Generics/FixedSizeCollection.cs,
+	Generics/FixedSizeDeque.cs, Generics/FixedSizeDictionary.cs,
+	Generics/FixedSizeList.cs, Generics/FixedSizeQueue.cs,
+	Generics/FixedSizeSet.cs, Generics/FixedSizeStack.cs,
+	Generics/Hashtable.cs, Generics/ICollection.cs,
+	Generics/IDeque.cs, Generics/IDictionary.cs,
+	Generics/IList.cs, Generics/IQueue.cs,
+	Generics/ISet.cs, Generics/IStack.cs,
+	Generics/LinkedList.cs, Generics/ListSet.cs,
+	Generics/ListWrapper.cs, Generics/ReadOnlyCollection.cs,
+	Generics/ReadOnlyDeque.cs, Generics/ReadOnlyDictionary.cs,
+	Generics/ReadOnlyList.cs, Generics/ReadOnlyQueue.cs,
+	Generics/ReadOnlySet.cs, Generics/ReadOnlyStack.cs,
+	Generics/SynchronizedCollection.cs, Generics/SynchronizedDeque.cs,
+	Generics/SynchronizedDictionary.cs, Generics/SynchronizedList.cs,
+	Generics/SynchronizedQueue.cs, Generics/SynchronizedSet.cs,
+	Generics/SynchronizedStack.cs: move "IsReadOnly" and "IsFixedSize"
+	into "ICollection<T>" because they are common collection traits.
+
+	* Generics/Generics.html, Generics/README: check-in a more
+	detailed description of the design constraints underlying
+	the generics library.
+
+	* Generics/ArrayList.cs, Generics/ArrayQueue.cs,
+	Generics/ArrayStack.cs, Generics/Generics.html, Generics/Generics.txt,
+	Generics/ICapacity.cs: remove utility routines from ArrayList;
+	add the ICapacity interface.
+
+	* Generics/Generics.txt, Generics/Hashtable.cs: remove utility
+	routines from Hashtable; make it sealed; fix "null" comparison
+	issues; implement the "Keys" and "Values" collections properly.
+
+2003-02-24  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System.Xml/XmlTextReader (ReadIdentifier): append the character
+	to the string builder after testing for terminating characters,
+	to avoid the use of "ToString(0, length - 1)", which is less
+	efficient than "ToString()".
+
+	* I18N/Common/HandlerCollection.cs, I18N/Common/Manager.cs:
+	change the representation of the I18N handler table to reduce
+	the startup code associated with the hash table version.
+
+	* Generics/Algorithm.cs, Generics/ArrayList.cs,
+	Generics/ArrayQueue.cs, Generics/ArrayStack.cs,
+	Generics/CollectionAdapter.cs, Generics/CollectionWrapper.cs,
+	Generics/DictionaryAdapter.cs, Generics/DictionaryEnumeratorAdapter.cs,
+	Generics/DictionaryEnumeratorWrapper.cs, Generics/DictionaryWrapper.cs,
+	Generics/EnumerableAdapter.cs, Generics/EnumerableWrapper.cs,
+	Generics/EnumeratorAdapter.cs, Generics/EnumeratorWrapper.cs,
+	Generics/Generics.txt, Generics/Hashtable.cs,
+	Generics/ICollection.cs, Generics/IDictionary.cs,
+	Generics/IDictionaryEnumerator.cs, Generics/IDictionaryIterator.cs,
+	Generics/IEnumerable.cs, Generics/IEnumerator.cs,
+	Generics/IIterator.cs, Generics/IList.cs, Generics/IListIterator.cs,
+	Generics/IQueue.cs, Generics/IStack.cs, Generics/LinkedList.cs,
+	Generics/ListAdapter.cs, Generics/ListWrapper.cs,
+	Generics/ReadOnlyIterator.cs, Generics/ReadOnlyListIterator.cs,
+	Generics/ReverseIterator.cs, Generics/SynchronizedDictEnumerator.cs,
+	Generics/SynchronizedDictIterator.cs,
+	Generics/SynchronizedEnumerator.cs, Generics/SynchronizedIterator.cs,
+	Generics/SynchronizedListIterator.cs: remove the dichotomy between
+	enumerators and iterators and replace it with just iterators.
+
+	* Generics/DictionaryAdapter.cs, Generics/DictionaryWrapper.cs,
+	Generics/Hashtable.cs, Generics/IDictionary.cs,
+	Generics/IDictionaryIterator.cs, Generics/SynchronizedDictIterator.cs:
+	fix the inheritance of dictionaries so that they are collections
+	of entries, not values.
+
+	* Generics/LinkedList: bug fix - advance to the next item in
+	Contains, IndexOf, and Remove.
+
+	* Generics/IDeque.cs, Generics/LinkedList.cs: add the IDeque
+	interface, and make LinkedList implement IDeque, IQueue, and IStack.
+
+	* Generics/ArrayQueue.cs, Generics/ArrayStack.cs,
+	Generics/Generics.txt, Generics/IDeque.cs, Generics/IQueue.cs,
+	Generics/IStack.cs, Generics/LinkedList.cs,
+	Generics/ReadOnlyCollection.cs, Generics/ReadOnlyDeque.cs,
+	Generics/ReadOnlyDictIterator.cs, Generics/ReadOnlyDictionary.cs,
+	Generics/ReadOnlyList.cs, Generics/ReadOnlyQueue.cs,
+	Generics/ReadOnlyStack.cs: add read-only wrapper classes,
+	to replace the concrete-specific "ReadOnly" methods.
+
+	* Generics/ArrayList.cs, Generics/FixedSizeCollection.cs,
+	Generics/FixedSizeDeque.cs, Generics/FixedSizeDictIterator.cs,
+	Generics/FixedSizeDictionary.cs, Generics/FixedSizeIterator.cs,
+	Generics/FixedSizeList.cs, Generics/FixedSizeListIterator.cs,
+	Generics/FixedSizeQueue.cs, Generics/FixedSizeStack.cs,
+	Generics/ReadOnlyCollection.cs, Generics/ReadOnlyDeque.cs,
+	Generics/ReadOnlyDictIterator.cs, Generics/ReadOnlyDictionary.cs,
+	Generics/ReadOnlyIterator.cs, Generics/ReadOnlyList.cs,
+	Generics/ReadOnlyListIterator.cs, Generics/ReadOnlyQueue.cs,
+	Generics/ReadOnlyStack.cs, Generics/ReverseIterator.cs,
+	Generics/SynchronizedDictIterator.cs, Generics/SynchronizedIterator.cs,
+	Generics/SynchronizedListIterator.cs: add fixed-size wrapper
+	classes to replace the concrete-specific "FixedSize" methods;
+	fix Copyright messages.
+
+	* Generics/FixedSizeCollection.cs, Generics/FixedSizeDictIterator.cs,
+	Generics/FixedSizeDictionary.cs, Generics/FixedSizeIterator.cs,
+	Generics/FixedSizeList.cs, Generics/FixedSizeListIterator.cs,
+	Generics/ReadOnlyCollection.cs, Generics/ReadOnlyDictIterator.cs,
+	Generics/ReadOnlyDictionary.cs, Generics/ReadOnlyIterator.cs,
+	Generics/ReadOnlyList.cs, Generics/ReadOnlyListIterator.cs:
+	move the fixed-size and read-only iterator wrappers inside
+	their respective collection classes and make them nested,
+	because they are only used from those collection classes.
+
+	* Generics/ArrayList.cs, Generics/FixedSizeList.cs, Generics/IList.cs,
+	Generics/LinkedList.cs, Generics/ListWrapper.cs,
+	Generics/ReadOnlyList.cs: add "IsRandomAccess" to "IList<T>".
+
+	* Generics/ArrayList.cs, Generics/ArrayQueue.cs,
+	Generics/ArrayStack.cs, Generics/Hashtable.cs,
+	Generics/SynchronizedCollection.cs, Generics/SynchronizedDeque.cs,
+	Generics/SynchronizedDictIterator.cs,
+	Generics/SynchronizedDictionary.cs, Generics/SynchronizedIterator.cs,
+	Generics/SynchronizedList.cs, Generics/SynchronizedListIterator.cs,
+	Generics/SynchronizedQueue.cs, Generics/SynchronizedStack.cs:
+	add synchronized wrapper classes to replace the concrete-specific
+	"Synchronized" methods.
+
+2003-02-23  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Text/StringBuilder.cs: reallocate StringBuilder's
+	by doubling their capacity each time they overflow, instead of
+	just adding 32 characters each time.
+
+2003-02-22  Jonathan Springer  <jonathan.springer@verizon.net>
+
+	* tests/System/Net/TestIPAddress.cs:  Fix up endian issues in IPAddress
+	test cases.
+
+2003-02-22  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* Generics/Algorithm.cs, Generics/ArrayList.cs,
+	Generics/BuiltinComparer.cs, Generics/CollectionAdapter.cs,
+	Generics/CollectionWrapper.cs, Generics/ComparableAdapter.cs,
+	Generics/ComparableWrapper.cs, Generics/Comparer.cs,
+	Generics/ComparerAdapter.cs, Generics/ComparerWrapper.cs,
+	Generics/Complex.cs, Generics/DictionaryAdapter.cs,
+	Generics/DictionaryEntry.cs, Generics/DictionaryEnumeratorAdapter.cs,
+	Generics/DictionaryEnumeratorWrapper.cs, Generics/DictionaryWrapper.cs,
+	Generics/EnumerableAdapter.cs, Generics/EnumerableWrapper.cs,
+	Generics/EnumeratorAdapter.cs, Generics/EnumeratorWrapper.cs,
+	Generics/Generics.txt, Generics/HashCodeProviderAdapter.cs,
+	Generics/HashCodeProviderWrapper.cs, Generics/Hashtable.cs,
+	Generics/ICollection.cs, Generics/IComparable.cs,
+	Generics/IComparer.cs, Generics/IDictionary.cs,
+	Generics/IDictionaryEnumerator.cs, Generics/IEnumerable.cs,
+	Generics/IEnumerator.cs, Generics/IHashCodeProvider.cs,
+	Generics/IIterable.cs, Generics/IIterator.cs,
+	Generics/IList.cs, Generics/List.cs,
+	Generics/ListAdapter.cs, Generics/ListWrapper.cs,
+	Generics/Predicate.cs, Generics/Queue.cs, Generics/README,
+	Generics/ReverseIterator.cs, Generics/S.cs,
+	Generics/Stack.cs, Generics/SynchronizedDictEnumerator.cs,
+	Generics/SynchronizedEnumerator.cs, Generics/SynchronizedIterator.cs:
+	initial check-in of the generic C# collection library.
+
+	* Generics/ArrayList.cs, Generics/Generics.txt, Generics/LinkedList.cs,
+	Generics/List.cs, Generics/ReadOnlyIterator.cs: read-only iterators;
+	rename List<T> to LinkedList<T>; finish implementing LinkedList<T>.
+
+	* Generics/ArrayStack.cs, Generics/IStack.cs, Generics/Stack.cs:
+	rename Stack<T> to ArrayStack<T> and add the IStack<T> interface.
+
+	* runtime/System/Collections/Stack.cs: bug in Stack.Push() - the
+	new item was not pushed when the stack was reallocated.
+
+	* Generics/ArrayQueue.cs, Generics/IQueue.cs, Generics/Queue.cs:
+	rename Queue<T> to ArrayQueue<T> and add the IQueue<T> interface.
+
+	* runtime/System/Collections/Queue.cs: bug in Queue.Enqueue() - the
+	new item was not pushed when the queue was reallocated.
+
+2003-02-21  Yannis BRES <Yannis.BRES@sophia.inria.fr>
+	
+	* runtime/System/Version.cs: == and != operator overloading for 
+	Version.
+	(Gopal, Patch #1127)
+
+2003-02-21  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Collections/ArrayList.cs,
+	runtime/System/Collections/DictionaryEntry.cs: minor bug fixes
+	to collection classes.
+
+	* runtime/System/Enum.cs: bug in "Enum.Parse" when multiple
+	values are supplied, separated by commas.
+
+2003-02-18  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Reflection/Emit/OpCodes.cs: add the "ldelem.any",
+	"stelem.any" and "unbox.any" opcodes to the Reflection.Emit list.
+
+	* resources/en_US/runtime/NotSupp.txt, runtime/System/Type.cs,
+	runtime/System/Reflection/ClrType.cs: add extra methods and
+	properties to "System.Type" that are needed to reflect
+	generic types.
+
+2003-02-17  Aditya P. Bansod <abansod@fullenergy.com>
+	
+	* runtime/System/IO/Directory.cs, runtime/Platform/DirMethods.cs:
+	Implement the CreateDirectory() method for compatibility.
+	(Gopal,fixes Bug #2518)
+
+2003-02-17  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/Threading/WaitHandle.cs: Fix WaitOne() overloaded
+	methods to accept an exitContext parameter.
+
+	* tests/runtime/System/Threading/TestAutoResetEvent.cs,
+	tests/runtime/System/Threading/TestManualResetEvent.cs: update
+	test cases to match changes in pnetlib.
+
+2003-02-16  Adam Ballai <minddog@cannibutter.com>
+
+	* System.Xml/XmlQualifiedName.cs : Operator fix for == & !=.
+
+2003-02-16  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/Threading/WaitCallback.cs,
+	runtime/System/Threading/WaitOrTimerCallback.cs : implement these
+	two non-ECMA delegates.
+
+	* runtime/System/Threading/RegisteredWaitHandle.cs,
+	runtime/System/Threading/ThreadPool.cs : stub out some of the threading
+	classes.
+
+2003-02-15  Gopal.V  <gopalv82@symonds.net>
+	
+	* System/Net/Sockets/SocketException.cs,
+	System/ComponentModel/Win32Exception.cs : inherit SocketException
+	from Win32Exception if in non-ECMA build else inherit ExternalException.
+
+2003-02-14  Gopal.V  <gopalv82@symonds.net>
+	
+	* System/Text/RegularExpressions/ChangeLog,
+	System/Text/RegularExpressions/collections.cs,
+	System/Text/RegularExpressions/regex.cs : synchronize the 
+	imported tree with the original.
+
+	* runtime/System/Type.cs: Implement Type.FindMembers() method.
+
+2003-02-14  Yannis BRES <Yannis.BRES@sophia.inria.fr>
+	
+	* runtime/System/IO/Directory.cs: Directory.Exists() should not
+	throw DirectoryNotFoundException.
+	(Patch #1100, Gopal)
+
+	* System/Diagnostics/Process.cs: Fix Process.StartInfo to return
+	ProcessStartInfo .
+	(Patch #1103, Gopal)
+
+2003-02-14  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* I18N/I18N.build, JScript/JScript.build, System/System.build,
+	System.Xml/Xml.build, compat/compat.build, csunit/csunit.build,
+	csupport/csupport.build, runtime/runtime.build: add the
+	"-fminimize-parameters" option to the *.build files, to reduce
+	the sizes of the library assemblies.
+
+	* JScript/Builtins/GlobalObject.cs, JScript/Execute/GlobalField.cs,
+	JScript/Execute/JSField.cs, JScript/Vsa/BaseVsaEngine.cs,
+	JScript/Vsa/JScriptException.cs, JScript/Vsa/VsaEngine.cs,
+	System.Xml/XmlConvert.cs, System.Xml/XmlTextWriter.cs,
+	runtime/System/Reflection/Assembly.cs: fix some problems with
+	the ECMA-compatible build.
+
+2003-02-11  Yannis BRES <Yannis.BRES@sophia.inria.fr>
+	
+	* runtime/System/DateTime.cs, 
+	runtime/System/Globalization/GregorianCalendar.cs,
+	runtime/System/Globalization/HebrewCalendar.cs,
+	runtime/System/Globalization/JulianCalendar.cs : Fix the DayOfWeek
+	function to return System.DayOfWeek enum.
+	(Patch #1089, Gopal)
+
+2003-02-10  Marcus Urban  <mathpup@mylinuxisp.com>
+
+	* System/Collections/Specialized/NameValueCollection.cs:
+	handle null strings when looking up a name (Bug #2498).
+	
+2003-02-08  Marcus Urban  <mathpup@mylinuxisp.com>
+	
+	* runtime/System/IO/StreamWriter.cs: Console.WriteLine fails
+	when null string is passed. Fix (Bug #2499).
+
+2003-02-08  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Globalization/CultureInfo.cs,
+	runtime/System/Private/CultureNameTable.cs: use "" for the
+	invariant culture name instead of "iv" (Bug #2493).
+
+2003-02-07  Gopal.V  <gopalv82@symonds.net>
+
+	* runtime/System/Diagnostics/SymbolStore/ISymbolBinder.cs,
+	runtime/System/Diagnostics/SymbolStore/ISymbolDocument.cs,
+	runtime/System/Diagnostics/SymbolStore/ISymbolDocumentWriter.cs,
+	runtime/System/Diagnostics/SymbolStore/ISymbolMethod.cs,
+	runtime/System/Diagnostics/SymbolStore/ISymbolNamespace.cs,
+	runtime/System/Diagnostics/SymbolStore/ISymbolReader.cs,
+	runtime/System/Diagnostics/SymbolStore/ISymbolScope.cs,
+	runtime/System/Diagnostics/SymbolStore/ISymbolVariable.cs,
+	runtime/System/Diagnostics/SymbolStore/ISymbolWriter.cs,
+	runtime/System/Diagnostics/SymbolStore/SymAddressKind.cs,
+	runtime/System/Diagnostics/SymbolStore/SymbolToken.cs,
+	runtime/System/Diagnostics/SymbolStore/SymDocumentType.cs,
+	runtime/System/Diagnostics/SymbolStore/SymLanguageType.cs,
+	runtime/System/Diagnostics/SymbolStore/SymLanguageVendor.cs:
+	Add a few non-ECMA interfaces and stub out the rest of the 
+	System.Diagnostics.SymbolStore namespace.
+
+	* runtime/runtime.build: exclude the SymbolStore classes on
+	ECMA_COMPAT.
+	
+2003-02-08  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* configure.in, NEWS: update version and news for the 0.5.2 release.
+
+	* configure.in: update working version to "0.5.3".
+
+2003-02-07  Marcus Urban  <mathpup@mylinuxisp.com>
+
+	* runtime/System/Globalization/CompareInfo.cs: Handle empty string 
+	in DefaultCompare() correctly. For bug #2492.
+	(Gopal,#1084)
+
+2003-02-07  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/Private/DateTimeFormat/DateTimeFormatter.cs: fix
+	the format exception to use the builtin resource string.
+
+	* runtime/System/IO/FileNotFoundException.cs: Add a non-ECMA property
+	for compatibility.
+
+	* runtime/System/Reflection/Emit/OpCodes.cs: correct case of the
+	opcode names.
+	
+	* runtime/System/Type.cs: Add stub for non-ECMA GetTypeCode() method.
+
+2003-02-07  Michael Moore <mtmoore@uga.edu>
+
+	* runtime/System/Private/DateTimeFormat/DateTimeFormatter.cs: Add 
+	ECMA spec compatibility to ToString(format, dtfi) and ToString(format).
+	If format is a single character and not a valid single character formatter
+	a FormatException should be thrown.
+	(Gopal,1080)
+
+2003-02-01  Jonathan Springer <jonathan.springer@verizon.net>
+
+	* runtime/System/Private/NumberParser.cs:
+	Performance improvement (removed StringBuilder use).  Parses unsigned
+	exponents.  Parses decimals.
+
+	* runtime/System/Private/NumberFormat/Formatter.cs,
+	runtime/System/Private/NumberFormat/GeneralFormatter.cs,
+	runtime/System/Private/NumberFormat/HexadecimalFormatter.cs:
+	Bug fixes to floating point.  First "real" implementation of
+	decimal formatting (to be honest).
+
+	* tests/runtime/System/SuiteSystem.cs,
+	tests/runtime/System/TestDecimal.cs,
+	tests/runtime/System/TestDouble.cs:
+	Tests for the above fixes and for decimal parsing/formatting.
+
+2003-02-02  Michael Moore <mtmoore@uga.edu>
+	
+	* runtime/System/Private/DateTimeFormatter.cs: move this
+	into a new directory.
+
+	* runtime/System/Private/DateTimeFormat/,
+	runtime/System/Private/DateTimeFormat/DateTimeFormatTemplate.cs,
+	runtime/System/Private/DateTimeFormat/DateTimeParser.cs,
+	runtime/System/Private/DateTimeFormat/DateTimeFormatter.cs,
+	runtime/System/Private/DateTimeFormat/ParsedDateTime.cs: new
+	directory for the DateTime formatting and parsing stuff.
+	(Gopal)
+
+2003-02-02  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/Collection/ArrayList.cs: double the size of
+	the array when reallocating, rather than just adding 32.
+
+2003-02-02  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/IO/BufferedStream.cs: fix minor bug.
+
+	* runtime/System/DateTime.cs: connect the DateTimeParser stuff
+	to the public API.
+
+2003-02-01  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/ResolveEventArgs.cs,
+	runtime/System/ResolveEventHandler.cs,
+	runtime/System/IO/DirectoryInfo.cs,
+	runtime/System/IO/FileAttributes.cs,
+	runtime/System/IO/FileInfo.cs,
+	runtime/System/IO/FileSystemInfo.cs,
+	runtime/System/AppDomain.cs
+	runtime/System/AppDomainSetup.cs
+	runtime/System/IAppDomainSetup.cs
+	runtime/System/LoaderOptimization.cs
+	runtime/System/Security/Policy/Evidence.cs: add some non-ECMA classes
+	that are required by SharpDevelop.
+
+	* System/Configuration/ConfigXmlDocument.cs,
+	System/Configuration/ConfigurationException.cs,
+	System/Configuration/ConfigurationSettings.cs,
+	System/Configuration/IConfigXmlNode.cs,
+	System/Configuration/IConfigurationSectionHandler.cs,
+	System/Configuration/IConfigurationSystem.cs,
+	System/Configuration/Makefile: implement some of the
+	System.Configuration classes.
+
+	* Makefile.am, System/.cvsignore, System/Makefile.am,
+	System/System.build, System/Configuration/ConfigXmlDocument.cs,
+	System/Configuration/ConfigurationException.cs,
+	System.Xml/Xml.build: implement a two-phase build process for
+	System.dll because of its circular dependency on System.Xml.
+
+	* System.Xml/XmlAttribute.cs, System.Xml/XmlCDataSection.cs,
+	System.Xml/XmlCharacterData.cs, System.Xml/XmlComment.cs,
+	System.Xml/XmlDeclaration.cs, System.Xml/XmlDocumentType.cs,
+	System.Xml/XmlElement.cs, System.Xml/XmlEntityReference.cs,
+	System.Xml/XmlProcessingInstruction.cs,
+	System.Xml/XmlSignificantWhitespace.cs,
+	System.Xml/XmlText.cs, System.Xml/XmlWhitespace.cs:
+	add extra "protected internal" constructors to the Xml node
+	types that are required for .NET SDK compatibility.
+
+	* runtime/System/AppDomain.cs: stub out AppDomain.SetCachePath.
+
+2003-01-28  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* runtime/System/IO/StreamWriter.cs: default UTF8 behaviour
+	should not have byte order marks.
+
+2003-01-27  Adam Ballai	 <minddog@cannibutter.com>
+
+	* System.Xml/XmlDocument.cs, System.Xml/XmlTextReader.cs: Implemented ReadNode
+	and Load methods.  Adding support for applications written for
+	Rdf parsing using XmlDocument.  Parsing of XmlDeclarations and
+	ProcessingInstructions fixed up a bit.
+	* System.Xml/XmlDocument.cs, System.Xml/XmlTextReader.cs: Fixed up
+	bugs found from rdf parsing and added Namespace support to
+	XmlTextReader.
+	* System.Xml/XmlTextReader.cs : BUG #2405 fix. Added better depth
+	control.
+
+2003-01-26  Adam Ballai  <minddog@cannibutter.com>
+	
+	* System.Xml/XmlTextReader.cs : BUG #2402 fix.
+
+2003-01-26  Gopal.V  <gopalv82@symonds.net>
+
+	* System.Xml/Xml.build : disable Schema for ECMA_COMPAT builds.
+
+	* runtime/System/IO/BufferedStream.cs: Add this class for compatibilty
+	with external libraries.
+
+	* runtime/System/Security/SuppressUnmanagedCodeSecurityAttribute.cs:
+	Class added for certain external libraries.
+
+2003-01-26  Adam Ballai  <minddog@cannibutter.com>
+
+	* System.Xml/Schema, System.Xml/Schema/ValidationEventArgs.cs,
+	System.Xml/Schema/ValidationEventHandler.cs, 
+	System.Xml/Schema/XmlSchema.cs, System.Xml/Schema/XmlSchemaAll.cs, 
+	System.Xml/Schema/XmlSchemaAnnotated.cs, 
+	System.Xml/Schema/XmlSchemaAnnotation.cs, 
+	System.Xml/Schema/XmlSchemaAny.cs, 
+	System.Xml/Schema/XmlSchemaAnyAttribute.cs, 
+	System.Xml/Schema/XmlSchemaAppInfo.cs, 
+	System.Xml/Schema/XmlSchemaAttribute.cs, 
+	System.Xml/Schema/XmlSchemaAttributeGroup.cs, 
+	System.Xml/Schema/XmlSchemaAttributeGroupRef.cs, 
+	System.Xml/Schema/XmlSchemaChoice.cs,
+	System.Xml/Schema/XmlSchemaCollection.cs, 
+	System.Xml/Schema/XmlSchemaCollectionEnumerator.cs, 
+	System.Xml/Schema/XmlSchemaComplexContent.cs, 
+	System.Xml/Schema/XmlSchemaComplexContentExtension.cs, 
+	System.Xml/Schema/XmlSchemaComplexContentRestriction.cs, 
+	System.Xml/Schema/XmlSchemaComplexType.cs,
+	System.Xml/Schema/XmlSchemaContent.cs, 
+	System.Xml/Schema/XmlSchemaContentModel.cs, 
+	System.Xml/Schema/XmlSchemaContentProcessing.cs, 
+	System.Xml/Schema/XmlSchemaContentType.cs, 
+	System.Xml/Schema/XmlSchemaDatatype.cs, 
+	System.Xml/Schema/XmlSchemaDerivationMethod.cs,	
+	System.Xml/Schema/XmlSchemaDocumentation.cs,
+	System.Xml/Schema/XmlSchemaElement.cs, 
+	System.Xml/Schema/XmlSchemaEnumerationFacet.cs,
+	System.Xml/Schema/XmlSchemaException.cs, 
+	System.Xml/Schema/XmlSchemaExternal.cs,
+	System.Xml/Schema/XmlSchemaFacet.cs, 
+ 	System.Xml/Schema/XmlSchemaForm.cs,
+	System.Xml/Schema/XmlSchemaFractionDigitsFacet.cs,
+ 	System.Xml/Schema/XmlSchemaGroup.cs,
+	System.Xml/Schema/XmlSchemaGroupBase.cs, 
+ 	System.Xml/Schema/XmlSchemaGroupRef.cs,	
+	System.Xml/Schema/XmlSchemaIdentityConstraint.cs,
+ 	System.Xml/Schema/XmlSchemaImport.cs, 
+	System.Xml/Schema/XmlSchemaInclude.cs, 
+ 	System.Xml/Schema/XmlSchemaKey.cs, 
+	System.Xml/Schema/XmlSchemaKeyref.cs, 
+ 	System.Xml/Schema/XmlSchemaLengthFacet.cs, 
+	System.Xml/Schema/XmlSchemaMaxExclusiveFacet.cs, 
+ 	System.Xml/Schema/XmlSchemaMaxInclusiveFacet.cs,
+	System.Xml/Schema/XmlSchemaMaxLengthFacet.cs, 
+ 	System.Xml/Schema/XmlSchemaMinExclusiveFacet.cs,
+	System.Xml/Schema/XmlSchemaMinInclusiveFacet.cs, 
+ 	System.Xml/Schema/XmlSchemaMinLengthFacet.cs,
+	System.Xml/Schema/XmlSchemaNotation.cs, 
+ 	System.Xml/Schema/XmlSchemaNumericFacet.cs,
+	System.Xml/Schema/XmlSchemaObject.cs, 
+ 	System.Xml/Schema/XmlSchemaObjectCollection.cs,
+	System.Xml/Schema/XmlSchemaObjectEnumerator.cs, 
+ 	System.Xml/Schema/XmlSchemaObjectTable.cs,
+	System.Xml/Schema/XmlSchemaParticle.cs, 
+ 	System.Xml/Schema/XmlSchemaPatternFacet.cs,
+	System.Xml/Schema/XmlSchemaReader.cs, 
+ 	System.Xml/Schema/XmlSchemaRedefine.cs,
+	System.Xml/Schema/XmlSchemaSequence.cs, 
+ 	System.Xml/Schema/XmlSchemaSimpleContent.cs,
+	System.Xml/Schema/XmlSchemaSimpleContentExtension.cs, 
+ 	System.Xml/Schema/XmlSchemaSimpleContentRestriction.cs,
+	System.Xml/Schema/XmlSchemaSimpleType.cs, 
+ 	System.Xml/Schema/XmlSchemaSimpleTypeContent.cs,
+	System.Xml/Schema/XmlSchemaSimpleTypeList.cs, 
+ 	System.Xml/Schema/XmlSchemaSimpleTypeRestriction.cs,
+	System.Xml/Schema/XmlSchemaSimpleTypeUnion.cs, 
+ 	System.Xml/Schema/XmlSchemaTotalDigitsFacet.cs,
+	System.Xml/Schema/XmlSchemaType.cs, 
+	System.Xml/Schema/XmlSchemaUnique.cs,
+	System.Xml/Schema/XmlSchemaUse.cs, 
+ 	System.Xml/Schema/XmlSchemaWhiteSpaceFacet.cs,
+	System.Xml/Schema/XmlSchemaXPath.cs,
+	System.Xml/Schema/XmlSeverityType.cs : Added stubs for System.Xml.Schema 
+	namespace.
+
+2003-01-22  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* JScript/Builtins/ArrayObject.cs, JScript/Builtins/FunctionObject.cs,
+	JScript/Execute/ActivationObject.cs, JScript/Execute/BlockScope.cs,
+	JScript/Execute/Convert.cs, JScript/Execute/IVariableAccess.cs,
+	JScript/Execute/JSObject.cs, JScript/Execute/PropertyAttributes.cs,
+	JScript/Execute/ScriptObject.cs, JScript/Execute/WithScope.cs,
+	JScript/Execute/FunctionScope.cs, JScript/Execute/NullEnumerator.cs,
+	JScript/Jsc/ForIn.cs, JScript/Jsc/NumericBinary.cs,
+	JScript/Jsc/NumericUnary.cs, JScript/Nodes/JExpr.tc,
+	JScript/Nodes/JNode.tc, JScript/Nodes/JStmt.tc: implement function
+	calls; "for-in" statements; variable declarations; property enums.
+
+2003-01-20  Adam Ballai <minddog@cannibutter.com>
+	
+	* System.Xml/XmlTextReader.cs: Fix bug #2250.
+	* tests/System.Xml/TestXmlTextReader.cs: Fix Read test case up for
+	accuracy.
+
+2003-01-19  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/Reflection/MemberFilter.cs: Add this delegate for
+	.NET compatibility.
+
+2003-01-18  Gopal.V  <gopalv82@symonds.net>
+	
+	* System.Xml/XmlTextWriter.cs: Change LookupPrefix to conform to 
+	ECMA standards (as suggested by Atsushi Enomoto).
+
+2003-01-17  Adam Ballai	 <minddog@cannibutter.com>
+
+	* System.Xml/XmlTextReader.cs: Cleaned up Read Method and
+	added a few more comments for reference.
+	* System.Xml/XmlTextReader.cs: Fix ReadOuterXml since change
+	in Read Method.
+	* System.Xml/XmlTextReader.cs, 
+	tests/System.Xml/TestXmlTextReader.cs,
+	tests/System.Xml/TestXml.cs: Fix a few more bugs. Add TestXmlTestReader
+	test case to TestXml.
+
+2003-01-17  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* JScript/Builtins/FunctionObject.cs,
+	JScript/Execute/ActivationObject.cs, JScript/Execute/Convert.cs,
+	JScript/Execute/DBNull.cs, JScript/Execute/IVariableAccess.cs,
+	JScript/Execute/ScriptFunction.cs, JScript/Execute/Support.cs,
+	JScript/Execute/WithScope.cs, JScript/Jsc/Equality.cs,
+	JScript/Jsc/In.cs, JScript/Jsc/StrictEquality.cs,
+	JScript/Nodes/JExpr.tc, JScript/Nodes/JNode.tc,
+	doc/JScript-internals.txt: implement evaluation logic for
+	JScript expressions.
+
+	* ChangeLog, doc/ChangeLog-2: archive the bulk of ChangeLog
+	into the doc directory to shorten it.
+
+2003-01-16  Jonathan Springer  <jonathan.springer@verizon.net>
+
+	* runtime/System/Private/NumberParser.cs,
+	runtime/System/Private/NumberFormat/GeneralFormatter.cs, 
+	runtime/System/Private/NumberFormat/ScientificFormatter.cs:
+	Fix several bugs related to floating point parsing and formatting (#2222).
+
+	* tests/runtime/System/TestDouble.cs:  Update test cases to include
+	conditions identified in bug report #2222.
+
+2003-01-16  Adam Ballai  <minddog@cannibutter.com>
+
+	* System.Xml/XmlTextReader.cs: Fixed '/' #2230 reported by gopal.
+	* System.Xml/XmlTextReader.cs: Fixed NodeType setting bug.
+	* System.Xml/XmlTextReader.cs: Fixed Name and Value setting bug.
+
+2003-01-16  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/Reflection/Assembly.cs: partially implement GetName
+	to support some external libraries.
+	
+	* runtime/System/Double.cs: fix the default format for Double.ToString
+	(Bug #2223).
+
+	* runtime/System/Double.cs: Check out the last change made as it broke
+	some tests.
+
+2003-01-15  Adam Ballai  <minddog@cannibutter.com>
+
+	* System.Xml/XmlTextWriter.cs: WriteString and WriteRaw
+	now output correctly.  
+	* System.Xml/XmlTextReader.cs: Renamed Read to ReadNode
+	and now internal method.  The new Read operates similar to 
+	other runtime libraries available for predicatable behavior
+	across platforms.
+	* System.Xml/XmlTextWriter.cs: Reversed last edit till further
+	research.
+	
+2003-01-14  Adam Ballai  <minddog@cannibutter.com>
+
+	* System.Xml/XmlTextReader.cs: Fix ReadOuterXml missing certain
+	characters.
+	* System.Xml/XmlTextReader.cs: Fixed up second bug.
+
+2003-01-14  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* JScript/Builtins/ArrayPrototype.cs,
+	JScript/Builtins/FunctionConstructor.cs,
+	JScript/Builtins/FunctionPrototype.cs,
+	JScript/Builtins/GlobalObject.cs,
+	JScript/Builtins/ObjectConstructor.cs,
+	JScript/Builtins/ObjectPrototype.cs,
+	JScript/Execute/ActivationObject.cs,
+	JScript/Execute/DefaultValueHint.cs,
+	JScript/Execute/JSObject.cs, JScript/Execute/ScriptFunction.cs,
+	JScript/Execute/ScriptObject.cs, JScript/Execute/Support.cs,
+	JScript/Jsc/Globals.cs, JScript/Nodes/JExpr.tc,
+	doc/JScript-internals.txt: bring the names of builtin properties
+	and functions into alignment with the names in ECMA-262.
+
+	* JScript/jsrun.cs, JScript/Execute/Support.cs,
+	JScript/Nodes/JExpr.tc, JScript/Parser/JSParser.cs,
+	JScript/Vsa/VsaCodeItem.cs, JScript/Vsa/VsaEngine.cs: make
+	the "print" function work in jsrun.
+
+2003-01-13  Adam Ballai  <minddog@cannibutter.com>
+
+	* System.Xml/XmlTextWriter.cs: Implemented CDATA, ProcessInstructions,
+	and fixed some minor bugs in Read.
+
+2003-01-13  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* Makefile.am, configure.in, JScript/*, doc/JScript-embed.txt,
+	doc/JScript-internals.txt, tests/Makefile.am, tests/JScript/*,
+	tools/run_test.sh.in: perform the initial check-in of the
+	JScript implementation (requires treecc 0.2.0 or higher).
+
+2003-01-13  Gopal.V  <gopalv82@symonds.net>
+	
+	* runtime/System/Reflection/Assembly.cs: Add some new methods for
+	supporting some external libraries.
+
+	* System.Xml/XmlTextWriter.cs: Remove Console.WriteLine accidentally
+	checked in.
+
+2003-01-12  Gopal.V  <gopalv82@symonds.net>
+	
+	* System.Xml/XmlElement.cs: Fix minor bug with setting the InnerText
+
+	* System.Xml/XmlTextReader.cs: Fix another minor bug with parsing 
+	xml fragments.
+
+2003-01-12  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* System/Diagnostics/Debug.cs: implement the debug assert routines
+	using simple "report to stderr" behaviour.
+
+2003-01-12  Adam Ballai  <minddog@cannibutter.com>
+
+	* System.Xml/XmlTextReader.cs: Attributes, Value, and Terminating
+	Statement bugs fixed.  
+
+2003-01-11  Thong Nguyen <tum@veridicus.com>
+
+	* tests/runtime/Testruntime.cs,
+	tests/runtime/System/Threading/SuiteThreading.cs,
+	tests/runtime/System/Threading/TestAutoResetEvent.cs,
+	tests/runtime/System/Threading/TestManualResetEvent.cs,
+	tests/runtime/System/Threading/TestWaitHandle.cs: Added unit tests for
+	WaitHandles, AutoResetEvents and ManualResetEvents.
+
+2003-01-11  Rhys Weatherley  <rweather@southern-storm.com.au>
+
+	* configure.in, NEWS: update version and news for the 0.5.0 release.
+
+	* configure.in: update working version to "0.5.1".

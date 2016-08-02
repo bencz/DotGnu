@@ -1,0 +1,183 @@
+
+Introduction
+------------
+
+This is the HACKING file for the "pnetC" project.  It describes how you can
+get started on the development side, and provides a roadmap for the main
+areas of the code.
+
+The goal of the "pnetC" project is to create an ANSI-compatible C library,
+that can be compiled down to IL using Portable.NET's "cscc" compiler.
+
+Hopefully the "cscc" compiler will eventually get to the point that it can
+bootstrap glibc, but in the meantime we need a library in place that we
+can use to get going.
+
+The license on the C library will be LGPL, to be consistent with glibc.
+
+Requirements
+------------
+
+- A recent version of the "pnet" package installed
+- GNU make 3.79.1 or later
+- Automake 1.4 or later
+- Autoconf 2.13 or later
+- Cygwin environment (Windows only)
+
+"pnetC" depends upon the Portable.NET "pnet" package to build.  The latest
+release version can be obtained here:
+
+    http://www.southern-storm.com.au/portable_net.html
+
+Or it can be obtained from the Portable.NET CVS server.  The CVS version
+is recommended, as the public version may lag behind in bug fixes.
+
+Obtaining a development version of "pnetC"
+------------------------------------------
+
+The most up to date version of "pnetC" is always the version in CVS on
+savannah.gnu.org.  This is the preferred version to use to make changes.
+To check out the sources via anonymous CVS, use the following commands:
+
+    export CVS_RSH="ssh"
+    cvs -z3 -d:ext:anoncvs@savannah.gnu.org:/cvsroot/dotgnu-pnet
+            co pnetC
+
+If you already have a version checked out, then cd to your "pnetC"
+working directory and use the following command:
+
+    cvs -z3 update -d
+
+The "-d" is important.  You won't get newly created directories from the
+repository if you omit it.
+
+Building "pnetC"
+----------------
+
+If you have checked out the CVS version, you will first have to do the
+following to generate the automake/autoconf output files:
+
+    $ ./auto_gen.sh
+
+The release version already has the output files generated for you.
+Use that if you don't have automake and autoconf on your system.
+
+Build and install "pnet" first, and then build "pnetC" as follows:
+
+    $ ./configure    (or ./configure --prefix=PATH)
+    $ make
+
+Using "make distclean" will return your tree to a pristine pre-configure
+state.  Always test your patches on a pristine build that has been updated
+from the CVS repository before submitting them.
+
+If you use the "--with-32bit" option to "configure", it will build the
+"32-bit only" version of "pnetC", instead of the default 64-bit version.
+Note: the 64-bit version works on both 32-bit and 64-bit runtime engines,
+so you normally won't need the 32-bit version.
+
+Quick Roadmap
+-------------
+
+The following is a quick roadmap to the directories in the "pnetC" source:
+
+    doc
+
+        Documentation files, including this "HACKING" file.
+
+    include
+
+        The include files that define the library's API.  These will be
+        installed into "${prefix}/lib/cscc/include" when "make install"
+        is performed.
+
+    libc
+
+        The primary C library, which normally builds to "libc64.dll" or
+        "libc32.dll".  Sub-directories contain source for each major
+        component of the library.
+
+    libm
+
+        The C math library, which normally builds to "libm64.dll" or
+        "libc32.dll".  This library is small enough that sub-directories
+        aren't required for code organisation.
+
+    samples
+
+        Some sample programs that use the library.
+
+Standards
+---------
+
+Where possible, you should use the "Single Unix Specification, Version 3"
+(susv3) as your primary guide for what the library should contain.  See
+"http://www.unix-systems.org/" for a downloadable HTML copy.
+
+If there is some latitude in interpretation, you should use "glibc" as
+a guide to implementation.  Or just lift the glibc version and adapt it
+for use in "pnetC".
+
+Working on the code
+-------------------
+
+The recommended steps for contributing code to "pnetC" are as follows:
+
+    - Write the header files and place them in "include".  Use "susv3"
+      as the guide to what the header should contain.
+    - Implement the functions, one per source file, in the appropriate
+      sub-directory of "libc" or "libm" (or simply copy the glibc code).
+      More than one function can be in a single source if they are
+	  obviously in the same group or variants of each other.
+    - Compile and test.
+
+Note: if you just want to contribute header files, then that is fine.
+You don't have to write the implementation also if you don't feel
+comfortable doing so.
+
+Coding Guidelines
+-----------------
+
+A. Use plain vanilla ANSI C at all times, and follow the GNU C coding
+   guidelines (with TAB's at 8, not 4).  e.g. the following is "strlen":
+
+        size_t
+        strlen (const char *s)
+        {
+          size_t len = 0;
+          while (*s++ != '\0')
+            {
+               ++len;
+            }
+          return len;
+        }
+
+   I've chosen the GNU style, rather than my regular C coding style,
+   because it is more common amongst C programmers in the GNU community,
+   and it will make it easier to reuse glibc code for some components,
+   without creating inconsistencies in coding style.
+
+B. Try to resist the urge to "embrace and extend" beyond susv3 for the
+   time being.  If users want a "super" C library, they can use glibc
+   once we can bootstrap it.
+
+C. Mark functionality that is still to be done with "/* TODO */".
+
+D. Avoid RCS source tags like "Date" and "Log".  They tend to make the
+   code look ugly, and are difficult to keep consistent when code is
+   copied from one source repository to another.  Change information
+   should instead be placed in the ChangeLog file:
+
+        2002-08-16  John Smith  <john@smith.com>
+
+                * libc/foo/bar.c: implement the "bar" function within
+                  the "foo" component.
+
+   This will acknowledge who did what to which file and when.  It is
+   also easier to scan through the ChangeLog file when building the
+   NEWS entry for each major release.
+
+E. Don't worry about supporting K&R style function prototypes, unless
+   you are adapting code imported from glibc or some other package.
+   The "cscc" compiler is ANSI, and the IL environment doesn't work
+   too well when K&R prototyping is used.

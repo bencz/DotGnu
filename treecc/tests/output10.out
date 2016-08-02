@@ -1,0 +1,457 @@
+line 4: %option lang Java
+line 5: %option package org.test
+line 7: %node type_code no_parent 14
+line 9: %node int_type type_code 16
+line 10: %node float_type type_code 16
+line 13: %node expression no_parent 6
+line 15: %field type type_code type_code.int_type 1
+line 18: %node binary expression 2
+line 20: %field expr1 expression no_value 0
+line 21: %field expr2 expression no_value 0
+line 24: %node unary expression 2
+line 27: %field expr expression no_value 0
+line 31: %node intnum expression 0
+line 33: %field num int no_value 0
+line 36: %node plus binary 0
+line 37: %node minus binary 0
+line 38: %node multiply binary 0
+line 39: %node divide binary 0
+line 40: %node negate unary 0
+line 41: %node power binary 0
+line 43: %operation void Infer::infer_type 2
+line 43: %param expression e 1
+line 45: %case binary infer_type
+line 65: %case unary infer_type
+line 71: %case intnum infer_type
+line 76: %case power infer_type
+/* Infer.java.  Generated automatically by treecc */
+
+package org.test;
+
+import java.lang.*;
+
+public class Infer
+{
+	public static void infer_type(expression e__)
+	{
+		switch(e__.getKind())
+		{
+			case power.KIND:
+			{
+				power e = (power)e__;
+				{
+					infer_type(e.expr1);
+					infer_type(e.expr2);
+				
+					if(e.expr2.type != type_code.int_type)
+					{
+						error("second sub-expression to `^' is not an integer");
+					}
+				
+					e.type = e.expr1.type;
+				}
+			}
+			break;
+
+			case binary.KIND:
+			case plus.KIND:
+			case minus.KIND:
+			case multiply.KIND:
+			case divide.KIND:
+			{
+				binary e = (binary)e__;
+				{
+					type_code type1, type2;
+				
+					infer_type(e.expr1);
+					type1 = e.expr1.type;
+				
+					infer_type(e.expr2);
+					type2 = e.expr2.type;
+				
+					if(type1 == type_code.float_type || type_code.type2 == float_type)
+					{
+						e.type = type_code.float_type;
+					}
+					else
+					{
+						e.type = type_code.int_type;
+					}
+				}
+			}
+			break;
+
+			case unary.KIND:
+			case negate.KIND:
+			{
+				unary e = (unary)e__;
+				{
+					infer_type(e.expr);
+					e.type = e.expr.type;
+				}
+			}
+			break;
+
+			case intnum.KIND:
+			{
+				intnum e = (intnum)e__;
+				{
+					e.type = type_code.int_type;
+				}
+			}
+			break;
+
+			default: break;
+		}
+	}
+}
+/* type_code.java.  Generated automatically by treecc */
+
+package org.test;
+
+import java.lang.*;
+
+public class type_code
+{
+	public static final int int_type = 0;
+	public static final int float_type = 1;
+}
+/* negate.java.  Generated automatically by treecc */
+
+package org.test;
+
+import java.lang.*;
+
+public class negate extends unary
+{
+	public static final int KIND = 12;
+
+	public negate(expression expr)
+	{
+		super(expr);
+		this.kind__ = KIND;
+	}
+
+	public int isA(int kind)
+	{
+		if(kind == KIND)
+			return 1;
+		else
+			return super.isA(kind);
+	}
+
+	public String getKindName()
+	{
+		return "negate";
+	}
+}
+/* power.java.  Generated automatically by treecc */
+
+package org.test;
+
+import java.lang.*;
+
+public class power extends binary
+{
+	public static final int KIND = 13;
+
+	public power(expression expr1, expression expr2)
+	{
+		super(expr1, expr2);
+		this.kind__ = KIND;
+	}
+
+	public int isA(int kind)
+	{
+		if(kind == KIND)
+			return 1;
+		else
+			return super.isA(kind);
+	}
+
+	public String getKindName()
+	{
+		return "power";
+	}
+}
+/* divide.java.  Generated automatically by treecc */
+
+package org.test;
+
+import java.lang.*;
+
+public class divide extends binary
+{
+	public static final int KIND = 11;
+
+	public divide(expression expr1, expression expr2)
+	{
+		super(expr1, expr2);
+		this.kind__ = KIND;
+	}
+
+	public int isA(int kind)
+	{
+		if(kind == KIND)
+			return 1;
+		else
+			return super.isA(kind);
+	}
+
+	public String getKindName()
+	{
+		return "divide";
+	}
+}
+/* multiply.java.  Generated automatically by treecc */
+
+package org.test;
+
+import java.lang.*;
+
+public class multiply extends binary
+{
+	public static final int KIND = 10;
+
+	public multiply(expression expr1, expression expr2)
+	{
+		super(expr1, expr2);
+		this.kind__ = KIND;
+	}
+
+	public int isA(int kind)
+	{
+		if(kind == KIND)
+			return 1;
+		else
+			return super.isA(kind);
+	}
+
+	public String getKindName()
+	{
+		return "multiply";
+	}
+}
+/* minus.java.  Generated automatically by treecc */
+
+package org.test;
+
+import java.lang.*;
+
+public class minus extends binary
+{
+	public static final int KIND = 9;
+
+	public minus(expression expr1, expression expr2)
+	{
+		super(expr1, expr2);
+		this.kind__ = KIND;
+	}
+
+	public int isA(int kind)
+	{
+		if(kind == KIND)
+			return 1;
+		else
+			return super.isA(kind);
+	}
+
+	public String getKindName()
+	{
+		return "minus";
+	}
+}
+/* plus.java.  Generated automatically by treecc */
+
+package org.test;
+
+import java.lang.*;
+
+public class plus extends binary
+{
+	public static final int KIND = 8;
+
+	public plus(expression expr1, expression expr2)
+	{
+		super(expr1, expr2);
+		this.kind__ = KIND;
+	}
+
+	public int isA(int kind)
+	{
+		if(kind == KIND)
+			return 1;
+		else
+			return super.isA(kind);
+	}
+
+	public String getKindName()
+	{
+		return "plus";
+	}
+}
+/* intnum.java.  Generated automatically by treecc */
+
+package org.test;
+
+import java.lang.*;
+
+public class intnum extends expression
+{
+	public static final int KIND = 7;
+
+	public int num;
+
+	public intnum(int num)
+	{
+		super();
+		this.kind__ = KIND;
+		this.num = num;
+	}
+
+	public int isA(int kind)
+	{
+		if(kind == KIND)
+			return 1;
+		else
+			return super.isA(kind);
+	}
+
+	public String getKindName()
+	{
+		return "intnum";
+	}
+}
+/* unary.java.  Generated automatically by treecc */
+
+package org.test;
+
+import java.lang.*;
+
+public class unary extends expression
+{
+	public static final int KIND = 6;
+
+	public expression expr;
+
+	protected unary(expression expr)
+	{
+		super();
+		this.kind__ = KIND;
+		this.expr = expr;
+	}
+
+	public int isA(int kind)
+	{
+		if(kind == KIND)
+			return 1;
+		else
+			return super.isA(kind);
+	}
+
+	public String getKindName()
+	{
+		return "unary";
+	}
+}
+/* binary.java.  Generated automatically by treecc */
+
+package org.test;
+
+import java.lang.*;
+
+public class binary extends expression
+{
+	public static final int KIND = 5;
+
+	public expression expr1;
+	public expression expr2;
+
+	protected binary(expression expr1, expression expr2)
+	{
+		super();
+		this.kind__ = KIND;
+		this.expr1 = expr1;
+		this.expr2 = expr2;
+	}
+
+	public int isA(int kind)
+	{
+		if(kind == KIND)
+			return 1;
+		else
+			return super.isA(kind);
+	}
+
+	public String getKindName()
+	{
+		return "binary";
+	}
+}
+/* expression.java.  Generated automatically by treecc */
+
+package org.test;
+
+import java.lang.*;
+
+public class expression
+{
+	protected int kind__;
+	protected String filename__;
+	protected long linenum__;
+
+	public int getKind() { return kind__; }
+	public String getFilename() { return filename__; }
+	public long getLinenum() { return linenum__; }
+	public void setFilename(String filename) { filename__ = filename; }
+	public void setLinenum(long linenum) { linenum__ = linenum; }
+
+	public static final int KIND = 4;
+
+	public int type;
+
+	protected expression()
+	{
+		this.kind__ = KIND;
+		this.filename__ = YYNODESTATE.getState().currFilename();
+		this.linenum__ = YYNODESTATE.getState().currLinenum();
+		this.type = type_code.int_type;
+	}
+
+	public int isA(int kind)
+	{
+		if(kind == KIND)
+			return 1;
+		else
+			return 0;
+	}
+
+	public String getKindName()
+	{
+		return "expression";
+	}
+}
+/* YYNODESTATE.java.  Generated automatically by treecc */
+
+package org.test;
+
+import java.lang.*;
+
+public class YYNODESTATE
+{
+
+	private static YYNODESTATE state__;
+
+	public static YYNODESTATE getState()
+	{
+		if(state__ != null) return state__;
+		state__ = new YYNODESTATE();
+		return state__;
+	}
+
+	public YYNODESTATE() { state__ = this; }
+
+	public String currFilename() { return null; }
+	public long currLinenum() { return 0; }
+
+}

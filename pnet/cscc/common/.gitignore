@@ -1,0 +1,6 @@
+Makefile
+Makefile.in
+.deps
+cc_cppdefs.c
+*.o
+*.a

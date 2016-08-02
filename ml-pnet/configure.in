@@ -1,0 +1,337 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(class/Mono.Directory.LDAP/Mono.Directory.LDAP.build)
+AM_INIT_AUTOMAKE(ml-pnet, 0.8.1)
+AM_MAINTAINER_MODE
+
+dnl Extra substitution variables.
+AC_SUBST(CSANT)
+AC_SUBST(CSANT_FLAGS)
+AC_SUBST(CSHARP_COMPILER)
+AC_SUBST(CSHARP_COMPILER_CYGWIN)
+AC_SUBST(CSHARP_PLUGIN)
+AC_SUBST(CSCC_FLAGS)
+AC_SUBST(PNET_PATH)
+AC_SUBST(ILRUN)
+AC_SUBST(ML_PNET_PATH)
+AC_SUBST(MONO_SOURCE_PATH)
+AC_SUBST(DEBUG_FLAG)
+AC_SUBST(CYG_ILGAC)
+AC_SUBST(CYG_CACHE)
+
+dnl Checks for programs.
+AC_PROG_AWK
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_PROG_CC
+AC_PATH_PROG(CYGPATH, cygpath)
+
+AC_PATH_PROG(TREECC, treecc,, ${prefix}/bin:$PATH)
+if test -z "$TREECC" ; then
+    echo "treecc is required to build and can be obtained from"
+    echo "http://www.southern-storm.com.au/treecc.html"
+    exit 1
+fi
+TREECC_VERSION=`"$TREECC" -v | (read name version rest; echo $version)`
+AC_SUBST(TREECC_VERSION)
+
+ML_PNET_PATH="`pwd`"
+
+dnl The --with-pnet option can be used to specify the location of
+dnl Portable.NET, so that we know where to get the C# compiler, etc.
+dnl The default location is assumed to be "../pnet".
+AC_ARG_WITH(pnet,
+[  --with-pnet=DIR         specify the location of Portable.NET],
+[
+	if test -n "$withval"; then
+		case "$withval" in
+		  ../*) PNET_PATH="`pwd`/$withval" ;;
+		     *) PNET_PATH="$withval" ;;
+		esac
+	else
+		PNET_PATH="`pwd`/../pnet"
+	fi
+],
+[
+	PNET_PATH="`pwd`/../pnet"
+])
+
+dnl Find the Portable.NET runtime engine.
+AC_PATH_PROG(ILRUN, ilrun,, $PNET_PATH/engine:${prefix}/bin:$PATH)
+if test "$ILRUN" = "" ; then
+	echo '**************************************************************'
+	echo "Portable.NET is required to run the test suite."
+	echo "Use the --with-pnet option to specify Portable.NET's location."
+	echo '**************************************************************'
+	exit 1
+fi
+
+dnl The --with-pnetlib option can be used to specify the location of
+dnl the Portable.NET C# library, so that we know where to get the
+dnl mscorlib.dll assembly to use with "ilrun".  The default location
+dnl is assumed to be "../pnetlib".
+AC_SUBST(PNETLIB_PATH)
+AC_ARG_WITH(pnetlib,
+[  --with-pnetlib=DIR      specify the location of pnetlib],
+[
+	if test -n "$withval"; then
+		case "$withval" in
+		  ../*) PNETLIB_PATH="`pwd`/$withval"
+		        PNETLIB_CHECK_PATH="$withval" ;;
+		     *) PNETLIB_PATH="$withval"
+			    PNETLIB_CHECK_PATH="$withval" ;;
+		esac
+	else
+		PNETLIB_PATH="`pwd`/../pnetlib"
+		PNETLIB_CHECK_PATH="../pnetlib"
+	fi
+],
+[
+	PNETLIB_PATH="`pwd`/../pnetlib"
+	PNETLIB_CHECK_PATH="../pnetlib"
+])
+
+dnl The --with-mono-sources option is used to specify the location
+dnl of the Mono source tree.
+AC_MSG_CHECKING(for mono source tree)
+MONO_SOURCE_PATH=""
+AC_ARG_WITH(mono-sources,
+[  --with-mono-sources=DIR specify the location of the Mono source tree],
+[
+	if test -n "$withval"; then
+		case "$withval" in
+		  ../*) MONO_SOURCE_PATH="`pwd`/$withval" ;;
+		     *) MONO_SOURCE_PATH="$withval" ;;
+		esac
+	fi
+])
+if test "x$MONO_SOURCE_PATH" = "x" ; then
+	# Try looking in some likely default locations.
+	if test -f "./mcs-sources/class/library.make" ; then
+		MONO_SOURCE_PATH="`pwd`/mcs-sources"
+	else
+		if test -f "./mcs-sources/build/library.make" ; then
+			MONO_SOURCE_PATH="`pwd`/mcs-sources"
+		else
+			if test -f "../mono/mcs/class/library.make" ; then
+				MONO_SOURCE_PATH="`pwd`/../mono/mcs"
+			else
+				if test -f "../mono/mcs/build/library.make" ; then
+					MONO_SOURCE_PATH="`pwd`/../mono/mcs"
+				else
+					if test -f "../mcs/class/library.make" ; then
+						MONO_SOURCE_PATH="`pwd`/../mcs"
+					else
+						if test -f "../mcs/build/library.make" ; then
+							MONO_SOURCE_PATH="`pwd`/../mcs"
+						else
+							AC_MSG_WARN(not found)
+							echo '****************************************************'
+							echo "Supply the --with-mono-sources option to specify the"
+							echo "location of the Mono library sources."
+							echo '****************************************************'
+							exit 1
+						fi
+					fi
+				fi
+			fi
+		fi
+	fi
+else
+	# Add an extra "mcs" if the user omitted it.
+	if test -f "$MONO_SOURCE_PATH/mcs/class/library.make" ; then
+		MONO_SOURCE_PATH="$MONO_SOURCE_PATH/mcs"
+	fi
+	if test -f "$MONO_SOURCE_PATH/mcs/build/library.make" ; then
+		MONO_SOURCE_PATH="$MONO_SOURCE_PATH/mcs"
+	fi
+fi
+if test ! -f "$MONO_SOURCE_PATH/class/library.make" ; then
+	if test ! -f "$MONO_SOURCE_PATH/build/library.make"; then
+		AC_MSG_WARN(not found)
+		echo '*****************************************************************'
+		echo "Could not find the Mono library source in the specified location."
+		echo '*****************************************************************'
+		exit 1
+	fi
+fi
+AC_MSG_RESULT($MONO_SOURCE_PATH)
+
+dnl The --with-profile=NAME option is used to change the build profile.
+AC_SUBST(PROFILE_NAME)
+AC_ARG_WITH(profile,
+[  --with-profile=NAME     use build profile NAME],
+[
+	if test -f "${srcdir}/profiles/${withval}" ; then
+		PROFILE_NAME="${withval}"
+	else
+		AC_MSG_ERROR(unknown build profile ${withval})
+	fi
+],
+[
+	PROFILE_NAME=framework1.1
+])
+
+dnl Option to disable debug line number information.
+AC_ARG_ENABLE(debug,
+[  --disable-debug         disable debug line number information],
+[case "${enableval}" in
+  yes) DEBUG_FLAG=true ;;
+  no)  DEBUG_FLAG=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-debug) ;;
+esac],[DEBUG_FLAG=true])
+
+dnl Find the Portable.NET "csant" program.
+AC_PATH_PROG(CSANT, csant,, $PNET_PATH/csant:${prefix}/bin:$PATH)
+if test "$CSANT" = "" ; then
+	echo '**************************************************************'
+	echo "Portable.NET's csant tool is required to build the system."
+	echo "Use the --with-pnet option to specify Portable.NET's location."
+	echo '**************************************************************'
+	exit 1
+fi
+
+dnl Find the Portable.NET "ilgac" program.
+AC_PATH_PROG(ILGAC, ilgac,, $PNET_PATH/ilgac:${prefix}/bin:$PATH)
+if test "$ILGAC" = "" ; then
+	echo '**************************************************************'
+	echo "Portable.NET's ilgac tool is required to build the system."
+	echo "Use the --with-pnet option to specify Portable.NET's location."
+	echo '**************************************************************'
+	exit 1
+fi
+
+dnl Find the Portable.NET "ildd" program.
+AC_PATH_PROG(ILDD, ildd,, $PNET_PATH/ildd:${prefix}/bin:$PATH)
+if test "$ILDD" = "" ; then
+	echo '**************************************************************'
+	echo "Portable.NET's ildd tool is required to build the system."
+	echo "Use the --with-pnet option to specify Portable.NET's location."
+	echo '**************************************************************'
+	exit 1
+fi
+
+dnl Get the version numbers to use on the libraries.
+AC_SUBST(FRAMEWORK_VERSION)
+AC_SUBST(SECONDARY_VERSION)
+AC_MSG_CHECKING(for pnetlib assembly versions)
+ASSEMBLY=""
+if test -f "$PNETLIB_PATH/runtime/mscorlib.dll" ; then
+	ASSEMBLY="$PNETLIB_PATH/runtime/mscorlib.dll"
+else
+	if test -f "${prefix}/lib/cscc/lib/mscorlib.dll" ; then
+		ASSEMBLY="${prefix}/lib/cscc/lib/mscorlib.dll"
+	fi
+fi
+if test "xASSEMBLY" = "x" ; then
+	# Use "ilgac" to get the default version number from the cache.
+	FRAMEWORK_VERSION=`"$ILGAC" -ld mscorlib`
+else
+	# Use "ildd" to get the version number from the actual library file.
+	FRAMEWORK_VERSION=`"$ILDD" -f "$ASSEMBLY"`
+fi
+FRAMEWORK_VERSION=`echo "$FRAMEWORK_VERSION" | grep ' (version=' | \
+				   sed -e '1,$s/^.* (version=//g' | \
+				   sed -e '1,$s/).*$//g'`
+if test "x$FRAMEWORK_VERSION" = "x" ; then
+	FRAMEWORK_VERSION="0.0.0.0"
+fi
+ASSEMBLY=""
+if test -f "$PNETLIB_PATH/compat/Microsoft.VisualC.dll" ; then
+	ASSEMBLY="$PNETLIB_PATH/compat/Microsoft.VisualC.dll"
+else
+	if test -f "${prefix}/lib/cscc/lib/Microsoft.VisualC.dll" ; then
+		ASSEMBLY="${prefix}/lib/cscc/lib/Microsoft.VisualC.dll"
+	fi
+fi
+if test "xASSEMBLY" = "x" ; then
+	# Use "ilgac" to get the default version number from the cache.
+	SECONDARY_VERSION=`"$ILGAC" -ld Microsoft.VisualC`
+else
+	# Use "ildd" to get the version number from the actual library file.
+	SECONDARY_VERSION=`"$ILDD" -f "$ASSEMBLY"`
+fi
+SECONDARY_VERSION=`echo "$SECONDARY_VERSION" | grep ' (version=' | \
+				   sed -e '1,$s/^.* (version=//g' | \
+				   sed -e '1,$s/).*$//g'`
+if test "x$SECONDARY_VERSION" = "x" ; then
+	SECONDARY_VERSION="0.0.0.0"
+fi
+AC_MSG_RESULT([$FRAMEWORK_VERSION, $SECONDARY_VERSION])
+
+dnl Find the C# compiler to use.
+AC_PATH_PROG(CSHARP_COMPILER, cscc,, $PNET_PATH/cscc:${prefix}/bin:$PATH)
+if test "$CSHARP_COMPILER" = "" ; then
+	echo '**************************************************'
+	echo "Portable.NET's cscc is required to build.  Use the"
+	echo "--with-pnet option to specify the location of the"
+	echo "Portable.NET source tree."
+	echo '**************************************************'
+	exit 1
+else
+	AC_PATH_PROG(CSHARP_PLUGIN, cscc-cs,, $PNET_PATH/cscc:${prefix}/lib/cscc/plugins:${prefix}/bin:$PATH)
+	if test "x$CYGPATH" = "x" ; then
+		CSHARP_COMPILER_CYGWIN="$CSHARP_COMPILER"
+		CYG_ILGAC="$ILGAC"
+		CYG_CACHE="${libdir}/cscc/lib"
+	else
+		# Convert the cscc and cscc-cs paths into their Windows
+		# forms, to ensure that spawns from csant work correctly.
+		CSHARP_COMPILER_CYGWIN="$CSHARP_COMPILER"
+		CSHARP_COMPILER=`"$CYGPATH" -w "$CSHARP_COMPILER"`
+		CSHARP_PLUGIN=`"$CYGPATH" -w "$CSHARP_PLUGIN"`
+		CYG_ILGAC=`"$CYGPATH" -w "$ILGAC"`
+		if test "x$prefix" = "xNONE" ; then
+			CYG_CACHE=`"$CYGPATH" -w "${ac_default_prefix}/lib/cscc/lib"`
+		else
+			CYG_CACHE=`"$CYGPATH" -w "${prefix}/lib/cscc/lib"`
+		fi
+	fi
+	CSANT_FLAGS='--compiler cscc -Dcscc="$(CSHARP_COMPILER)" -Dcscc.plugins.cs="$(CSHARP_PLUGIN)" --profile "$(top_srcdir)/profiles/$(PROFILE_NAME)" -Ddebug.flag="$(DEBUG_FLAG)" -Dilgac="$(CYG_ILGAC)" --assembly-cache "$(DESTDIR)$(CYG_CACHE)" -DFRAMEWORK_VERSION="$(FRAMEWORK_VERSION)" -DSECONDARY_VERSION="$(SECONDARY_VERSION)"'
+fi
+
+AC_OUTPUT([
+Makefile
+class/Makefile
+class/ByteFX.Data/Makefile
+class/Custommarshalers/Makefile
+class/IBM.Data.DB2/Makefile
+class/System.Management/Makefile
+class/System.Messaging/Makefile
+class/System.ServiceProcess/Makefile
+class/System.Runtime.Serialization.Formatters.Soap/Makefile
+class/PEAPI/Makefile
+class/Mono.Data.Tds/Makefile
+class/System.Data/Makefile
+class/Npgsql/Makefile
+class/Mono.Data.SqliteClient/Makefile
+class/Mono.Data.SybaseClient/Makefile
+class/Mono.Data.TdsClient/Makefile
+class/System.Data.OracleClient/Makefile
+class/Mono.GetOptions/Makefile
+class/Mono.Posix/Makefile
+class/Mono.Cairo/Makefile
+class/Novell.Directory.Ldap/Makefile
+class/System.DirectoryServices/Makefile
+class/System.Web/Makefile
+class/System.Web.Services/Makefile
+class/System.XML/Makefile
+class/System.Runtime.Remoting/Makefile
+class/Mono.Security/Makefile
+class/Mono.Security.Win32/Makefile
+class/System.Security/Makefile
+class/Mono.Http/Makefile
+nunit20/Makefile
+nunit20/framework/Makefile
+nunit20/core/Makefile
+nunit20/util/Makefile
+nunit20/nunit-console/Makefile
+tools/run_test.sh
+tools/Makefile
+tools/SqlSharp/Makefile
+tools/wsdl/Makefile
+jay/Makefile
+tests/Makefile
+ml-pnet.spec
+])
+

@@ -1,0 +1,197 @@
+.\" Copyright (c) 2001 Southern Storm Software, Pty Ltd.
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.TH resgen 1 "29 October 2003" "Southern Storm Software" "Portable.NET Development Tools"
+.SH NAME
+resgen \- resource generation and conversion utility
+.SH SYNOPSIS
+\fBresgen\fR [ options ] \fIinput\fR ... \fIoutput\fR
+.SH DESCRIPTION
+.B Resgen
+converts strings between a number of resource formats that are used
+within the Portable.NET platform.  It is typically used to convert
+text resources (.txt), XML resources (.resx), or GNU gettext
+resources (.po) into binary resources (.resources) that can be
+attached to an IL executable or dynamic link library.
+
+.B Resgen
+can convert multiple input files into a single output file.
+A number of options are available to specify the format of the
+input files and the output file.  Alternatively, \fBresgen\fR can
+guess the format of a file from its extension:
+.TP
+.B .txt, .text
+Text resources.
+.TP
+.B .resources
+Binary resources.
+.TP
+.B .resx, .xml
+XML resources.
+.TP
+.B .po
+GNU gettext resources.
+.TP
+.B .exe, .dll, .obj, .o
+Binary resources within an IL image (input only).
+.PP
+The input filename `\-' may be used to specify standard input.  If an
+input format is not specified, standard input is assumed to contain
+text resources.
+
+The output filename `\-' may be used to specify standard output.  If an
+output format is not specified, the format of standard output is
+assumed to be text.
+.SH OPTIONS
+.TP
+.B \-t, \-\-text\-input
+The input files are all assumed to be in text resource format.
+.TP
+.B \-r, \-\-res\-input
+The input files are all assumed to be in binary resource format.
+.TP
+.B \-i, \-\-il\-input
+The input files are all assumed to be IL image files (i.e. executables,
+dynamic link libraries, or object files).
+.TP
+.B \-x, \-\-xml\-input
+The input files are all assumed to be in XML resource format.
+.TP
+.B \-p, \-\-po\-input
+The input files are all assumed to be in GNU gettext .po resource format.
+.TP
+.B \-T, \-\-text\-output
+The output format is set to text resources.
+.TP
+.B \-R, \-\-res\-output
+The output format is set to binary resources.
+.TP
+.B \-X, \-\-xml\-output
+The output format is set to XML resources.
+.TP
+.B \-P, \-\-po\-output
+The output format is set to GNU gettext .po resources.
+.TP
+.B \-l, \-\-latin1
+Interpret text and .po files as Latin-1 rather than UTF-8.
+.TP
+.B \-s, \-\-sort\-names
+When writing text resources as output, sort the resources by name.
+This typically makes it easier for humans to read the output.
+
+This option is ignored if the output format is not text.
+.TP
+.B \-\-help
+Print a usage message for the \fBresgen\fR program.
+.TP
+.B \-v, \-\-version
+Print the version of the \fBresgen\fR program.
+.TP
+.B \-\-
+Marks the end of the command-line options, and the beginning of
+the input filenames.  You may need to use this if your filename
+begins with '-'.  e.g. "ilresgen -- -input.txt output.resources".
+This is not needed if the input is stdin: "ilresgen - output.resources"
+is perfectly valid.
+.SH "TEXT RESOURCE FORMAT"
+Text resource files contain one line for each resource.  Each line
+has the form `\fIname\fR=\fIvalue\fR', where `\fIname\fR' is the
+tag name associated with the resource, and `\fIvalue\fR' is the
+resource's string value.  For example:
+.RS
+.nf
+\fC
+Arg_InvalidBase=Base must be 2, 8, 10, or 16
+Overflow_Byte=Valid Byte values are between 0 and 255, inclusive
+\fR
+.fi
+.RE
+Comments are lines that begin with a `#' character.  Blank lines
+are also considered comments.
+
+Resource string values are assumed to be in the UTF-8 text encoding
+unless the \fB-l\fR command-line option is supplied.  No other character
+sets are currently supported.  Values can contain one of the following
+escape sequences, which indicate special characters:
+.TP
+\\n
+Newline character, '\\u000A'.
+.TP
+\\r
+Carriage return character, '\\u000D'.
+.TP
+\\t
+TAB character, '\\u0009'.
+.TP
+\\f
+Form feed character, '\\u000C'.
+.TP
+\\v
+Vertical TAB character, '\\u000B'.
+.TP
+\\0
+NUL character, '\\u0000'.
+.TP
+\\NNN
+8-bit octal Unicode character.
+.TP
+\\xHH
+8-bit hexadecimal Unicode character.
+.TP
+\\uHHHH
+16-bit hexadecimal Unicode character.
+.TP
+\\UHHHHHHHH
+32-bit hexadecimal Unicode character.
+.PP
+.SH EXAMPLES
+The following command-line converts three text resource input files
+into a binary resource output file:
+.RS
+.nf
+\fC
+resgen file1.txt file2.txt file3.txt output.resources
+\fR
+.fi
+.RE
+If the files did not have extensions whose format can be guessed,
+then command-line options can be used specify the formats:
+.RS
+.nf
+\fC
+resgen \-\-text\-input \-\-res-output file1 file2 file3 output
+\fR
+.fi
+.RE
+The default resources within an executable can be extracted to text
+format on standard output as follows:
+.RS
+.nf
+\fC
+resgen \-s program.exe \-
+\fR
+.fi
+.RE
+The `\-s' option was used here to sort the output so that it is more
+easily digested by the user.
+.SH "AUTHOR"
+Written by Southern Storm Software, Pty Ltd.
+
+http://www.southern-storm.com.au/
+.SH "SEE ALSO"
+cscc(1)
+.SH "DIAGNOSTICS"
+Exit status is 1 if an error occurred while processing the input.
+Otherwise the exit status is 0.

@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+
+<project name="System.Security" default="all">
+	<target name="all">
+		<compile target="library"
+				 output="System.Security.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="true"
+				 installasdefault="true">
+
+			<sources basedir="${mono.sources}/class/System.Security">
+				<includes name="**/*.cs"/> 
+				<includes name="../../build/common/Consts.cs"/>
+				<includes name="../../build/common/Locale.cs"/>
+				<includes name="../../build/common/MonoTODOAttribute.cs"/> 
+				<excludes name="Test/**"/>
+				<excludes name="System.Security.Cryptography.Pkcs/**"/>
+			</sources>
+
+			<references>
+				<file name="System.Xml.dll"/>
+				<file name="System.dll"/>
+				<file name="../Mono.Security/Mono.Security.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=ms"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+
+		</compile>
+	</target>
+</project>

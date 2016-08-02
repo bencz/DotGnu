@@ -1,0 +1,33 @@
+
+This thread implementation attempts to be as close to Posix semantics
+as is possible in a CLI environment.  There are however a few quirks, mostly
+due to limitations in the underlying C# System.Threading class library.
+
+Thread cancellation using "pthread_cancel" can only be performed in
+"deferred" mode.  Explicit calls to "pthread_testcancel" are required
+to make cancels work in the target thread.  Other functions that
+act as cancellation points (e.g. "pthread_cond_wait") will check
+for cancellation before and after a blocking operation, but not during.
+
+All mutexes are recursive by nature, because C# monitors are used
+behind the scenes to implement mutexes and monitors are always recursive.
+
+Condition variables are merely pointers to the mutexes used in the "wait"
+operation.  Operations on condition variables such as "wait" and "signal"
+actually operate on the monitor underlying the mutex.  For this reason,
+only one mutex must be used with a condition variable (which is simply
+good pthread programming practice anyway).
+
+Read-write locks are just mutexes behind the scenes, so it isn't possible
+to have multiple readers using a resource at one time.  This could probably
+be fixed if someone were to implement a C# read-write lock that schedules
+its readers and writers fairly (patches welcome).
+
+Signals can only be delivered when a thread calls "sigsuspend" or
+"sigpending" or when it sends a signal to itself with "pthread_kill".
+Signals sent with "kill" will be sent to any thread that has the signal
+unblocked, but only one such thread.  This will normally be the thread
+that invoked "kill", but not necessarily.
+
+The "pthread_atfork" function doesn't do anything, because it isn't
+possible to intercept the C# library's fork facilities.

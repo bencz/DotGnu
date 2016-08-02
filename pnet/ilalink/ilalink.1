@@ -1,0 +1,154 @@
+.\" Copyright (c) 2001, 2002, 2003 Southern Storm Software, Pty Ltd.
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.TH ilalink 1 "14 February 2003" "Southern Storm Software" "Portable.NET Development Tools"
+.SH NAME
+ilalink \- the Intermediate Language (IL) assembly linker
+.SH SYNOPSIS
+\fBilalink\fR [ options ] \fIinput\fR ...
+.SH DESCRIPTION
+.B Ilalink
+links a number of IL object files (.obj) together, resolves external
+references to IL libraries, and creates a final IL executable (.exe)
+or IL dynamic link library (.dll).
+.SH OPTIONS
+.TP
+.B \-o FILE, \-\-output FILE
+Specify the name of the file to write the linker output to.  The
+default is "a.out.exe", "a.out.dll", or "a.out.obj", depending
+on the value of the
+.B \-\-format
+option.
+.TP
+.B \-j, \-\-format obj
+Write a ".obj" file as output, instead of an executable or dynamic
+link library.  This is normally not very useful.
+.TP
+.B \-e, \-\-format exe
+Write an executable file as output, instead of a ".obj" file or dynamic
+link library.  This is the default value.
+.TP
+.B \-d, \-\-format dll
+Write a dynamic link library file as output, instead of a ".obj" file or
+executable.
+.TP
+.B \-l NAME, \-\-library NAME
+Link against the library called "NAME".  The linker will search all of
+the library directories for a file called "NAME.dll".  If \fB\-\-no\-stdlib\fR
+is not specified, then the standard library "mscorlib" will be automatically
+added to the list of libraries.  The name of the standard library can be
+changed using the \fB\-fstdlib\-name\fR option.
+.TP
+.B \-L PATH, \-\-library\-dir PATH
+Specify a directory to be searched for libraries.  The option `\fB\-L .\fR'
+must be explicitly supplied to search the current directory.  If
+\fB\-\-no\-stdlib\fR is not specified, then a standard set of builtin paths
+will be added to the end of the list specified by the `\fB\-L\fR' options.
+The set of builtin paths can be overridden by setting the "CSCC_LIB_PATH"
+environment variable to an appropriate value.
+.TP
+.B \-n, \-\-no\-stdlib
+Do not include the standard library or any of the builtin library directories.
+.TP
+.B \-S NAME, \-fstdlib\-name=NAME
+Set the name of the standard library to "NAME".  The default is "mscorlib".
+.TP
+.B \-\-shared
+Link the output as a shared image.  This is the default.
+.TP
+.B \-\-static
+Link the output statically.  This option is not yet implemented.  It is
+provided for compatibility with other tools.
+.TP
+.B \-a NAME, \-fassembly\-name=NAME
+Set the name of the final assembly to "NAME".  The default is the name of
+the output file without its directory path or extension.
+.TP
+.B \-A NN:NN:NN:NN, \-fassembly\-version=NN:NN:NN:NN
+Set the final assembly version to "NN:NN:NN:NN".  The default is
+"0:0:0:0", unless a non-zero version is supplied by one of the input files.
+.TP
+.B \-M NAME, \-fmodule\-name=NAME
+Set the name of the final module to "NAME".  The default is the name of
+the output file without its directory path.
+.TP
+.B \-E NAME, \-\-entry\-point NAME
+Specify the name of the program's entry point.  This should only be used
+if the output is an executable (.exe).  If this option is not present,
+the linker will attempt to deduce which method is the entry point by
+inspecting the names and signatures of methods within the input files.
+The name is either a class name, or a class name plus method name.
+The sequence "::" is used to separate the class and method names.
+Examples are "MyClass", "MyNamespace.MyClass", and "MyNamespace.MyClass::Main".
+.TP
+.B \-r FILE, \-fresources=FILE
+Specify the name of a resource file to be linked with the output assembly.
+.TP
+.B \-R, \-\-resources\-only
+Create an output assembly that only contains resources.  This is useful
+for building satellite resource assemblies for foreign languages.
+.TP
+.B \-p, \-fprivate\-resources
+Mark the resources as private to the output assembly.
+.TP
+.B \-H ALG, \-fhash\-algorithm=ALG
+Set the assembly hash algorithm to "ALG", which must be either
+"SHA1" or "MD5".  The default is "SHA1".
+.TP
+.B \-V vN.N.NNNN, \-fmetadata\-version=vN.N.NNNN
+Set the final metadata version to "vN.N.NNNN".  The default is
+inferred from the metadata version on "mscorlib".
+.TP
+.B \-u NAME, \-fculture=NAME
+Specify the resource culture (e.g. "en-US").
+.TP
+.B \-z, \-fminimize\-parameters
+Minimize the size of the parameter definition table by discarding
+parameters that don't strictly need to be present for correct execution.
+.TP
+.B \-3, \-m32bit\-only
+Mark the final output assembly so that it can only be used on 32-bit
+systems.  Use of this option is severely discouraged.
+.TP
+.B \-c, \-mcui\-subsystem
+Link the final output assembly for the command-line subsystem
+on Windows.  This is the default.
+.TP
+.B \-G, \-mgui\-subsystem
+Link the final output assembly for the GUI subsystem on Windows.
+.TP
+.B \-\-help
+Print a usage message for the \fBilalink\fR program.
+.TP
+.B \-v, \-\-version
+Print the version of the \fBilalink\fR program.
+.TP
+.B \-\-
+Marks the end of the command-line options, and the beginning of
+the input filenames.  You may need to use this if your filename
+begins with '-'.  e.g. "ilalink -- -input.obj".  This is not needed
+if the input is stdin: "ilalink -" is perfectly valid.
+.PP
+The `\fB\-f\fR' and `\fB\-m\fR' options can be specified on the \fBcscc\fR(1)
+command-line, and will be passed to the linker automatically by the compiler.
+.SH "AUTHOR"
+Written by Southern Storm Software, Pty Ltd.
+
+http://www.southern-storm.com.au/
+.SH "SEE ALSO"
+ilasm(1), ildasm(1), cscc(1)
+.SH "DIAGNOSTICS"
+Exit status is 1 if an error occurred while processing the input.
+Otherwise the exit status is 0.

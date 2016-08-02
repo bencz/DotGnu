@@ -1,0 +1,112 @@
+.\" Copyright (c) 2001 Southern Storm Software, Pty Ltd.
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.TH csdoc2texi 1 "27 September 2001" "Southern Storm Software" "Portable.NET Development Tools"
+.SH NAME
+csdoc2texi \- convert C# documentation into texinfo
+.SH SYNOPSIS
+\fBcsdoc2texi\fR [ options ] \fIinput\fR ...
+.SH DESCRIPTION
+.B Csdoc2texi
+reads the supplied XML input files, and converts them into
+texinfo.
+
+Specifying multiple input files is exactly the same as specifying
+one input file which is the concatenation of all of the files.
+Only one output file is created.  \fBCsdoc2texi\fR must be invoked multiple
+times to convert multiple input files into multiple output files.
+.SH OPTIONS
+.TP
+.B \-o \fIfile\fR, \-\-output \fIfile\fR
+Specify the name of the file to write the texinfo output to.  The
+default is `input.texi'.  If there are multiple input files, then
+the name of the output file is based on the name of the first input file.
+If the first input file is `\-', then the output is written to
+standard output.  If \fIfile\fR is `\-', then the output is
+written to standard output.
+.TP
+.B \-fstandalone
+Make a stand-alone texinfo document that includes headers,
+a title page, and an index.  This is the default.
+.TP
+.B \-fembedded
+Make an embedded texinfo document.  Use this if you wish to
+incorporate the texinfo output into a larger document.
+.TP
+.B \-fparent=\fIname\fR
+Specify the name of the parent node for an embedded document.
+The default value is `Top'.  This option is ignored
+in stand-alone documents.
+.TP
+.B \-ffilename=\fIname\fR
+Specify the value for `@setfilename'.  The default is the same
+as the first input file with the extension changed to `.info'.
+If the first input file is standard input, then the default
+value is `stdout.info'.  This option is ignored in
+embedded documents.
+.TP
+.B \-ftitle=\fItitle\fR
+Specify the title to use for the document.  The default is
+the same as `\fB\-ffilename\fR'.  This option is ignored in
+embedded documents.
+.TP
+.B \-fdescription=\fIdesc\fR
+Specify the description to use in the info header of the document.
+The default is the same as `\fB\-ftitle\fR'.  This option is
+ignored in embedded documents.
+.TP
+.B \-fchapternewpage=\fIvalue\fR
+Specify the value for `@setchapternewpage'.  The default value is
+`on'.  Valid values are `on', `off', or `odd'.  This option is
+ignored in embedded documents.
+.TP
+.B \-fcopyright=\fImsg\fR
+Specify the Copyright message to use for the document.  The default
+is no Copyright message.  This option is ignored in embedded documents.
+.TP
+.B \-findex
+Include an index chapter in the output.  This is the default
+in stand-alone documents.
+.TP
+.B \-fno\-index
+Do not include an index chapter in the output.  This is the
+default in embedded documents.
+.TP
+.B \-fnewpage
+Use a new page for each type member description.  This is the default.
+.TP
+.B \-fno\-newpage
+Do not use a new page for each type member description.
+.TP
+.B \-\-help
+Print a usage message for the \fBcsdoc2texi\fR program.
+.TP
+.B \-v, \-\-version
+Print the version of the \fBcsdoc2texi\fR program.
+.TP
+.B \-\-
+Marks the end of the command-line options, and the beginning of
+the input filenames.  You may need to use this if your filename
+begins with '-'.  e.g. "csdoc2texi -- -input.xml".  This is not needed
+if the input is stdin: "csdoc2texi -" is perfectly valid.
+.SH "AUTHOR"
+Written by Southern Storm Software, Pty Ltd.
+
+http://www.southern-storm.com.au/
+.SH "SEE ALSO"
+csdoc(1), csdoc2html(1)
+.SH "DIAGNOSTICS"
+Exit status is 1 if an error occurred while processing the input.
+Otherwise the exit status is 0.

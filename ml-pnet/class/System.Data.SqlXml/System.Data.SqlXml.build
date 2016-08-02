@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+
+<project name="System.Data.SqlXml" default="all">
+	<target name="all">
+		<compile target="library"
+				 output="System.Data.SqlXml.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="true"
+				 installasdefault="true">
+
+			<sources basedir="${mono.sources}/class/System.Data.SqlXml">
+				<includes name="**/*.cs"/> 
+				<excludes name="Test/**"/>
+			</sources>
+
+			<references>
+				<file name="../Mono.Security/Mono.Security.dll"/>
+				<file name="../System.Data/System.Data.dll"/>
+				<file name="../Mono.Data.Tds/Mono.Data.Tds.dll"/>
+				<file name="System.Xml.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=ms"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+
+		</compile>
+	</target>
+</project>

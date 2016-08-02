@@ -1,0 +1,247 @@
+#!/bin/sh
+#
+# run_tests.sh - Helper script for running the "cscc" test suite.
+#
+# Copyright (C) 2001, 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+# Parameters from the configuration process.
+CSCC="@CSCC@"
+CSCC_SYSTEM_FLAGS="@CSCC_SYSTEM_FLAGS@"
+
+# Command to use to invoke "cscc".
+CSCC_INVOKE="${CSCC} ${CSCC_SYSTEM_FLAGS}"
+
+# Options to pass to "cscc".
+CSCC_FLAGS='-Wall -funsafe -nostdlib -fbuiltin-library'
+
+TMPFILE=/tmp/test$$
+TMPFILEB=/tmp/test2$$
+TMPFILEC=/tmp/test3$$
+TMPFILED=/tmp/test3$$
+TMPFILEE=/tmp/test3$$
+
+trap 'rm -f $TMPFILE $TMPFILEB $TMPFILEC $TMPFILED $TMPFILEE' 1 2 15
+
+if test -z "${srcdir}" ; then
+	srcdir=.
+fi
+
+if test -z "$1" ; then
+	echo "Usage: $0 test_name"
+	exit 1
+fi
+
+process()
+{
+	SRCBASE="$1"
+	SRCFULL="$2"
+	CTEST="$3"
+	PSTATUS=0
+
+	rm -f $TMPFILE $TMPFILEB $TMPFILEC
+
+	# Generate IL output and test it.
+	if ${CSCC_INVOKE} ${CSCC_FLAGS} -o ${TMPFILE} -S "${SRCFULL}" >${TMPFILEB} 2>&1 ; then
+		if diff "${SRCBASE}.il" ${TMPFILE} >${TMPFILEC} ; then
+			if test -f "${SRCBASE}.err" ; then
+				sed -e '1,$s/^\.\///g' ${TMPFILEB} >${TMPFILED}
+				sed -e '1,$s/^\.\///g' "${SRCBASE}.err" >${TMPFILEE}
+				if diff ${TMPFILEE} ${TMPFILED} >${TMPFILEC} ; then
+					:
+				else
+					echo "${SRCFULL}[IL]: incorrect warning output"
+					cat ${TMPFILEC}
+					PSTATUS=1
+				fi
+			else
+				if test -s ${TMPFILEB} ; then
+					echo "${SRCFULL}[IL]: incorrect warning output"
+					echo -n "" | diff - ${TMPFILEB}
+					PSTATUS=1
+				fi
+			fi
+		else
+			echo "${SRCFULL}[IL]: incorrect assembly output"
+			cat ${TMPFILEC}
+			PSTATUS=1
+		fi
+	else
+		if test -f "${SRCBASE}.il" ; then
+			echo "${SRCFULL}[IL]: did not produce assembly output"
+			PSTATUS=1
+		else
+			if test -s ${TMPFILE} ; then
+				echo "${SRCFULL}[IL]: produced assembly output instead of giving an error"
+				echo -n "" | diff - ${TMPFILE}
+				PSTATUS=1
+			else
+				sed -e '1,$s/^\.\///g' ${TMPFILEB} >${TMPFILED}
+				sed -e '1,$s/^\.\///g' "${SRCBASE}.err" >${TMPFILEE}
+				if diff ${TMPFILEE} ${TMPFILED} >${TMPFILEC} ; then
+					:
+				else
+					echo "${SRCFULL}[IL]: incorrect error output"
+					cat ${TMPFILEC}
+					PSTATUS=1
+				fi
+			fi
+		fi
+	fi
+
+	if test "$CTEST" = "no" ; then
+		# Generate JL output and test it.
+		if ${CSCC_INVOKE} ${CSCC_FLAGS} -mjvm -o ${TMPFILE} -S "${SRCFULL}" >${TMPFILEB} 2>&1 ; then
+			if diff "${SRCBASE}.jl" ${TMPFILE} >${TMPFILEC} ; then
+				if test -f "${SRCBASE}.jerr" ; then
+					sed -e '1,$s/^\.\///g' ${TMPFILEB} >${TMPFILED}
+					sed -e '1,$s/^\.\///g' "${SRCBASE}.jerr" >${TMPFILEE}
+					if diff ${TMPFILEE} ${TMPFILED} >${TMPFILEC} ; then
+						:
+					else
+						echo "${SRCFULL}[JL]: incorrect warning output"
+						cat ${TMPFILEC}
+						PSTATUS=1
+					fi
+				else
+					if test -s ${TMPFILEB} ; then
+						echo "${SRCFULL}[JL]: incorrect warning output"
+						echo -n "" | diff - ${TMPFILEB}
+						PSTATUS=1
+					fi
+				fi
+			else
+				echo "${SRCFULL}[JL]: incorrect assembly output"
+				cat ${TMPFILEC}
+				PSTATUS=1
+			fi
+		else
+			if test -f "${SRCBASE}.jl" ; then
+				echo "${SRCFULL}[JL]: did not produce assembly output"
+				PSTATUS=1
+			else
+				if test -s ${TMPFILE} ; then
+					echo "${SRCFULL}[JL]: produced assembly output instead of giving an error"
+					echo -n "" | diff - ${TMPFILE}
+					PSTATUS=1
+				else
+					sed -e '1,$s/^\.\///g' ${TMPFILEB} >${TMPFILED}
+					sed -e '1,$s/^\.\///g' "${SRCBASE}.jerr" >${TMPFILEE}
+					if diff ${TMPFILEE} ${TMPFILED} >${TMPFILEC} ; then
+						:
+					else
+						echo "${SRCFULL}[JL]: incorrect error output"
+						cat ${TMPFILEC}
+						PSTATUS=1
+					fi
+				fi
+			fi
+		fi
+	else
+		# Generate 32-bit IL output and test it.
+		if ${CSCC_INVOKE} ${CSCC_FLAGS} -m32bit-only -o ${TMPFILE} -S "${SRCFULL}" >${TMPFILEB} 2>&1 ; then
+			if diff "${SRCBASE}.3il" ${TMPFILE} >${TMPFILEC} ; then
+				if test -f "${SRCBASE}.3err" ; then
+					sed -e '1,$s/^\.\///g' ${TMPFILEB} >${TMPFILED}
+					sed -e '1,$s/^\.\///g' "${SRCBASE}.3err" >${TMPFILEE}
+					if diff ${TMPFILEE} ${TMPFILED} >${TMPFILEC} ; then
+						:
+					else
+						echo "${SRCFULL}[3IL]: incorrect warning output"
+						cat ${TMPFILEC}
+						PSTATUS=1
+					fi
+				else
+					if test -s ${TMPFILEB} ; then
+						echo "${SRCFULL}[3IL]: incorrect warning output"
+						echo -n "" | diff - ${TMPFILEB}
+						PSTATUS=1
+					fi
+				fi
+			else
+				echo "${SRCFULL}[3IL]: incorrect assembly output"
+				cat ${TMPFILEC}
+				PSTATUS=1
+			fi
+		else
+			if test -f "${SRCBASE}.3il" ; then
+				echo "${SRCFULL}[3IL]: did not produce assembly output"
+				PSTATUS=1
+			else
+				if test -s ${TMPFILE} ; then
+					echo "${SRCFULL}[3IL]: produced assembly output instead of giving an error"
+					echo -n "" | diff - ${TMPFILE}
+					PSTATUS=1
+				else
+					sed -e '1,$s/^\.\///g' ${TMPFILEB} >${TMPFILED}
+					sed -e '1,$s/^\.\///g' "${SRCBASE}.3err" >${TMPFILEE}
+					if diff ${TMPFILEE} ${TMPFILED} >${TMPFILEC} ; then
+						:
+					else
+						echo "${SRCFULL}[3IL]: incorrect error output"
+						cat ${TMPFILEC}
+						PSTATUS=1
+					fi
+				fi
+			fi
+		fi
+	fi
+	
+	return $PSTATUS
+}
+
+# Process the file on the command-line.
+STATUS=0
+case "$1" in
+	*.cs)	if test -f "$1" ; then
+				BASE=`dirname "$1"`/`basename "$1" .cs`
+				if process "$BASE" "$1" "no" ; then
+					:
+				else
+					STATUS=1
+				fi
+			else
+				echo "$1: No such file or directory"
+				STATUS=1
+			fi ;;
+	*.java)	if test -f "$1" ; then
+				BASE=`dirname "$1"`/`basename "$1" .java`
+				if process "$BASE" "$1" "no" ; then
+					:
+				else
+					STATUS=1
+				fi
+			else
+				echo "$1: No such file or directory"
+				STATUS=1
+			fi ;;
+	*.c)	if test -f "$1" ; then
+				BASE=`dirname "$1"`/`basename "$1" .c`
+				if process "$BASE" "$1" "yes" ; then
+					:
+				else
+					STATUS=1
+				fi
+			else
+				echo "$1: No such file or directory"
+				STATUS=1
+			fi ;;
+		 *)	echo "$1: Do not know how to test this type of file"
+		    STATUS=1 ;;
+esac
+
+rm -f $TMPFILE $TMPFILEB $TMPFILEC $TMPFILED $TMPFILEE
+exit $STATUS

@@ -1,0 +1,84 @@
+.\" Copyright (c) 2001 Southern Storm Software, Pty Ltd.
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.TH ilfind 1 "13 August 2001" "Southern Storm Software" "Portable.NET Development Tools"
+.SH NAME
+ilfind \- the Intermediate Language (IL) name find utility
+.SH SYNOPSIS
+\fBilfind\fR [ options ] \fIpattern\fR \fIinput\fR ...
+.SH DESCRIPTION
+.B Ilfind
+searches for \fIpattern\fR within the supplied input files.  Each input
+file must be an IL object file (.obj), an IL executable (.exe), or an
+IL dynamic link library (.dll).
+
+For each assembly, namespace, class, field, method, event, or property
+that matches the pattern, a line is written to standard output describing
+the match.
+.SH OPTIONS
+.TP
+.B \-w, \-\-whole\-string
+Match the whole pattern string against names in the input files.
+This is the default.  For example, the pattern `ABC' will match
+classes, fields, and methods called `ABC', but will not match
+items called `ABCD'.
+.TP
+.B \-s, \-\-sub\-string
+Match the pattern against sub-strings of names in the input files.
+For example, the pattern `ABC' will match any item that contains
+`ABC' within its name.
+.TP
+.B \-f, \-\-file\-regex
+Use a file-like regular expression matching scheme.  This is the
+default.  Patterns can use `?' and `*' to match a single character
+or multiple characters.  Patterns can use the characters `[' and `]'
+to group a set of alternative characters.  This pattern syntax
+is similar to that used to match filenames in shells such as
+\fBsh\fR(1) and \fBcsh\fR(1).
+.TP
+.B \-g, \-\-grep\-regex
+Use a regular expression matching scheme similar to \fBgrep\fR(1).
+Note: the `^' and `$' characters will be implicitly prepended and
+appended to the pattern if whole string matching is enabled
+(`\fB\-w\fR').
+.TP
+.B \-n, \-\-no\-regex
+Do not use regular expression matching.  This will perform a simple
+identity check against names (`\fB\-w\fR') or a simple sub-string check
+(`\fB\-s\fR').
+.TP
+.B \-i, \-\-ignore\-case
+Ignore case when matching names against \fIpattern\fR.
+.TP
+.B \-p, \-\-public\-only
+Search only the classes that are publicly accessible.
+.TP
+.B \-\-help
+Print a usage message for the \fBilfind\fR program.
+.TP
+.B \-v, \-\-version
+Print the version of the \fBilfind\fR program.
+.TP
+.B \-\-
+Marks the end of the command-line options.  The next argument is
+the \fIpattern\fR.  You may need to use this if your pattern
+begins with '-'.  e.g. "ilfind -- -name input.obj".
+.SH "AUTHOR"
+Written by Southern Storm Software, Pty Ltd.
+
+http://www.southern-storm.com.au/
+.SH "SEE ALSO"
+ilasm(1), ildasm(1), ilnative(1), ilsize(1), cscc(1), size(1), grep(1),
+sh(1), csh(1)

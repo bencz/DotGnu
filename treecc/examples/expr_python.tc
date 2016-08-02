@@ -1,0 +1,275 @@
+/*
+ * expr_python.tc - Expression example treecc input file for Python.
+ *
+ * Copyright (C) 2007  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+%option lang = "Python"
+
+%output "expr_python.py"
+
+/*
+ * Define the type code that is associated with a node
+ * in the syntax tree.  We use "error_type" to indicate
+ * a failure during type inferencing.
+ */
+%enum type_code =
+{
+    error_type,
+    int_type,
+    float_type
+}
+
+/*
+ * Define the node types that make up the syntax.
+ */
+%node expression %abstract %typedef =
+{
+    %nocreate type_code type = {type_code.error_type};
+}
+
+%node binary expression %abstract =
+{
+    expression expr1;
+    expression expr2;
+}
+
+%node unary expression %abstract =
+{
+    expression expr;
+}
+
+%node intnum expression =
+{
+    int num;
+}
+
+%node floatnum expression =
+{
+    float num;
+}
+
+%node plus binary
+%node minus binary
+%node multiply binary
+%node divide binary
+%node power binary
+%node negate unary
+
+%node cast expression =
+{
+    type_code new_type;
+    expression expr;
+}
+
+/*
+ * Define the "infer_type" operation as a non-virtual.
+ */
+%operation void infer_type(expression e)
+
+infer_type(binary)
+{
+    infer_type(e.expr1)
+    infer_type(e.expr2)
+
+    if e.expr1.type == type_code.error_type or \
+       e.expr2.type == type_code.error_type:
+        e.type = type_code.error_type
+    elif e.expr1.type == type_code.float_type or \
+         e.expr2.type == type_code.float_type:
+        e.type = type_code.float_type
+    else:
+        e.type = type_code.int_type
+}
+
+infer_type(unary)
+{
+    infer_type(e.expr)
+    e.type = e.expr.type
+}
+
+infer_type(intnum)
+{
+    e.type = type_code.int_type
+}
+
+infer_type(floatnum)
+{
+    e.type = type_code.float_type
+}
+
+infer_type(power)
+{
+    infer_type(e.expr1)
+    infer_type(e.expr2)
+
+    if e.expr1.type == type_code.error_type or \
+       e.expr2.type == type_code.error_type:
+        e.type = type_code.error_type
+    elif e.expr2.type != int_type:
+        print "%s:%d: second argument to `^' is not an integer" \
+            % (e.filename, e.linenum)
+        e.type = type_code.error_type
+    else:
+        e.type = e.expr1.type
+}
+
+infer_type(cast)
+{
+    infer_type(e.expr)
+
+    if e.expr.type != type_code.error_type:
+        e.type = e.new_type
+    else:
+        e.type = type_code.error_type
+}
+
+/*
+ * Define the "eval_expr" operation as a virtual.
+ */
+%operation %virtual eval_value eval_expr(expression self)
+
+eval_expr(plus)
+{
+    # Evaluate the sub-expressions
+    value1 = self.expr1.eval_expr()
+    value2 = self.expr2.eval_expr()
+
+    # Coerce to the common type
+    value1 = coerce(value1, self.expr1.type, self.type)
+    value2 = coerce(value2, self.expr2.type, self.type)
+
+    # Evaluate and return the result to the caller
+    return value1 + value2
+}
+
+eval_expr(minus)
+{
+    # Evaluate the sub-expressions
+    value1 = self.expr1.eval_expr()
+    value2 = self.expr2.eval_expr()
+
+    # Coerce to the common type */
+    value1 = coerce(value1, self.expr1.type, self.type)
+    value2 = coerce(value2, self.expr2.type, self.type)
+
+    # Evaluate and return the result to the caller
+    return value1 - value2
+}
+
+eval_expr(multiply)
+{
+    # Evaluate the sub-expressions
+    value1 = self.expr1.eval_expr()
+    value2 = self.expr2.eval_expr()
+
+    # Coerce to the common type
+    value1 = coerce(value1, self.expr1.type, self.type)
+    value2 = coerce(value2, self.expr2.type, self.type)
+
+    # Evaluate and return the result to the caller
+    return value1 * value2
+}
+
+eval_expr(divide)
+{
+    # Evaluate the sub-expressions
+    value1 = self.expr1.eval_expr()
+    value2 = self.expr2.eval_expr()
+
+    # Coerce to the common type
+    value1 = coerce(value1, self.expr1.type, self.type)
+    value2 = coerce(value2, self.expr2.type, self.type)
+
+    # Evaluate and return the result to the caller
+    if self.type == type_code.int_type and value2 == 0:
+        print self.filename + ":" + self.linenum + ": division by zero"
+        return 0
+    else:
+        return value1 / value2
+}
+
+eval_expr(power)
+{
+    # Evaluate the sub-expressions
+    value1 = self.expr1.eval_expr()
+    value2 = self.expr2.eval_expr()
+
+    # Coerce to the common type
+    value1 = coerce(value1, self.expr1.type, self.type)
+    value2 = coerce(value2, self.expr2.type, self.type)
+
+    # Evaluate and return the result to the caller
+    if self.type == type_code.int_type:
+        return int(pow(value1, value2))
+    else:
+        return pow(value1, value2)
+}
+
+eval_expr(negate)
+{
+    return -self.expr.eval_expr()
+}
+
+eval_expr(cast)
+{
+    # Evaluate the sub-expression
+    value = self.expr.eval_expr()
+
+    # Cast to the final type
+    return coerce(value, self.expr.type, self.type)
+}
+
+eval_expr(intnum),
+eval_expr(floatnum)
+{
+    return self.num
+}
+
+/*
+ * Define the "coerce" operation as an inline non-virtual.
+ */
+%operation %inline eval_value coerce
+    (eval_value value, [type_code type_from], [type_code type_to]) = {None}
+
+coerce(int_type, float_type)
+{
+    return float(value)
+}
+
+coerce(float_type, int_type)
+{
+    return int(value)
+}
+
+coerce(type_code, type_code)
+{
+    return value
+}
+
+/*
+ * Include the following code at the end of the ".py" file.
+ */
+%end %{
+
+def yycurrfilename():
+    return "input"
+
+def yycurrlinenum():
+    return 1
+
+%}

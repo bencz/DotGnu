@@ -1,0 +1,393 @@
+/*
+ * jv_const.tc - Constant value nodes.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/*
+ * JavaGenDiscard implementation for constants.
+ */
+JavaGenDiscard(ILNode_Constant)
+{
+	/* Nothing to do here */
+}
+
+/*
+ * JavaGenThen/Else clauses that always branch.
+ */
+JavaGenElse(ILNode_Null),
+JavaGenElse(ILNode_NullPtr),
+JavaGenThen(ILNode_True),
+JavaGenElse(ILNode_False),
+JavaGenThen(ILNode_String)
+{
+	JavaGenJump(info, JAVA_OP_GOTO, label);
+}
+
+/*
+ * JavaGenThen/Else clauses that never branch.
+ */
+JavaGenThen(ILNode_Null),
+JavaGenThen(ILNode_NullPtr),
+JavaGenElse(ILNode_True),
+JavaGenThen(ILNode_False),
+JavaGenElse(ILNode_String)
+{
+	/* Nothing to do here */
+}
+
+/*
+ * "null" constant.
+ */
+JavaGenValue(ILNode_Null)
+{
+	JavaGenSimple(info, JAVA_OP_ACONST_NULL);
+	JavaGenAdjust(info, 1);
+	return ILMachineType_ObjectRef;
+}
+
+/*
+ * "null pointer" constant.
+ */
+JavaGenValue(ILNode_NullPtr)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenAdjust(info, 1);
+	return ILMachineType_UnmanagedPtr;
+}
+
+/*
+ * "true" constant.
+ */
+JavaGenValue(ILNode_True)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenAdjust(info, 1);
+	return ILMachineType_Boolean;
+}
+
+/*
+ * "false" constant.
+ */
+JavaGenValue(ILNode_False)
+{
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenAdjust(info, 1);
+	return ILMachineType_Boolean;
+}
+
+/*
+ * Generate value code for integer constants.
+ */
+JavaGenValue(ILNode_Int8)
+{
+	if(node->isneg)
+	{
+		JavaGenInt32(info, (ILInt32)(-((ILInt64)(node->value))));
+	}
+	else
+	{
+		JavaGenInt32(info, (ILInt32)(node->value));
+	}
+	JavaGenAdjust(info, 1);
+	return ILMachineType_Int8;
+}
+JavaGenValue(ILNode_UInt8)
+{
+	JavaGenUInt32(info, (ILUInt32)(node->value));
+	JavaGenAdjust(info, 1);
+	return ILMachineType_UInt8;
+}
+JavaGenValue(ILNode_Int16)
+{
+	if(node->isneg)
+	{
+		JavaGenInt32(info, (ILInt32)(-((ILInt64)(node->value))));
+	}
+	else
+	{
+		JavaGenInt32(info, (ILInt32)(node->value));
+	}
+	JavaGenAdjust(info, 1);
+	return ILMachineType_Int16;
+}
+JavaGenValue(ILNode_UInt16),
+JavaGenValue(ILNode_Char)
+{
+	JavaGenUInt32(info, (ILUInt32)(node->value));
+	JavaGenAdjust(info, 1);
+	return ILMachineType_UInt16;
+}
+JavaGenValue(ILNode_Int32)
+{
+	if(node->isneg)
+	{
+		JavaGenInt32(info, (ILInt32)(-((ILInt64)(node->value))));
+	}
+	else
+	{
+		JavaGenInt32(info, (ILInt32)(node->value));
+	}
+	JavaGenAdjust(info, 1);
+	return ILMachineType_Int32;
+}
+JavaGenValue(ILNode_UInt32)
+{
+	JavaGenUInt32(info, (ILUInt32)(node->value));
+	JavaGenAdjust(info, 1);
+	return ILMachineType_UInt32;
+}
+JavaGenValue(ILNode_Int64)
+{
+	if(node->isneg)
+	{
+		JavaGenInt64(info, -((ILInt64)(node->value)));
+	}
+	else
+	{
+		JavaGenInt64(info, (ILInt64)(node->value));
+	}
+	JavaGenAdjust(info, 2);
+	return ILMachineType_Int64;
+}
+JavaGenValue(ILNode_UInt64)
+{
+	JavaGenUInt64(info, node->value);
+	JavaGenAdjust(info, 2);
+	return ILMachineType_UInt64;
+}
+JavaGenValue(ILNode_Int)
+{
+	if(node->isneg)
+	{
+		if(node->value <= (((ILUInt64)(ILUInt32)IL_MAX_INT32) + 1))
+		{
+			JavaGenInt32(info, (ILInt32)(-((ILInt64)(node->value))));
+			JavaGenAdjust(info, 1);
+			return ILMachineType_NativeInt;
+		}
+		else
+		{
+			/* The value is too big for systems with 32-bit native
+			   integers, so convert into a 64-bit integer instead */
+			JavaGenInt64(info, -((ILInt64)(node->value)));
+			JavaGenAdjust(info, 2);
+			return ILMachineType_Int64;
+		}
+	}
+	else
+	{
+		if(node->value <= (ILUInt64)(ILUInt32)IL_MAX_INT32)
+		{
+			JavaGenInt32(info, (ILInt32)(node->value));
+			JavaGenAdjust(info, 1);
+			return ILMachineType_NativeInt;
+		}
+		else
+		{
+			/* The value is too big for systems with 32-bit native
+			   integers, so convert into a 64-bit integer instead */
+			JavaGenInt64(info, (ILInt64)(node->value));
+			JavaGenAdjust(info, 2);
+			return ILMachineType_Int64;
+		}
+	}
+}
+JavaGenValue(ILNode_UInt)
+{
+	if(node->value <= (ILUInt64)IL_MAX_UINT32)
+	{
+		JavaGenUInt32(info, (ILUInt32)(node->value));
+		JavaGenAdjust(info, 1);
+		return ILMachineType_NativeUInt;
+	}
+	else
+	{
+		/* The value is too big for systems with 32-bit native
+		   integers, so convert into a 64-bit integer instead */
+		JavaGenUInt64(info, node->value);
+		JavaGenAdjust(info, 2);
+		return ILMachineType_UInt64;
+	}
+}
+
+/*
+ * Generate "then" or "else" code for integer constants.
+ */
+JavaGenThen(ILNode_Integer)
+{
+	if(node->value != 0)
+	{
+		JavaGenJump(info, JAVA_OP_GOTO, label);
+	}
+}
+JavaGenElse(ILNode_Integer)
+{
+	if(node->value == 0)
+	{
+		JavaGenJump(info, JAVA_OP_GOTO, label);
+	}
+}
+
+/*
+ * Generate value code for floating point constants.
+ */
+JavaGenValue(ILNode_Float32)
+{
+	JavaGenFloat32(info, (ILFloat)(node->value));
+	JavaGenAdjust(info, 1);
+	return ILMachineType_Float32;
+}
+JavaGenValue(ILNode_Float64)
+{
+	JavaGenFloat64(info, node->value);
+	JavaGenAdjust(info, 2);
+	return ILMachineType_Float64;
+}
+JavaGenValue(ILNode_Float)
+{
+	JavaGenFloat64(info, node->value);
+	JavaGenAdjust(info, 2);
+	return ILMachineType_NativeFloat;
+}
+
+/*
+ * Generate "then" or "else" code for floating point constants.
+ */
+JavaGenThen(ILNode_Real)
+{
+	if(node->value != (ILDouble)0.0)
+	{
+		JavaGenJump(info, JAVA_OP_GOTO, label);
+	}
+}
+JavaGenElse(ILNode_Real)
+{
+	if(node->value == (ILDouble)0.0)
+	{
+		JavaGenJump(info, JAVA_OP_GOTO, label);
+	}
+}
+
+/*
+ * Node operations for decimal constants.
+ */
+JavaGenValue(ILNode_Decimal)
+{
+	ILInt64 intValue;
+	if(info->useJavaLib)
+	{
+		if(ILDecimalToInt64(&(node->value), &intValue))
+		{
+			/* We can up-convert a "long" to get a BigDecimal object */
+			JavaGenInt64(info, intValue);
+			JavaGenAdjust(info, 2);
+			JavaGenCallByName(info, "java/math/BigDecimal", "valueOf",
+							  "(J)Ljava/math/BigDecimal;");
+			JavaGenAdjust(info, -1);
+		}
+		else
+		{
+			/* We must up-convert from the string form of the value */
+			char buffer[64];
+			JavaGenNewObj(info, "java/math/BigDecimal");
+			JavaGenSimple(info, JAVA_OP_DUP);
+			JavaGenAdjust(info, 2);
+			ILDecimalFormat(buffer, &(node->value), 0);
+			JavaGenStringConst(info, buffer, strlen(buffer));
+			JavaGenAdjust(info, 1);
+			JavaGenCallCtor(info, "java/math/BigDecimal", "<init>",
+						    "(Ljava/lang/String;)V");
+			JavaGenAdjust(info, -2);
+		}
+	}
+	else if(ILDecimalToInt64(&(node->value), &intValue))
+	{
+		/* We can up-convert an integer to get a decimal value */
+		if(intValue >= (ILInt64)IL_MIN_INT32 &&
+		   intValue <= (ILInt64)IL_MAX_INT32)
+		{
+			JavaGenInt32(info, (ILInt32)intValue);
+			JavaGenAdjust(info, 1);
+			JavaGenCallByName(info, "System/Decimal", "op_Implicit__iV",
+							  "(I)LSystem/Decimal;");
+		}
+		else if(!(info->clsCompliant) && intValue >= 0 &&
+				intValue <= (ILInt64)(ILUInt64)IL_MAX_UINT32)
+		{
+			/* Cannot use this if CLS compliance is enabled */
+			JavaGenUInt32(info, (ILUInt32)intValue);
+			JavaGenAdjust(info, 1);
+			JavaGenCallByName(info, "System/Decimal", "op_Implicit__IV",
+							  "(I)LSystem/Decimal;");
+		}
+		else
+		{
+			JavaGenInt64(info, intValue);
+			JavaGenAdjust(info, 2);
+			JavaGenCallByName(info, "System/Decimal", "op_Implicit__lV",
+							  "(J)LSystem/Decimal;");
+			JavaGenAdjust(info, -1);
+		}
+	}
+	else
+	{
+		/* We need to call the "Decimal" constructor to get the value */
+		JavaGenNewObj(info, "System/Decimal");
+		JavaGenSimple(info, JAVA_OP_DUP);
+		JavaGenAdjust(info, 2);
+		JavaGenUInt32(info, node->value.low);
+		JavaGenUInt32(info, node->value.middle);
+		JavaGenUInt32(info, node->value.high);
+		JavaGenUInt32(info,
+				((node->value.flags & (ILUInt32)0x80000000) != 0 ? 1 : 0));
+		JavaGenUInt32(info, ((node->value.flags >> 16) & 0xFF));
+		JavaGenAdjust(info, 5);
+		JavaGenCallCtor(info, "System/Decimal", "<init>__iiiB", "(IIIZI)");
+		JavaGenAdjust(info, -6);
+	}
+	return ILMachineType_Decimal;
+}
+JavaGenThen(ILNode_Decimal)
+{
+	if(!ILDecimalIsZero(&(node->value)))
+	{
+		JavaGenJump(info, JAVA_OP_GOTO, label);
+	}
+}
+JavaGenElse(ILNode_Decimal)
+{
+	if(ILDecimalIsZero(&(node->value)))
+	{
+		JavaGenJump(info, JAVA_OP_GOTO, label);
+	}
+}
+
+/*
+ * Node operations for string constants.
+ */
+JavaGenValue(ILNode_String)
+{
+	JavaGenStringConst(info, node->str, node->len);
+	if(!(info->useJavaLib))
+	{
+		JavaGenCallByName(info, "System/String", "__FromJavaString",
+						  "(Ljava/lang/String;)LSystem/String;");
+	}
+	JavaGenAdjust(info, 1);
+	return ILMachineType_String;
+}

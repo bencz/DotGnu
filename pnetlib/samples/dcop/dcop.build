@@ -1,0 +1,87 @@
+<?xml version="1.0"?>
+<project name="dcop samples" default="all">
+	<target name="all">
+
+		<!-- Build the DcopSample.exe program -->
+		<compile output="DcopSample.exe"
+				 target="exe"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="true">
+
+			<sources>
+				<includes if="${CONFIG_REFLECTION}" name="DcopSample.cs"/>
+				<file name="../dummy.cs"/>
+			</sources>
+
+			<references>
+				<includes if="${CONFIG_REFLECTION}" name="../../Xsharp/Xsharp.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../compat/Accessibility.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Xml/System.Xml.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System/System.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../DotGNU.Images/DotGNU.Images.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../SharpZipLib/ICSharpCode.SharpZipLib.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the DcopBrowser.exe program -->
+		<compile output="DcopBrowser.exe"
+				 target="exe"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="true">
+
+			<sources>
+				<includes if="${CONFIG_REFLECTION}" name="DcopBrowser.cs"/>
+				<file name="../dummy.cs"/>
+			</sources>
+
+			<references>
+				<includes if="${CONFIG_REFLECTION}" name="../../Xsharp/Xsharp.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../compat/Accessibility.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Windows.Forms/System.Windows.Forms.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Drawing/System.Drawing.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Xml/System.Xml.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System/System.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../DotGNU.Images/DotGNU.Images.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../SharpZipLib/ICSharpCode.SharpZipLib.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+			
+			<resources>
+				<includes if="${CONFIG_RUNTIME_INFRA}"
+					name="${csant.src.dir}/Method.bmp"/>
+				<includes if="${CONFIG_RUNTIME_INFRA}"
+					name="${csant.src.dir}/Class.bmp"/>
+				<includes if="${CONFIG_RUNTIME_INFRA}"
+					name="${csant.src.dir}/Interface.bmp"/>
+				<includes if="${CONFIG_RUNTIME_INFRA}"
+					name="${csant.src.dir}/DcopBrowser.bmp"/>
+			</resources>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+	</target>
+</project>

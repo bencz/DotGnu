@@ -1,0 +1,62 @@
+
+DotGNU Session Session Library
+==============================
+
+Legal matters
+-------------
+
+The DotGNU.SSL library is distributed under the terms of the GPL
+plus linking exception, like the rest of pnetlib, with the following
+additional exemption:
+
+	Compiling, linking, and/or using OpenSSL with DotGNU.SSL is permitted.
+
+Note: older versions of GNUTLS were distributed under the full GPL and
+are incompatible with this library.  Newer versions of GNUTLS are distributed
+under the terms of the LGPL and are compatible.  Please enssure that you
+are using a recent version of GNUTLS.
+
+Quick start guide
+-----------------
+
+The DotGNU.SSL library hides the details of the underlying SSL
+implementation (e.g. GNUTLS) in such a way that it should be easy
+to replace it with some other SSL implementation in the future.
+The library can also support multiple SSL providers.
+
+The first step in creating a secure session is to obtain a provider:
+
+	using DotGNU.SSL;
+
+	ISecureSessionProvider provider = SecureSessionFactory.GetProvider();
+
+In this case, we have chosen to use the default SSL session provider.
+With multiple providers, you can supply a string argument to "GetProvider"
+to specify which provider you desire.
+
+The next step is to obtain a session object from your selected provider.
+There are two kinds of sessions: client and server.  We will create a
+client session that uses TLS version 1:
+
+	ISecureSession session = provider.CreateClientSession(Protocol.TLSv1);
+
+At this point, we can set session options or can continue on to the
+session handshake phase:
+
+	Stream secureStream = session.PerformHandshake(socket);
+
+The "socket" value must be an instance of "System.Net.Sockets.Socket".
+The "PerformHandshake" method will return a new stream, that you use for
+secure communications, or it will throw an exception if the handshake failed.
+
+Once you have finished with secure communications, clean everything up
+as follows:
+
+	secureStream.Close();
+	session.Dispose();
+
+Note: "secureStream.Close()" just closes the security portions of the
+session.  It doesn't close the underlying "stream" object.  You will
+need to do that yourself separately.
+
+See the "sslfetch.cs" file for a more complete example of using DotGNU.SSL.

@@ -1,0 +1,175 @@
+#
+# Basic.txt - Resources for VB.NET.
+#
+# Copyright (C) 2003, 2004  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+VB_BothBeforeAndAfter=Cannot specify both "Before" and "After" when adding an item to a collection
+VB_InvalidCollectionIndex=Invalid collection index
+VB_KeyAlreadyExists=The specified key already exists in the collection
+VB_InvalidErrorNumber=Invalid error number specified
+VB_InvalidFileMode=Invalid file mode value specified
+VB_InvalidFileAccess=Invalid file access value specified
+VB_InvalidFileShare=Invalid file share value specified
+VB_InvalidRecordLength=Record length must be between 1 and 32767, inclusive
+VB_Obsolete=Obsolete functionality
+VB_InvalidRank=Invalid rank specified for array type
+VB_InvalidColorIndex=Invalid QB color index specified
+VB_NonNegative=Value must not be negative
+VB_EmptyString=Cannot specify an empty string
+VB_InvalidArrayBound=Invalid array bounds specification
+VB_InvalidStringIndex=Invalid string index specification
+VB_InvalidStringLength=Invalid string length specification
+VB_InvalidCast=Cannot cast from {0} to {1}
+VB_IsValueType=Specified object had a value type
+VB_ValueIsNull=Argument cannot be null
+VB_CommonForType=Could not find a common type for an arithmetic operation
+VB_LoopCounterIsNull=Loop counter was not specified
+VB_InvalidHexOrOct=Invalid hexadecimal or octal number format
+VB_InvalidAddArguments=Invalid arguments to binary addition
+VB_InvalidBitAndArguments=Invalid arguments to binary bitwise AND
+VB_InvalidBitOrArguments=Invalid arguments to binary bitwise OR
+VB_InvalidBitXorArguments=Invalid arguments to binary bitwise XOR
+VB_InvalidDivArguments=Invalid arguments to binary division
+VB_InvalidIDivArguments=Invalid arguments to binary integer division
+VB_InvalidModArguments=Invalid arguments to binary modulus
+VB_InvalidMulArguments=Invalid arguments to binary multiplication
+VB_InvalidNegArgument=Invalid argument to unary negation
+VB_InvalidNotArgument=Invalid argument to unary bitwise NOT
+VB_InvalidTstArguments=Invalid arguments to binary test and compare
+VB_InvalidPlusArgument=Invalid argument to unary plus
+VB_InvalidPowArguments=Invalid arguments to binary power operation
+VB_InvalidShiftLeftArguments=Invalid arguments to binary left shift
+VB_InvalidShiftRightArguments=Invalid arguments to binary right shift
+VB_InvalidSubArguments=Invalid arguments to binary subtraction
+VB_InvalidXorArguments=Invalid arguments to binary boolean XOR
+VB_InvalidPattern=Invalid "like" pattern
+VB_MismatchedRanks=Array ranks are mismatched
+VB_MismatchedDimensions=Array dimensions are mismatched
+VB_DateTimeRange=DateTime value is out of range
+VB_MustBeEvenSized=Array must have an even number of elements
+VB_InvalidCallType=Invalid late binding call type
+VB_CouldntExecute=Could not find {0} or could not execute it
+VB_InvalidAppWinStyle=Invalid application window style
+VB_InvalidDDB=Invalid arguments to DDB function
+VB_InvalidNPer=Invalid arguments to NPer function
+VB_InvalidRate=Invalid arguments to Rate function
+VB_InvalidSLN=Invalid arguments to SLN function
+VB_InvalidSYD=Invalid arguments to SYD function
+VB_MonthRange=Month value is out of range
+VB_InvalidWeekday=Invalid weekday value
+VB_InvalidInterval=Invalid date interval specification
+VB_InvalidWeekOfYear=Invalid week of year rule value
+VB_InvalidNumber=Invalid number
+VB_CouldntCalculateRate=Could not calculate the rate
+VB_ChrRange=Character code must be between -32768 and 65535
+VB_CouldntHandle=Could not handle the specified object
+VB_InvalidCompareMethod=Invalid comparison method
+VB_NotACharacter=Specified object is not a character
+VB_InvalidDateFormat=Invalid date format
+VB_OK=OK
+VB_Cancel=Cancel
+VB_ErrorDefault=Application-defined or object-defined error.
+VB_Error3=This Error number is obsolete and no longer used.
+VB_Error5=Procedure call or argument is not valid.
+VB_Error6=Overflow.
+VB_Error7=Out of memory.
+VB_Error9=Subscript out of range.
+VB_Error10=This array is fixed or temporarily locked.
+VB_Error11=Division by zero.
+VB_Error13=Type mismatch.
+VB_Error14=Out of string space.
+VB_Error16=Expression too complex.
+VB_Error17=Can't perform requested operation.
+VB_Error18=User interrupt occurred.
+VB_Error20=Resume without error.
+VB_Error28=Out of stack space.
+VB_Error35=Sub or Function not defined.
+VB_Error47=Too many DLL application clients.
+VB_Error48=Error in loading DLL.
+VB_Error49=Bad DLL calling convention.
+VB_Error51=Internal error.
+VB_Error52=Bad file name or number.
+VB_Error53=File not found.
+VB_Error54=Bad file mode.
+VB_Error55=File already open.
+VB_Error57=Device I/O error.
+VB_Error58=File already exists.
+VB_Error59=Bad record length.
+VB_Error61=Disk full.
+VB_Error62=Input past end of file.
+VB_Error63=Bad record number.
+VB_Error67=Too many files.
+VB_Error68=Device unavailable.
+VB_Error70=Permission denied.
+VB_Error71=Disk not ready.
+VB_Error74=Cannot rename with different drive.
+VB_Error75=Path/File access error.
+VB_Error76=Path not found.
+VB_Error91=Object variable or With block variable not set.
+VB_Error92=For loop not initialized.
+VB_Error93=Pattern string is not valid.
+VB_Error94=This Error number is obsolete and no longer used.
+VB_Error96=Unable to sink events of object because the object is already firing events to the maximum number of event receivers that it supports.
+VB_Error97=Cannot call friend function on object that is not an instance of defining class.
+VB_Error98=A property or method call cannot include a reference to a private object, either as an argument or as a return value.
+VB_Error100=Class '|1' does not implement the System.Collections.ICollection interface.
+VB_Error321=File format is not valid.
+VB_Error322=Cannot create necessary temporary file.
+VB_Error325=Format in resource file is not valid.
+VB_Error380=Property value is not valid.
+VB_Error381=Property array index is not valid.
+VB_Error382=Set not supported at runtime.
+VB_Error383=Set not supported (read-only property).
+VB_Error385=Need property array index.
+VB_Error387=Set not permitted.
+VB_Error393=Get not supported at runtime.
+VB_Error394=Get not supported (write-only property).
+VB_Error422=Property not found.
+VB_Error423=Property or method not found.
+VB_Error424=Object required.
+VB_Error429=Cannot create ActiveX component.
+VB_Error430=Class does not support Automation or does not support expected interface.
+VB_Error432=File name or class name not found during Automation operation.
+VB_Error438=Object does not support this property or method.
+VB_Error440=Automation error.
+VB_Error442=Connection to type library or object library for remote process has been lost. Press OK for dialog to remove reference.
+VB_Error443=Automation object does not have a default value.
+VB_Error445=Object does not support this action.
+VB_Error446=Object does not support named arguments.
+VB_Error447=Object does not support current locale setting.
+VB_Error448=Named argument not found.
+VB_Error449=Argument not optional.
+VB_Error450=Wrong number of arguments or property assignment was not valid.
+VB_Error451=Property let procedure not defined and property get procedure did not return an object.
+VB_Error452=Ordinal is not valid.
+VB_Error453=Specified DLL function not found.
+VB_Error454=Code resource not found.
+VB_Error455=Code resource lock error.
+VB_Error457=This key is already associated with an element of this collection.
+VB_Error458=Variable uses an Automation type not supported in Visual Basic.
+VB_Error459=Object or class does not support the set of events.
+VB_Error460=Clipboard format is not valid.
+VB_Error461=Method or data member not found.
+VB_Error462=The remote server machine does not exist or is unavailable.
+VB_Error463=Class not registered on local machine.
+VB_Error481=Picture is not valid.
+VB_Error482=Printer error.
+VB_Error735=Cannot save file to TEMP.
+VB_Error744=Search text not found.
+VB_Error746=Replacements too long.
+VB_Error999=Stop statement encountered.
+VB_Error32768=Feature not yet implemented.

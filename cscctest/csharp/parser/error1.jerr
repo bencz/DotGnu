@@ -1,0 +1,5 @@
+./error1.cs:21: parse error at or near `x'
+./error1.cs:22: parse error at or near `y'
+./error1.cs:23: parse error at or near `z'
+./error1.cs:25: parse error, expecting an identifier, at or near `;'
+./error1.cs:30: parse error, expecting `{', at or near `class'

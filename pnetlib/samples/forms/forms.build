@@ -1,0 +1,263 @@
+<?xml version="1.0"?>
+<project name="forms samples" default="all">
+	<target name="all">
+
+		<!-- Build the FormsHello.exe program -->
+		<compile output="FormsHello.exe"
+				 target="exe"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="true">
+
+			<sources>
+				<includes if="${CONFIG_REFLECTION}" name="FormsHello.cs"/>
+				<file name="../dummy.cs"/>
+			</sources>
+
+			<references>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Windows.Forms/System.Windows.Forms.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../compat/Accessibility.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Drawing/System.Drawing.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Xml/System.Xml.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System/System.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../DotGNU.Images/DotGNU.Images.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../SharpZipLib/ICSharpCode.SharpZipLib.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="cscc" value="-g"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the radiobuttons.exe program -->
+		<compile output="radiobuttons.exe"
+				 target="exe"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="true">
+
+			<sources>
+				<includes if="${CONFIG_REFLECTION}" name="radiobuttons.cs"/>
+				<file name="../dummy.cs"/>
+			</sources>
+
+			<references>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Windows.Forms/System.Windows.Forms.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../compat/Accessibility.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Drawing/System.Drawing.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Xml/System.Xml.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System/System.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../DotGNU.Images/DotGNU.Images.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../SharpZipLib/ICSharpCode.SharpZipLib.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+
+		<!-- Build the CustomControl.exe program -->
+		<compile output="CustomControl.exe"
+				 target="exe"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="true">
+
+			<sources>
+				<includes if="${CONFIG_REFLECTION}" name="CustomControl.cs"/>
+				<file name="../dummy.cs"/>
+			</sources>
+
+			<references>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Windows.Forms/System.Windows.Forms.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../compat/Accessibility.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Drawing/System.Drawing.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Xml/System.Xml.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System/System.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../DotGNU.Images/DotGNU.Images.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../SharpZipLib/ICSharpCode.SharpZipLib.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the FormsTest.exe program -->
+		<compile output="FormsTest.exe"
+				 target="exe"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="true">
+
+			<sources>
+				<includes if="${CONFIG_REFLECTION}" name="FormsTest.cs"/>
+				<file name="../dummy.cs"/>
+			</sources>
+
+			<references>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Windows.Forms/System.Windows.Forms.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../compat/Accessibility.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Drawing/System.Drawing.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Xml/System.Xml.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System/System.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../DotGNU.Images/DotGNU.Images.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../SharpZipLib/ICSharpCode.SharpZipLib.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+
+			<resources>
+				<includes if="${CONFIG_RUNTIME_INFRA}"
+					name="FormsTest.*.bmp"/>
+				<includes if="${CONFIG_RUNTIME_INFRA}"
+					name="FormsTest.*.ico"/>
+			</resources>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the FormsMdi.exe program -->
+		<compile output="FormsMdi.exe"
+				 target="exe"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="true">
+
+			<sources>
+				<includes if="${CONFIG_REFLECTION}" name="FormsMdi.cs"/>
+				<file name="../dummy.cs"/>
+			</sources>
+
+			<references>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Windows.Forms/System.Windows.Forms.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../compat/Accessibility.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Drawing/System.Drawing.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Xml/System.Xml.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System/System.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../DotGNU.Images/DotGNU.Images.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../SharpZipLib/ICSharpCode.SharpZipLib.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="cscc" value="-g"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the ImageViewer.exe program -->
+		<compile output="ImageViewer.exe"
+				 target="exe"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="true">
+
+			<sources>
+				<includes if="${CONFIG_REFLECTION}" name="ImageViewer.cs"/>
+				<file name="../dummy.cs"/>
+			</sources>
+
+			<references>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Windows.Forms/System.Windows.Forms.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../compat/Accessibility.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Drawing/System.Drawing.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Xml/System.Xml.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System/System.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../DotGNU.Images/DotGNU.Images.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../SharpZipLib/ICSharpCode.SharpZipLib.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="cscc" value="-g"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the IrdaTest.exe program -->
+		<compile output="IrdaTest.exe"
+				 target="exe"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="true">
+
+			<sources>
+				<includes if="${CONFIG_REFLECTION}" name="IrdaTest.cs"/>
+				<file name="../dummy.cs"/>
+			</sources>
+
+			<references>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Windows.Forms/System.Windows.Forms.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../compat/Accessibility.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Drawing/System.Drawing.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Xml/System.Xml.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System/System.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../System.Net.IrDA/System.Net.IrDA.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../DotGNU.Images/DotGNU.Images.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../SharpZipLib/ICSharpCode.SharpZipLib.dll"/>
+				<includes if="${CONFIG_REFLECTION}" name="../../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="cscc" value="-g"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+	</target>
+</project>

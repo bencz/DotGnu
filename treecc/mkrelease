@@ -1,0 +1,144 @@
+#!/bin/sh
+#
+# mkrelease - Helper script for building release versions.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+# Validate the command-line argments.
+if [ -z "$1" -o -z "$2" ]; then
+	echo 'Usage: "mkrelease dir version".  e.g. "mkrelease $HOME/release 0.0.3"'
+	exit 1
+fi
+if [ ! -d "$1" ]; then
+	echo "$1: Release directory does not exist"
+	exit 1
+fi
+cd "$1"
+RELDIR=`pwd`
+VERSION="$2"
+
+# Check for an existing version with the same number.
+if [ -f "treecc-$VERSION.tar.gz" ]; then
+	echo "There already appears to be a $VERSION release"
+	exit 1
+fi
+
+# Create the log file.
+LOGFILE="$RELDIR/buildtc-$VERSION.log"
+echo "Release build for version $VERSION started on" `date` >$LOGFILE
+
+# Helper function that echoes a command-line and then executes it.
+function call()
+{
+	echo '$' $* >>$LOGFILE
+	echo $*
+	$*
+}
+
+# Helper function to echo an error message to stdout and the log file.
+function error()
+{
+	echo '***' $* '***' >>$LOGFILE
+	echo 'Release build ended with an error on' `date` >>$LOGFILE
+	echo '***' $* '***'
+	echo "Log is in $LOGFILE"
+}
+
+# Remove an existing treecc directory, if present.
+call rm -rf treecc
+
+# Check out the current version of the source.
+call cvs -Q checkout treecc
+
+# Make sure that the version number matches.
+SRCVERSION=`grep ^AM_INIT_AUTOMAKE treecc/configure.in | sed 's/^[^(]*(treecc, //' | sed 's/)//g'`
+if [ "$SRCVERSION" != "$VERSION" ]; then
+	error "The source version is set to $SRCVERSION, not $VERSION"
+	exit 1
+fi
+
+# Perform automake and autoconf.
+echo '$' cd treecc >>$LOGFILE
+echo cd treecc
+cd treecc
+call automake
+call autoconf
+
+# Verify that the source will build cleanly.
+echo '$' ./configure >>$LOGFILE
+echo ./configure
+if ./configure >>$LOGFILE 2>&1; then
+	# Configure succeeded.
+	echo -n ''
+else
+	error "Configure failed"
+	exit 1
+fi
+echo '$' make >>$LOGFILE
+echo make
+if make >>$LOGFILE 2>&1; then
+	# Build succeeded.
+	echo -n ''
+else
+	error "Source did not build cleanly"
+	exit 1
+fi
+
+# Create a binary install tarball.
+call rm -rf "../treeccbin-$VERSION"
+echo '$' make DESTDIR="$RELDIR/treeccbin-$VERSION" install-strip >>$LOGFILE
+make DESTDIR="$RELDIR/treeccbin-$VERSION" install-strip >>$LOGFILE 2>&1
+echo '$' cd .. >>$LOGFILE
+echo cd ..
+cd ..
+call tar cfz "treeccbin-$VERSION.tar.gz" "treeccbin-$VERSION"
+
+# Clean up now that we know it builds.
+call rm -rf treecc
+
+# Check out again and run automake/autoconf.
+call cvs -Q checkout treecc
+echo '$' cd treecc >>$LOGFILE
+echo cd treecc
+cd treecc
+call automake
+call autoconf
+echo '$' cd .. >>$LOGFILE
+echo cd ..
+cd ..
+
+# Remove CVS directories.
+echo '$ find treecc -name CVS -print | xargs rm -rf' >>$LOGFILE
+echo 'find treecc -name CVS -print | xargs rm -rf'
+find treecc -name CVS -print | xargs rm -rf
+
+# Remove unnecessary files.
+echo '$ rm -rf treecc/mkrelease' >>$LOGFILE
+rm -rf treecc/mkrelease
+
+# Rename the directory to its version.
+call mv treecc "treecc-$VERSION"
+
+# Tar up the release.
+call tar cfz "treecc-$VERSION.tar.gz" "treecc-$VERSION"
+
+# Clean up the source and binary directories, which we no longer require.
+call rm -rf "treecc-$VERSION" "treeccbin-$VERSION"
+
+# Done
+echo "Release build for version $VERSION succeeded on" `date` >>$LOGFILE
+exit 0

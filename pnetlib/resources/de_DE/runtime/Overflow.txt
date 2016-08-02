@@ -1,0 +1,32 @@
+#
+# Overflow.txt - Resources for overflow errors.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Overflow_Byte=Gueltige Byte Werte sind zwischen 0 und 255, inklusive
+Overflow_SByte=Gueltige SByte Werte sind zwischen -128 und 127, inklusive
+Overflow_Int16=Gueltige Int16 Werte sind zwischen -32768 und 32767, inklusive
+Overflow_UInt16=Gueltige UInt16 Werte sind zwischen 0 und 65535, inklusive
+Overflow_Int32=Gueltige Int32 Werte sind zwischen -2147483648 und 2147483647, inklusive
+Overflow_UInt32=Gueltige UInt32 Werte sind zwischen 0 und 4294967295, inklusive
+Overflow_Int64=Gueltige	Int64 Werte sind zwischen -9223372036854775808 und 9223372036854775807, inklusive
+Overflow_UInt64=Gueltige UInt64 Werte sind zwischen 0 und 18446744073709551615, inklusive
+Overflow_Char=Gueltige Char Werte sind zwischen 0 und 65535, inklusive
+Overflow_Decimal=Gueltige Dezimal Werte sind zwischen -79228162514264337593543950335 und 79228162514264337593543950335, inklusive
+Overflow_NegateTwosCompNum=Attempt to negate the largest negative integer.
+Overflow_Pointer=Wert des Pointer ist ausserhalb des gueltigen Bereiches fuer die angegebene Operation
+Overflow_Currency=OA Waehrungs Wert uebergelaufen

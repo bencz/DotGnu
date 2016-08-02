@@ -1,0 +1,40 @@
+#
+# Invalid.txt - Resources for invalid operation messages.
+#
+# Copyright (C) 2001, 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Invalid_CGWriterExists=This code generator already has a different text writer
+Invalid_ServerNotCreated=Listening TCP server has not been created
+Invalid_SendToOnConnected=Attempting to use SendTo on a connected datagram socket
+Invalid_SendOnNonConnected=Attempting to use Send on an unconnected datagram socket
+Invalid_RemoteEventSource=Cannot access remote event sources
+Invalid_CounterNotInited=Performance counter has not yet been initialized
+Invalid_CategoryNotInited=Performance counter category has not yet been initialized
+Invalid_ProcessNotExited=Process has not yet exited
+Invalid_ProcessNotStarted=Process has not yet started
+Invalid_ProcessExited=Process has exited
+Invalid_Platform=Requested operation is not available on this platform
+Invalid_NotWaiting=The specified thread is not currently waiting
+Invalid_StandardStream=The standard stream is not defined or redirected
+Invalid_ProcessStartInfo=Invalid process start information
+Invalid_PermissionPresent=The specified permission is already present
+Invalid_PermissionNotPresent=The specified permission is not present
+Invalid_PathMismatch=Mismatch in the length of permission paths
+Invalid_AuthModuleNotRegistered=The specified authentication module is not registered
+Invalid_LicenseContextChange=The license context cannot be changed
+Invalid_LicenseContextLocked=The license context is already locked
+Invalid_LicenseContextNotLocked=The license context is not locked by the specified context user

@@ -1,0 +1,407 @@
+Introduction
+------------
+
+This is the HACKING file for Portable.NET.  It describes how you can get
+started on the development side, and provides a roadmap for the main areas
+of the code.  More detailed information on each component can be found
+in the following sub-directories:
+
+image/HACKING
+
+	Hacking on the IL image code.  IL images are programs (.exe's)
+	or libraries (.dll's) that have been compiled to the Intermediate
+	Language (IL, or sometimes CIL) bytecode format.
+
+engine/HACKING
+
+	Hacking on the runtime engine.
+
+codegen/HACKING
+
+	Hacking on the back-end code generator for the compiler.
+
+cscc/HACKING
+
+	Hacking on the front-end for the compiler.
+
+Note: some of these files are a work in progress and may not be present yet.
+
+Requirements
+------------
+
+- gcc 2.95.3 or later
+- GNU make 3.79.1 or later
+- Automake 1.4 or later
+- Autoconf 2.13 or later
+- GNU bison version 1.28 or later
+- flex version 2.5.4 or later
+- A recent version of the "treecc" package installed
+- Cygwin environment (Windows only)
+
+You must use GNU make, because the dependency system will not work
+with other versions of make.  e.g. BSD's make.
+
+Berkeley yacc (byacc) can be used in place of bison, but bison is
+better.  Some of the line number and error processing in the compiler
+won't work as expected with byacc.
+
+Portable.NET depends upon the treecc program to build.  The latest
+release version can be obtained here:
+
+	http://www.southern-storm.com.au/treecc.html
+
+Or it can be obtained from the Portable.NET CVS server.
+
+Obtaining a development version of Portable.NET
+-----------------------------------------------
+
+The most up to date version of pnet is always the version in CVS on
+savannah.gnu.org.  This is the preferred version to use to make changes.
+To check out the sources via anonymous CVS, use the following commands:
+
+    export CVS_RSH="ssh"
+    cvs -z3 -d:ext:anoncvs@savannah.gnu.org:/cvsroot/dotgnu-pnet
+            co pnet
+
+If you already have a version checked out, then cd to your "pnet"
+working directory and use the following command:
+
+    cvs -z3 update -d
+
+The "-d" is important.  You won't get newly created directories from the
+repository if you omit it.
+
+The most recent release version of the source is on the Portable.NET
+Web site:
+
+    http://www.southern-storm.com.au/portable_net.html
+
+Building Portable.NET
+---------------------
+
+If you have checked out the CVS version, you will first have to do the
+following to generate the automake/autoconf output files:
+
+	$ ./auto_gen.sh
+
+The release version already has the output files generated for you.
+Use that if you don't have automake and autoconf on your system.
+
+Build and install treecc first, and then build Portable.NET as follows:
+
+	$ ./configure    (or ./configure --prefix=PATH)
+	$ make
+
+The test suite can be run with "make check", and "make distclean" will
+return your tree to a pristine pre-configure state.  Always test your
+patches on a pristine build that has been updated from the CVS repository
+before submitting them.
+
+If you would like some assistance building the code or you are having
+problems, then run the Portable.NET Mad Cow diagnostic utility, which
+will walk you through it one step at a time:
+
+	$ ./madcow
+
+This script dumps out a "madcow.log" file which can help the Portable.NET
+developers diagnose any build problems that you may be having.
+
+Standards
+---------
+
+The ECMA standards for C# and the Common Language Infrastructure (CLI)
+can be found at the ECMA Web site:
+
+	http://www.ecma-international.org/publications/standards/Ecma-334.htm (C#)
+	http://www.ecma-international.org/publications/standards/Ecma-335.htm (CLI)
+
+Version numbers
+---------------
+
+Portable.NET versions are numbered as follows:
+
+	- Working CVS versions end in an odd number.  e.g. "0.2.3".
+	- Release versions end in an even number.  e.g. "0.2.4".
+
+Other than that, the numbering scheme is pulled out of a hat.
+
+You can tell what version you are working on by looking in the
+"configure.in" file for the "AM_INIT_AUTOMAKE" line.
+
+Copyright
+---------
+
+All source files must contain the standard GPL header, together with the
+name of the entity that you are assigning Copyright to.  You can choose
+one of the following entities:
+
+    Southern Storm Software, Pty Ltd
+    Free Software Foundation
+    FreeDevelopers.net
+
+Be sure to check with your employer (especially their legal department)
+to make sure that you have permission to re-assign Copyright.  Some
+employers have conditions in their employment agreements that make all
+work done by you belong to them even if you did it outside office hours.
+
+For patches to existing classes, the guidelines are:
+
+    If the change is less than 15 lines in length, then the patch is
+    considered trivial and the Copyright stays with the current holder.
+
+    For larger changes, you should either assign Copyright to the
+    existing holder, or choose one of the above entities to assign
+    joint ownership.
+
+The following is an example Copyright header:
+
+/*
+ * foo.c - Implementation of the "foo" utility functions.
+ *
+ * Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+ *
+ * Contributions from John Smith <john@smith.com>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+Joint ownership would look something like this:
+
+ * Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+ * Copyright (C) 2002  Free Software Foundation
+
+See the Portable.NET FAQ for more information on Copyright assignment:
+
+    http://www.southern-storm.com.au/pnet_faq.html
+
+How to submit changes and bug reports
+-------------------------------------
+
+Changes should be submitted through the Patch Manager on Savannah:
+
+    http://savannah.gnu.org/patch/?group_id=353
+
+Bug reports should be submitted through the Bug Tracking system
+on Savannah:
+
+	https://savannah.gnu.org/bugs/?group=dotgnu-pnet
+
+Alternatively, you can e-mail patches and bug reports to Rhys Weatherley
+(rweather@southern-storm.com.au).  The facilities on Savannah make it
+easier to track issues.
+
+When you submit a bug report, please provide the following information:
+
+    - Source for a test application that demonstrates the bug.
+    - A description of why you think the behaviour is incorrect.
+    - The platform (OS and CPU) upon which the problem was observed.
+    - The version of Portable.NET that you tested with.
+    - Patch data for fixes, if applicable.
+
+The preferred patch format is context diff's against the CVS repository.
+Use "cvs diff -c filename" to create such diff's.  To create a context
+diff for a new file that does not exist in the repository, use the
+command "diff -c /dev/null filename" instead.
+
+The "make_patch.sh" script can be used to assist in the process of building
+patch files suitable for use with pnet.  The script assumes that you are
+working with the CVS version of the source tree, not the .tar.gz version.
+The simplest way to use the script is to cd to the top-level source directory
+and type:
+
+    ./make_patch.sh
+
+The script will determine which files have changed, ask for you to enter
+a description, and then construct the patch file.  The file will be called
+"USER-DATE.patch" in the current directory unless you specify "-o":
+
+    ./make_patch.sh -o filename
+
+Normally the patch will be calculated for every file that you have changed.
+To submit a patch for a specific set of files, specify them on the command
+line:
+
+    ./make_patch.sh ChangeLog foo/bar.c
+
+It is usually a good idea to do a "cvs update -d" prior to creating a
+patch file using "make_patch.sh".
+
+Please submit patches for:
+
+    - Source files that were added or changed.
+    - Makefile.am files that incorporate new files into the build.
+    - Manual pages when command-line syntax is affected.
+    - ChangeLog entries that describe the changes that were made.
+
+To summarise, here are the steps for modifying Portable.NET:
+
+    - Create and test the new source files.
+    - Modify Makefile.am to incorporate new files into the build.
+    - Modify ChangeLog to describe what you have changed.
+    - Do a "cvs update -d" to get the latest version of the source.
+    - Execute "make_patch.sh" to create a patch file with the changes:
+
+            ./make_patch.sh
+        or  ./make_patch.sh ChangeLog foo/Makefile.am foo/bar.c
+
+    - Submit the patch through the Patch Manager on Savannah.
+
+Programs
+--------
+
+The following programs are built as part of Portable.NET.  More detailed
+user documentation can be found in "doc/pnettools.texi".  Developer
+documentation can be found in the HACKING files mentioned earlier.
+
+csant
+
+	A utility to assist with building C# applications.
+
+cscc
+
+	Compiler front-end driver.  Cscc == "C Sharp Code Compiler".
+
+cscc-cs
+
+	C# compiler plug-in back-end.
+
+csdoc
+
+	A tool for extracting C# documentation in XML format from source.
+
+csdoc2html
+
+	A utility for converting XML documentation into HTML.
+
+csdoc2texi
+
+	A utility for converting XML documentation into Texinfo.
+
+csdocvalil
+
+	A utility for validating an IL image against an XML documentation
+	file to list all of the things that are incorrect about the image.
+
+ilrun
+
+	The runtime engine (or Common Language Runtime).
+
+ilrun_opt
+
+	An optimised version of the runtime engine that gives better
+	performance on x86 systems.  It will be identical to ilrun on
+	non-x86 systems.
+
+ilasm
+
+	The IL (Intermediate Language) assembler, which is (mostly)
+	compatible with the ECMA assembly language syntax.
+
+ildasm
+
+	The IL disassembler.
+
+ildb
+
+	The IL debugger, based on the gdb command-line interface.
+	This program is in a very early stage.
+
+ildiff
+
+	A utility for printing the differences between two IL images.
+
+ilfind
+	A utility for locating classes, methods, fields, etc, by name
+	in an IL image.
+
+ilnative
+
+	A utility for printing the native methods (internalcall's and
+	PInvoke's) that appear in an IL image.
+
+ilsize
+
+	A utility for printing size information about IL images, similar
+	to the "size(1)" program.
+
+resgen
+
+	A utility for converting between various resource file formats.
+
+
+Contact
+-------
+
+The primary author, Rhys Weatherley, can be contacted via e-mail at
+"rweather@southern-storm.com.au".
+
+The best mailing list to use to discuss Portable.NET development is
+the "developers@dotgnu.org" mailing list.  See "www.dotgnu.org" for
+subscription details.
+
+General coding guidelines
+-------------------------
+
+A. At all times, be clear.  If you need to use tricky code, then
+   comment it heavily to explain the reasons for the trickiness.
+
+B. If you are modifying someone else's code, then use their white space
+   and brace-placement conventions, even if you don't like them.  That
+   will prevent code degradation.  The default style in most files
+   is tab stops at 4 spaces, with braces on a new line.  For example:
+
+        if(condition)
+        {
+            /* This is a comment that crosses
+               multiple lines */
+            ...
+        }
+        else
+        {
+            ...   /* This is a single-line comment */
+        }
+
+C. Function and type names generally begin with upper case, with some
+   kind of prefix.  e.g. "ILTypeXXX" for operations on types.  Field,
+   parameter and local variable names begin with lower case.  Avoid
+   Hungarian notations such as "m_" for structure members.
+
+D. Use ANSI C features.  Don't worry about supporting K&R style
+   function prototypes.  The Portable.NET project assumes that an
+   ANSI C compiler is being used.
+
+E. Always compile with "-Wall" when using gcc, and fix all warnings.
+
+F. If you need something from the system library that isn't strictly
+   compatible with ANSI C, it needs to be autoconf'ed.  Ideally, you
+   would put it into "support" and wrap it in a system-independent
+   API that can be more easily ported to other platforms.
+
+G. If you have a function that is incomplete, then mark it with the
+   /* TODO */ commenting convention.
+
+H. Avoid RCS source tags like "Date" and "Log".  They tend to make the
+   code look ugly, and are difficult to keep consistent when code is
+   copied from one source repository to another.  Change information
+   should instead be placed in the ChangeLog file:
+
+        2002-01-07  John Smith  <john@smith.com>
+
+                * foo/bar.c: modify the "bar" utility functions to
+                implement "foo" parsing.
+
+   This will acknowledge who did what to which file and when.  It is
+   also easier to scan through the ChangeLog file when building the
+   NEWS entry for each major release.

@@ -1,0 +1,9 @@
+./sizeof2.cs:29: warning: unsafe method declaration
+./sizeof2.cs:31: warning: unsafe `sizeof' operator
+./sizeof2.cs:31: `void' type is not allowed in this context
+./sizeof2.cs:32: warning: unsafe `sizeof' operator
+./sizeof2.cs:32: cannot take the size of a managed type
+./sizeof2.cs:33: warning: unsafe `sizeof' operator
+./sizeof2.cs:33: cannot take the size of a managed type
+./sizeof2.cs:34: warning: unsafe `sizeof' operator
+./sizeof2.cs:34: invalid argument to `sizeof' operator

@@ -1,0 +1,298 @@
+/*
+ * java_types.tc - Semantic analysis of Java type nodes
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ * Copyright (C) 2003  Gopal.V
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+%decls %{
+/*
+ * Convert a type into a printable name, suitable for use in error messages.
+ */
+const char *JavaTypeToName(ILType *type);
+%}
+/*
+ * Perform semantic analysis for primitive types.
+ */
+ILNode_JSemAnalysis(ILNode_JPrimitiveType)
+{
+	JavaSemValue value;
+	JavaSemSetType(value, ILType_FromElement(node->elementType));
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the "object" type.
+ */
+ILNode_JSemAnalysis(ILNode_JSystemType)
+{
+	JavaSemValue value;
+	JavaSemSetType(value, ILFindNonSystemType(info, node->className,"java.lang"));
+	if(!(JavaSemGetType(value)))
+	{
+		value=ILNode_JSemAnalysis(
+				ILQualIdentTwo("java.lang",node->className),info,parent);
+	}
+	if(!(JavaSemGetType(value)))
+	{
+		CCOutOfMemory();
+	}
+	return value;
+}
+
+ILNode_JSemAnalysis(ILNode_ILSystemType)
+{
+	JavaSemValue value;
+	JavaSemSetType(value, ILFindSystemType(info, node->className));
+	if(!(JavaSemGetType(value)))
+	{
+		value=ILNode_JSemAnalysis(
+				ILQualIdentTwo("System",node->className),info,parent);
+	}
+	if(!(JavaSemGetType(value)))
+	{
+		CCOutOfMemory();
+	}
+	return value;
+}
+
+/*
+ * Perform semantic analysis for array types.  Array types are
+ * constructed by the C# grammar with the rank specifiers in the
+ * reverse of the true order, which this function fixes up.
+ */
+ILNode_JSemAnalysis(ILNode_JArrayType)
+{
+	JavaSemValue value;
+	ILNode *elemType;
+	ILNode **elemTypeParent;
+	ILType *arrayType;
+	ILType *type;
+
+	/* Find the element type at the end of the rank specifiers */
+	elemType = node->type;
+	elemTypeParent = &(node->type);
+	while(yykind(elemType) == yykindof(ILNode_JArrayType))
+	{
+		elemTypeParent = &(((ILNode_JArrayType *)elemType)->type);
+		elemType = ((ILNode_JArrayType *)elemType)->type;
+	}
+
+	/* Perform semantic analysis on the element type */
+	type = JavaSemTypeLiteral(elemType, info, elemTypeParent);
+
+	/* Create the array type from the outermost rank inwards */
+	arrayType = ILTypeCreateArray(info->context, node->numDimensions, type);
+	if(!arrayType)
+	{
+		CCOutOfMemory();
+	}
+	elemType = node->type;
+	while(yykind(elemType) == yykindof(ILNode_JArrayType))
+	{
+		arrayType = ILTypeCreateArray
+			(info->context, ((ILNode_JArrayType *)elemType)->numDimensions,
+			 arrayType);
+		if(!arrayType)
+		{
+			CCOutOfMemory();
+		}
+		elemType = ((ILNode_JArrayType *)elemType)->type;
+	}
+
+	/* Return the final array type */
+	JavaSemSetType(value, arrayType);
+	return value;
+}
+
+%end %{
+const char *JavaTypeToName(ILType *type)
+{
+	if(ILType_IsPrimitive(type))
+	{
+		/* Get the name of a primitive type */
+		switch(ILType_ToElement(type))
+		{
+			case IL_META_ELEMTYPE_VOID:			return "void";
+			case IL_META_ELEMTYPE_BOOLEAN:		return "boolean";
+			case IL_META_ELEMTYPE_I1:			return "sbyte";
+			case IL_META_ELEMTYPE_U1:			return "byte";
+			case IL_META_ELEMTYPE_I2:			return "short";
+			case IL_META_ELEMTYPE_U2:			return "ushort";
+			case IL_META_ELEMTYPE_CHAR:			return "char";
+			case IL_META_ELEMTYPE_I4:			return "int";
+			case IL_META_ELEMTYPE_U4:			return "uint";
+			case IL_META_ELEMTYPE_I8:			return "long";
+			case IL_META_ELEMTYPE_U8:			return "ulong";
+			case IL_META_ELEMTYPE_R4:			return "float";
+			case IL_META_ELEMTYPE_R8:			return "double";
+			case IL_META_ELEMTYPE_R:			return "double";
+			case IL_META_ELEMTYPE_I:			return "System.IntPtr";
+			case IL_META_ELEMTYPE_U:			return "System.UIntPtr";
+			case IL_META_ELEMTYPE_STRING:		return "System.String";
+			case IL_META_ELEMTYPE_OBJECT:		return "System.Object";
+			case IL_META_ELEMTYPE_TYPEDBYREF:	return "System.TypedReference";
+		}
+		if(type == ILType_Null)
+		{
+			return "null";
+		}
+	}
+	else if(ILType_IsValueType(type) || ILType_IsClass(type))
+	{
+		/* Get the name of a value or class type */
+		ILClass *classInfo = ILType_ToClass(type);
+		const char *name = ILClass_Name(classInfo);
+		const char *namespace = ILClass_Namespace(classInfo);
+		if(namespace)
+		{
+			return ILInternAppendedString
+						(ILInternAppendedString
+							(ILInternString((char *)namespace, -1),
+							 ILInternString((char *)".", 1)),
+						 ILInternString((char *)name, -1)).string;
+		}
+		else
+		{
+			return name;
+		}
+	}
+	else if(type != ILType_Invalid)
+	{
+		/* Get the name of a complex type */
+		int kind = ILType_Kind(type);
+		if(kind == IL_TYPE_COMPLEX_BYREF)
+		{
+			return ILInternAppendedString
+					(ILInternString((char *)JavaTypeToName(ILType_Ref(type)), -1),
+					 ILInternString((char *)" &", 2)).string;
+		}
+		else if(kind == IL_TYPE_COMPLEX_PTR)
+		{
+			return ILInternAppendedString
+					(ILInternString((char *)JavaTypeToName(ILType_Ref(type)), -1),
+					 ILInternString((char *)" *", 2)).string;
+		}
+		else if(kind == IL_TYPE_COMPLEX_ARRAY ||
+			    kind == IL_TYPE_COMPLEX_ARRAY_CONTINUE)
+		{
+			ILType *elemType = ILType_ElemType(type);
+			ILIntString str;
+			ILIntString open;
+			ILIntString close;
+			ILIntString comma;
+			while(ILType_IsComplex(elemType) && elemType != ILType_Invalid &&
+			      (ILType_Kind(elemType) == IL_TYPE_COMPLEX_ARRAY ||
+				   ILType_Kind(elemType) == IL_TYPE_COMPLEX_ARRAY))
+			{
+				elemType = ILType_ElemType(elemType);
+			}
+			str = ILInternString((char *)JavaTypeToName(elemType), -1);
+			open = ILInternString((char *)"[", 1);
+			close = ILInternString((char *)"]", 1);
+			comma = ILInternString((char *)",", 1);
+			str = ILInternAppendedString(str, open);
+			while(type != elemType)
+			{
+				if(ILType_Kind(type) == IL_TYPE_COMPLEX_ARRAY)
+				{
+					str = ILInternAppendedString(str, close);
+					type = ILType_ElemType(type);
+					if(type != elemType)
+					{
+						str = ILInternAppendedString(str, open);
+					}
+				}
+				else
+				{
+					str = ILInternAppendedString(str, comma);
+					type = ILType_ElemType(type);
+				}
+			}
+			return str.string;
+		}
+		else if(kind == IL_TYPE_COMPLEX_CMOD_REQD ||
+				kind == IL_TYPE_COMPLEX_CMOD_OPT)
+		{
+			ILIntString str;
+			ILIntString temp;
+			if(kind == IL_TYPE_COMPLEX_CMOD_REQD)
+			{
+				str = ILInternString("/* reqd ", -1);
+			}
+			else
+			{
+				str = ILInternString("/* opt ", -1);
+			}
+			temp = ILInternString
+			  ((char *)(JavaTypeToName(ILType_FromClass
+			  				(type->un.modifier__.info__))), -1);
+			str = ILInternAppendedString(str, temp);
+			temp = ILInternString(" */ ", -1);
+			str = ILInternAppendedString(str, temp);
+			temp = ILInternString
+				((char *)(JavaTypeToName(type->un.modifier__.type__)), -1);
+			str = ILInternAppendedString(str, temp);
+			return str.string;
+		}
+		else if((kind & IL_TYPE_COMPLEX_METHOD) != 0)
+		{
+			ILIntString str;
+			ILIntString temp;
+			unsigned long num;
+			unsigned long param;
+			ILType *paramType;
+
+			/* Convert the return type */
+			str = ILInternString
+				((char *)(JavaTypeToName(ILTypeGetReturnWithPrefixes(type))), -1);
+
+			/* Add the start of the parameter list */
+			temp = ILInternString(" * (", -1);
+			str = ILInternAppendedString(str, temp);
+
+			/* Indicate if the type has a "this" parameter */
+			if(ILType_HasThis(type))
+			{
+				temp = ILInternString("/*this,*/ ", -1);
+				str = ILInternAppendedString(str, temp);
+			}
+
+			/* Add the parameters to the list */
+			num = ILTypeNumParams(type);
+			for(param = 1; param <= num; ++param)
+			{
+				paramType = ILTypeGetParamWithPrefixes(type, param);
+				temp = ILInternString((char *)(JavaTypeToName(paramType)), -1);
+				str = ILInternAppendedString(str, temp);
+				if(param < num)
+				{
+					temp = ILInternString(", ", 2);
+					str = ILInternAppendedString(str, temp);
+				}
+			}
+
+			/* Terminate the parameter list and return */
+			temp = ILInternString(")", 1);
+			str = ILInternAppendedString(str, temp);
+			return str.string;
+		}
+	}
+	return "invalid type";
+}
+
+
+%}

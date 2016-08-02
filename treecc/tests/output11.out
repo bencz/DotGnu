@@ -1,0 +1,477 @@
+line 4: %option lang C#
+line 5: %option namespace Test
+line 7: %node type_code no_parent 14
+line 9: %node int_type type_code 16
+line 10: %node float_type type_code 16
+line 13: %node expression no_parent 6
+line 15: %field type type_code type_code.int_type 1
+line 18: %node binary expression 2
+line 20: %field expr1 expression no_value 0
+line 21: %field expr2 expression no_value 0
+line 24: %node unary expression 2
+line 27: %field expr expression no_value 0
+line 31: %node intnum expression 0
+line 33: %field num int no_value 0
+line 36: %node plus binary 0
+line 37: %node minus binary 0
+line 38: %node multiply binary 0
+line 39: %node divide binary 0
+line 40: %node negate unary 0
+line 41: %node power binary 0
+line 43: %operation void Infer::infer_type 2
+line 43: %param expression e 1
+line 45: %case binary infer_type
+line 65: %case unary infer_type
+line 71: %case intnum infer_type
+line 76: %case power infer_type
+line 89: %operation void infer_virtual 1
+line 89: %param expression e 1
+line 89: %virtual expression infer_virtual
+line 91: %case binary infer_virtual
+line 111: %case unary infer_virtual
+line 117: %case intnum infer_virtual
+line 122: %case power infer_virtual
+/* output.c.  Generated automatically by treecc */
+
+namespace Test
+{
+
+using System;
+
+public enum type_code
+{
+	int_type,
+	float_type,
+}
+
+public class YYNODESTATE
+{
+
+	private static YYNODESTATE state__;
+
+	public static YYNODESTATE getState()
+	{
+		if(state__ != null) return state__;
+		state__ = new YYNODESTATE();
+		return state__;
+	}
+
+	public YYNODESTATE() { state__ = this; }
+
+	public virtual String currFilename() { return null; }
+	public virtual long currLinenum() { return 0; }
+
+}
+
+public abstract class expression
+{
+	protected int kind__;
+	protected String filename__;
+	protected long linenum__;
+
+	public int getKind() { return kind__; }
+	public String getFilename() { return filename__; }
+	public long getLinenum() { return linenum__; }
+	public void setFilename(String filename) { filename__ = filename; }
+	public void setLinenum(long linenum) { linenum__ = linenum; }
+
+	public const int KIND = 4;
+
+	public type_code type;
+
+	protected expression()
+	{
+		this.kind__ = KIND;
+		this.filename__ = YYNODESTATE.getState().currFilename();
+		this.linenum__ = YYNODESTATE.getState().currLinenum();
+		this.type = type_code.int_type;
+	}
+
+	public abstract void infer_virtual();
+
+	public virtual int isA(int kind)
+	{
+		if(kind == KIND)
+			return 1;
+		else
+			return 0;
+	}
+
+	public virtual String getKindName()
+	{
+		return "expression";
+	}
+}
+
+public class binary : expression
+{
+	public new const int KIND = 5;
+
+	public expression expr1;
+	public expression expr2;
+
+	protected binary(expression expr1, expression expr2)
+		: base()
+	{
+		this.kind__ = KIND;
+		this.expr1 = expr1;
+		this.expr2 = expr2;
+	}
+
+	public override void infer_virtual()
+#line 92 "output11.tst"
+	{
+		binary e = this;
+	
+		type_code type1, type2;
+	
+		e.expr1.infer_virtual();
+		type1 = e.expr1.type;
+	
+		e.expr2.infer_virtual();
+		type2 = e.expr2.type;
+	
+		if(type1 == type_code.float_type || type_code.type2 == float_type)
+		{
+			e.type = type_code.float_type;
+		}
+		else
+		{
+			e.type = type_code.int_type;
+		}
+	}
+#line 111 "output.c"
+
+	public override int isA(int kind)
+	{
+		if(kind == KIND)
+			return 1;
+		else
+			return base.isA(kind);
+	}
+
+	public override String getKindName()
+	{
+		return "binary";
+	}
+}
+
+public class unary : expression
+{
+	public new const int KIND = 6;
+
+	public expression expr;
+
+	protected unary(expression expr)
+		: base()
+	{
+		this.kind__ = KIND;
+		this.expr = expr;
+	}
+
+	public override void infer_virtual()
+#line 112 "output11.tst"
+	{
+		unary e = this;
+	
+		e.expr.infer_virtual();
+		e.type = e.expr.type;
+	}
+#line 148 "output.c"
+
+	public override int isA(int kind)
+	{
+		if(kind == KIND)
+			return 1;
+		else
+			return base.isA(kind);
+	}
+
+	public override String getKindName()
+	{
+		return "unary";
+	}
+}
+
+public class intnum : expression
+{
+	public new const int KIND = 7;
+
+	public int num;
+
+	public intnum(int num)
+		: base()
+	{
+		this.kind__ = KIND;
+		this.num = num;
+	}
+
+	public override void infer_virtual()
+#line 118 "output11.tst"
+	{
+		intnum e = this;
+	
+		e.type = type_code.int_type;
+	}
+#line 184 "output.c"
+
+	public override int isA(int kind)
+	{
+		if(kind == KIND)
+			return 1;
+		else
+			return base.isA(kind);
+	}
+
+	public override String getKindName()
+	{
+		return "intnum";
+	}
+}
+
+public class plus : binary
+{
+	public new const int KIND = 8;
+
+	public plus(expression expr1, expression expr2)
+		: base(expr1, expr2)
+	{
+		this.kind__ = KIND;
+	}
+
+	public override int isA(int kind)
+	{
+		if(kind == KIND)
+			return 1;
+		else
+			return base.isA(kind);
+	}
+
+	public override String getKindName()
+	{
+		return "plus";
+	}
+}
+
+public class minus : binary
+{
+	public new const int KIND = 9;
+
+	public minus(expression expr1, expression expr2)
+		: base(expr1, expr2)
+	{
+		this.kind__ = KIND;
+	}
+
+	public override int isA(int kind)
+	{
+		if(kind == KIND)
+			return 1;
+		else
+			return base.isA(kind);
+	}
+
+	public override String getKindName()
+	{
+		return "minus";
+	}
+}
+
+public class multiply : binary
+{
+	public new const int KIND = 10;
+
+	public multiply(expression expr1, expression expr2)
+		: base(expr1, expr2)
+	{
+		this.kind__ = KIND;
+	}
+
+	public override int isA(int kind)
+	{
+		if(kind == KIND)
+			return 1;
+		else
+			return base.isA(kind);
+	}
+
+	public override String getKindName()
+	{
+		return "multiply";
+	}
+}
+
+public class divide : binary
+{
+	public new const int KIND = 11;
+
+	public divide(expression expr1, expression expr2)
+		: base(expr1, expr2)
+	{
+		this.kind__ = KIND;
+	}
+
+	public override int isA(int kind)
+	{
+		if(kind == KIND)
+			return 1;
+		else
+			return base.isA(kind);
+	}
+
+	public override String getKindName()
+	{
+		return "divide";
+	}
+}
+
+public class power : binary
+{
+	public new const int KIND = 13;
+
+	public power(expression expr1, expression expr2)
+		: base(expr1, expr2)
+	{
+		this.kind__ = KIND;
+	}
+
+	public override void infer_virtual()
+#line 123 "output11.tst"
+	{
+		power e = this;
+	
+		e.expr1.infer_virtual();
+		e.expr2.infer_virtual();
+	
+		if(e.expr2.type != type_code.int_type)
+		{
+			error("second sub-expression to `^' is not an integer");
+		}
+	
+		e.type = e.expr1.type;
+	}
+#line 321 "output.c"
+
+	public override int isA(int kind)
+	{
+		if(kind == KIND)
+			return 1;
+		else
+			return base.isA(kind);
+	}
+
+	public override String getKindName()
+	{
+		return "power";
+	}
+}
+
+public class negate : unary
+{
+	public new const int KIND = 12;
+
+	public negate(expression expr)
+		: base(expr)
+	{
+		this.kind__ = KIND;
+	}
+
+	public override int isA(int kind)
+	{
+		if(kind == KIND)
+			return 1;
+		else
+			return base.isA(kind);
+	}
+
+	public override String getKindName()
+	{
+		return "negate";
+	}
+}
+
+public class Infer
+{
+	public static void infer_type(expression e__)
+	{
+		switch(e__.getKind())
+		{
+			case power.KIND:
+			{
+				power e = (power)e__;
+#line 77 "output11.tst"
+				{
+					infer_type(e.expr1);
+					infer_type(e.expr2);
+				
+					if(e.expr2.type != type_code.int_type)
+					{
+						error("second sub-expression to `^' is not an integer");
+					}
+				
+					e.type = e.expr1.type;
+				}
+#line 382 "output.c"
+			}
+			break;
+
+			case binary.KIND:
+			case plus.KIND:
+			case minus.KIND:
+			case multiply.KIND:
+			case divide.KIND:
+			{
+				binary e = (binary)e__;
+#line 46 "output11.tst"
+				{
+					type_code type1, type2;
+				
+					infer_type(e.expr1);
+					type1 = e.expr1.type;
+				
+					infer_type(e.expr2);
+					type2 = e.expr2.type;
+				
+					if(type1 == type_code.float_type || type_code.type2 == float_type)
+					{
+						e.type = type_code.float_type;
+					}
+					else
+					{
+						e.type = type_code.int_type;
+					}
+				}
+#line 412 "output.c"
+			}
+			break;
+
+			case unary.KIND:
+			case negate.KIND:
+			{
+				unary e = (unary)e__;
+#line 66 "output11.tst"
+				{
+					infer_type(e.expr);
+					e.type = e.expr.type;
+				}
+#line 425 "output.c"
+			}
+			break;
+
+			case intnum.KIND:
+			{
+				intnum e = (intnum)e__;
+#line 72 "output11.tst"
+				{
+					e.type = type_code.int_type;
+				}
+#line 436 "output.c"
+			}
+			break;
+
+			default: break;
+		}
+	}
+}
+
+}

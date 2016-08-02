@@ -1,0 +1,39 @@
+#
+# NotSupp.txt - Resources for "Not Supported" messages.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+NotSupp_FixedSizeCollection=L'operació no està suportada en objectes fixes
+NotSupp_ReadOnly=Operació no suportada en objectes de només lectura
+NotSupp_NotArrayType=Cal que sigui del tipus array
+NotSupp_NotGenericType=El tipus no és un tipus generic
+NotSupp_GetValueDirect=Utilitza GetValue enlloc de FieldInfo.GetValueDirect
+NotSupp_SetValueDirect=Utilitza SetValue enlloc de FieldInfo.SetValueDirect
+NotSupp_Remoting=Remoting no està suportat
+NotSupp_Multicast=Aquest tipus de delegat no suporta multicasting
+NotSupp_TypedRefEquals=No es poden comprobar referencies de tipus per igualtat
+NotSupp_SetWaitHandle=No es pot definir un manejador d'espera
+NotSupp_CodePage=El codi de pàgina {0} no està suportat
+NotSupp_EncodingName=El nom de codificació `{0}' no està suportat
+NotSupp_Builder=L'operació demanada no està suportada per ensamblats dinàmics
+NotSupp_TypeCreated=L'operació demanada no està suportada després d'haver-se creat el tipus
+NotSupp_TypeNotCreated=L'operació demanada no està suportada fins que el tipus no ha estat creat
+NotSupp_IPermissionUnion=No es poden unir els objectes IPermission especificats
+NotSupp_SetRemotingValue=No es pot definir aquest valor per 'remoting'
+NotSupp_SerializePointer=No es poden serialitzar els valors dels punters
+NotSupp_SubClass=L'implemnetació ha de ser oferta per les subclasses
+NotSupp_DelAsyncProcMsg=No es pot utilitzar AsyncProcessMessage amb delegats asíncrons

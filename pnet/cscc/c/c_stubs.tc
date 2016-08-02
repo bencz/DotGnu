@@ -1,0 +1,138 @@
+/*
+ * c_stubs.tc - Stub out codegen nodes that we don't require.
+ *
+ * Copyright (C) 2002, 2009  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/*
+ * Perform semantic analysis for nodes that aren't relevant to C,
+ * or which are synthesised during semantic analysis.
+ */
+ILNode_CSemAnalysis(ILNode_UserLogicalAnd),
+ILNode_CSemAnalysis(ILNode_UserLogicalOr),
+ILNode_CSemAnalysis(ILNode_UserUnaryOp),
+ILNode_CSemAnalysis(ILNode_UserBinaryOp),
+ILNode_CSemAnalysis(ILNode_Concat),
+ILNode_CSemAnalysis(ILNode_DelegateAdd),
+ILNode_CSemAnalysis(ILNode_DelegateSub),
+ILNode_CSemAnalysis(ILNode_UserIncOrDec),
+ILNode_CSemAnalysis(ILNode_UserPreInc),
+ILNode_CSemAnalysis(ILNode_UserPreDec),
+ILNode_CSemAnalysis(ILNode_UserPostInc),
+ILNode_CSemAnalysis(ILNode_UserPostDec),
+ILNode_CSemAnalysis(ILNode_UserConversion),
+ILNode_CSemAnalysis(ILNode_This),
+ILNode_CSemAnalysis(ILNode_ArgList),
+ILNode_CSemAnalysis(ILNode_VarArgList),
+ILNode_CSemAnalysis(ILNode_VarArgExpand),
+ILNode_CSemAnalysis(ILNode_Argument),
+ILNode_CSemAnalysis(ILNode_ArgArray),
+ILNode_CSemAnalysis(ILNode_BoxingExpression),
+ILNode_CSemAnalysis(ILNode_As),
+ILNode_CSemAnalysis(ILNode_Is),
+ILNode_CSemAnalysis(ILNode_Box),
+ILNode_CSemAnalysis(ILNode_Unbox),
+ILNode_CSemAnalysis(ILNode_IsNull),
+ILNode_CSemAnalysis(ILNode_IsNonNull),
+ILNode_CSemAnalysis(ILNode_MakeRefAny),
+ILNode_CSemAnalysis(ILNode_RefType),
+ILNode_CSemAnalysis(ILNode_RefValue),
+ILNode_CSemAnalysis(ILNode_BaseAccess),
+ILNode_CSemAnalysis(ILNode_BaseElement),
+ILNode_CSemAnalysis(ILNode_StaticField),
+ILNode_CSemAnalysis(ILNode_MemberField),
+ILNode_CSemAnalysis(ILNode_StaticProperty),
+ILNode_CSemAnalysis(ILNode_MemberProperty),
+ILNode_CSemAnalysis(ILNode_IndexerAccess),
+ILNode_CSemAnalysis(ILNode_EventAddOrRemove),
+ILNode_CSemAnalysis(ILNode_Declaration),
+ILNode_CSemAnalysis(ILNode_ClassDefn),
+ILNode_CSemAnalysis(ILNode_ScopeChange),
+ILNode_CSemAnalysis(ILNode_FieldDeclaration),
+ILNode_CSemAnalysis(ILNode_FieldDeclarator),
+ILNode_CSemAnalysis(ILNode_EventDeclaration),
+ILNode_CSemAnalysis(ILNode_EventDeclarator),
+ILNode_CSemAnalysis(ILNode_MethodDeclaration),
+ILNode_CSemAnalysis(ILNode_PropertyDeclaration),
+ILNode_CSemAnalysis(ILNode_EnumMemberDeclaration),
+ILNode_CSemAnalysis(ILNode_DelegateMemberDeclaration),
+ILNode_CSemAnalysis(ILNode_FormalParameter),
+ILNode_CSemAnalysis(ILNode_AttributeTree),
+ILNode_CSemAnalysis(ILNode_AttributeSection),
+ILNode_CSemAnalysis(ILNode_Attribute),
+ILNode_CSemAnalysis(ILNode_AttrArgs),
+ILNode_CSemAnalysis(ILNode_NamedArg),
+ILNode_CSemAnalysis(ILNode_NewExpression),
+ILNode_CSemAnalysis(ILNode_ObjectCreationExpression),
+ILNode_CSemAnalysis(ILNode_DelegateCreationExpression),
+ILNode_CSemAnalysis(ILNode_DefaultConstructor),
+ILNode_CSemAnalysis(ILNode_RefInit),
+ILNode_CSemAnalysis(ILNode_RefValueTypeCreationExpression),
+ILNode_CSemAnalysis(ILNode_BaseInit),
+ILNode_CSemAnalysis(ILNode_ThisInit),
+ILNode_CSemAnalysis(ILNode_NonStaticInit),
+ILNode_CSemAnalysis(ILNode_Foreach),
+ILNode_CSemAnalysis(ILNode_ForeachString),
+ILNode_CSemAnalysis(ILNode_EmptyExpr),
+ILNode_CSemAnalysis(ILNode_ForeachCollection),
+ILNode_CSemAnalysis(ILNode_LabelledBreak),
+ILNode_CSemAnalysis(ILNode_LabelledContinue),
+ILNode_CSemAnalysis(ILNode_GotoCase),
+ILNode_CSemAnalysis(ILNode_GotoDefault),
+ILNode_CSemAnalysis(ILNode_SwitchSectList),
+ILNode_CSemAnalysis(ILNode_SwitchSection),
+ILNode_CSemAnalysis(ILNode_CaseList),
+ILNode_CSemAnalysis(ILNode_VariableDeclarator),
+ILNode_CSemAnalysis(ILNode_LocalVarDeclaration),
+ILNode_CSemAnalysis(ILNode_LocalConstDeclaration),
+ILNode_CSemAnalysis(ILNode_QualIdent),
+ILNode_CSemAnalysis(ILNode_CDeclarator),
+ILNode_CSemAnalysis(ILNode_ArrayAccess),
+ILNode_CSemAnalysis(ILNode_DerefField),
+ILNode_CSemAnalysis(ILNode_MemberAccess),
+ILNode_CSemAnalysis(ILNode_PreIncPtr),
+ILNode_CSemAnalysis(ILNode_PreDecPtr),
+ILNode_CSemAnalysis(ILNode_PostIncPtr),
+ILNode_CSemAnalysis(ILNode_PostDecPtr),
+ILNode_CSemAnalysis(ILNode_InvocationExpression),
+ILNode_CSemAnalysis(ILNode_Deref),
+ILNode_CSemAnalysis(ILNode_CAttribute),
+ILNode_CSemAnalysis(ILNode_CAttributeValue),
+ILNode_CSemAnalysis(ILNode_CBitField),
+ILNode_CSemAnalysis(ILNode_ArrayLength),
+ILNode_CSemAnalysis(ILNode_ArrayInit)
+{
+	/* Nothing to do here */
+	return CSemValueError;
+}
+
+/*
+ * Perform address computations for nodes that aren't needed by C.
+ */
+ILNode_CGenAddress(ILNode_BaseAccess),
+ILNode_CGenAddress(ILNode_BaseElement),
+ILNode_CGenAddress(ILNode_StaticField),
+ILNode_CGenAddress(ILNode_MemberField),
+ILNode_CGenAddress(ILNode_ArrayAccess),
+ILNode_CGenAddress(ILNode_DerefField),
+ILNode_CGenAddress(ILNode_Deref),
+ILNode_CGenAddress(ILNode_MemberAccess),
+ILNode_CGenAddress(ILNode_This)
+{
+	/* Nothing to do here */
+	return CAddressDefault;
+}

@@ -1,0 +1,39 @@
+#
+# NotSupp.txt - Resources for "Not Supported" messages.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+NotSupp_FixedSizeCollection=Operation bei Objekten mit fixer Groesse nicht unterstuetzt
+NotSupp_ReadOnly=Operation bei read-only Objekten nicht unterstuetzt
+NotSupp_NotArrayType=Typ ist kein array typ
+NotSupp_NotGenericType=Der Typ ist kein generischer Typ
+NotSupp_GetValueDirect=FieldInfo.GetValueDirect nicht unterstuetzt, benutze GetValue stattdessen
+NotSupp_SetValueDirect=FieldInfo.SetValueDirect nicht unterstuetzt, benutze SetValue stattdessen
+NotSupp_Remoting=Remoting wird nicht unterstuetzt
+NotSupp_Multicast=This delegate type does not support multicasting
+NotSupp_TypedRefEquals=Kann eingegebene Referenzen nicht auf Gleichheit pruefen
+NotSupp_SetWaitHandle=Setting a wait handle is not supported
+NotSupp_CodePage=Code page {0} wird nicht unterstuetzt
+NotSupp_EncodingName=Encoding name `{0}' wird nicht unterstuetzt
+NotSupp_Builder=Die angeforderte Operation wird bei dynamischen assemblies nicht unterstuetzt
+NotSupp_TypeCreated=Die angeforderte Operation wird nicht unterstuetzt nachdem der Typ erstellt wurde
+NotSupp_TypeNotCreated=Die angeforderte Operation wird nicht unterstuetzt bis der Typ erstellt wurde
+NotSupp_IPermissionUnion=Kann die angegebenen IPermission Objekte nicht vereinen
+NotSupp_SetRemotingValue=Kann den angegebenen remoting Wert nicht setzen
+NotSupp_SerializePointer=Kann pointer Werte nicht serialisieren
+NotSupp_SubClass=Implementierung muss durch abgeleitete Klassen erfolgen
+NotSupp_DelAsyncProcMsg=Kann die AsyncProcessMessage nicht mit asynchronen Delegates verwenden

@@ -1,0 +1,12 @@
+
+This directory contains a copy of the GNU C pre-processor sources,
+copied from gcc 3.2.  We used to use the system-installed version
+of cpp, but some systems had problems and others didn't have a
+version of cpp at all.
+
+It is also a pain to undefine the system macros and replace them with
+the CLI platform macros.  This way, we can get a C pre-processor that
+works the way we want, with no system-dependent macro pollution.
+
+The pre-processor has been modified to use the CLI macro definitions,
+and to add the "#using" directive that is copied from Managed C++.

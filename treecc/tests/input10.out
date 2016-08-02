@@ -1,0 +1,14 @@
+line 2: literal code:
+ abc^*&%/* kjk}jkj*/
+	// }
+	/*
+*/
+	"\"}" '/*kjkjk*/'
+
+line 8: identifier (len = 16): no_parse_literal
+line 9: {
+line 9: identifier (len = 13): parse_literal
+line 9: identifier (len = 3): abc
+line 10: }
+line 11: literal code:
+ hello 

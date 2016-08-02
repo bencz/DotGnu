@@ -1,0 +1,4 @@
+./new3.cs:33: warning: unsafe method declaration
+./new3.cs:37: warning: unsafe address operator
+./new3.cs:39: warning: unsafe pointer dereference
+./new3.cs:40: warning: unsafe pointer dereference

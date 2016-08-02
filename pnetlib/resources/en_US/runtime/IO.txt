@@ -1,0 +1,56 @@
+#
+# IO.txt - Resources for I/O-related errors and exceptions.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+IO_StreamClosed=Stream is already closed
+IO_FileAccess=Invalid file access value specified
+IO_FileMode=Invalid file mode value specified
+IO_FileShare=Invalid file share value specified
+IO_InvalidPathname=Invalid pathname specified
+IO_IncorrectAccess=Incorrect access mode specified for file handle
+IO_WriteFailed=Write request failed
+IO_FlushFailed=Flush request failed
+IO_ReadFailed=Read request failed
+IO_SeekFailed=Seek request failed
+IO_SetLengthFailed=SetLength request failed
+IO_EndOfStream=Attempt to seek beyond the end of the stream
+IO_ReadEndOfStream=Attempt to read beyond the end of the stream
+IO_NotSupp_Seek=The specified stream does not support seeking
+IO_NotSupp_SetLength=The specified stream does not support setting its length
+IO_NotSupp_Read=The specified stream does not support reading
+IO_NotSupp_Write=The specified stream does not support writing
+IO_NotSupp_Async=The specified stream does not support asynchronous operations
+IO_PathNotFound=The specified path could not be found
+IO_DirNotFound=The specified directory could not be found
+IO_FileNotFound=Could not find file "{0}"
+IO_FileLoad=Could not load file "{0}"
+IO_RegistryKeyClosed=Registry key has already been closed
+IO_RegistryReadOnly=Registry key is read-only
+IO_RegistryKeyNotExist=Registry key does not exist
+IO_RegistryHasSubKeys=Registry key still has sub keys
+IO_UnknownFile=Unknown filename
+IO_AccessDenied=Access to the specified pathname is not allowed
+IO_InvalidLength=Cannot change the stream length to the specified value
+IO_InvalidSeekPosition=Invalid seek position
+IO_InvalidWhence=Invalid seek origin
+IO_IsolatedStorage=An error occurred while accessing isolated storage
+IO_FixedCapacity=Cannot increase the capacity of this memory stream
+IO_CannotReduceCapacity=Cannot reduce the capacity below the stream's length
+IO_LockFailed=Failed to acquire lock
+IO_UnlockFailed=Failed to release lock
+IO_NotSupp_Symlinks=Symbolic links are not supported on this filesystem

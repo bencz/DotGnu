@@ -1,0 +1,91 @@
+
+The "pnet_build.sh" script is designed to assist people who wish
+to run regular automated builds of Portable.NET from the CVS tree.
+The usual reason for doing this is to check if something has been
+accidentally broken for a particular platform or configuration.
+
+You should not use this script if you are trying to port Portable.NET
+to a new platform for the first time, or if you just want to build
+Portable.NET for your own personal use.
+
+The script rebuilds the entire tree from pristine sources each
+time, and runs all available regression test programs.
+
+Note: the regression tests are not currently exhaustive.  Just because
+all tests pass doesn't necessarily mean that the system is perfect.
+We are working on improving test coverage.
+
+To use the script, copy the "pnet_build.sh" and "pnet_build.cfg"
+files to a convenient location on your system.  Then edit the
+"pnet_build.cfg" file to tell the script where important directories
+and programs are located.  The most important of these is the
+"PNET_BUILD_BASE" variable, which specifies the full absolute path
+of the directory where all builds are performed.
+
+You can run the script manually from the command-line as follows:
+
+    /some_dir/pnet_build.sh /some_dir/pnet_build.cfg
+
+where "/some_dir" is directory where you copied the files to above.
+If you wish to run the script from "cron", then set it up to run as
+a regular user (not root), and specify the "-q" option.  e.g.
+
+    /some_dir/pnet_build.sh -q /some_dir/pnet_build.cfg
+
+The script assumes that it has a full GNU compiler toolchain available.
+You may need to edit the script to set environment variables (e.g. PATH)
+if you are running the script from "cron".
+
+The script also assumes that you have already logged into the CVS
+server as an anonymous user with the following command:
+
+  cvs -z3 -d:pserver:anoncvs@subversions.gnu.org:/cvsroot/dotgnu-pnet login
+
+The build proceeds as follows:
+
+* The latest version of the sources is checked out into the
+  directory $PNET_BUILD_BASE/pristine.  You should not edit the
+  contents of this directory in any way - it is merely a mirror
+  of the current state of the CVS repository.
+
+* The contents of the $PNET_BUILD_BASE/actual directory are deleted
+  and replaced with a fresh copy of the pristine directory.
+
+* Each source repository is configured, built, and any applicable
+  regression test suites are run.  The repositories are built in
+  the order "treecc", "pnet", "pnetlib", "cscctest".  The build
+  will stop as soon as a failure is detected.
+
+* A full log of the build process is written to the directory
+  $PNET_BUILD_BASE/log.
+
+If you are planning to work on the Portable.NET code to fix problems,
+then we suggest that you do so in a separate copy.  Do not edit the
+pristine or actual directories.
+
+If the build fails, the current state of the system will be left in
+the actual directory, but as soon as the next build begins, the entire
+actual directory will be removed and the process restarts.
+
+The "pnet" tree can be configured and built in a number of different
+profiles and configurations.  These are typically selected by supplying
+options to pnet's "configure" script.  You can alter this by setting
+the PNET_CONFIGURE_OPTIONS variable in the "pnet_build.cfg" file.
+
+If you want to, then you can also build multiple profiles by running
+the script multiple times:
+
+	export PNET_BUILD_LOG_NAME=full
+	export PNET_CONFIGURE_OPTIONS="--with-profile=full"
+	/some_dir/pnet_build.sh -q /some_dir/pnet_build.cfg
+
+	export PNET_BUILD_LOG_NAME=kernel
+	export PNET_CONFIGURE_OPTIONS="--with-profile=kernel --without-libgc"
+	/some_dir/pnet_build.sh -q /some_dir/pnet_build.cfg
+
+	export PNET_BUILD_LOG_NAME=compact-fp
+	export PNET_CONFIGURE_OPTIONS="--with-profile=compact-fp"
+	/some_dir/pnet_build.sh -q /some_dir/pnet_build.cfg
+
+The results for each run are written to a separate log file, in case
+some builds succeed but others fail.

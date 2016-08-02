@@ -1,0 +1,402 @@
+<html>
+<head>
+<title>Generic C# Library Design</title>
+</head>
+<body bgcolor="#ffffff">
+<h1>DotGNU Portable.Net FAQ</h1>
+
+Rhys Weatherley, <a href="mailto:rweather@southern-storm.com.au">rweather@southern-storm.com.au</a>.<br>
+Last Modified: $Date: 2003/12/23 22:07:07 $<p>
+
+Copyright &copy; 2003 Southern Storm Software, Pty Ltd.<br>
+Permission to distribute unmodified copies of this work is hereby granted.<p>
+
+<h2>Introduction</h2>
+
+This document describes the design of Portable.NET's Generic C#
+collection library.  The library is distributed under the terms of
+the General Public License (GPL) with the linking exception.<p>
+
+The library was designed to have a similar "flavour" to the existing
+non-generic C# collections, with some ideas borrowed from the C++
+Standard Template Library (STL), and the Java 2 Collections library.<p>
+
+<h2>Conventions</h2>
+
+Notations such as <code>ArrayList&lt;T&gt;</code> are used to indicate
+generic classes; whereas notations such as <code>ArrayList</code> are
+used to indicate the traditional non-generic classes.<p>
+
+<h2>General design considerations</h2>
+
+Here are some examples of the problems in the existing non-generic
+collection classes:<p>
+
+<ol>
+	<li>It is possible to create read-only, fixed-size, and synchronized
+		<code>ArrayList</code>'s, but only synchronized
+		<code>Hashtable</code>'s.</li>
+	<li>Common algorithms, such as sorting and searching, must be implemented
+		in every concrete list implementation, when it would make more sense
+		to have a common utility method that takes an <code>IList</code>.</li>
+	<li>Ugly hacks, like wrapping an <code>IList</code> inside an
+		<code>ArrayList</code>, to get around the algorithm limitations.</li>
+	<li>Enumerators are read-only, failing if the underlying collection
+		is modified.  This makes it difficult to implement algorithms
+		that require modify in-place, or the removal of items during
+		traversal.</li>
+	<li>Confusion between abstract and concrete implementations in some
+		cases.  e.g. there is a <code>Queue</code> class, but no
+		<code>IQueue</code> interface.  So, it isn't easy to
+		replace an array based queue with a linked list based queue.</li>
+	<li>Functionality is overridden through <code>virtual</code> methods,
+	    usually to allow read-only or type-safe wrapping.  This can make
+		the base implementation less efficient, due to the overhead
+		of virtual method calls that will rarely point at anything
+		except the base implementation.</li>
+	<li><code>IsReadOnly</code> and <code>IsFixedSize</code> are common
+		collection traits like <code>IsSynchronized</code>, but appear
+		in subinterfaces instead of <code>ICollection</code>.</li>
+</ol>
+
+To address these problems, we have the following design constraints:<p>
+
+<ol>
+	<li>Read-only, fixed-size, and synchronized functionality are
+		provided with separate decorator classes, not as part of the
+		concrete implementations.  e.g. <code>ReadOnlyList&lt;T&gt;</code>.</li>
+	<li>Common algorithms are ejected to the <code>Algorithm</code>
+		utility class as <code>static</code> generic methods.</li>
+	<li>Concrete classes only implement interfaces - they never implement
+		other utility functions beyond that.</li>
+	<li>Iterators are introduced to replace enumerators, and support
+		in-place removal.  List iterators also support traversal backwards
+		through a list and in-place modification of the current item.</li>
+	<li>Concrete classes always implement at least one abstract interface
+		representing a useful data structure (list, queue, stack, etc).</li>
+	<li>Concrete classes are <code>sealed</code>.  Modified functionality
+		is provided using decorators.</li>
+	<li>Common collection traits are placed into
+		<code>ICollection&lt;T&gt;</code>.</li>
+</ol>
+
+We eschew the use of abstract base classes for implementations.  e.g.
+Java 2's <code>AbstractCollection</code>.  This is typically used to
+implement common utility methods (e.g. <code>addAll()</code> for copying
+one collection into another).  Such utility methods are placed into the
+<code>Algorithm</code> class in our implementation.<p>
+
+An equivalent of the existing <code>CollectionBase</code> class is not
+needed in this implementation.  It is typically used to enforce type
+safety constraints, which the generic language facilities are already
+taking care of for us.  <code>CollectionBase</code> is also used to
+get notification of insertions, removals, etc.  This can be accomplished
+using decorator classes instead.</p>
+
+<blockquote><font size="-2">
+Notes: the design of iterators is based on the Java 2 collection classes.
+The idea of ejecting algorithms and utility methods out of the concrete
+classes is borrowed from the C++ Standard Template Library.
+</font></blockquote>
+
+<h2>Collection interfaces</h2>
+
+<dl>
+<dt><code>ICollection&lt;T&gt;</code></dt>
+	<dd>Base interface for all collections.</dd>
+
+<dt><code>IDeque&lt;T&gt;</code></dt>
+	<dd>The collection is organised as a deque (double-ended queue).</dd>
+
+<dt><code>IDictionary&lt;KeyT, ValueT&gt;</code></dt>
+	<dd>The collection is organised as a dictionary, mapping keys
+		to associated values.</dd>
+
+<dt><code>IIterable&lt;T&gt;</code></dt>
+	<dd>The collection can be iterated over.</dd>
+
+<dt><code>IList&lt;T&gt;</code></dt>
+	<dd>The collection is organised as a list, ordered on index.  The
+		<code>IsRandomAccess</code> property can be used to determine
+		if the indexer implements constant-time lookups (e.g.
+		<code>ArrayList&lt;T&gt;</code>) or non constant-time lookups
+		(e.g. <code>LinkedList&lt;T&gt;</code>).</dd>
+
+<dt><code>IQueue&lt;T&gt;</code></dt>
+	<dd>The collection is organised as a FIFO queue, where additions occur
+		at one end, and removals from the other.</dd>
+
+<dt><code>ISet&lt;T&gt;</code></dt>
+	<dd>The collection is organised as a set.  Each value will occur
+		at most once in the set.</dd>
+
+<dt><code>IStack&lt;T&gt;</code></dt>
+	<dd>The collection is organised as a stack, where additions and
+		removals occur at the same end.</dd>
+</dl>
+
+<h2>Iterators</h2>
+
+<dl>
+<dt><code>IIterator&lt;T&gt;</code></dt>
+	<dd>Provides a counterpart to the non-generic <code>IEnumerator</code>
+		interface, with the addition of a <code>Remove</code> method.
+		This method is used to remove the current item in the iteration
+		in such a way that traversal can continue naturally.</dd>
+
+<dt><code>IListIterator&lt;T&gt;</code></dt>
+	<dd>Extends <code>IIterator&lt;T&gt;</code> with the ability to traverse
+		backwards through a list, to get the current position by index,
+		and to modify the current item in-place.</dd>
+
+<dt><code>IDictionaryIterator&lt;T&gt;</code></dt>
+	<dd>Extends <code>IIterator&lt;T&gt;</code> with properties that
+		extract the key and value components, and modify the value of
+		the current item in-place.  There is no counterpart to the
+		<code>IDictionary.Entry</code> property, because it is identical
+		to <code>Current</code>.</dd>
+</dl>
+
+If an iterator operation is called after the underlying collection
+has been modified, the behaviour is undefined.  It may operate
+correctly, it may throw an exception, or it may appear to operate
+correctly but actually do something else.  The only guarantees given
+are with respect to modifying <code>Current</code> and calling
+<code>Remove</code> on the iterator.<p>
+
+<h2>Utility interfaces</h2>
+
+<dl>
+<dt><code>IComparable&lt;T&gt;</code></dt>
+	<dd>Provides a counterpart to the non-generic <code>IComparable</code>
+		interface.  Objects that implement this interface can be compared.
+		</dd>
+
+<dt><code>IComparer&lt;T&gt;</code></dt>
+	<dd>Provides a counterpart to the non-generic <code>IComparer</code>
+		interface.  It compares two values of type <code>T</code>.</dd>
+
+<dt><code>IHashCodeProvider&lt;T&gt;</code></dt>
+	<dd>Provides a counterpart to the non-generic <code>IHashCodeProvider</code>
+		interface.  It takes a value of type <code>T</code> and returns
+		a hash code, suitable for use in classes such as
+		<code>Hashtable&lt;T&gt;</code>.</dd>
+
+<dt><code>ICapacity</code></dt>
+	<dd>Provides an interface to get or set the capacity of a collection.
+		Implemented by classes like <code>ArrayList&lt;T&gt;</code>
+		that use an array to implement growable data structures.</dd>
+</dl>
+
+<h2>Concrete implementations</h2>
+
+<dl>
+<dt><code>ArrayList&lt;T&gt;</code></dt>
+	<dd>Implementation of an <code>IList&lt;T&gt;</code>, organised
+		as an array.</dd>
+
+<dt><code>ArrayQueue&lt;T&gt;</code></dt>
+	<dd>Implementation of an <code>IQueue&lt;T&gt;</code>, organised
+		as an array.</dd>
+
+<dt><code>ArrayStack&lt;T&gt;</code></dt>
+	<dd>Implementation of an <code>IStack&lt;T&gt;</code>, organised
+		as an array.</dd>
+
+<dt><code>Hashtable&lt;KeyT, ValueT&gt;</code></dt>
+	<dd>Implementation of an <code>IDictionary&lt;KeyT, ValueT&gt;</code>,
+		organised as a hash.</dd>
+
+<dt><code>LinkedList&lt;T&gt;</code></dt>
+	<dd>Implementation of an <code>IList&lt;T&gt;</code>, organised
+		as a doubly-linked list.  This class also implements
+		<code>IDeque&lt;T&gt;</code>, <code>IQueue&lt;T&gt;</code>,
+		and <code>IStack&lt;T&gt;</code>.</dd>
+
+<dt><code>ListSet&lt;T&gt;</code></dt>
+	<dd>Implementation of an <code>ISet&lt;T&gt;</code> on top of
+		an underlying <code>IList&lt;T&gt;</code> object.  By default,
+		a <code>LinkedList&lt;T&gt;</code> object is used.</dd>
+
+<dt><code>SinglyLinkedList&lt;T&gt;</code></dt>
+	<dd>Implementation of an <code>IList&lt;T&gt;</code>, organised
+		as a singly-linked list.  This class also implements
+		<code>IQueue&lt;T&gt;</code> and <code>IStack&lt;T&gt;</code>.</dd>
+
+<dt><code>TreeSet&lt;T&gt;</code></dt>
+	<dd>Implementation of an <code>ISet&lt;T&gt;</code> as a
+		balanced binary tree.</dd>
+
+<dt><code>TreeDictionary&lt;KeyT, ValueT&gt;</code></dt>
+	<dd>Implementation of an <code>IDictionary&lt;KeyT, ValueT&gt;</code>
+		as a balanced binary tree.</dd>
+</dl>
+
+<h2>Decorators</h2>
+
+<dl>
+<dt><code>FixedSizeCollection&lt;T&gt;</code></dt>
+	<dd>This class, and its descendents, are used to wrap up collections
+		to make them appear to be fixed-size to callers.  Any attempt
+		to modify the size of the collection will result in an
+		<code>InvalidOperationException</code>.</dd>
+
+<dt><code>ReadOnlyCollection&lt;T&gt;</code></dt>
+	<dd>This class, and its descendents, are used to wrap up collections
+		to make them appear to be read-only to callers.  Any attempt
+		to modify the contents of the collection will result in
+		an <code>InvalidOperationException</code>.</dd>
+
+<dt><code>SynchronizedCollection&lt;T&gt;</code></dt>
+	<dd>This class, and its descendents, are used to wrap up collections
+		to synchronize access from multiple threads.  The concrete
+		collection classes are not safe to use simultaneously from multiple
+		threads unless they are wrapped up in this fashion.</dd>
+</dl>
+
+There are decorator classes for collections, deques, dictionaries,
+lists, queues, sets, and stacks.  They all follow the above style.<p>
+
+<h2>Adapters and wrappers</h2>
+
+Sometimes it can be useful to use a generic collection with an
+existing API that expects a non-generic collection, or to use
+an existing non-generic collection with a new API that expects
+a generic one.  The following classes are provided for enabling
+interoperation between generic and non-generic libraries:<p>
+
+<dl>
+<dt><code>CollectionAdapter&lt;T&gt;</code></dt>
+	<dd>This class wraps a generic <code>ICollection&lt;T&gt;</code>
+		and exports the non-generic <code>ICollection</code> interface.</dd>
+
+<dt><code>CollectionWrapper&lt;T&gt;</code></dt>
+	<dd>This class wraps a non-generic <code>ICollection</code> and
+		exports the generic <code>ICollection&lt;T&gt;</code> interface.</dd>
+
+<dt><code>ComparableAdapter&lt;T&gt;</code></dt>
+	<dd>This class wraps a generic <code>IComparable&lt;T&gt;</code>
+		and exports the non-generic <code>IComparable</code> interface.</dd>
+
+<dt><code>ComparableWrapper&lt;T&gt;</code></dt>
+	<dd>This class wraps a non-generic <code>IComparable</code> and
+		exports the generic <code>IComparable&lt;T&gt;</code> interface.</dd>
+
+<dt><code>ComparerAdapter&lt;T&gt;</code></dt>
+	<dd>This class wraps a generic <code>IComparer&lt;T&gt;</code>
+		and exports the non-generic <code>IComparer</code> interface.</dd>
+
+<dt><code>ComparerWrapper&lt;T&gt;</code></dt>
+	<dd>This class wraps a non-generic <code>IComparer</code> and
+		exports the generic <code>IComparer&lt;T&gt;</code> interface.</dd>
+
+<dt><code>DictionaryAdapter&lt;KeyT, ValueT&gt;</code></dt>
+	<dd>This class wraps a generic <code>IDictionary&lt;KeyT, ValueT&gt;</code>
+		and exports the non-generic <code>IDictionary</code> interface.</dd>
+
+<dt><code>DictionaryWrapper&lt;KeyT, ValueT&gt;</code></dt>
+	<dd>This class wraps a non-generic <code>IDictionary</code> and
+		exports the generic <code>IDictionary&lt;KeyT, ValueT&gt;</code>
+		interface.</dd>
+
+<dt><code>DictionaryEnumeratorAdapter&lt;KeyT, ValueT&gt;</code></dt>
+	<dd>This class wraps a generic
+	    <code>IDictionaryIterator&lt;KeyT, ValueT&gt;</code>
+		and exports the non-generic <code>IDictionaryEnumerator</code>
+		interface.</dd>
+
+<dt><code>DictionaryEnumeratorWrapper&lt;KeyT, ValueT&gt;</code></dt>
+	<dd>This class wraps a non-generic <code>IDictionaryEnumerator</code> and
+		exports the generic
+		<code>IDictionaryIterator&lt;KeyT, ValueT&gt;</code> interface.</dd>
+
+<dt><code>EnumerableAdapter&lt;T&gt;</code></dt>
+	<dd>This class wraps a generic <code>IIterable&lt;T&gt;</code>
+		and exports the non-generic <code>IEnumerable</code> interface.</dd>
+
+<dt><code>EnumerableWrapper&lt;T&gt;</code></dt>
+	<dd>This class wraps a non-generic <code>IEnumerable</code> and
+		exports the generic <code>IIterable&lt;T&gt;</code> interface.</dd>
+
+<dt><code>EnumeratorAdapter&lt;T&gt;</code></dt>
+	<dd>This class wraps a generic <code>IIterator&lt;T&gt;</code>
+		and exports the non-generic <code>IEnumerator</code> interface.</dd>
+
+<dt><code>EnumeratorWrapper&lt;T&gt;</code></dt>
+	<dd>This class wraps a non-generic <code>IEnumerator</code> and
+		exports the generic <code>IIterator&lt;T&gt;</code> interface.</dd>
+
+<dt><code>HashCodeProviderAdapter&lt;T&gt;</code></dt>
+	<dd>This class wraps a generic <code>IHashCodeProvider&lt;T&gt;</code>
+		and exports the non-generic <code>IHashCodeProvider</code>
+		interface.</dd>
+
+<dt><code>HashCodeProviderWrapper&lt;T&gt;</code></dt>
+	<dd>This class wraps a non-generic <code>IHashCodeProvider</code> and
+		exports the generic <code>IHashCodeProvider&lt;T&gt;</code>
+		interface.</dd>
+
+<dt><code>ListAdapter&lt;T&gt;</code></dt>
+	<dd>This class wraps a generic <code>IList&lt;T&gt;</code>
+		and exports the non-generic <code>IList</code> interface.</dd>
+
+<dt><code>ListWrapper&lt;T&gt;</code></dt>
+	<dd>This class wraps a non-generic <code>IList</code> and
+		exports the generic <code>IList&lt;T&gt;</code> interface.</dd>
+</dl>
+
+As can be seen, we use "<code>*Adapter</code>" classes to wrap generic
+collections for non-generic use, and use "<code>*Wrapper</code>" classes
+to wrap non-generic collections for generic use.<p>
+
+<h2>Miscellaneous classes</h2>
+
+<dl>
+<dt><code>Algorithm</code></dt>
+	<dd>Provides a large number of generic utility methods for manipulating
+		collections according to various algorithms (sort, search, etc).</dd>
+
+<dt><code>BuiltinComparer&lt;T&gt;</code></dt>
+	<dd>Implementation of <code>IComparer&lt;T&gt;</code> which uses
+		the builtin "<code>&lt;</code>" and "<code>&gt;</code>" operators
+		to perform the comparison.  This is only useful when <code>T</code>
+		is a primitive numeric type.</dd>
+
+<dt><code>Comparer&lt;T&gt;</code></dt>
+	<dd>Implementation of <code>IComparer&lt;T&gt;</code> which uses
+		<code>IComparable&lt;T&gt;</code> and <code>IComparable</code>
+		to perform the comparison.</dd>
+
+<dt><code>Complex&lt;T&gt;</code></dt>
+	<dd>Implementation of a complex number type, based on an
+		underlying numeric type <code>T</code>.</dd>
+
+<dt><code>DictionaryEntry&lt;KeyT, ValueT&gt;</code></dt>
+	<dd>A value type that contains a key/value pair for use with
+		dictionary collections and iterators.</dd>
+
+<dt><code>Predicate&lt;T&gt;</code></dt>
+	<dd>Delegate that takes a single argument of type <code>T</code>
+		and returns <code>true</code> if some predicate condition
+		has been satisfied by the argument.</dd>
+
+<dt><code>RangeList&lt;T&gt;</code></dt>
+	<dd>Wraps up an <code>IList&lt;T&gt;</code> to access a sub-range.</dd>
+
+<dt><code>ReverseIterator&lt;T&gt;</code></dt>
+	<dd>Wraps up an <code>IListIterator&lt;T&gt;</code> to reverse
+		the direction of traversal.</dd>
+
+<dt><code>TreeBase&lt;KeyT, ValueT&gt;</code></dt>
+	<dd>Utility base class for <code>TreeSet&lt;KeyT&gt;</code> and
+		<code>TreeDictionary&lt;KeyT, ValueT&gt;</code>.  Not recommended
+		for direct use by programmers.</dd>
+</dl>
+
+<hr>
+
+Copyright &copy; 2003 Southern Storm Software, Pty Ltd.<br>
+Permission to distribute unmodified copies of this work is hereby granted.
+
+</body>
+</html>

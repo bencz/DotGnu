@@ -1,0 +1,4 @@
+./error.cs:21: error: 
+./error.cs:22: error: This is an unquoted error
+./error.cs:23: error: "This is a quoted error"
+./error.cs:26: warning: file contains no declarations

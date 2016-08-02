@@ -1,0 +1,406 @@
+/*
+ * java_misc.tc - Miscellaneous nodes and their operations 
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ * Copyright (C) 2003  Gopal.V
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+%decls %{
+void GenArrayOfArray(ILGenInfo *info, ILType *arrayType,
+						ILNode *dims);
+%}
+
+ILNode_JSemAnalysis(ILNode_NewExpression)
+{
+	JavaSemValue value;
+	ILNode_ListIter iter;
+	ILNode *child;
+	ILNode *expr;
+	ILNode **parentNode;
+	ILNode **parentOfExpr;
+	ILEvalValue evalValue;
+	int numDimensions = 0;
+	int dim,dimCount;
+
+	/* Determine if the array creation is normal or initializer-based */
+	if(node->indexes)
+	{
+		/* Build the full type node, by combining the element
+		   type, indexed dimensions, and the rank specifiers */
+		if(yyisa(node->type, ILNode_JArrayType))
+		{
+			/* Cannot use array types in this context */
+			CCErrorOnLine(yygetfilename(node->type), yygetlinenum(node->type),
+						  "invalid array element type");
+		}
+
+		dimCount = CountArgList(node->indexes);
+		for(dim=0;dim<dimCount;dim++)
+		{
+			node->type = ILNode_JArrayType_create(node->type, 1);
+		}
+		
+		ILNode_ListIter_Init(&iter, node->rank);
+		while((child = ILNode_ListIter_Next(&iter)) != 0)
+		{
+			node->type = ILNode_JArrayType_create
+				(node->type, ((ILNode_JTypeSuffix *)child)->count);
+		}
+
+		/* Perform semantic analysis on the array type */
+		node->arrayType = JavaSemType(node->type, info, &(node->type));
+
+		/* Perform semantic analysis on the array dimensions */
+		child = node->indexes;
+		parentOfExpr = &(node->indexes);
+		while(yyisa(child, ILNode_ArgList))
+		{
+			++numDimensions;
+			expr = ((ILNode_ArgList *)child)->expr2;
+			parentNode = &(((ILNode_ArgList *)child)->expr2);
+			if(JavaSemExpectValue(expr, info, parentNode, &value))
+			{
+				if(!ILCoerce(info, *parentNode, parentNode,
+							 JavaSemGetType(value), ILType_Int32,1) &&
+				   !ILCoerce(info, *parentNode, parentNode,
+							 JavaSemGetType(value), ILType_UInt32,1) &&
+				   !ILCoerce(info, *parentNode, parentNode,
+							 JavaSemGetType(value), ILType_Int64,1) &&
+				   !ILCoerce(info, *parentNode, parentNode,
+							 JavaSemGetType(value), ILType_UInt64,1))
+				{
+					CCErrorOnLine
+						(yygetfilename(expr), yygetlinenum(expr),
+			  			 "incompatible types in dimension specifier: "
+						 	"no conversion from `%s' to `int', `uint', "
+							"`long', or `ulong'",
+					     JavaTypeToName(JavaSemGetType(value)));
+				}
+			}
+			else
+			{
+				CCErrorOnLine(yygetfilename(expr), yygetlinenum(expr),
+							  "invalid dimension in array creation expression");
+			}
+			parentOfExpr = &(((ILNode_ArgList *)child)->expr1);
+			child = *parentOfExpr;
+		}
+		++numDimensions;
+		expr = child;
+		parentNode = parentOfExpr;
+		if(JavaSemExpectValue(expr, info, parentNode, &value))
+		{
+			if(!ILCoerce(info, *parentNode, parentNode,
+						 JavaSemGetType(value), ILType_Int32,1) &&
+			   !ILCoerce(info, *parentNode, parentNode,
+						 JavaSemGetType(value), ILType_UInt32,1) &&
+			   !ILCoerce(info, *parentNode, parentNode,
+						 JavaSemGetType(value), ILType_Int64,1) &&
+			   !ILCoerce(info, *parentNode, parentNode,
+						 JavaSemGetType(value), ILType_UInt64,1))
+			{
+				CCErrorOnLine
+					(yygetfilename(expr), yygetlinenum(expr),
+		  			 "incompatible types in dimension specifier: "
+					 	"no conversion from `%s' to `int', `uint', "
+						"`long', or `ulong'",
+				     JavaTypeToName(JavaSemGetType(value)));
+			}
+		}
+		else
+		{
+			CCErrorOnLine(yygetfilename(expr), yygetlinenum(expr),
+						  "invalid dimension in array creation expression");
+		}
+	}
+	else
+	{
+		/* Perform semantic analysis on the array type, which is
+		   assumed to already have rank specifiers */
+		node->arrayType = JavaSemType(node->type, info, &(node->type));
+
+		/* Check that the supplied type is actually an array */
+		if(!ILType_IsArray(node->arrayType))
+		{
+			CCErrorOnLine(yygetfilename(node->type), yygetlinenum(node->type),
+						  "array initializer used with non-array type");
+			JavaSemSetRValue(value, node->arrayType);
+			return value;
+		}
+	}
+
+	/* Handle array initializers */
+	if(node->arrayInitializer)
+	{
+		/*
+		 * Since java supports untyped array initializers like
+		 * int a[]={1,2}; The grammar with wrap the arrays in 
+		 * in an ILNode_ArrayInit by default.
+		 */
+		if(!yyisa(node->arrayInitializer,ILNode_ArrayInit))
+		{
+			/* Wrap the initializer in an "ILNode_ArrayInit" node */
+			node->arrayInitializer =
+				ILNode_ArrayInit_create(node->arrayInitializer);
+		}
+
+		/* Validate the initializer's shape against the actual type,
+		   and then coerce all of the elements to their final types */
+		if(!ILArrayInitShapeOK(info, node->arrayInitializer, node->arrayType))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  "incorrect pattern of elements in array initializer");
+		}
+		else
+		{
+			CoerceArrayInit(info, node->arrayInitializer,
+							&(node->arrayInitializer),
+						    ILTypeGetElemType(node->arrayType));
+		}
+
+		/* If we have indices, then they must be constant and match
+		   the sizes of the initializer dimensions */
+		if(node->indexes)
+		{
+			dim = numDimensions;
+			child = node->indexes;
+			while(yyisa(child, ILNode_ArgList))
+			{
+				expr = ((ILNode_ArgList *)child)->expr2;
+				if(!ILNode_EvalConst(expr, info, &evalValue) ||
+				   !ILGenCastConst(info, &evalValue, evalValue.valueType,
+								   ILMachineType_Int64) ||
+				   evalValue.un.i8Value !=
+				   		(ILInt64)ILGetArrayInitLength
+							(((ILNode_ArrayInit *)(node->arrayInitializer))
+									->expr, dim - 1))
+				{
+					CCErrorOnLine(yygetfilename(expr), yygetlinenum(expr),
+						  "dimension %d does not match initializer", dim);
+				}
+				child = (((ILNode_ArgList *)child)->expr1);
+				--dim;
+			}
+			expr = child;
+			if(!ILNode_EvalConst(expr, info, &evalValue) ||
+			   !ILGenCastConst(info, &evalValue, evalValue.valueType,
+							   ILMachineType_Int64) ||
+			   evalValue.un.i8Value !=
+			   		(ILInt64)ILGetArrayInitLength
+						(((ILNode_ArrayInit *)(node->arrayInitializer))
+								->expr, dim - 1))
+			{
+				CCErrorOnLine(yygetfilename(expr), yygetlinenum(expr),
+					  "dimension %d does not match initializer", dim);
+			}
+		}
+
+		/* Replace the current node with the initializer node */
+		*parent = node->arrayInitializer;
+	}
+
+	/* Done */
+	JavaSemSetRValue(value, node->arrayType);
+	return value;
+}
+
+ILNode_JSemAnalysis(ILNode_ArrayInit)
+{
+	if(node->arrayType)
+	{
+		/* We've already visited this node, so return its type */
+		JavaSemValue value;
+		JavaSemSetRValue(value, node->arrayType);
+		return value;
+	}
+	else
+	{
+		/* We haven't visited this node, so it has been used in
+		   an incorrect context.  Initializers can be used on
+		   fields and variables using regular assignment, or in
+		   array creation expressions */
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("internal error in array initializer"));
+		return JavaSemValueDefault;
+	}
+}
+
+/*
+ * Synthesised helper function to proxy main(java.lang.String[])
+ * with a Main(System.String[])
+ */
+ILNode_JSemAnalysis(ILNode_JMain)
+{
+	/* Nothing to do here */
+	return JavaSemValueDefault;
+}
+
+ILNode_GenDiscard(ILNode_JMain)
+{
+	unsigned arrayVar;
+	unsigned indexVar;
+	ILType *sig=ILMethod_Signature(node->method);
+	ILType * arrayType=ILTypeGetParam(sig,1);
+	ILType * elemType=ILTypeGetElemType(arrayType);
+
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	ILLabel label3 = ILLabel_Undefined;
+	ILLabel label4 = ILLabel_Undefined;
+
+
+	/* We need a temporary variable for the evaluated array */
+	arrayVar = ILGenTempTypedVar(info, arrayType);
+
+	/* We need a temporary variable for the array index */
+	indexVar = ILGenTempTypedVar(info, ILType_Int32);
+
+	ILGenSimple(info,IL_OP_LDARG_0); /* load args[] */
+	ILGenSimple(info,IL_OP_LDLEN); /* args.length */
+	ILGenSimple(info,IL_OP_CONV_I4); /* convert to I4 */
+	ILGenAdjust(info,2);
+	ILGenArrayNew(info,elemType);   /* newargs = new String[..]; */
+	ILGenStoreLocal(info,arrayVar); 
+	ILGenAdjust(info, -1);
+	
+	ILGenSimple(info,IL_OP_LDC_I4_0);
+	ILGenStoreLocal(info,indexVar);
+
+	ILGenJump(info,IL_OP_BR,&label1);
+
+	ILGenLabel(info,&label2);
+
+	ILGenLoadLocal(info,arrayVar);
+	ILGenLoadLocal(info,indexVar);
+	ILGenAdjust(info,2);
+
+	ILGenSimple(info,IL_OP_LDARG_0);
+	ILGenLoadLocal(info,indexVar);
+	ILGenAdjust(info,2);
+
+	ILGenSimple(info,IL_OP_LDELEM_REF);
+	ILGenAdjust(info,-1);
+	
+	ILGenCallByName(info,
+			"class ['java.lang']'java.lang'.'String' "
+			"['java.lang']'dotgnu.javawrappers'.'StringWrapper'::'op_Implicit'"
+			"(class [.library]'System'.'String')");
+
+	ILGenSimple(info,IL_OP_STELEM_REF);
+	ILGenAdjust(info,-1);
+	ILGenLabel(info,&label3);	
+	
+	ILGenLoadLocal(info,indexVar);
+	ILGenSimple(info,IL_OP_LDC_I4_1);
+	ILGenAdjust(info,2);
+	ILGenSimple(info,IL_OP_ADD);
+	ILGenAdjust(info,-1);
+	ILGenStoreLocal(info,indexVar);
+	ILGenAdjust(info,-1);
+
+	ILGenLabel(info,&label1);
+	ILGenLoadLocal(info,indexVar);
+	ILGenSimple(info,IL_OP_LDARG_0);
+	ILGenAdjust(info,2);
+	ILGenSimple(info,IL_OP_LDLEN);
+	ILGenSimple(info,IL_OP_CONV_I4); /* convert to I4 */
+	
+	ILGenJump(info,IL_OP_BLT,&label2);
+	ILGenAdjust(info,-2);
+
+	ILGenLabel(info,&label4);
+
+	ILGenLoadLocal(info,arrayVar);
+	ILGenAdjust(info,1);
+
+	ILGenCallByMethod(info, node->method);
+}
+
+JavaGenDiscard(ILNode_JMain)
+{
+	// why ?
+}
+
+%{
+
+static ILType * GetUnderlyingElementType(ILType *arrayType)
+{
+	if(ILType_IsArray(arrayType))
+	{
+		return GetUnderlyingElementType(ILType_ElemType(arrayType));
+	}
+	return arrayType;
+}
+
+void GenArrayOfArray(ILGenInfo *info, ILType *arrayType,
+						ILNode *dims)
+{
+	ILNode *argArray= ILNode_ArgArray_create(ILType_UInt32,
+								CountArgList(dims), 
+								dims);
+	
+	ILGenTypeToken(info,IL_OP_LDTOKEN,arrayType);
+	ILGenAdjust(info,1);
+	
+	/* Convert the type handle into a type object */
+	ILGenCallByName(info,
+			"class [.library]System.Type "
+				"[.library]System.Type::GetTypeFromHandle"
+				"(valuetype [.library]System.RuntimeTypeHandle)");
+		
+	ILNode_GenValue(argArray,info);
+
+	ILGenCallByName(info,
+			"class [.library]System.Array "
+			"['java.lang']dotgnu.javawrappers.ArrayWrapper::CreateMultiArray"
+			"(class [.library]System.Type type, unsigned int32[] dims)");
+	ILGenAdjust(info,-1);
+	ILGenTypeToken(info, IL_OP_CASTCLASS , arrayType);
+}
+
+%}
+
+ILNode_GenValue(ILNode_JNewExpression)
+{
+	long saveStack;
+
+	/* Bail out if initializer-based (semantic analysis should
+	   have turned this node into "ILNode_ArrayInit") */
+	if(!(node->indexes))
+	{
+		return ILMachineType_ObjectRef;
+	}
+
+	/* Output the indexes */
+	saveStack = info->stackHeight;
+	
+	if(yyisa(node->indexes,ILNode_ArgList))
+	{
+		/* Create the array */
+		GenArrayOfArray(info,node->arrayType,node->indexes);
+	}
+	else
+	{
+		ILNode_GenValue(node->indexes,info);
+		ILGenArrayNew(info,ILType_ElemType(node->arrayType));
+	}
+
+	/* Set the final stack position */
+	info->stackHeight = saveStack + 1;
+
+	/* Arrays are always object references */
+	return ILMachineType_ObjectRef;
+}

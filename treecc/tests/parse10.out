@@ -1,0 +1,13 @@
+line 3: %option lang C#
+line 5: %node expr no_parent 4
+parse10.tst:7: C# requires that a class name be specified
+line 7: %operation void op1 0
+line 7: %param expr e 1
+line 9: %case expr op1
+parse10.tst:13: C# requires different class and operation names
+line 13: %operation void op2::op2 0
+line 13: %param expr e 1
+line 15: %case expr op2
+line 19: %operation void Op3::op3 0
+line 19: %param expr e 1
+line 21: %case expr op3

@@ -1,0 +1,16 @@
+
+This directory contains the source code for the "OpenSystem.C.dll" assembly,
+which provides support routines to the C compiler.  It is distributed
+under the terms of the GNU Lesser General Public License.
+
+Note: this isn't the standard C library (or "libc" as it is usually called).
+That is defined elsewhere.  The "OpenSystem.C.dll" assembly is similar in
+some respects to "libgcc.a" in the gcc compiler toolchain.
+
+Although this isn't the standard C library, it does access functionality
+from such a library.  It does this by looking for an assembly called
+"libc32" or "libc64", depending upon the application's memory model.
+
+All of the classes in "OpenSystem.C.dll" are defined within the namespace
+"OpenSystem.C".  The compiler assumes that these classes exist and have
+certain members.

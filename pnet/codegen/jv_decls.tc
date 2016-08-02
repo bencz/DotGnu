@@ -1,0 +1,132 @@
+/*
+ * jv_decls.tc - Declaration nodes for Java.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/*
+ * Generate discard code for a class definition.
+ */
+JavaGenDiscard(ILNode_ClassDefn)
+{
+	/* We let ILNode_GenDiscard do the hard work because the class
+	   definition shell for IL and JL are identical.  It will call
+	   back into JavaGenDiscard when outputting the class body */
+	ILNode_GenDiscard(node, info);
+}
+
+/*
+ * Generate discard code for an interface proxy replacement method.
+ */
+JavaGenDiscard(ILNode_ProxyDeclaration)
+{
+	/* TODO */
+}
+
+/*
+ * Generate discard code for a scope change.
+ */
+JavaGenDiscard(ILNode_ScopeChange)
+{
+	if(node->body)
+	{
+		ILScope *oldScope = info->currentScope;
+		info->currentScope = node->scope;
+		JavaGenDiscard(node->body, info);
+		info->currentScope = oldScope;
+	}
+}
+
+/*
+ * Generate discard code for a field declaration.
+ */
+JavaGenDiscard(ILNode_FieldDeclaration)
+{
+	/* We let ILNode_GenDiscard do the hard work because the field
+	   definition syntax for IL and JL are identical */
+	ILNode_GenDiscard(node, info);
+}
+
+/*
+ * Generate discard code for a field declarator.
+ */
+JavaGenDiscard(ILNode_FieldDeclarator)
+{
+	/* Nothing to do here: handled by ILNode_FieldDeclaration */
+}
+
+/*
+ * Generate discard code for an event declarations.
+ */
+JavaGenDiscard(ILNode_EventDeclaration)
+{
+	/* TODO */
+}
+
+/*
+ * Generate discard code for an event declarators.
+ */
+JavaGenDiscard(ILNode_EventDeclarator)
+{
+	/* Nothing to do here: handled by ILNode_EventDeclaration */
+}
+
+/* 
+ * Generate discard code for MethodDeclaration
+ */
+JavaGenDiscard(ILNode_MethodDeclaration)
+{
+	/* We let ILNode_GenDiscard do the hard work because the method
+	   definition shell for IL and JL are identical.  It will call
+	   back into JavaGenDiscard when outputting the method body */
+	ILNode_GenDiscard(node, info);
+}
+
+JavaGenDiscard(ILNode_PropertyDeclaration)
+{
+	/* We let ILNode_GenDiscard do the hard work because the property
+	   definition shell for IL and JL are identical.  It will call
+	   back into JavaGenDiscard when outputting the accessor bodies */
+	ILNode_GenDiscard(node, info);
+}
+
+JavaGenDiscard(ILNode_EnumMemberDeclaration)
+{
+	/* We let ILNode_GenDiscard do the hard work because the enum
+	   definition syntax for IL and JL are identical */
+	ILNode_GenDiscard(node, info);
+}
+
+JavaGenDiscard(ILNode_DelegateMemberDeclaration)
+{
+	/* TODO */
+}
+
+JavaGenDiscard(ILNode_FormalParameter)
+{
+	/* TODO */
+}
+
+JavaGenDiscard(ILNode_GenericTypeParameter)
+{
+	/* TODO */
+}
+
+JavaGenDiscard(ILNode_GenericTypeParameters)
+{
+	/* TODO */
+}

@@ -1,0 +1,43 @@
+pnet for Debian
+---------------
+
+Warning:
+  These are NOT the official Debian packages.  The official
+  packages are maintained by Andrew Mitchell, and are part
+  of Debian.  These packages will probably disappear in time.
+
+PNet is part of the DotGNU effort.  DotGNU aims to provide
+free toolkit that targets the same areas as Microsofts' .NET
+platform.  PNet is the CLR part of DotNET - it provides a set
+of compilers they emit CLR assemblies for C#, C, Java and other
+languages.  PNet also provides a CLR engine that runs the
+assemblies produced.  It can also run some programs produced
+by Microsofts' .NET compilers.  Think of PNet as a set GCC
+like compilers and tools for Microsofts' .NET Platform.
+
+There is considerable overlap between the PNet and Mono
+efforts, and the two projects often share code.  In general
+terms, Mono strength is in how closely it emulates .NET
+platform, whereas PNets' strength is portability.  Hence its
+name - PNet stands for Portable .NET.
+
+You can file DotGNUs' home page here:
+  http://www.dotgnu.org
+
+
+It was built from this source tarball:
+  http://www.southern-storm.com.au/download/pnet-VERSION.tar.gz
+
+
+Note to package Debian maintainers:
+
+  Most of the files in the debian/ directory are created by the
+  build-debian-packages.sh script which is in the root directory
+  of the sources.  This script uses the information in the rpm
+  .spec file to create the equivelent control files in debian.
+  This means I only have to maintain one set of descriptions,
+  file lists, and so on.
+
+  Look at the comments in that script for more information.
+
+ -- Russell Stuart <russell-debian@stuart.id.au>  Thu,  2 Sep 2004 05:41:21 +1000

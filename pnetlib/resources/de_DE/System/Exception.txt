@@ -1,0 +1,28 @@
+#
+# Exception.txt - Resources for exception messages.
+#
+# Copyright (C) 2001, 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Exception_Web=Waehrend einer Internet-bezogenen Operation trat ein Fehler auf
+Exception_Protocol=Protokollfehler aufgetreten
+Exception_Disposed=Diese Instanz wurde abgeschafft
+Exception_InvalidEnum=Ungueltiger Aufzaehlungswert fuer den Parameter
+Exception_Checkout=Ein Felher ist beim Versuch eine Datei auszuchecken aufgetreten
+Exception_CheckoutCanceled=Eine Auscheak Operation wurde abgebrochen
+Exception_BufferOverflow=Es ist ein interner Puffer Ueberlauf aufgetreten
+Exception_License=Es wurden ungueltige Lizenzinformationen angegeben
+Exception_Cookie=Das angegebene Cookie konnte dem Container nicht hinzugefuegt werden

@@ -1,0 +1,20 @@
+
+This directory will eventually contain an implementation of the
+"mscoree.dll" shim, plus an emulation of Microsoft's metadata API's.
+
+The shim is used to dynamically select a runtime engine to be
+executed under Win32 systems.
+
+The metadata API implementation is provided to assist Free Software
+implementors port their code from dependence upon Windows.
+
+The source is under the terms of the GNU General Public License,
+with the following small exception: the shim may be used to automatically
+launch an IL executable with no requirement to put the executable under
+the terms of the GPL.
+
+However, an application that uses the metadata emulation routines, or
+which attempts to use the shim to embed the runtime engine in an unmanaged
+application, must be placed under a license that is compatible with the
+terms of the GPL.  This restriction is necessary to prevent circumvention
+of the GPL on the core Portable.NET code.

@@ -1,0 +1,6 @@
+Makefile
+Makefile.in
+.deps
+*.resources
+*.dll
+tempres.txt

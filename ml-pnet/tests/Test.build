@@ -1,0 +1,647 @@
+<?xml version="1.0"?>
+<project name="ml-pnet Tests" default="all">
+	<target name="all" depends="TestSystem.Runtime.Remoting"/>
+
+	<target name="Testcorlib.System">
+		<compile target="library"
+				 output="Testcorlib.System.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/corlib/Test/System">
+				<includes name="**/*.cs"/>
+				<excludes name="ActivatorTest.cs"/>
+				<excludes name="AppDomainSetupTest.cs"/>
+				<excludes name="MarshalByRefObjectTest.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+		</compile>
+	</target>
+
+	<target name="Testcorlib.System.Collections" depends="Testcorlib.System>
+		<compile target="library"
+				 output="Testcorlib.System.Collections.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/corlib/Test/System.Collections">
+				<includes name="**/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+		</compile>
+	</target>
+
+	<target name="Testcorlib.System.Diagnostics" depends="Testcorlib.System.Collections>
+		<compile target="library"
+				 output="Testcorlib.System.Diagnostics.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/corlib/Test/System.Diagnostics">
+				<includes name="**/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+		</compile>
+	</target>
+
+	<target name="Testcorlib.System.Globalization" depends="Testcorlib.System.Diagnostics>
+		<compile target="library"
+				 output="Testcorlib.System.Globalization.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/corlib/Test/System.Globalization">
+				<includes name="**/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+		</compile>
+	</target>
+
+	<target name="Testcorlib.System.IO" depends="Testcorlib.System.Globalization>
+		<compile target="library"
+				 output="Testcorlib.System.IO.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/corlib/Test/System.IO">
+				<includes name="**/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+		</compile>
+	</target>
+
+	<target name="Testcorlib.System.Reflection" depends="Testcorlib.System.IO>
+		<compile target="library"
+				 output="Testcorlib.System.Reflection.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/corlib/Test/System.Reflection">
+				<includes name="**/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+		</compile>
+	</target>
+
+	<target name="Testcorlib.System.Reflection.Emit" depends="Testcorlib.System.Reflection>
+		<compile target="library"
+				 output="Testcorlib.System.Reflection.Emit.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/corlib/Test/System.Reflection.Emit">
+				<includes name="**/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+		</compile>
+	</target>
+
+	<target name="Testcorlib.System.Resources" depends="Testcorlib.System.Reflection.Emit>
+		<compile target="library"
+				 output="Testcorlib.System.Resources.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/corlib/Test/System.Resources">
+				<includes name="**/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+		</compile>
+	</target>
+
+	<target name="Testcorlib.System.Runtime.CompilerServices" depends="Testcorlib.System.Resources>
+		<compile target="library"
+				 output="Testcorlib.System.Runtime.CompilerServices.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/corlib/Test/System.Runtime.CompilerServices">
+				<includes name="**/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+		</compile>
+	</target>
+
+	<target name="Testcorlib.System.Runtime.InteropServices" depends="Testcorlib.System.Runtime.CompilerServices>
+		<compile target="library"
+				 output="Testcorlib.System.Runtime.InteropServices.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/corlib/Test/System.Runtime.InteropServices">
+				<includes name="**/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+		</compile>
+	</target>
+
+	<target name="Testcorlib.System.Runtime.Remoting" depends="Testcorlib.System.Runtime.InteropServices>
+		<compile target="library"
+				 output="Testcorlib.System.Runtime.Remoting.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/corlib/Test/System.Runtime.Remoting">
+				<includes name="**/*.cs"/>
+				<excludes name="RemotingConfigurationTest.cs"/>
+				<excludes name="RemotingServicesTest.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+		</compile>
+	</target>
+
+	<target name="Testcorlib.System.Runtime.Serialization" depends="Testcorlib.System.Runtime.Remoting>
+		<compile target="library"
+				 output="Testcorlib.System.Runtime.Serialization.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/corlib/Test/System.Runtime.Serialization">
+				<includes name="**/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+		</compile>
+	</target>
+
+	<target name="Testcorlib.System.Security" depends="Testcorlib.System.Runtime.Serialization>
+		<compile target="library"
+				 output="Testcorlib.System.Security.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/corlib/Test/System.Security">
+				<includes name="**/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+		</compile>
+	</target>
+
+	<target name="Testcorlib.System.Security.Cryptography" depends="Testcorlib.System.Security>
+		<compile target="library"
+				 output="Testcorlib.System.Security.Cryptography.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/corlib/Test/System.Security.Cryptography">
+				<includes name="**/*.cs"/>
+				<includes name="../System.Security.Cryptography.X509Certificates/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+		</compile>
+	</target>
+
+	<target name="Testcorlib.System.Security.Permissions" depends="Testcorlib.System.Security.Cryptography>
+		<compile target="library"
+				 output="Testcorlib.System.Security.Permissions.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/corlib/Test/System.Security.Permissions">
+				<includes name="**/*.cs"/>
+				<excludes name="RegistryPermissionAttributeTest.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+		</compile>
+	</target>
+
+	<target name="Testcorlib.System.Security.Policy" depends="Testcorlib.System.Security.Permissions>
+		<compile target="library"
+				 output="Testcorlib.System.Security.Policy.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/corlib/Test/System.Security.Policy">
+				<includes name="**/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+		</compile>
+	</target>
+
+	<target name="Testcorlib.System.Security.Principal" depends="Testcorlib.System.Security.Policy>
+		<compile target="library"
+				 output="Testcorlib.System.Security.Principal.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/corlib/Test/System.Security.Principal">
+				<includes name="**/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+		</compile>
+	</target>
+
+	<target name="Testcorlib.System.Text" depends="Testcorlib.System.Security.Principal>
+		<compile target="library"
+				 output="Testcorlib.System.Text.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/corlib/Test/System.Text">
+				<includes name="**/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+		</compile>
+	</target>
+
+	<target name="Testcorlib.System.Threading" depends="Testcorlib.System.Text>
+		<compile target="library"
+				 output="Testcorlib.System.Threading.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/corlib/Test/System.Threading">
+				<includes name="**/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+		</compile>
+	</target>
+
+	<target name="TestSystem" depends="Testcorlib.System.Threading">
+		<compile target="library"
+				 output="TestSystem.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/System/Test">
+				<includes name="**/*.cs"/>
+				<excludes name="System.Net/WebRequestTest.cs"/>
+				<excludes name="System.IO.Compression/**"/>
+				<!-- exclude Regextests because they do not run -->
+				<excludes name="System.Text.RegularExpressions/**"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="../class/Mono.Security/Mono.Security.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+
+		</compile>
+	</target>
+
+	<target name="TestSystem.Xml" depends="TestSystem">
+		<compile target="library"
+				 output="TestSystem.Xml.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/System.XML/Test">
+				<includes name="**/*.cs"/>
+				<excludes name="System.Xml/XmlWriterTests.cs"/>
+				<excludes name="System.Xml/XmlAttributeTests.cs"/>
+				<excludes name="System.Xml/XmlSecureResolverTests.cs"/>
+				<excludes name="System.Xml/XsdParticleValidationTests.cs"/>
+				<excludes name="System.Xml/standalone_tests/**"/>
+				<excludes name="System.Xml.Xsl/standalone_tests/**"/>
+				<excludes name="System.Xml.Schema/standalone_tests/**"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+
+		</compile>
+	</target>
+
+	<target name="TestSystem.Runtime.Serialization.Formatters.Soap" depends="TestSystem.Xml">
+		<compile target="library"
+				 output="TestSystem.Runtime.Serialization.Formatters.Soap.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/System.Runtime.Serialization.Formatters.Soap/Test">
+				<includes name="**/*.cs"/> 
+				<excludes name="SerializationTest.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../class/System.Runtime.Serialization.Formatters.Soap/System.Runtime.Serialization.Formatters.Soap.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=ms"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+
+		</compile>
+	</target>
+
+	<target name="TestSystem.Security" depends="TestSystem.Runtime.Serialization.Formatters.Soap">
+		<compile target="library"
+				 output="TestSystem.Security.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/System.Security/Test">
+				<includes name="System.Security.Cryptography.Xml/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../class/System.Security/System.Security.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+
+		</compile>
+	</target>
+
+	<target name="TestMono.Security" depends="TestSystem.Security">
+		<!-- Build the TestMono.Security.dll library -->
+		<compile target="library"
+				 output="TestMono.Security.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/Mono.Security/Test">
+				<includes name="**/*.cs"/>
+				<excludes name="tools/tlstest/**"/> 
+				<excludes name="tools/npgsql/**"/> 
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="../class/System.Security/System.Security.dll"/>
+				<file name="../class/Mono.Security/Mono.Security.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+		</compile>
+	</target>
+
+	<target name="TestSystem.Data" depends="TestMono.Security">
+		<compile target="library"
+				 output="TestSystem.Data.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/System.Data/Test">
+				<includes name="**/*.cs"/>
+				<excludes name="PostgresTest.cs"/>
+				<excludes name="OdbcTest.cs"/>
+				<excludes name="SqlTest.cs"/>
+				<excludes name="System.Xml/XmlDataDocumentTest2.cs"/>
+				<excludes name="System.Data.Common/**.cs"/>
+				<excludes name="System.Data.Odbc/**.cs"/>
+				<excludes name="System.Data.SqlClient/**.cs"/>
+				<excludes name="DataProviderTests/**.cs"/>
+				<excludes name="*.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="${pnet.libdir}/System.EnterpriseServices/System.EnterpriseServices.dll"/>
+				<file name="../class/Mono.Data.Tds/Mono.Data.Tds.dll"/>
+				<file name="../class/Mono.Security/Mono.Security.dll"/>
+				<file name="../class/System.Data/System.Data.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=neutral"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+		</compile>
+	</target>
+
+	<target name="TestSystem.Web.Services" depends="TestSystem.Data">
+		<compile target="library"
+				 output="TestSystem.Web.Services.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/System.Web.Services/Test">
+				<includes name="**/*.cs"/>
+				<excludes name="standalone/**"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="${pnet.libdir}/System.EnterpriseServices/System.EnterpriseServices.dll"/>
+				<file name="../class/Mono.Data.Tds/Mono.Data.Tds.dll"/>
+				<file name="../class/Mono.Security/Mono.Security.dll"/>
+				<file name="../class/System.Data/System.Data.dll"/>
+				<file name="../class/System.Web/System.Web.dll"/>
+				<file name="../class/System.Web.Services/System.Web.Services.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=neutral"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+		</compile>
+	</target>
+
+	<target name="TestSystem.Runtime.Remoting" depends="TestSystem.Web.Services">
+		<compile target="library"
+				 output="TestSystem.Runtime.Remoting.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="false"
+				 installasdefault="false">
+
+			<sources basedir="${mono.sources}/class/System.Runtime.Remoting/Test">
+				<includes name="**/*.cs"/>
+				<excludes name="corba-example.cs"/>
+				<excludes name="simple-example.cs"/>
+			</sources>
+
+			<references>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml"/>
+				<file name="../class/Mono.Data.Tds/Mono.Data.Tds.dll"/>
+				<file name="../class/Mono.Security/Mono.Security.dll"/>
+				<file name="../class/System.Data/System.Data.dll"/>
+				<file name="../class/System.Web/System.Web.dll"/>
+				<file name="../class/System.Runtime.Serialization.Formatters.Soap/System.Runtime.Serialization.Formatters.Soap.dll"/>
+				<file name="../class/System.Runtime.Remoting/System.Runtime.Remoting.dll"/>
+				<file name="../nunit20/framework/nunit.framework.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=neutral"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+		</compile>
+	</target>
+
+</project>

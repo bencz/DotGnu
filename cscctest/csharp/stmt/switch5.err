@@ -1,0 +1,3 @@
+./switch5.cs:5: `goto' used outside switch
+./switch5.cs:14: `goto' used inside `finally' clause
+./switch5.cs:20: `goto' used outside switch

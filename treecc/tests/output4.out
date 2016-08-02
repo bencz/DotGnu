@@ -1,0 +1,827 @@
+line 3: %option state_type GlobalState
+line 5: %node expression no_parent 6
+line 7: %field type type_code no_value 1
+line 10: %node binary expression 2
+line 12: %field expr1 expression * no_value 0
+line 13: %field expr2 expression * no_value 0
+line 16: %node unary expression 2
+line 19: %field expr expression * no_value 0
+line 23: %node intnum expression 0
+line 25: %field num int no_value 0
+line 28: %node plus binary 0
+line 29: %node minus binary 0
+line 30: %node multiply binary 0
+line 31: %node divide binary 0
+line 32: %node negate unary 0
+line 33: %node power binary 0
+line 35: %operation void infer_type 0
+line 35: %param expression * e 1
+line 37: %case binary infer_type
+line 57: %case unary infer_type
+line 63: %case intnum infer_type
+line 68: %case power infer_type
+/* output.h.  Generated automatically by treecc */
+#ifndef __yy_output_h
+#define __yy_output_h
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#define expression_kind 1
+#define binary_kind 2
+#define unary_kind 3
+#define intnum_kind 4
+#define plus_kind 5
+#define minus_kind 6
+#define multiply_kind 7
+#define divide_kind 8
+#define power_kind 10
+#define negate_kind 9
+
+typedef struct expression__ expression;
+typedef struct binary__ binary;
+typedef struct unary__ unary;
+typedef struct intnum__ intnum;
+typedef struct plus__ plus;
+typedef struct minus__ minus;
+typedef struct multiply__ multiply;
+typedef struct divide__ divide;
+typedef struct power__ power;
+typedef struct negate__ negate;
+
+#line 1 "c_skel.h"
+typedef struct
+{
+	struct GlobalState_block *blocks__;
+	struct GlobalState_push *push_stack__;
+	int used__;
+
+} GlobalState;
+#line 40 "output.h"
+struct expression__ {
+	const struct expression_vtable__ *vtable__;
+	int kind__;
+	char *filename__;
+	long linenum__;
+	type_code type;
+};
+
+struct expression_vtable__ {
+	const void *parent__;
+	int kind__;
+	const char *name__;
+};
+
+extern struct expression_vtable__ const expression_vt__;
+
+struct binary__ {
+	const struct binary_vtable__ *vtable__;
+	int kind__;
+	char *filename__;
+	long linenum__;
+	type_code type;
+	expression * expr1;
+	expression * expr2;
+};
+
+struct binary_vtable__ {
+	const struct expression_vtable__ *parent__;
+	int kind__;
+	const char *name__;
+};
+
+extern struct binary_vtable__ const binary_vt__;
+
+struct unary__ {
+	const struct unary_vtable__ *vtable__;
+	int kind__;
+	char *filename__;
+	long linenum__;
+	type_code type;
+	expression * expr;
+};
+
+struct unary_vtable__ {
+	const struct expression_vtable__ *parent__;
+	int kind__;
+	const char *name__;
+};
+
+extern struct unary_vtable__ const unary_vt__;
+
+struct intnum__ {
+	const struct intnum_vtable__ *vtable__;
+	int kind__;
+	char *filename__;
+	long linenum__;
+	type_code type;
+	int num;
+};
+
+struct intnum_vtable__ {
+	const struct expression_vtable__ *parent__;
+	int kind__;
+	const char *name__;
+};
+
+extern struct intnum_vtable__ const intnum_vt__;
+
+struct plus__ {
+	const struct plus_vtable__ *vtable__;
+	int kind__;
+	char *filename__;
+	long linenum__;
+	type_code type;
+	expression * expr1;
+	expression * expr2;
+};
+
+struct plus_vtable__ {
+	const struct binary_vtable__ *parent__;
+	int kind__;
+	const char *name__;
+};
+
+extern struct plus_vtable__ const plus_vt__;
+
+struct minus__ {
+	const struct minus_vtable__ *vtable__;
+	int kind__;
+	char *filename__;
+	long linenum__;
+	type_code type;
+	expression * expr1;
+	expression * expr2;
+};
+
+struct minus_vtable__ {
+	const struct binary_vtable__ *parent__;
+	int kind__;
+	const char *name__;
+};
+
+extern struct minus_vtable__ const minus_vt__;
+
+struct multiply__ {
+	const struct multiply_vtable__ *vtable__;
+	int kind__;
+	char *filename__;
+	long linenum__;
+	type_code type;
+	expression * expr1;
+	expression * expr2;
+};
+
+struct multiply_vtable__ {
+	const struct binary_vtable__ *parent__;
+	int kind__;
+	const char *name__;
+};
+
+extern struct multiply_vtable__ const multiply_vt__;
+
+struct divide__ {
+	const struct divide_vtable__ *vtable__;
+	int kind__;
+	char *filename__;
+	long linenum__;
+	type_code type;
+	expression * expr1;
+	expression * expr2;
+};
+
+struct divide_vtable__ {
+	const struct binary_vtable__ *parent__;
+	int kind__;
+	const char *name__;
+};
+
+extern struct divide_vtable__ const divide_vt__;
+
+struct power__ {
+	const struct power_vtable__ *vtable__;
+	int kind__;
+	char *filename__;
+	long linenum__;
+	type_code type;
+	expression * expr1;
+	expression * expr2;
+};
+
+struct power_vtable__ {
+	const struct binary_vtable__ *parent__;
+	int kind__;
+	const char *name__;
+};
+
+extern struct power_vtable__ const power_vt__;
+
+struct negate__ {
+	const struct negate_vtable__ *vtable__;
+	int kind__;
+	char *filename__;
+	long linenum__;
+	type_code type;
+	expression * expr;
+};
+
+struct negate_vtable__ {
+	const struct unary_vtable__ *parent__;
+	int kind__;
+	const char *name__;
+};
+
+extern struct negate_vtable__ const negate_vt__;
+
+extern expression *intnum_create(int num);
+extern expression *plus_create(expression * expr1, expression * expr2);
+extern expression *minus_create(expression * expr1, expression * expr2);
+extern expression *multiply_create(expression * expr1, expression * expr2);
+extern expression *divide_create(expression * expr1, expression * expr2);
+extern expression *power_create(expression * expr1, expression * expr2);
+extern expression *negate_create(expression * expr);
+
+extern void infer_type(expression * e);
+
+#ifndef yykind
+#define yykind(node__) ((node__)->kind__)
+#endif
+
+#ifndef yykindname
+#define yykindname(node__) ((node__)->vtable__->name__)
+#endif
+
+#ifndef yykindof
+#define yykindof(type__) (type__##_kind)
+#endif
+
+#ifndef yyisa
+extern int yyisa__(const void *vtable__, int kind__);
+#define yyisa(node__,type__) \
+	(yyisa__((node__)->vtable__, (type__##_kind)))
+#endif
+
+#ifndef yygetfilename
+#define yygetfilename(node__) ((node__)->filename__)
+#endif
+
+#ifndef yygetlinenum
+#define yygetlinenum(node__) ((node__)->linenum__)
+#endif
+
+#ifndef yysetfilename
+#define yysetfilename(node__, value__) \
+	((node__)->filename__ = (value__))
+#endif
+
+#ifndef yysetlinenum
+#define yysetlinenum(node__, value__) \
+	((node__)->linenum__ = (value__))
+#endif
+
+#ifndef yytracklines_declared
+extern char *yycurrfilename(void);
+extern long yycurrlinenum(void);
+#define yytracklines_declared 1
+#endif
+
+#ifndef yynodeops_declared
+extern void yynodeinit(void);
+extern void *yynodealloc(unsigned int size__);
+extern int yynodepush(void);
+extern void yynodepop(void);
+extern void yynodeclear(void);
+extern void yynodefailed(void);
+#define yynodeops_declared 1
+#endif
+
+#ifdef __cplusplus
+};
+#endif
+
+#endif
+/* output.c.  Generated automatically by treecc */
+
+#define GlobalState_TRACK_LINES 1
+#line 1 "c_skel.c"
+/*
+ * treecc node allocation routines for C.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ * As a special exception, when this file is copied by treecc into
+ * a treecc output file, you may use that output file without restriction.
+ */
+
+#include <stdlib.h>
+
+#ifndef GlobalState_BLKSIZ
+#define	GlobalState_BLKSIZ	2048
+#endif
+
+/*
+ * Types used by the allocation routines.
+ */
+struct GlobalState_block
+{
+	char data__[GlobalState_BLKSIZ];
+	struct GlobalState_block *next__;
+
+};
+struct GlobalState_push
+{
+	struct GlobalState_push *next__;
+	struct GlobalState_block *saved_block__;
+	int saved_used__;
+};
+
+/*
+ * The fixed global state to use for non-reentrant allocation.
+ */
+#ifndef GlobalState_REENTRANT
+static GlobalState fixed_state__;
+#endif
+
+/*
+ * Some macro magic to determine the default alignment
+ * on this machine.  This will compile down to a constant.
+ */
+#define	GlobalState_ALIGN_CHECK_TYPE(type,name)	\
+	struct _GlobalState_align_##name { \
+		char pad; \
+		type field; \
+	}
+#define	GlobalState_ALIGN_FOR_TYPE(type)	\
+	((unsigned)(unsigned long)(&(((struct _GlobalState_align_##type *)0)->field)))
+#define	GlobalState_ALIGN_MAX(a,b)	\
+	((a) > (b) ? (a) : (b))
+#define	GlobalState_ALIGN_MAX3(a,b,c) \
+	(GlobalState_ALIGN_MAX((a), GlobalState_ALIGN_MAX((b), (c))))
+GlobalState_ALIGN_CHECK_TYPE(int, int);
+GlobalState_ALIGN_CHECK_TYPE(long, long);
+#if defined(WIN32) && !defined(__CYGWIN__)
+GlobalState_ALIGN_CHECK_TYPE(__int64, long_long);
+#else
+GlobalState_ALIGN_CHECK_TYPE(long long, long_long);
+#endif
+GlobalState_ALIGN_CHECK_TYPE(void *, void_p);
+GlobalState_ALIGN_CHECK_TYPE(float, float);
+GlobalState_ALIGN_CHECK_TYPE(double, double);
+#define	GlobalState_ALIGNMENT	\
+	GlobalState_ALIGN_MAX( \
+			GlobalState_ALIGN_MAX3	\
+			(GlobalState_ALIGN_FOR_TYPE(int), \
+		     GlobalState_ALIGN_FOR_TYPE(long), \
+			 GlobalState_ALIGN_FOR_TYPE(long_long)), \
+  	     GlobalState_ALIGN_MAX3 \
+		 	(GlobalState_ALIGN_FOR_TYPE(void_p), \
+			 GlobalState_ALIGN_FOR_TYPE(float), \
+			 GlobalState_ALIGN_FOR_TYPE(double)))
+
+/*
+ * Initialize the node allocation pool.
+ */
+#ifdef GlobalState_REENTRANT
+void yynodeinit(state__)
+GlobalState *state__;
+{
+#else
+void yynodeinit()
+{
+	GlobalState *state__ = &fixed_state__;
+#endif
+	state__->blocks__ = 0;
+	state__->push_stack__ = 0;
+	state__->used__ = 0;
+}
+
+/*
+ * Allocate a block of memory.
+ */
+#ifdef GlobalState_REENTRANT
+void *yynodealloc(state__, size__)
+GlobalState *state__;
+unsigned int size__;
+{
+#else
+void *yynodealloc(size__)
+unsigned int size__;
+{
+	GlobalState *state__ = &fixed_state__;
+#endif
+	struct GlobalState_block *block__;
+	void *result__;
+
+	/* Round the size to the next alignment boundary */
+	size__ = (size__ + GlobalState_ALIGNMENT - 1) &
+				~(GlobalState_ALIGNMENT - 1);
+
+	/* Do we need to allocate a new block? */
+	block__ = state__->blocks__;
+	if(!block__ || (state__->used__ + size__) > GlobalState_BLKSIZ)
+	{
+		if(size__ > GlobalState_BLKSIZ)
+		{
+			/* The allocation is too big for the node pool */
+			return (void *)0;
+		}
+		block__ = (struct GlobalState_block *)
+						malloc(sizeof(struct GlobalState_block));
+		if(!block__)
+		{
+			/* The system is out of memory.  The programmer can
+			   supply the "yynodefailed" function to report the
+			   out of memory state and/or abort the program */
+#ifdef GlobalState_REENTRANT
+			yynodefailed(state__);
+#else
+			yynodefailed();
+#endif
+			return (void *)0;
+		}
+		block__->next__ = state__->blocks__;
+		state__->blocks__ = block__;
+		state__->used__ = 0;
+	}
+
+	/* Allocate the memory and return it */
+	result__ = (void *)(block__->data__ + state__->used__);
+	state__->used__ += size__;
+	return result__;
+}
+
+/*
+ * Push the node allocation state.
+ */
+#ifdef GlobalState_REENTRANT
+int yynodepush(state__)
+GlobalState *state__;
+{
+#else
+int yynodepush()
+{
+	GlobalState *state__ = &fixed_state__;
+#endif
+	struct GlobalState_block *saved_block__;
+	int saved_used__;
+	struct GlobalState_push *push_item__;
+
+	/* Save the current state of the node allocation pool */
+	saved_block__ = state__->blocks__;
+	saved_used__ = state__->used__;
+
+	/* Allocate space for a push item */
+#ifdef GlobalState_REENTRANT
+	push_item__ = (struct GlobalState_push *)
+			yynodealloc(state__, sizeof(struct GlobalState_push));
+#else
+	push_item__ = (struct GlobalState_push *)
+			yynodealloc(sizeof(struct GlobalState_push));
+#endif
+	if(!push_item__)
+	{
+		return 0;
+	}
+
+	/* Copy the saved information to the push item */
+	push_item__->saved_block__ = saved_block__;
+	push_item__->saved_used__ = saved_used__;
+
+	/* Add the push item to the push stack */
+	push_item__->next__ = state__->push_stack__;
+	state__->push_stack__ = push_item__;
+	return 1;
+}
+
+/*
+ * Pop the node allocation state.
+ */
+#ifdef GlobalState_REENTRANT
+void yynodepop(state__)
+GlobalState *state__;
+{
+#else
+void yynodepop()
+{
+	GlobalState *state__ = &fixed_state__;
+#endif
+	struct GlobalState_push *push_item__;
+	struct GlobalState_block *saved_block__;
+	struct GlobalState_block *temp_block__;
+
+	/* Pop the top of the push stack */
+	push_item__ = state__->push_stack__;
+	if(push_item__ == 0)
+	{
+		saved_block__ = 0;
+		state__->used__ = 0;
+	}
+	else
+	{
+		saved_block__ = push_item__->saved_block__;
+		state__->used__ = push_item__->saved_used__;
+		state__->push_stack__ = push_item__->next__;
+	}
+
+	/* Free unnecessary blocks */
+	while(state__->blocks__ != saved_block__)
+	{
+		temp_block__ = state__->blocks__;
+		state__->blocks__ = temp_block__->next__;
+		free(temp_block__);
+	}
+}
+
+/*
+ * Clear the node allocation pool completely.
+ */
+#ifdef GlobalState_REENTRANT
+void yynodeclear(state__)
+GlobalState *state__;
+{
+#else
+void yynodeclear()
+{
+	GlobalState *state__ = &fixed_state__;
+#endif
+	struct GlobalState_block *temp_block__;
+	while(state__->blocks__ != 0)
+	{
+		temp_block__ = state__->blocks__;
+		state__->blocks__ = temp_block__->next__;
+		free(temp_block__);
+	}
+	state__->push_stack__ = 0;
+	state__->used__ = 0;
+}
+#line 270 "output.c"
+struct expression_vtable__ const expression_vt__ = {
+	0,
+	expression_kind,
+	"expression",
+};
+
+struct binary_vtable__ const binary_vt__ = {
+	&expression_vt__,
+	binary_kind,
+	"binary",
+};
+
+struct unary_vtable__ const unary_vt__ = {
+	&expression_vt__,
+	unary_kind,
+	"unary",
+};
+
+struct intnum_vtable__ const intnum_vt__ = {
+	&expression_vt__,
+	intnum_kind,
+	"intnum",
+};
+
+struct plus_vtable__ const plus_vt__ = {
+	&binary_vt__,
+	plus_kind,
+	"plus",
+};
+
+struct minus_vtable__ const minus_vt__ = {
+	&binary_vt__,
+	minus_kind,
+	"minus",
+};
+
+struct multiply_vtable__ const multiply_vt__ = {
+	&binary_vt__,
+	multiply_kind,
+	"multiply",
+};
+
+struct divide_vtable__ const divide_vt__ = {
+	&binary_vt__,
+	divide_kind,
+	"divide",
+};
+
+struct power_vtable__ const power_vt__ = {
+	&binary_vt__,
+	power_kind,
+	"power",
+};
+
+struct negate_vtable__ const negate_vt__ = {
+	&unary_vt__,
+	negate_kind,
+	"negate",
+};
+
+expression *intnum_create(int num)
+{
+	intnum *node__ = (intnum *)yynodealloc(sizeof(struct intnum__));
+	if(node__ == 0) return 0;
+	node__->vtable__ = &intnum_vt__;
+	node__->kind__ = intnum_kind;
+	node__->filename__ = yycurrfilename();
+	node__->linenum__ = yycurrlinenum();
+	node__->num = num;
+	return (expression *)node__;
+}
+
+expression *plus_create(expression * expr1, expression * expr2)
+{
+	plus *node__ = (plus *)yynodealloc(sizeof(struct plus__));
+	if(node__ == 0) return 0;
+	node__->vtable__ = &plus_vt__;
+	node__->kind__ = plus_kind;
+	node__->filename__ = yycurrfilename();
+	node__->linenum__ = yycurrlinenum();
+	node__->expr1 = expr1;
+	node__->expr2 = expr2;
+	return (expression *)node__;
+}
+
+expression *minus_create(expression * expr1, expression * expr2)
+{
+	minus *node__ = (minus *)yynodealloc(sizeof(struct minus__));
+	if(node__ == 0) return 0;
+	node__->vtable__ = &minus_vt__;
+	node__->kind__ = minus_kind;
+	node__->filename__ = yycurrfilename();
+	node__->linenum__ = yycurrlinenum();
+	node__->expr1 = expr1;
+	node__->expr2 = expr2;
+	return (expression *)node__;
+}
+
+expression *multiply_create(expression * expr1, expression * expr2)
+{
+	multiply *node__ = (multiply *)yynodealloc(sizeof(struct multiply__));
+	if(node__ == 0) return 0;
+	node__->vtable__ = &multiply_vt__;
+	node__->kind__ = multiply_kind;
+	node__->filename__ = yycurrfilename();
+	node__->linenum__ = yycurrlinenum();
+	node__->expr1 = expr1;
+	node__->expr2 = expr2;
+	return (expression *)node__;
+}
+
+expression *divide_create(expression * expr1, expression * expr2)
+{
+	divide *node__ = (divide *)yynodealloc(sizeof(struct divide__));
+	if(node__ == 0) return 0;
+	node__->vtable__ = &divide_vt__;
+	node__->kind__ = divide_kind;
+	node__->filename__ = yycurrfilename();
+	node__->linenum__ = yycurrlinenum();
+	node__->expr1 = expr1;
+	node__->expr2 = expr2;
+	return (expression *)node__;
+}
+
+expression *power_create(expression * expr1, expression * expr2)
+{
+	power *node__ = (power *)yynodealloc(sizeof(struct power__));
+	if(node__ == 0) return 0;
+	node__->vtable__ = &power_vt__;
+	node__->kind__ = power_kind;
+	node__->filename__ = yycurrfilename();
+	node__->linenum__ = yycurrlinenum();
+	node__->expr1 = expr1;
+	node__->expr2 = expr2;
+	return (expression *)node__;
+}
+
+expression *negate_create(expression * expr)
+{
+	negate *node__ = (negate *)yynodealloc(sizeof(struct negate__));
+	if(node__ == 0) return 0;
+	node__->vtable__ = &negate_vt__;
+	node__->kind__ = negate_kind;
+	node__->filename__ = yycurrfilename();
+	node__->linenum__ = yycurrlinenum();
+	node__->expr = expr;
+	return (expression *)node__;
+}
+
+static void infer_type_1__(power *e)
+#line 69 "output4.tst"
+{
+	infer_type(e->expr1);
+	infer_type(e->expr2);
+
+	if(e->expr2->type != int_type)
+	{
+		error("second sub-expression to `^' is not an integer");
+	}
+
+	e->type = e->expr1->type;
+}
+#line 433 "output.c"
+
+static void infer_type_2__(binary *e)
+#line 38 "output4.tst"
+{
+	type_code type1, type2;
+
+	infer_type(e->expr1);
+	type1 = e->expr1->type;
+
+	infer_type(e->expr2);
+	type2 = e->expr2->type;
+
+	if(type1 == float_type || type2 == float_type)
+	{
+		e->type = float_type;
+	}
+	else
+	{
+		e->type = int_type;
+	}
+}
+#line 455 "output.c"
+
+static void infer_type_3__(unary *e)
+#line 58 "output4.tst"
+{
+	infer_type(e->expr);
+	e->type = e->expr->type;
+}
+#line 463 "output.c"
+
+static void infer_type_4__(intnum *e)
+#line 64 "output4.tst"
+{
+	e->type = int_type;
+}
+#line 470 "output.c"
+
+void infer_type(expression * e__)
+{
+	switch(e__->kind__)
+	{
+		case power_kind:
+		{
+			infer_type_1__((power *)e__);
+		}
+		break;
+
+		case binary_kind:
+		case plus_kind:
+		case minus_kind:
+		case multiply_kind:
+		case divide_kind:
+		{
+			infer_type_2__((binary *)e__);
+		}
+		break;
+
+		case unary_kind:
+		case negate_kind:
+		{
+			infer_type_3__((unary *)e__);
+		}
+		break;
+
+		case intnum_kind:
+		{
+			infer_type_4__((intnum *)e__);
+		}
+		break;
+
+		default: break;
+	}
+}
+
+struct yy_vtable__ {
+	const struct yy_vtable__ *parent__;
+	int kind__;
+};
+
+int yyisa__(const void *vtable__, int kind__)
+{
+	const struct yy_vtable__ *vt;
+	vt = (const struct yy_vtable__ *)vtable__;
+	while(vt != 0) {
+		if(vt->kind__ == kind__)
+			return 1;
+		vt = vt->parent__;
+	}
+	return 0;
+}
+

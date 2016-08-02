@@ -1,0 +1,61 @@
+#!/bin/sh
+#
+# run_test.sh - Run a C# test using nunit and "ilrun".
+#
+# Copyright (C) 2001, 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+# Get the incoming configuration variables.
+ILRUN="@ILRUN@"
+PNETLIB_PATH="@PNETLIB_PATH@"
+MONO_SOURCE_PATH="@MONO_SOURCE_PATH@"
+ 
+# Get the top-most build directory, so that we can add the right
+# paths to the "ilrun" command-line.
+TOP_BUILDDIR="$1"
+shift
+
+# Make sure that we are in the default locale so that locale-sensitive
+# tests don't get confused on non-English systems.
+LANG=en_US
+LC_ALL=en_US
+export LANG LC_ALL
+
+# Run the test.
+exec "$ILRUN" -C 4096 \
+	-L"$PNETLIB_PATH"/runtime \
+	-L"$PNETLIB_PATH"/I18N \
+	-L"$PNETLIB_PATH"/System \
+	-L"$PNETLIB_PATH"/System.Xml \
+	-L"$PNETLIB_PATH"/DotGNU.SSL \
+	-L"$PNETLIB_PATH"/System.EnterpriseServices \
+	-L"$PNETLIB_PATH"/compat \
+	-L"$PNETLIB_PATH"/JScript \
+	-L"$TOP_BUILDDIR"/nunit20/framework \
+	-L"$TOP_BUILDDIR"/nunit20/core \
+	-L"$TOP_BUILDDIR"/nunit20/util \
+	-L"$TOP_BUILDDIR"/class/System.Runtime.Serialization.Formatters.Soap \
+	-L"$TOP_BUILDDIR"/class/System.Security \
+	-L"$TOP_BUILDDIR"/class/Mono.Security \
+	-L"$TOP_BUILDDIR"/class/Mono.Data.Tds \
+	-L"$TOP_BUILDDIR"/class/System.Data \
+	-L"$TOP_BUILDDIR"/class/System.Web \
+	-L"$TOP_BUILDDIR"/class/System.Web.Services \
+	-L"$TOP_BUILDDIR"/class/System.Runtime.Remoting \
+	-L"$TOP_BUILDDIR"/class/Mono.Directory.LDAP \
+	-L. \
+	"$TOP_BUILDDIR/nunit20/nunit-console/nunit-console-pnet.exe" $* \
+	/xmlConsole /transform="$MONO_SOURCE_PATH"/nunit20/core/Summary.xslt

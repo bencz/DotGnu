@@ -1,0 +1,4 @@
+
+Use the "ilrun.sh" script to run the samples with the correct paths
+set up to find the library dependencies.  Otherwise, you must do a
+"make install" on pnet and pnetlib first before running the samples.

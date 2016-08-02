@@ -1,0 +1,1229 @@
+%output "cg_decls.c"
+
+%{
+/*
+ * cg_decls.tc - Declaration nodes.
+ *
+ * Copyright (C) 2001, 2009  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <codegen/cg_nodes.h>
+#include <il_profile.h>
+#include "il_dumpasm.h"
+
+/*
+ * Output the attributes that are attached to a program item.
+ */
+void ILGenOutputAttributes(ILGenInfo *info, FILE *stream, ILProgramItem *item)
+{
+	ILAttribute *attr;
+	ILMethod *ctor;
+	const void *value;
+	ILUInt32 valueLen;
+	ILUInt32 posn;
+
+	attr = 0;
+	while((attr = ILProgramItemNextAttribute(item, attr)) != 0)
+	{
+		fputs(".custom ", stream);
+		ctor = ILProgramItemToMethod(ILAttributeTypeAsItem(attr));
+		if(ctor)
+		{
+			ILDumpMethodType(stream, info->image,
+							 ILMethod_Signature(ctor),
+							 IL_DUMP_QUOTE_NAMES,
+							 ILMethod_Owner(ctor),
+							 ILMethod_Name(ctor),
+							 ctor);
+		}
+		if((value = ILAttributeGetValue(attr, &valueLen)) != 0)
+		{
+			fputs(" = (", stream);
+			for(posn = 0; posn < valueLen; ++posn)
+			{
+				if(posn != 0)
+				{
+					putc(' ', stream);
+				}
+				fprintf(stream, "%02X",
+						(int)(((const unsigned char *)value)[posn]));
+			}
+			putc(')', stream);
+		}
+		putc('\n', stream);
+	}
+
+	/* Dump declarative security blobs as well */
+	if(ILProgramItemToAssembly(item) ||
+	   ILProgramItemToClass(item) ||
+	   ILProgramItemToMethod(item))
+	{
+		ILDeclSecurity *decl = 0;
+
+		while((decl = ILProgramItemNextDeclSecurity(item, decl)) != 0)
+		{
+			static char * const actionNames[] = {
+				"demand /*nil*/", "request", "demand", "assert",
+				"deny", "permitonly", "linkcheck", "inheritcheck",
+				"reqmin", "reqopt", "reqrefuse", "prejitgrant",
+				"prejitdeny", "noncasdemand", "noncaslinkdemand",
+				"nocasinheritance"
+			};
+			fputs(".permissionset ", stream);
+			fputs(actionNames[ILDeclSecurity_Type(decl) &
+							  IL_META_SECURITY_ACTION_MASK], stream);
+			fputs(" = (", stream);
+			value = ILDeclSecurityGetBlob(decl, &valueLen);
+			if(value && valueLen)
+			{
+				for(posn = 0; posn < valueLen; ++posn)
+				{
+					if(posn != 0)
+					{
+						putc(' ', stream);
+					}
+					fprintf(stream, "%02X",
+							(int)(((const unsigned char *)value)[posn]));
+				}
+			}
+			fputs(")\n", stream);
+		}
+	}
+}
+
+/*
+ * Output the attributes attached to generic parameters of a program item.
+ */
+void ILGenOutputGenericParamAttributes(ILGenInfo *info, FILE *stream, ILProgramItem *item)
+{
+	ILUInt32 numGenericParams = ILGenericParGetNumParams(item);
+	ILUInt32 current = 0;
+
+	for(current = 0; current < numGenericParams; current++)
+	{
+		ILGenericPar *genPar = ILGenericParGetFromOwner(item, current);
+
+		/* Check if the generic parameter has any attributes */
+		if(ILProgramItemNextAttribute(ILToProgramItem(genPar), 0) != 0)
+		{
+			fprintf(stream, ".param type [%X]\n", current + 1);
+			ILGenOutputAttributes(info, stream, ILToProgramItem(genPar));
+		}
+	}
+}
+
+/*
+ * Determine if a class has no instance fields.
+ */
+static int ClassIsEmpty(ILClass *classInfo)
+{
+	ILField *field = 0;
+	while((field = (ILField *)ILClassNextMemberByKind
+					(classInfo, (ILMember *)field,
+					 IL_META_MEMBERKIND_FIELD)) != 0)
+	{
+		if(!ILField_IsStatic(field))
+		{
+			return 0;
+		}
+	}
+	return 1;
+}
+
+/*
+ * Dump the members of the current class definition node and all it's other
+ * partial declarations.
+ */
+static void DumpClassMembers(ILGenInfo *info, ILNode_ClassDefn *node)
+{
+	/* First dump the members of this class */
+	if(info->outputIsJava)
+	{
+		JavaGenDiscard(node->body, info);
+	}
+	else
+	{
+		ILNode_GenDiscard(node->body, info);
+	}
+#if IL_VERSION_MAJOR > 1
+	if(node->otherParts)
+	{
+		ILNode_ListIter iter;
+		ILNode *part;
+		ILNode *prevClass;
+
+		prevClass = info->currentClass;
+		ILNode_ListIter_Init(&iter, node->otherParts);
+		while((part = ILNode_ListIter_Next(&iter)) != 0)
+		{
+			info->currentClass = part;
+
+			if(info->outputIsJava)
+			{
+				JavaGenDiscard(((ILNode_ClassDefn *)part)->body, info);
+			}
+			else
+			{
+				ILNode_GenDiscard(((ILNode_ClassDefn *)part)->body, info);
+			}
+		}
+		info->currentClass = prevClass;
+	}
+#endif /* IL_VERSION_MAJOR > 1 */
+}
+
+%}
+
+/*
+ * Generate discard code for a class definition.
+ */
+ILNode_GenDiscard(ILNode_ClassDefn)
+{
+	ILClass *classInfo;
+	ILImplements *impl;
+	int first;
+	ILNode *prevClass;
+	int isModule = (!strcmp(node->name, "<Module>"));
+	ILClassLayout *layout;
+
+#if IL_VERSION_MAJOR > 1
+	/*
+	 * If this is an additional part skip it here because it's contents is
+	 * handled in DumpClassMembers.
+	 */
+	if(node->partialParent)
+	{
+		return;
+	}
+#endif /* IL_VERSION_MAJOR > 1 */
+
+	/* Get the class information structure */
+	classInfo = node->classInfo;
+	if(!classInfo || classInfo == ((ILClass *)1))
+	{
+		return;
+	}
+	layout = ILClassLayoutGetFromOwner(classInfo);
+
+	/* Set the current class within the ILGenInfo object */
+	prevClass = info->currentClass;
+	info->currentClass = (ILNode *)node;
+
+	/* Output the class heading */
+	if(info->asmOutput && !isModule)
+	{
+		ILProgramItem *parent;
+
+		/* Output the namespace information */
+		if(ILClass_Namespace(classInfo) && ILClass_NestedParent(classInfo) == 0)
+		{
+			fputs(".namespace ", info->asmOutput);
+			ILDumpIdentifier(info->asmOutput, ILClass_Namespace(classInfo), 0,
+							 IL_DUMP_QUOTE_NAMES);
+			fputs("\n{\n", info->asmOutput);
+		}
+
+		/* Output the class flags and name */
+		fputs(".class ", info->asmOutput);
+		ILDumpFlags(info->asmOutput, (unsigned long)(ILClass_Attrs(classInfo)),
+					ILTypeDefinitionFlags, 0);
+		ILDumpIdentifier(info->asmOutput, ILClass_Name(classInfo), 0,
+						 IL_DUMP_QUOTE_NAMES);
+
+	#if IL_VERSION_MAJOR > 1
+		/* Output the generic parameters, if any */
+		ILDAsmDumpGenericParams(info->image, info->asmOutput,
+								ILToProgramItem(classInfo),
+								IL_DUMP_QUOTE_NAMES);
+	#endif /* IL_VERSION_MAJOR > 1 */
+
+		/* Output the name of the parent class */
+		if((parent = ILClass_Parent(classInfo)) != 0)
+		{
+			fputs(" extends ", info->asmOutput);
+			ILDumpProgramItem(info->asmOutput, info->image,
+							  parent, IL_DUMP_QUOTE_NAMES);
+		}
+
+		/* Output the names of the implemented interfaces */
+		impl = 0;
+		first = 1;
+		while((impl = ILClassNextImplements(classInfo, impl)) != 0)
+		{
+			ILProgramItem *interface;
+
+			interface = ILImplementsGetInterface(impl);
+			if(first)
+			{
+				fputs(" implements ", info->asmOutput);
+				first = 0;
+			}
+			else
+			{
+				fputs(", ", info->asmOutput);
+			}
+			ILDumpProgramItem(info->asmOutput, info->image, interface,
+							  IL_DUMP_QUOTE_NAMES);
+		}
+
+		/* Done with the header */
+		fputs("\n{\n", info->asmOutput);
+
+		/* Output the line number information for the class */
+		if(info->debugFlag)
+		{
+			fprintf(info->asmOutput, ".line %ld \"%s\"\n",
+					yygetlinenum(node), yygetfilename(node));
+		}
+
+		/* Output the attributes that are attached to the class */
+		ILGenOutputAttributes
+			(info, info->asmOutput, (ILProgramItem *)classInfo);
+
+	#if IL_VERSION_MAJOR > 1
+		/* Output the attributes attached to generic parameters of the class */
+		ILGenOutputGenericParamAttributes
+			(info, info->asmOutput, (ILProgramItem *)classInfo);
+	#endif /* IL_VERSION_MAJOR > 1 */
+
+		/* Output the class layout information */
+		if(layout)
+		{
+			if(ILClassLayout_ClassSize(layout) != 0)
+			{
+				fprintf(info->asmOutput, ".size %lu\n",
+						(unsigned long)(ILClassLayout_ClassSize(layout)));
+			}
+			if(ILClassLayout_PackingSize(layout) != 0)
+			{
+				fprintf(info->asmOutput, ".pack %lu\n",
+						(unsigned long)(ILClassLayout_PackingSize(layout)));
+			}
+		}
+		else if(ClassIsEmpty(classInfo) && ILClassIsValueType(classInfo))
+		{
+			/* Make sure that "struct"'s are never zero-sized */
+			fprintf(info->asmOutput, ".size 1\n");
+		}
+	}
+
+	/* Output the class members */
+	DumpClassMembers(info, node);
+
+	/* Output the static constructor for the class */
+	if(node->staticCtorsMethod && info->asmOutput)
+	{
+		MethodGenDiscard(info, info->asmOutput,
+						 (ILNode_MethodDeclaration *)(node->staticCtorsMethod),
+						 ((ILNode_MethodDeclaration *)(node->staticCtorsMethod))
+						 		->methodInfo);
+	}
+
+	/* Output the class footer */
+	if(info->asmOutput && !isModule)
+	{
+		fprintf(info->asmOutput, "} // class %s\n", ILClass_Name(classInfo));
+		if(ILClass_Namespace(classInfo) && ILClass_NestedParent(classInfo) == 0)
+		{
+			fprintf(info->asmOutput, "} // namespace %s\n",
+					ILClass_Namespace(classInfo));
+		}
+	}
+
+	/* Restore the previous class */
+	info->currentClass = prevClass;
+}
+
+/*
+ * Generate discard code for an interface proxy replacement method.
+ */
+ILNode_GenDiscard(ILNode_ProxyDeclaration)
+{
+	FILE *outstream = info->asmOutput;
+	const char *name;
+	ILType *signature = ILMethod_Signature(node->interfaceMethod);
+	unsigned long numParams;
+	unsigned long param;
+
+	/* Bail out if no assembly output stream */
+	if(!outstream)
+	{
+		return;
+	}
+	
+	/* Create a name for the proxy method */
+	name = ILInternStringConcat3
+		(ILInternString
+				((char *)ILClass_Name(ILMethod_Owner(node->interfaceMethod)),
+				 -1),
+		 ILInternString(".", 1),
+		 ILInternString((char *)ILMethod_Name(node->interfaceMethod), -1))
+		 		.string;
+
+	/* Dump the method heading */
+	fputs(".method ", outstream);
+	ILDumpFlags(outstream, IL_META_METHODDEF_PRIVATE |
+						   IL_META_METHODDEF_FINAL |
+						   IL_META_METHODDEF_VIRTUAL |
+						   IL_META_METHODDEF_NEW_SLOT,
+				ILMethodDefinitionFlags, 0);
+	ILDumpMethodType(outstream, info->image, signature,
+					 IL_DUMP_QUOTE_NAMES, 0, name,
+					 node->interfaceMethod);
+	fputs(" il managed\n{\n", outstream);
+
+	/* Output the ".override" declaration */
+	fputs("\t.override\t", outstream);
+	ILDumpClassName(outstream, info->image,
+					ILMethod_Owner(node->interfaceMethod),
+					IL_DUMP_QUOTE_NAMES);
+	fputs("::", outstream);
+	ILDumpIdentifier(outstream, ILMethod_Name(node->interfaceMethod), 0,
+					 IL_DUMP_QUOTE_NAMES);
+	putc('\n', outstream);
+
+	/* Push all of the arguments onto the stack, including "this" */
+	numParams = ILTypeNumParams(signature);
+	for(param = 0; param <= numParams; ++param)
+	{
+		ILGenLoadArg(info, (unsigned)param);
+	}
+
+	/* Call the proxy replacement method */
+	ILGenCallMethod(info, node->proxyReplacement);
+
+	/* Return from the proxy method */
+	ILGenSimple(info, IL_OP_RET);
+
+	/* Set the maximum stack height */
+	fprintf(outstream, "\t.maxstack %ld\n", numParams + 1);
+
+	/* Output the method footer */
+	fputs("}\n", outstream);
+}
+
+/*
+ * Generate discard code for a scope change.
+ */
+ILNode_GenDiscard(ILNode_ScopeChange)
+{
+	if(node->body)
+	{
+		ILScope *oldScope = info->currentScope;
+		info->currentScope = node->scope;
+		ILNode_GenDiscard(node->body, info);
+		info->currentScope = oldScope;
+	}
+}
+
+%{
+
+/*
+ * Dump PInvoke information for a method or field.
+ */
+static void DumpPInvoke(ILGenInfo *info, FILE *outstream,
+						ILPInvoke *pinvoke, ILMember *member)
+{
+	fputs("pinvokeimpl(", outstream);
+	ILDumpString(outstream,
+				 ILModule_Name(ILPInvoke_Module(pinvoke)));
+	putc(' ', outstream);
+	if(strcmp(ILPInvoke_Alias(pinvoke), ILMember_Name(member)) != 0)
+	{
+		fputs("as ", outstream);
+		ILDumpString(outstream, ILPInvoke_Alias(pinvoke));
+		putc(' ', outstream);
+	}
+	ILDumpFlags(outstream, ILPInvoke_Attrs(pinvoke),
+				ILPInvokeImplementationFlags, 0);
+	fputs(") ", outstream);
+}
+
+/*
+ * Dump information about a field to the output stream.
+ */
+static void DumpField(ILGenInfo *info, ILField *field, ILNode *node)
+{
+	ILFieldLayout *layout;
+	ILPInvoke *pinvoke;
+
+	/* Does the field have PInvoke information associated with it? */
+	if(ILField_HasPInvokeImpl(field))
+	{
+		pinvoke = ILPInvokeFindField(field);
+	}
+	else
+	{
+		pinvoke = 0;
+	}
+
+	/* Dump the field signature and name */
+	fputs(".field ", info->asmOutput);
+	layout = ILFieldLayoutGetFromOwner(field);
+	if(layout)
+	{
+		fprintf(info->asmOutput, "[%lu] ",
+				(unsigned long)(ILFieldLayout_Offset(layout)));
+	}
+	ILDumpFlags(info->asmOutput, ILField_Attrs(field),
+			    ILFieldDefinitionFlags, 0);
+	if(pinvoke)
+	{
+		DumpPInvoke(info, info->asmOutput, pinvoke, (ILMember *)field);
+	}
+	ILDumpType(info->asmOutput, info->image, ILFieldGetTypeWithPrefixes(field),
+			   IL_DUMP_QUOTE_NAMES);
+	fputc(' ', info->asmOutput);
+	ILDumpIdentifier(info->asmOutput, ILField_Name(field), 0,
+					 IL_DUMP_QUOTE_NAMES);
+
+	/* Dump the field initializer */
+	ILDumpConstant(info->asmOutput, (ILProgramItem *)field, 1);
+
+	/* Terminate the field definition */
+	putc('\n', info->asmOutput);
+
+	/* Output the line number information for the field */
+	if(info->debugFlag)
+	{
+		fprintf(info->asmOutput, ".line %ld \"%s\"\n",
+				yygetlinenum(node), yygetfilename(node));
+	}
+
+	/* Output the attributes that are attached to the field */
+	ILGenOutputAttributes(info, info->asmOutput, (ILProgramItem *)field);
+}
+
+%}
+
+/*
+ * Generate discard code for a field declaration .
+ */
+ILNode_GenDiscard(ILNode_FieldDeclaration)
+{
+	ILNode_ListIter	iter;
+	ILNode_FieldDeclarator *decl;
+	ILField *field;
+
+	if(node->fieldDeclarators && info->asmOutput)
+	{
+		ILNode_ListIter_Init(&iter, node->fieldDeclarators);
+		while((decl = (ILNode_FieldDeclarator *)
+							ILNode_ListIter_Next(&iter)) != 0)
+		{
+			field = decl->fieldInfo;
+			if(field)
+			{
+				DumpField(info, field, decl->name);
+			}
+		}
+	}
+}
+
+/*
+ * Generate discard code for a field declarator.
+ */
+ILNode_GenDiscard(ILNode_FieldDeclarator)
+{
+	/* Nothing to do here: handled by ILNode_FieldDeclaration */
+}
+
+/*
+ * Generate discard code for event declarations.
+ */
+ILNode_GenDiscard(ILNode_EventDeclaration)
+{
+	ILNode_ListIter iter;
+	ILNode *decl;
+
+	if(yyisa(node->eventDeclarators, ILNode_EventDeclarator))
+	{
+		/* Create the singleton event */
+		ILNode_GenDiscard(node->eventDeclarators, info);
+	}
+	else
+	{
+		/* Scan the list and create the events that we require */
+		ILNode_ListIter_Init(&iter, node->eventDeclarators);
+		while((decl = ILNode_ListIter_Next(&iter)) != 0)
+		{
+			ILNode_GenDiscard(decl, info);
+		}
+	}
+}
+
+/*
+ * Generate discard code for event declarators.
+ */
+ILNode_GenDiscard(ILNode_EventDeclarator)
+{
+	FILE *outstream = info->asmOutput;
+	ILMethod *methodInfo;
+
+	if(outstream && node->eventInfo)
+	{
+		/* Generate the code for the add method */
+		if(node->addAccessor)
+		{
+			ILNode_GenDiscard(node->addAccessor, info);
+		}
+
+		/* Generate the code for the remove method */
+		if(node->removeAccessor)
+		{
+			ILNode_GenDiscard(node->removeAccessor, info);
+		}
+
+		/* Output the hidden field that holds the event data */
+		if(node->backLink->needFields)
+		{
+			fputs(".field private ", outstream);
+			if(node->addAccessor)
+			{
+				methodInfo = ((ILNode_MethodDeclaration *)(node->addAccessor))
+								->methodInfo;
+				if(ILMethod_IsStatic(methodInfo))
+				{
+					fputs("static ", outstream);
+				}
+			}
+			else if(node->removeAccessor)
+			{
+				methodInfo =
+					((ILNode_MethodDeclaration *)(node->removeAccessor))
+						->methodInfo;
+				if(ILMethod_IsStatic(methodInfo))
+				{
+					fputs("static ", outstream);
+				}
+			}
+			ILDumpType(outstream, info->image,
+					   ILEvent_Type(node->eventInfo),
+					   IL_DUMP_QUOTE_NAMES);
+			putc(' ', outstream);
+			ILDumpIdentifier(outstream, ILEvent_Name(node->eventInfo),
+							 0, IL_DUMP_QUOTE_NAMES);
+			putc('\n', outstream);
+		}
+
+		/* Output the event declaration */
+		fputs(".event ", outstream);
+		ILDumpFlags(outstream, ILEvent_Attrs(node->eventInfo),
+					ILEventDefinitionFlags, 0);
+		ILDumpClassName(outstream, info->image,
+					    ILType_ToClass(ILEvent_Type(node->eventInfo)),
+					    IL_DUMP_QUOTE_NAMES);
+		putc(' ', outstream);
+		ILDumpIdentifier(outstream, ILEvent_Name(node->eventInfo),
+					     0, IL_DUMP_QUOTE_NAMES);
+		fputs("\n{\n", outstream);
+		if(info->debugFlag && info->asmOutput)
+		{
+			fprintf(info->asmOutput, ".line %ld \"%s\"\n",
+					yygetlinenum(node), yygetfilename(node));
+		}
+		ILGenOutputAttributes(info, outstream,
+						 	  (ILProgramItem *)(node->eventInfo));
+		if(node->addAccessor)
+		{
+			methodInfo = ((ILNode_MethodDeclaration *)(node->addAccessor))
+								->methodInfo;
+			fputs("\t.addon ", outstream);
+			ILDumpMethodType(outstream, info->image,
+						     ILMethod_Signature(methodInfo),
+						     IL_DUMP_QUOTE_NAMES, ILMethod_Owner(methodInfo),
+							 ILMethod_Name(methodInfo), 0);
+			putc('\n', outstream);
+		}
+		if(node->removeAccessor)
+		{
+			methodInfo = ((ILNode_MethodDeclaration *)(node->removeAccessor))
+								->methodInfo;
+			fputs("\t.removeon ", outstream);
+			ILDumpMethodType(outstream, info->image,
+						     ILMethod_Signature(methodInfo),
+						     IL_DUMP_QUOTE_NAMES, ILMethod_Owner(methodInfo),
+							 ILMethod_Name(methodInfo), 0);
+			putc('\n', outstream);
+		}
+		fputs("} // event ", outstream);
+		ILDumpIdentifier(outstream, ILEvent_Name(node->eventInfo), 0, 0);
+		putc('\n', outstream);
+	}
+}
+
+%{
+
+/*
+ * Dump the local variable block for an IL method.
+ */
+static void DumpILLocals(ILGenInfo *info, FILE *outstream, ILType *localVarSig)
+{
+	/* Dump the local variable signature, and set the
+	   base for temporary local variable allocation */
+	if(localVarSig)
+	{
+		unsigned long num = ILTypeNumLocals(localVarSig);
+		unsigned long index;
+		fputs("\t.locals init\t(", outstream);
+		for(index = 0; index < num; ++index)
+		{
+			if(index != 0)
+			{
+				fputs(", ", outstream);
+			}
+			ILDumpType(outstream, info->image,
+					   ILTypeGetLocalWithPrefixes(localVarSig, index),
+					   IL_DUMP_QUOTE_NAMES);
+		}
+		fputs(")\n", outstream);
+		info->tempLocalBase = num;
+	}
+	else
+	{
+		info->tempLocalBase = 0;
+	}
+}
+
+void ILGenDumpILLocals(ILGenInfo *info, ILType *localVarSig)
+{
+	if(info->asmOutput)
+	{
+		DumpILLocals(info, info->asmOutput, localVarSig);
+	}
+}
+
+/*
+ * Allocate the arguments and locals for a JL method.
+ */
+static void AllocJLVars(ILGenInfo *info, ILType *signature,
+						ILType *localVarSig)
+{
+	ILType *vars;
+	ILType *type;
+	unsigned long num;
+	unsigned long index;
+	ILMachineType machineType;
+	char *name;
+
+	/* Allocate frame positions to the method arguments */
+	JavaGenStartFrame(info);
+	vars = signature;
+	if(ILType_HasThis(vars))
+	{
+		/* Allocate a slot for the "this" argument */
+		JavaGenAddFrameSlot(info, ILMachineType_ObjectRef);
+	}
+	num = ILTypeNumParams(vars);
+	for(index = 1; index <= num; ++index)
+	{
+		JavaGenAddFrameSlot
+			(info, ILTypeToMachineType(ILTypeGetParam(vars, index)));
+	}
+
+	/* Allocate frame positions to the locals, and initialize them */
+	JavaGenStartLocals(info);
+	vars = localVarSig;
+	if(vars)
+	{
+		num = ILTypeNumLocals(vars);
+		for(index = 0; index < num; ++index)
+		{
+			type = ILTypeGetLocal(vars, index);
+			machineType = ILTypeToMachineType(type);
+			JavaGenAddFrameSlot(info, machineType);
+			if(machineType == ILMachineType_Decimal && info->useJavaLib)
+			{
+				/* Initialize "decimal" objects using "BigDecimal" */
+				JavaGenSimple(info, JAVA_OP_LCONST_0);
+				JavaGenAdjust(info, 2);
+				JavaGenCallByName(info, "java/math/BigDecimal",
+						  "valueOf", "(J)Ljava/math/BigDecimal;");
+				JavaGenStoreLocal(info, index, ILMachineType_ManagedValue);
+				JavaGenAdjust(info, -2);
+			}
+			else if(machineType == ILMachineType_ManagedValue ||
+					machineType == ILMachineType_Decimal)
+			{
+				/* Regular value type, which we assume has a
+				   zero-argument constructor per the C# rules */
+				name = JavaGetClassName(info, ILType_ToValueType(type));
+				JavaGenNewObj(info, name);
+				JavaGenSimple(info, JAVA_OP_DUP);
+				JavaGenAdjust(info, 2);
+				JavaGenCallCtor(info, name, "<init>", "()V");
+				JavaGenStoreLocal(info, index, ILMachineType_ManagedValue);
+				JavaGenAdjust(info, -2);
+				ILFree(name);
+			}
+		}
+		info->tempLocalBase = num;
+	}
+	else
+	{
+		info->tempLocalBase = 0;
+	}
+}
+
+void ILGenEndMethod(ILGenInfo *info)
+{
+	ILGotoEntry *gotoEntry, *nextGoto;
+
+	/* Flush the static array initialization classes used by the method */
+	if(!(info->outputIsJava))
+	{
+		ILArrayInitFlush(info);
+	}
+
+	/* Clear the stack heights */
+	info->stackHeight = 0;
+	info->maxStackHeight = 0;
+
+	/* Clear the return type information */
+	info->returnType = ILType_Void;
+	info->returnVar = -1;
+	info->returnLabel = ILLabel_Undefined;
+	info->gotoPtrLabel = ILLabel_Undefined;
+
+	/* Clear the temporary throw variable */
+	info->throwVariable = -1;
+
+	/* Clear the "goto" list */
+	gotoEntry = info->gotoList;
+	while(gotoEntry != 0)
+	{
+		nextGoto = gotoEntry->next;
+		ILFree(gotoEntry);
+		gotoEntry = nextGoto;
+	}
+	info->gotoList = 0;
+
+	/* Clear the list of temporary variables */
+	info->numTempVars = 0;
+	info->tempLocalBase = 0;
+}
+
+/*
+ * Generate discard code for a method.
+ */
+static void MethodGenDiscard(ILGenInfo *info, FILE *outstream,
+							 ILNode_MethodDeclaration *node,
+							 ILMethod *method)
+{
+	ILPInvoke *pinvoke;
+	int outputLabel;
+	ILParameter *param;
+	ILMachineType returnMachineType;
+	ILOverride *over;
+	ILMethod *decl;
+	ILConstant *constant;
+
+	/* Ignore the method if "suppressCodeGen" is set.  This can happen
+	   for "extern" methods within the "<Module>" class, which are
+	   actually imported from C into C# */
+	if(node && node->suppressCodeGen)
+	{
+		return;
+	}
+
+	/* Does the method have PInvoke information associated with it? */
+	if(ILMethod_HasPInvokeImpl(method))
+	{
+		pinvoke = ILPInvokeFind(method);
+	}
+	else
+	{
+		pinvoke = 0;
+	}
+
+	/* Dump the method heading */
+	fputs(".method ", outstream);
+	ILDumpFlags(outstream, ILMethod_Attrs(method),
+				ILMethodDefinitionFlags, 0);
+	if(pinvoke)
+	{
+		/* Dump PInvoke information for the method */
+		DumpPInvoke(info, outstream, pinvoke, (ILMember *)method);
+	}
+	ILDumpMethodType(outstream, info->image,
+					 ILMethod_Signature(method),
+#if IL_VERSION_MAJOR > 1
+					 IL_DUMP_QUOTE_NAMES | IL_DUMP_GENERIC_PARAMS, 0,
+#else	/* IL_VERSION_MAJOR == 1 */
+					 IL_DUMP_QUOTE_NAMES, 0,
+#endif	/* IL_VERSION_MAJOR == 1 */
+					 ILMethod_Name(method), method);
+	putc(' ', outstream);
+	ILDumpFlags(outstream, ILMethod_ImplAttrs(method),
+				ILMethodImplementationFlags, 0);
+	if(info->outputIsJava && !ILMethod_IsJava(method))
+	{
+		/* Make sure that the assembler is informed
+		   that this is a Java method */
+		fputs("java ", outstream);
+	}
+	fputs("\n{\n", outstream);
+
+	/* Output the attributes that are attached to the field */
+	ILGenOutputAttributes(info, outstream, (ILProgramItem *)method);
+
+#if IL_VERSION_MAJOR > 1
+	/* Output the attributes attached to generic parameters of the method */
+	ILGenOutputGenericParamAttributes(info, outstream,
+									  (ILProgramItem *)method);
+#endif /* IL_VERSION_MAJOR > 1 */
+
+	/* Output the attributes that are attached to the parameters */
+	param = 0;
+	while((param = ILMethodNextParam(method, param)) != 0)
+	{
+		constant = ILConstantGetFromOwner((ILProgramItem *)param);
+		if(ILProgramItemNextAttribute((ILProgramItem *)param, 0) != 0 ||
+		   constant != 0)
+		{
+			fprintf(outstream, ".param[%lu]",
+					(unsigned long)(ILParameter_Num(param)));
+			ILDumpConstant(outstream, (ILProgramItem *)param, 1);
+			putc('\n', outstream);
+			ILGenOutputAttributes(info, outstream, (ILProgramItem *)param);
+		}
+	}
+
+	/* Output override information */
+	over = ILOverrideFromMethod(method);
+	if(over)
+	{
+		decl = ILOverride_Decl(over);
+		fputs("\t.override\t", outstream);
+		ILDumpClassName(outstream, info->image,
+						ILMethod_Owner(decl),
+						IL_DUMP_QUOTE_NAMES);
+		fputs("::", outstream);
+		ILDumpIdentifier(outstream, ILMethod_Name(decl), 0,
+						 IL_DUMP_QUOTE_NAMES);
+		putc('\n', outstream);
+	}
+
+	/* Set up the return type so that "return" statements
+	   know what to cast the return value to upon exit */
+	info->returnType = ILTypeGetReturn(ILMethod_Signature(method));
+	returnMachineType = ILTypeToMachineType(info->returnType);
+
+	/* The local variable frame is created differently in IL and JL */
+	if(info->outputIsJava)
+	{
+		AllocJLVars(info, ILMethod_Signature(method), node->localVarSig);
+	}
+	else
+	{
+		DumpILLocals(info, outstream, node->localVarSig);
+	}
+
+	/* Don't create extra scope for locals */
+	info->createLocalsScope = 0;
+
+	/* Dump the code within the body of the method */
+	if(node->body)
+	{
+		if(info->outputIsJava)
+		{
+			JavaGenDiscard(node->body, info);
+		}
+		else
+		{
+			ILNode_GenDiscard(node->body, info);
+		}
+	}
+
+	/* Don't bother with return logic or stack sizes if abstract or extern */
+	if(!ILMethod_IsAbstract(method) && ILMethod_IsIL(method) && node->body)
+	{
+		if(!(info->outputIsJava))
+		{
+			/* Add an explicit return instruction if the body didn't */
+			outputLabel = 0;
+			if(!ILNodeEndsInFlowChange(node->body,info))
+			{
+				if(info->returnLabel != ILLabel_Undefined &&
+				   info->returnType == ILType_Void)
+				{
+					/* Use this point in the code for return labels
+					   to prevent outputting two "ret"'s in a row */
+					ILGenLabel(info, &(info->returnLabel));
+					outputLabel = 1;
+				}
+				ILGenCast(info, ILMachineType_Void, returnMachineType);
+				ILGenSimple(info, IL_OP_RET);
+				if(info->returnType != ILType_Void)
+				{
+					ILGenAdjust(info, -1);
+				}
+			}
+
+			/* If we have a return label, we need to output some final
+			   code to return the contents of a temporary local variable.
+			   This is used when returning from inside a "try" block */
+			if(!outputLabel && info->returnLabel != ILLabel_Undefined)
+			{
+				ILGenLabel(info, &(info->returnLabel));
+				if(info->returnType != ILType_Void)
+				{
+					ILGenLoadLocal(info, info->returnVar);
+					ILGenExtend(info, 1);
+				}
+				ILGenSimple(info, IL_OP_RET);
+			}
+		}
+		else
+		{
+			/* Add an explicit return instruction if the body didn't */
+			outputLabel = 0;
+			if(!ILNodeEndsInFlowChange(node->body,info))
+			{
+				if(info->returnLabel != ILLabel_Undefined &&
+				   info->returnType == ILType_Void)
+				{
+					/* Use this point in the code for return labels
+					   to prevent outputting two "ret"'s in a row */
+					JavaGenLabel(info, &(info->returnLabel));
+					outputLabel = 1;
+				}
+				JavaGenCast(info, ILMachineType_Void, returnMachineType);
+				JavaGenReturnInsn(info, returnMachineType);
+				if(info->returnType != ILMachineType_Void)
+				{
+					JavaGenAdjust(info, -JavaGenTypeSize(returnMachineType));
+				}
+			}
+
+			/* If we have a return label, we need to output some final
+			   code to return the contents of a temporary local variable.
+			   This is used when returning from inside a "try" block */
+			if(!outputLabel && info->returnLabel != ILLabel_Undefined)
+			{
+				JavaGenLabel(info, &(info->returnLabel));
+				if(info->returnType != ILType_Void)
+				{
+					JavaGenLoadLocal(info, info->returnVar, returnMachineType);
+					JavaGenExtend(info, JavaGenTypeSize(returnMachineType));
+				}
+				JavaGenReturnInsn(info, returnMachineType);
+			}
+
+			/* Output the number of local variables to the method */
+			fprintf(outstream, "\t.locals %u\n", JavaGenNumLocals(info));
+		}
+
+		/* Output the maximum stack height to the method */
+		fprintf(outstream, "\t.maxstack %ld\n", info->maxStackHeight);
+	}
+
+	/* Dump the method terminator */
+	fputs ("} // method ", outstream);
+	ILDumpIdentifier(outstream, ILMethod_Name(method), 0, 0);
+	putc('\n', outstream);
+
+	/* Clean up values that were used to generate the method code */
+	ILGenEndMethod(info);
+}
+
+%}
+
+/* 
+ * Generate discard code for method declarations.
+ */
+ILNode_GenDiscard(ILNode_MethodDeclaration)
+{
+	if(info->asmOutput && node->methodInfo)
+	{
+		MethodGenDiscard(info, info->asmOutput, node, node->methodInfo);
+	}
+}
+
+/*
+ * Generate discard code for property declarations.
+ */
+ILNode_GenDiscard(ILNode_PropertyDeclaration)
+{
+	FILE *outstream = info->asmOutput;
+	ILMethod *methodInfo;
+
+	if(outstream && node->propertyInfo)
+	{
+		/* Generate the code for the get method */
+		if(node->getAccessor)
+		{
+			ILNode_GenDiscard(node->getAccessor, info);
+		}
+
+		/* Generate the code for the set method */
+		if(node->setAccessor)
+		{
+			ILNode_GenDiscard(node->setAccessor, info);
+		}
+
+		/* Output the property declaration */
+		fputs(".property ", outstream);
+		ILDumpFlags(outstream, ILProperty_Attrs(node->propertyInfo),
+					ILPropertyDefinitionFlags, 0);
+		ILDumpMethodType(outstream, info->image,
+					     ILProperty_Signature(node->propertyInfo),
+					     IL_DUMP_QUOTE_NAMES, 0,
+						 ILProperty_Name(node->propertyInfo), 0);
+		ILDumpConstant(outstream, (ILProgramItem *)node->propertyInfo, 1);
+		fputs("\n{\n", outstream);
+		if(info->debugFlag && info->asmOutput)
+		{
+			fprintf(info->asmOutput, ".line %ld \"%s\"\n",
+					yygetlinenum(node->name), yygetfilename(node->name));
+		}
+		ILGenOutputAttributes(info, outstream,
+						      (ILProgramItem *)(node->propertyInfo));
+		if(node->getAccessor)
+		{
+			methodInfo = ((ILNode_MethodDeclaration *)(node->getAccessor))
+								->methodInfo;
+			fputs("\t.get ", outstream);
+			ILDumpMethodType(outstream, info->image,
+						     ILMethod_Signature(methodInfo),
+						     IL_DUMP_QUOTE_NAMES, ILMethod_Owner(methodInfo),
+							 ILMethod_Name(methodInfo), 0);
+			putc('\n', outstream);
+		}
+		if(node->setAccessor)
+		{
+			methodInfo = ((ILNode_MethodDeclaration *)(node->setAccessor))
+								->methodInfo;
+			fputs("\t.set ", outstream);
+			ILDumpMethodType(outstream, info->image,
+						     ILMethod_Signature(methodInfo),
+						     IL_DUMP_QUOTE_NAMES, ILMethod_Owner(methodInfo),
+							 ILMethod_Name(methodInfo), 0);
+			putc('\n', outstream);
+		}
+		fputs("} // property ", outstream);
+		ILDumpIdentifier(outstream, ILProperty_Name(node->propertyInfo), 0, 0);
+		putc('\n', outstream);
+	}
+}
+
+ILNode_GenDiscard(ILNode_EnumMemberDeclaration)
+{
+	ILField *field;
+
+	field = node->fieldInfo;
+	if(info->asmOutput && field)
+	{
+		DumpField(info, field, node->name);
+	}
+}
+
+%{
+
+/*
+ * Dump the definition of a "runtime" method.
+ */
+static void DumpRuntimeMethod(ILGenInfo *info, FILE *outstream,
+							  ILMethod *method)
+{
+	/* Bail out if the parameters are incorrect */
+	if(!outstream || !method)
+	{
+		return;
+	}
+
+	/* Dump the method heading */
+	fputs(".method ", outstream);
+	ILDumpFlags(outstream, ILMethod_Attrs(method),
+				ILMethodDefinitionFlags, 0);
+	ILDumpMethodType(outstream, info->image,
+					 ILMethod_Signature(method),
+					 IL_DUMP_QUOTE_NAMES, 0,
+					 ILMethod_Name(method), method);
+	putc(' ', outstream);
+	ILDumpFlags(outstream, ILMethod_ImplAttrs(method),
+				ILMethodImplementationFlags, 0);
+
+	/* Dump the method body, which is empty */
+	fputs("{}\n", outstream);
+}
+
+%}
+
+ILNode_GenDiscard(ILNode_DelegateMemberDeclaration)
+{
+	DumpRuntimeMethod(info, info->asmOutput, node->ctorMethod);
+	DumpRuntimeMethod(info, info->asmOutput, node->invokeMethod);
+	DumpRuntimeMethod(info, info->asmOutput, node->beginInvokeMethod);
+	DumpRuntimeMethod(info, info->asmOutput, node->endInvokeMethod);
+}
+
+ILNode_GenDiscard(ILNode_FormalParameter)
+{
+#if 0
+	if (info->asmOutput)
+	{
+		/*FIXME attributes, parameter modifier */
+		DumpTypeName(info->asmOutput, node->type);
+		ILNode_GenDiscard(node->type, info);
+		fputc(' ', info->asmOutput);
+		fputs (ILQualIdentName (node->name, 1), info->asmOutput);
+	}
+#endif
+}
+
+ILNode_GenDiscard(ILNode_GenericTypeParameter)
+{
+#if IL_VERSION_MAJOR > 1
+	if (info->asmOutput)
+	{
+		if(node->attributes)
+		{
+			if(node->target == ILGenParamTarget_Class)
+			{
+				fprintf(info->asmOutput, ".param [!%i]\n",
+						node->num + 1);
+			}
+			else
+			{
+				fprintf(info->asmOutput, ".param [!!%i]\n",
+						node->num + 1);
+			}
+			/* Output the attributes that are attached to the type parameter */
+			ILGenOutputAttributes(info, info->asmOutput,
+								  (ILProgramItem *)node->genPar);
+		}
+	}
+#endif /* IL_VERSION_MAJOR > 1 */
+}
+
+ILNode_GenDiscard(ILNode_GenericTypeParameters)
+{
+#if IL_VERSION_MAJOR > 1
+	if (info->asmOutput)
+	{
+		ILNode_ListIter iter;
+		ILNode *genPar;
+
+		ILNode_ListIter_Init(&iter, node->typeParams);
+		while((genPar = ILNode_ListIter_Next(&iter)) != 0)
+		{
+			ILNode_GenDiscard(genPar, info);
+		}
+	}
+#endif /* IL_VERSION_MAJOR > 1 */
+}

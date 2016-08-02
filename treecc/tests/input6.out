@@ -1,0 +1,4 @@
+input6.tst:2: invalid `#' character in input
+input6.tst:2: invalid `$' character in input
+input6.tst:3: invalid `/' character in input
+line 3: identifier (len = 1): a

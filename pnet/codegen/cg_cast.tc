@@ -1,0 +1,3185 @@
+%output "cg_cast.c"
+
+%{
+/*
+ * cg_cast.tc - Cast operations.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <codegen/cg_nodes.h>
+%}
+
+/*
+ * Declare the general-purpose machine type cast operation.
+ */
+%operation %inline %split void ILGenCast
+		(ILGenInfo *info, [ILMachineType fromType], [ILMachineType toType])
+
+/*
+ * Declare the constant cast operation.
+ */
+%operation %inline %split int ILGenCastConst
+		(ILGenInfo *info, ILEvalValue *value, [ILMachineType fromType],
+		 [ILMachineType toType]) = {0}
+
+/*
+ * Declare "ILGenConstToBoolean" for constants.
+ */
+%decls %{
+
+#define	ILGenConstToBoolean(info,value)	\
+			(ILGenCastConst((info), (value), (value)->valueType, \
+							ILMachineType_Boolean))
+
+%}
+
+/*
+ * Helper functions for conversions from "decimal".
+ */
+%{
+
+static int DecimalToInt32(const ILDecimal *value, ILInt32 *result,
+						  ILInt32 minValue, ILInt32 maxValue)
+{
+	ILDecimal truncValue;
+	ILInt64 intValue;
+	ILDecimalTruncate(&truncValue, value);
+	if(!ILDecimalToInt64(&truncValue, &intValue))
+	{
+		return 0;
+	}
+	if(intValue < (ILInt64)minValue || intValue > (ILInt64)maxValue)
+	{
+		return 0;
+	}
+	*result = (ILInt32)intValue;
+	return 1;
+}
+
+static int DecimalToUInt32(const ILDecimal *value, ILInt32 *result,
+						   ILUInt32 maxValue)
+{
+	ILDecimal truncValue;
+	ILUInt64 intValue;
+	ILDecimalTruncate(&truncValue, value);
+	if(!ILDecimalToUInt64(&truncValue, &intValue))
+	{
+		return 0;
+	}
+	if(intValue > (ILUInt64)maxValue)
+	{
+		return 0;
+	}
+	*result = (ILInt32)(ILUInt32)intValue;
+	return 1;
+}
+
+%}
+
+/*
+ * Cast to "void".
+ */
+ILGenCast(ILMachineType_Void, ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILGenCast(ILMachineType, ILMachineType_Void)
+{
+	ILGenSimple(info, IL_OP_POP);
+	ILGenAdjust(info, -1);
+}
+
+/*
+ * Cast to "boolean".
+ */
+ILGenCast(ILMachineType_Void, ILMachineType_Boolean)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenAdjust(info, 1);
+}
+ILGenCast(ILMachineType_Boolean, ILMachineType_Boolean)
+{
+	/* Nothing to do here */
+}
+ILGenCast(ILMachineType_Int8, ILMachineType_Boolean),
+ILGenCast(ILMachineType_UInt8, ILMachineType_Boolean),
+ILGenCast(ILMachineType_Int16, ILMachineType_Boolean),
+ILGenCast(ILMachineType_UInt16, ILMachineType_Boolean),
+ILGenCast(ILMachineType_Char, ILMachineType_Boolean),
+ILGenCast(ILMachineType_Int32, ILMachineType_Boolean),
+ILGenCast(ILMachineType_UInt32, ILMachineType_Boolean),
+ILGenCast(ILMachineType_NativeInt, ILMachineType_Boolean),
+ILGenCast(ILMachineType_NativeUInt, ILMachineType_Boolean),
+ILGenCast(ILMachineType_ObjectRef, ILMachineType_Boolean),
+ILGenCast(ILMachineType_UnmanagedPtr, ILMachineType_Boolean),
+ILGenCast(ILMachineType_ManagedPtr, ILMachineType_Boolean),
+ILGenCast(ILMachineType_TransientPtr, ILMachineType_Boolean)
+{
+	/* Note: this would be a lot easier if there was a
+	   "cne" opcode in the instruction set.
+	   So We have to use ceq and not instead */
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CEQ);
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenSimple(info, IL_OP_XOR);
+	ILGenExtend(info, 1);
+}
+ILGenCast(ILMachineType_Int64, ILMachineType_Boolean),
+ILGenCast(ILMachineType_UInt64, ILMachineType_Boolean)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenSimple(info, IL_OP_CONV_I8);
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CEQ);
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenSimple(info, IL_OP_XOR);
+	ILGenExtend(info, 1);
+}
+ILGenCast(ILMachineType_Float32, ILMachineType_Boolean),
+ILGenCast(ILMachineType_Float64, ILMachineType_Boolean),
+ILGenCast(ILMachineType_NativeFloat, ILMachineType_Boolean)
+{
+    ILGenLoadFloat32(info, (ILFloat)0.0);
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_CEQ);
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenSimple(info, IL_OP_XOR);
+	ILGenExtend(info, 1);
+}
+ILGenCast(ILMachineType_Decimal, ILMachineType_Boolean)
+{
+    ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenCallByName(info, "valuetype [.library]System.Decimal "
+							"[.library]System.Decimal::op_Implicit(int32)");
+	ILGenCallByName(info, "bool [.library]System.Decimal::op_Equality"
+			"(valuetype [.library]System.Decimal, "
+			"valuetype [.library]System.Decimal)");
+	ILGenExtend(info, 1);
+}
+ILGenCast(ILMachineType_String, ILMachineType_Boolean)
+{
+	ILGenCallByName(info,
+			"bool [.library]System.Boolean::FromString"
+				"(class [.library]System.String)");
+}
+ILGenCast(ILMachineType_ManagedValue, ILMachineType_Boolean)
+{
+	ILGenSimple(info, IL_OP_POP);
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+}
+
+/*
+ * Cast to "int8".
+ */
+ILGenCast(ILMachineType_Void, ILMachineType_Int8)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenAdjust(info, 1);
+}
+ILGenCast(ILMachineType_Boolean, ILMachineType_Int8),
+ILGenCast(ILMachineType_Int8, ILMachineType_Int8)
+{
+	/* Nothing to do here */
+}
+ILGenCast(ILMachineType_Int16, ILMachineType_Int8),
+ILGenCast(ILMachineType_Int32, ILMachineType_Int8),
+ILGenCast(ILMachineType_Int64, ILMachineType_Int8),
+ILGenCast(ILMachineType_NativeInt, ILMachineType_Int8),
+ILGenCast(ILMachineType_Float32, ILMachineType_Int8),
+ILGenCast(ILMachineType_Float64, ILMachineType_Int8),
+ILGenCast(ILMachineType_NativeFloat, ILMachineType_Int8)
+{
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I1);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I1);
+	}
+}
+ILGenCast(ILMachineType_UInt8, ILMachineType_Int8),
+ILGenCast(ILMachineType_UInt16, ILMachineType_Int8),
+ILGenCast(ILMachineType_UInt32, ILMachineType_Int8),
+ILGenCast(ILMachineType_UInt64, ILMachineType_Int8),
+ILGenCast(ILMachineType_NativeUInt, ILMachineType_Int8),
+ILGenCast(ILMachineType_Char, ILMachineType_Int8),
+ILGenCast(ILMachineType_UnmanagedPtr, ILMachineType_Int8)
+{
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I1_UN);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I1);
+	}
+}
+ILGenCast(ILMachineType_Decimal, ILMachineType_Int8)
+{
+	if(info->clsCompliant)
+	{
+		/* CLS does not have a conversion from Decimal to int8, so
+		   down-convert from int32 instead */
+		ILGenCallByName(info, "int32 [.library]System.Decimal::op_Explicit"
+									"(valuetype [.library]System.Decimal)");
+		ILGenSimple(info, IL_OP_CONV_OVF_I1);
+	}
+	else
+	{
+		ILGenCallByName(info, "int8 [.library]System.Decimal::op_Explicit"
+									"(valuetype [.library]System.Decimal)");
+	}
+}
+ILGenCast(ILMachineType_String, ILMachineType_Int8)
+{
+	if(info->clsCompliant)
+	{
+		/* CLS does not have the SByte class, so down-convert from Int32 */
+		ILGenCallByName(info,
+				"int32 [.library]System.Int32::FromString"
+						"(class [.library]System.String)");
+		ILGenSimple(info, IL_OP_CONV_OVF_I1);
+	}
+	else
+	{
+		ILGenCallByName(info, "int8 [.library]System.SByte::FromString"
+									"(class [.library]System.String)");
+	}
+}
+ILGenCast(ILMachineType_ObjectRef, ILMachineType_Int8),
+ILGenCast(ILMachineType_ManagedPtr, ILMachineType_Int8),
+ILGenCast(ILMachineType_TransientPtr, ILMachineType_Int8),
+ILGenCast(ILMachineType_ManagedValue, ILMachineType_Int8)
+{
+	ILGenSimple(info, IL_OP_POP);
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+}
+
+/*
+ * Cast to "uint8".
+ */
+ILGenCast(ILMachineType_Void, ILMachineType_UInt8)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenAdjust(info, 1);
+}
+ILGenCast(ILMachineType_Boolean, ILMachineType_UInt8),
+ILGenCast(ILMachineType_UInt8, ILMachineType_UInt8)
+{
+	/* Nothing to do here */
+}
+ILGenCast(ILMachineType_Int8, ILMachineType_UInt8),
+ILGenCast(ILMachineType_Int16, ILMachineType_UInt8),
+ILGenCast(ILMachineType_Int32, ILMachineType_UInt8),
+ILGenCast(ILMachineType_Int64, ILMachineType_UInt8),
+ILGenCast(ILMachineType_NativeInt, ILMachineType_UInt8),
+ILGenCast(ILMachineType_Float32, ILMachineType_UInt8),
+ILGenCast(ILMachineType_Float64, ILMachineType_UInt8),
+ILGenCast(ILMachineType_NativeFloat, ILMachineType_UInt8),
+ILGenCast(ILMachineType_UnmanagedPtr, ILMachineType_UInt8)
+{
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U1);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U1);
+	}
+}
+ILGenCast(ILMachineType_UInt16, ILMachineType_UInt8),
+ILGenCast(ILMachineType_UInt32, ILMachineType_UInt8),
+ILGenCast(ILMachineType_UInt64, ILMachineType_UInt8),
+ILGenCast(ILMachineType_NativeUInt, ILMachineType_UInt8),
+ILGenCast(ILMachineType_Char, ILMachineType_UInt8)
+{
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U1_UN);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U1);
+	}
+}
+ILGenCast(ILMachineType_Decimal, ILMachineType_UInt8)
+{
+	ILGenCallByName(info, "unsigned int8 [.library]System.Decimal::op_Explicit"
+								"(valuetype [.library]System.Decimal)");
+}
+ILGenCast(ILMachineType_String, ILMachineType_UInt8)
+{
+	ILGenCallByName(info, "unsigned int8 [.library]System.Byte::FromString"
+								"(class [.library]System.String)");
+}
+ILGenCast(ILMachineType_ObjectRef, ILMachineType_UInt8),
+ILGenCast(ILMachineType_ManagedPtr, ILMachineType_UInt8),
+ILGenCast(ILMachineType_TransientPtr, ILMachineType_UInt8),
+ILGenCast(ILMachineType_ManagedValue, ILMachineType_UInt8)
+{
+	ILGenSimple(info, IL_OP_POP);
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+}
+
+/*
+ * Cast to "int16".
+ */
+ILGenCast(ILMachineType_Void, ILMachineType_Int16)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenAdjust(info, 1);
+}
+ILGenCast(ILMachineType_Boolean, ILMachineType_Int16),
+ILGenCast(ILMachineType_Int8, ILMachineType_Int16),
+ILGenCast(ILMachineType_UInt8, ILMachineType_Int16),
+ILGenCast(ILMachineType_Int16, ILMachineType_Int16)
+{
+	/* Nothing to do here */
+}
+ILGenCast(ILMachineType_Int32, ILMachineType_Int16),
+ILGenCast(ILMachineType_Int64, ILMachineType_Int16),
+ILGenCast(ILMachineType_NativeInt, ILMachineType_Int16),
+ILGenCast(ILMachineType_Float32, ILMachineType_Int16),
+ILGenCast(ILMachineType_Float64, ILMachineType_Int16),
+ILGenCast(ILMachineType_NativeFloat, ILMachineType_Int16)
+{
+	/* Convert a signed input value */
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I2);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I2);
+	}
+}
+ILGenCast(ILMachineType_UInt16, ILMachineType_Int16),
+ILGenCast(ILMachineType_UInt32, ILMachineType_Int16),
+ILGenCast(ILMachineType_UInt64, ILMachineType_Int16),
+ILGenCast(ILMachineType_NativeUInt, ILMachineType_Int16),
+ILGenCast(ILMachineType_Char, ILMachineType_Int16),
+ILGenCast(ILMachineType_UnmanagedPtr, ILMachineType_Int16)
+{
+	/* Convert an unsigned input value */
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I2_UN);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I2);
+	}
+}
+ILGenCast(ILMachineType_Decimal, ILMachineType_Int16)
+{
+	ILGenCallByName(info, "int16 [.library]System.Decimal::op_Explicit"
+								"(valuetype [.library]System.Decimal)");
+}
+ILGenCast(ILMachineType_String, ILMachineType_Int16)
+{
+	ILGenCallByName(info, "int16 [.library]System.Int16::FromString"
+								"(class [.library]System.String)");
+}
+ILGenCast(ILMachineType_ObjectRef, ILMachineType_Int16),
+ILGenCast(ILMachineType_ManagedPtr, ILMachineType_Int16),
+ILGenCast(ILMachineType_TransientPtr, ILMachineType_Int16),
+ILGenCast(ILMachineType_ManagedValue, ILMachineType_Int16)
+{
+	ILGenSimple(info, IL_OP_POP);
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+}
+
+/*
+ * Cast to "uint16" or "char".
+ */
+ILGenCast(ILMachineType_Void, ILMachineType_UInt16),
+ILGenCast(ILMachineType_Void, ILMachineType_Char)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenAdjust(info, 1);
+}
+ILGenCast(ILMachineType_Boolean, ILMachineType_UInt16),
+ILGenCast(ILMachineType_UInt8, ILMachineType_UInt16),
+ILGenCast(ILMachineType_UInt16, ILMachineType_UInt16),
+ILGenCast(ILMachineType_Char, ILMachineType_UInt16),
+ILGenCast(ILMachineType_Boolean, ILMachineType_Char),
+ILGenCast(ILMachineType_UInt8, ILMachineType_Char),
+ILGenCast(ILMachineType_UInt16, ILMachineType_Char),
+ILGenCast(ILMachineType_Char, ILMachineType_Char)
+{
+	/* Nothing to do here */
+}
+ILGenCast(ILMachineType_Int8, ILMachineType_UInt16),
+ILGenCast(ILMachineType_Int16, ILMachineType_UInt16),
+ILGenCast(ILMachineType_Int32, ILMachineType_UInt16),
+ILGenCast(ILMachineType_Int64, ILMachineType_UInt16),
+ILGenCast(ILMachineType_NativeInt, ILMachineType_UInt16),
+ILGenCast(ILMachineType_Float32, ILMachineType_UInt16),
+ILGenCast(ILMachineType_Float64, ILMachineType_UInt16),
+ILGenCast(ILMachineType_NativeFloat, ILMachineType_UInt16),
+ILGenCast(ILMachineType_Int8, ILMachineType_Char),
+ILGenCast(ILMachineType_Int16, ILMachineType_Char),
+ILGenCast(ILMachineType_Int32, ILMachineType_Char),
+ILGenCast(ILMachineType_Int64, ILMachineType_Char),
+ILGenCast(ILMachineType_NativeInt, ILMachineType_Char),
+ILGenCast(ILMachineType_Float32, ILMachineType_Char),
+ILGenCast(ILMachineType_Float64, ILMachineType_Char),
+ILGenCast(ILMachineType_NativeFloat, ILMachineType_Char)
+{
+	/* Convert a signed input value */
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U2);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U2);
+	}
+}
+ILGenCast(ILMachineType_UInt32, ILMachineType_UInt16),
+ILGenCast(ILMachineType_UInt64, ILMachineType_UInt16),
+ILGenCast(ILMachineType_NativeUInt, ILMachineType_UInt16),
+ILGenCast(ILMachineType_UInt32, ILMachineType_Char),
+ILGenCast(ILMachineType_UInt64, ILMachineType_Char),
+ILGenCast(ILMachineType_NativeUInt, ILMachineType_Char),
+ILGenCast(ILMachineType_UnmanagedPtr, ILMachineType_Char)
+{
+	/* Convert an unsigned input value */
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U2_UN);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U2);
+	}
+}
+ILGenCast(ILMachineType_Decimal, ILMachineType_UInt16)
+{
+	if(info->clsCompliant)
+	{
+		/* CLS does not have a conversion from Decimal to uint16, so
+		   down-convert from int32 instead */
+		ILGenCallByName(info, "int32 [.library]System.Decimal::op_Explicit"
+									"(valuetype [.library]System.Decimal)");
+		ILGenSimple(info, IL_OP_CONV_OVF_U2);
+	}
+	else
+	{
+		ILGenCallByName(info,
+				"unsigned int16 [.library]System.Decimal::op_Explicit"
+						"(valuetype [.library]System.Decimal)");
+	}
+}
+ILGenCast(ILMachineType_Decimal, ILMachineType_Char)
+{
+	ILGenCallByName(info, "char [.library]System.Decimal::op_Explicit"
+								"(valuetype [.library]System.Decimal)");
+}
+ILGenCast(ILMachineType_String, ILMachineType_UInt16)
+{
+	if(info->clsCompliant)
+	{
+		/* CLS does not have the UInt16 class, so down-convert from Int32 */
+		ILGenCallByName(info,
+				"int32 [.library]System.Int32::FromString"
+						"(class [.library]System.String)");
+		ILGenSimple(info, IL_OP_CONV_OVF_U2);
+	}
+	else
+	{
+		ILGenCallByName(info,
+				"unsigned int16 [.library]System.UInt16::FromString"
+						"(class [.library]System.String)");
+	}
+}
+ILGenCast(ILMachineType_String, ILMachineType_Char)
+{
+	ILGenCallByName(info,
+			"char [.library]System.Char::FromString"
+					"(class [.library]System.String)");
+}
+ILGenCast(ILMachineType_ObjectRef, ILMachineType_UInt16),
+ILGenCast(ILMachineType_UnmanagedPtr, ILMachineType_UInt16),
+ILGenCast(ILMachineType_ManagedPtr, ILMachineType_UInt16),
+ILGenCast(ILMachineType_TransientPtr, ILMachineType_UInt16),
+ILGenCast(ILMachineType_ManagedValue, ILMachineType_UInt16),
+ILGenCast(ILMachineType_ObjectRef, ILMachineType_Char),
+ILGenCast(ILMachineType_ManagedPtr, ILMachineType_Char),
+ILGenCast(ILMachineType_TransientPtr, ILMachineType_Char),
+ILGenCast(ILMachineType_ManagedValue, ILMachineType_Char)
+{
+	ILGenSimple(info, IL_OP_POP);
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+}
+
+/*
+ * Cast to "int32".
+ */
+ILGenCast(ILMachineType_Void, ILMachineType_Int32)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenAdjust(info, 1);
+}
+ILGenCast(ILMachineType_Boolean, ILMachineType_Int32),
+ILGenCast(ILMachineType_Int8, ILMachineType_Int32),
+ILGenCast(ILMachineType_UInt8, ILMachineType_Int32),
+ILGenCast(ILMachineType_Int16, ILMachineType_Int32),
+ILGenCast(ILMachineType_UInt16, ILMachineType_Int32),
+ILGenCast(ILMachineType_Int32, ILMachineType_Int32),
+ILGenCast(ILMachineType_Char, ILMachineType_Int32)
+{
+	/* Nothing to do here */
+}
+ILGenCast(ILMachineType_Int64, ILMachineType_Int32),
+ILGenCast(ILMachineType_NativeInt, ILMachineType_Int32),
+ILGenCast(ILMachineType_Float32, ILMachineType_Int32),
+ILGenCast(ILMachineType_Float64, ILMachineType_Int32),
+ILGenCast(ILMachineType_NativeFloat, ILMachineType_Int32)
+{
+	/* Convert a signed input value */
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I4);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I4);
+	}
+}
+ILGenCast(ILMachineType_UInt32, ILMachineType_Int32)
+{
+	/* Convert an unsigned input value, but only in overflow mode */
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I4_UN);
+	}
+}
+ILGenCast(ILMachineType_UInt64, ILMachineType_Int32),
+ILGenCast(ILMachineType_NativeUInt, ILMachineType_Int32),
+ILGenCast(ILMachineType_UnmanagedPtr, ILMachineType_Int32)
+{
+	/* Convert an unsigned input value */
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I4_UN);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I4);
+	}
+}
+ILGenCast(ILMachineType_Decimal, ILMachineType_Int32)
+{
+	ILGenCallByName(info, "int32 [.library]System.Decimal::op_Explicit"
+								"(valuetype [.library]System.Decimal)");
+}
+ILGenCast(ILMachineType_String, ILMachineType_Int32)
+{
+	ILGenCallByName(info, "int32 [.library]System.Int32::FromString"
+								"(class [.library]System.String)");
+}
+ILGenCast(ILMachineType_ObjectRef, ILMachineType_Int32),
+ILGenCast(ILMachineType_ManagedPtr, ILMachineType_Int32),
+ILGenCast(ILMachineType_TransientPtr, ILMachineType_Int32),
+ILGenCast(ILMachineType_ManagedValue, ILMachineType_Int32)
+{
+	ILGenSimple(info, IL_OP_POP);
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+}
+
+/*
+ * Cast to "uint32".
+ */
+ILGenCast(ILMachineType_Void, ILMachineType_UInt32)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenAdjust(info, 1);
+}
+ILGenCast(ILMachineType_Boolean, ILMachineType_UInt32),
+ILGenCast(ILMachineType_UInt8, ILMachineType_UInt32),
+ILGenCast(ILMachineType_UInt16, ILMachineType_UInt32),
+ILGenCast(ILMachineType_UInt32, ILMachineType_UInt32),
+ILGenCast(ILMachineType_Char, ILMachineType_UInt32)
+{
+	/* Nothing to do here */
+}
+ILGenCast(ILMachineType_Int8, ILMachineType_UInt32),
+ILGenCast(ILMachineType_Int16, ILMachineType_UInt32),
+ILGenCast(ILMachineType_Int32, ILMachineType_UInt32)
+{
+	/* Convert a signed input value, but only in overflow mode */
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U4);
+	}
+}
+ILGenCast(ILMachineType_Int64, ILMachineType_UInt32),
+ILGenCast(ILMachineType_NativeInt, ILMachineType_UInt32),
+ILGenCast(ILMachineType_Float32, ILMachineType_UInt32),
+ILGenCast(ILMachineType_Float64, ILMachineType_UInt32),
+ILGenCast(ILMachineType_NativeFloat, ILMachineType_UInt32)
+{
+	/* Convert a signed input value */
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U4);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U4);
+	}
+}
+ILGenCast(ILMachineType_UInt64, ILMachineType_UInt32),
+ILGenCast(ILMachineType_NativeUInt, ILMachineType_UInt32),
+ILGenCast(ILMachineType_UnmanagedPtr, ILMachineType_UInt32)
+{
+	/* Convert an unsigned input value */
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U4_UN);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U4);
+	}
+}
+ILGenCast(ILMachineType_Decimal, ILMachineType_UInt32)
+{
+	if(info->clsCompliant)
+	{
+		/* CLS does not have a conversion from Decimal to uint32, so
+		   down-convert from int64 instead */
+		ILGenCallByName(info, "int64 [.library]System.Decimal::op_Explicit"
+									"(valuetype [.library]System.Decimal)");
+		ILGenSimple(info, IL_OP_CONV_OVF_U4);
+	}
+	else
+	{
+		ILGenCallByName(info,
+				"unsigned int32 [.library]System.Decimal::op_Explicit"
+						"(valuetype [.library]System.Decimal)");
+	}
+}
+ILGenCast(ILMachineType_String, ILMachineType_UInt32)
+{
+	if(info->clsCompliant)
+	{
+		/* CLS does not have the UInt32 class, so down-convert from Int64 */
+		ILGenCallByName(info,
+				"int64 [.library]System.Int64::FromString"
+						"(class [.library]System.String)");
+		ILGenSimple(info, IL_OP_CONV_OVF_U4);
+	}
+	else
+	{
+		ILGenCallByName(info,
+			"unsigned int32 [.library]System.UInt32::FromString"
+						"(class [.library]System.String)");
+	}
+}
+ILGenCast(ILMachineType_ObjectRef, ILMachineType_UInt32),
+ILGenCast(ILMachineType_ManagedPtr, ILMachineType_UInt32),
+ILGenCast(ILMachineType_TransientPtr, ILMachineType_UInt32),
+ILGenCast(ILMachineType_ManagedValue, ILMachineType_UInt32)
+{
+	ILGenSimple(info, IL_OP_POP);
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+}
+
+/*
+ * Cast to "int64".
+ */
+ILGenCast(ILMachineType_Void, ILMachineType_Int64)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenSimple(info, IL_OP_CONV_I8);
+	ILGenAdjust(info, 1);
+}
+ILGenCast(ILMachineType_Boolean, ILMachineType_Int64),
+ILGenCast(ILMachineType_Int8, ILMachineType_Int64),
+ILGenCast(ILMachineType_UInt8, ILMachineType_Int64),
+ILGenCast(ILMachineType_Int16, ILMachineType_Int64),
+ILGenCast(ILMachineType_UInt16, ILMachineType_Int64),
+ILGenCast(ILMachineType_Int32, ILMachineType_Int64),
+ILGenCast(ILMachineType_NativeInt, ILMachineType_Int64),
+ILGenCast(ILMachineType_Char, ILMachineType_Int64)
+{
+	/* A simple sign-extend is sufficient */
+	ILGenSimple(info, IL_OP_CONV_I8);
+}
+ILGenCast(ILMachineType_UInt32, ILMachineType_Int64),
+ILGenCast(ILMachineType_NativeUInt, ILMachineType_Int64)
+{
+	/* A simple zero-extend is sufficient */
+	ILGenSimple(info, IL_OP_CONV_U8);
+}
+ILGenCast(ILMachineType_Int64, ILMachineType_Int64)
+{
+	/* Nothing to do here */
+}
+ILGenCast(ILMachineType_Float32, ILMachineType_Int64),
+ILGenCast(ILMachineType_Float64, ILMachineType_Int64),
+ILGenCast(ILMachineType_NativeFloat, ILMachineType_Int64),
+ILGenCast(ILMachineType_UnmanagedPtr, ILMachineType_Int64)
+{
+	/* Convert a signed input value */
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I8);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I8);
+	}
+}
+ILGenCast(ILMachineType_UInt64, ILMachineType_Int64)
+{
+	/* Convert an unsigned input value, but only in overflow mode */
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I8_UN);
+	}
+}
+ILGenCast(ILMachineType_Decimal, ILMachineType_Int64)
+{
+	ILGenCallByName(info, "int64 [.library]System.Decimal::op_Explicit"
+								"(valuetype [.library]System.Decimal)");
+}
+ILGenCast(ILMachineType_String, ILMachineType_Int64)
+{
+	ILGenCallByName(info,
+			"int64 [.library]System.Int64::FromString"
+					"(class [.library]System.String)");
+}
+ILGenCast(ILMachineType_ObjectRef, ILMachineType_Int64),
+ILGenCast(ILMachineType_ManagedPtr, ILMachineType_Int64),
+ILGenCast(ILMachineType_TransientPtr, ILMachineType_Int64),
+ILGenCast(ILMachineType_ManagedValue, ILMachineType_Int64)
+{
+	ILGenSimple(info, IL_OP_POP);
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenSimple(info, IL_OP_CONV_I8);
+}
+
+/*
+ * Cast to "uint64".
+ */
+ILGenCast(ILMachineType_Void, ILMachineType_UInt64)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenSimple(info, IL_OP_CONV_I8);
+	ILGenAdjust(info, 1);
+}
+ILGenCast(ILMachineType_Int8, ILMachineType_UInt64),
+ILGenCast(ILMachineType_Int16, ILMachineType_UInt64),
+ILGenCast(ILMachineType_Int32, ILMachineType_UInt64),
+ILGenCast(ILMachineType_NativeInt, ILMachineType_UInt64),
+ILGenCast(ILMachineType_Float32, ILMachineType_UInt64),
+ILGenCast(ILMachineType_Float64, ILMachineType_UInt64),
+ILGenCast(ILMachineType_NativeFloat, ILMachineType_UInt64)
+{
+	/* Convert a signed input value */
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U8);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U8);
+	}
+}
+ILGenCast(ILMachineType_Boolean, ILMachineType_UInt64),
+ILGenCast(ILMachineType_UInt8, ILMachineType_UInt64),
+ILGenCast(ILMachineType_UInt16, ILMachineType_UInt64),
+ILGenCast(ILMachineType_UInt32, ILMachineType_UInt64),
+ILGenCast(ILMachineType_NativeUInt, ILMachineType_UInt64),
+ILGenCast(ILMachineType_UnmanagedPtr, ILMachineType_UInt64),
+ILGenCast(ILMachineType_Char, ILMachineType_UInt64)
+{
+	/* A simple zero-extend is sufficient */
+	ILGenSimple(info, IL_OP_CONV_U8);
+}
+ILGenCast(ILMachineType_UInt64, ILMachineType_UInt64)
+{
+	/* Nothing to do here */
+}
+ILGenCast(ILMachineType_Int64, ILMachineType_UInt64)
+{
+	/* Convert a signed input value, but only in overflow mode */
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U8);
+	}
+}
+ILGenCast(ILMachineType_Decimal, ILMachineType_UInt64)
+{
+	if(info->clsCompliant)
+	{
+		/* CLS does not have a conversion from Decimal to uint64,
+		   so we need to do this in a more round-about fashion.
+		   We subtract 0x8000000000000000, convert to int64, and
+		   then add 0x8000000000000000 to the result */
+		ILGenInt32(info, 0);					/* low */
+		ILGenInt32(info, (ILInt32)0x80000000);	/* mid */
+		ILGenInt32(info, 0);					/* high */
+		ILGenInt32(info, 0);					/* isNegative */
+		ILGenInt32(info, 0);					/* scale */
+		ILGenAdjust(info, 5);
+		ILGenNewObj(info, "[.library]System.Decimal",
+		            "(int32, int32, int32, bool, unsigned int8)");
+		ILGenAdjust(info, -4);
+		ILGenCallByName(info, "valuetype [.library]System.Decimal "
+				"[.library]System.Decimal::op_Subtraction"
+						"(valuetype [.library]System.Decimal,"
+						 "valuetype [.library]System.Decimal)");
+		ILGenAdjust(info, -1);
+		ILGenCallByName(info, "int64 [.library]System.Decimal::op_Explicit"
+									"(valuetype [.library]System.Decimal)");
+		ILGenUInt64(info, (ILUInt64)IL_MIN_INT64);
+		ILGenSimple(info, IL_OP_ADD);
+		ILGenAdjust(info, -1);
+	}
+	else
+	{
+		ILGenCallByName(info,
+				"unsigned int64 [.library]System.Decimal::op_Explicit"
+					"(valuetype [.library]System.Decimal)");
+	}
+}
+ILGenCast(ILMachineType_String, ILMachineType_UInt64)
+{
+	if(info->clsCompliant)
+	{
+		/* CLS does not have the UInt64 class, so down-convert from Decimal */
+		ILGenCallByName(info,
+				"valuetype [.library]System.Decimal "
+						"[.library]System.Decimal::FromString"
+								"(class [.library]System.String)");
+		ILGenCast(info, ILMachineType_Decimal, ILMachineType_UInt64);
+	}
+	else
+	{
+		ILGenCallByName(info,
+			"unsigned int64 [.library]System.UInt64::FromString"
+					"(class [.library]System.String)");
+	}
+}
+ILGenCast(ILMachineType_ObjectRef, ILMachineType_UInt64),
+ILGenCast(ILMachineType_ManagedPtr, ILMachineType_UInt64),
+ILGenCast(ILMachineType_TransientPtr, ILMachineType_UInt64),
+ILGenCast(ILMachineType_ManagedValue, ILMachineType_UInt64)
+{
+	ILGenSimple(info, IL_OP_POP);
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenSimple(info, IL_OP_CONV_I8);
+}
+
+/*
+ * Cast to "native int".
+ */
+ILGenCast(ILMachineType_Void, ILMachineType_NativeInt)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenSimple(info, IL_OP_CONV_I);
+	ILGenAdjust(info, 1);
+}
+ILGenCast(ILMachineType_Int8, ILMachineType_NativeInt),
+ILGenCast(ILMachineType_Int16, ILMachineType_NativeInt),
+ILGenCast(ILMachineType_Int32, ILMachineType_NativeInt)
+{
+	/* A simple sign-extend is sufficient */
+	ILGenSimple(info, IL_OP_CONV_I);
+}
+ILGenCast(ILMachineType_Boolean, ILMachineType_NativeInt),
+ILGenCast(ILMachineType_UInt8, ILMachineType_NativeInt),
+ILGenCast(ILMachineType_UInt16, ILMachineType_NativeInt),
+ILGenCast(ILMachineType_UInt32, ILMachineType_NativeInt),
+ILGenCast(ILMachineType_Char, ILMachineType_NativeInt)
+{
+	/* A simple zero-extend is sufficient */
+	ILGenSimple(info, IL_OP_CONV_U);
+}
+ILGenCast(ILMachineType_NativeInt, ILMachineType_NativeInt),
+ILGenCast(ILMachineType_UnmanagedPtr, ILMachineType_NativeInt)
+{
+	/* Nothing to do here */
+}
+ILGenCast(ILMachineType_Int64, ILMachineType_NativeInt),
+ILGenCast(ILMachineType_Float32, ILMachineType_NativeInt),
+ILGenCast(ILMachineType_Float64, ILMachineType_NativeInt),
+ILGenCast(ILMachineType_NativeFloat, ILMachineType_NativeInt)
+{
+	/* Convert a signed input value */
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I);
+	}
+}
+ILGenCast(ILMachineType_NativeUInt, ILMachineType_NativeInt)
+{
+	/* Convert an unsigned input value, but only in overflow mode */
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I_UN);
+	}
+}
+ILGenCast(ILMachineType_UInt64, ILMachineType_NativeInt)
+{
+	/* Convert an unsigned input value */
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_I_UN);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_I);
+	}
+}
+ILGenCast(ILMachineType_Decimal, ILMachineType_NativeInt)
+{
+	/* We don't know how big the native integer type is at
+	   this point, so we convert to "int64", and then perform
+	   a run-time down conversion to "native int" */
+	ILGenCallByName(info, "int64 [.library]System.Decimal::op_Explicit"
+								"(valuetype [.library]System.Decimal)");
+	ILGenSimple(info, IL_OP_CONV_OVF_I);
+}
+ILGenCast(ILMachineType_String, ILMachineType_NativeInt)
+{
+	ILGenCallByName(info,
+			"int64 [.library]System.Int64::FromString"
+					"(class [.library]System.String)");
+	ILGenSimple(info, IL_OP_CONV_OVF_I);
+}
+ILGenCast(ILMachineType_ObjectRef, ILMachineType_NativeInt),
+ILGenCast(ILMachineType_ManagedPtr, ILMachineType_NativeInt),
+ILGenCast(ILMachineType_TransientPtr, ILMachineType_NativeInt),
+ILGenCast(ILMachineType_ManagedValue, ILMachineType_NativeInt)
+{
+	ILGenSimple(info, IL_OP_POP);
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenSimple(info, IL_OP_CONV_I);
+}
+
+/*
+ * Cast to "native unsigned int".
+ */
+ILGenCast(ILMachineType_Void, ILMachineType_NativeUInt)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenSimple(info, IL_OP_CONV_U);
+	ILGenAdjust(info, 1);
+}
+ILGenCast(ILMachineType_Int8, ILMachineType_NativeUInt),
+ILGenCast(ILMachineType_Int16, ILMachineType_NativeUInt),
+ILGenCast(ILMachineType_Int32, ILMachineType_NativeUInt)
+{
+	/* A simple sign-extend is sufficient */
+	ILGenSimple(info, IL_OP_CONV_I);
+}
+ILGenCast(ILMachineType_Boolean, ILMachineType_NativeUInt),
+ILGenCast(ILMachineType_UInt8, ILMachineType_NativeUInt),
+ILGenCast(ILMachineType_UInt16, ILMachineType_NativeUInt),
+ILGenCast(ILMachineType_UInt32, ILMachineType_NativeUInt),
+ILGenCast(ILMachineType_Char, ILMachineType_NativeUInt)
+{
+	/* A simple zero-extend is sufficient */
+	ILGenSimple(info, IL_OP_CONV_U);
+}
+ILGenCast(ILMachineType_NativeUInt, ILMachineType_NativeUInt),
+ILGenCast(ILMachineType_UnmanagedPtr, ILMachineType_NativeUInt)
+{
+	/* Nothing to do here */
+}
+ILGenCast(ILMachineType_Int64, ILMachineType_NativeUInt),
+ILGenCast(ILMachineType_Float32, ILMachineType_NativeUInt),
+ILGenCast(ILMachineType_Float64, ILMachineType_NativeUInt),
+ILGenCast(ILMachineType_NativeFloat, ILMachineType_NativeUInt)
+{
+	/* Convert a signed input value */
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U);
+	}
+}
+ILGenCast(ILMachineType_NativeInt, ILMachineType_NativeUInt)
+{
+	/* Convert a signed input value, but only in overflow mode */
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U);
+	}
+}
+ILGenCast(ILMachineType_UInt64, ILMachineType_NativeUInt)
+{
+	/* Convert an unsigned input value */
+	if(info->overflowInsns)
+	{
+		ILGenSimple(info, IL_OP_CONV_OVF_U_UN);
+	}
+	else
+	{
+		ILGenSimple(info, IL_OP_CONV_U);
+	}
+}
+ILGenCast(ILMachineType_Decimal, ILMachineType_NativeUInt)
+{
+	/* We don't know how big the native integer type is at
+	   this point, so we convert to "uint64", and then perform
+	   a run-time down conversion to "native unsigned int" */
+	ILGenCast(info, ILMachineType_Decimal, ILMachineType_UInt64);
+	ILGenSimple(info, IL_OP_CONV_OVF_U_UN);
+}
+ILGenCast(ILMachineType_String, ILMachineType_NativeUInt)
+{
+	ILGenCast(info, ILMachineType_String, ILMachineType_UInt64);
+	ILGenSimple(info, IL_OP_CONV_OVF_U_UN);
+}
+ILGenCast(ILMachineType_ObjectRef, ILMachineType_NativeUInt),
+ILGenCast(ILMachineType_ManagedPtr, ILMachineType_NativeUInt),
+ILGenCast(ILMachineType_TransientPtr, ILMachineType_NativeUInt),
+ILGenCast(ILMachineType_ManagedValue, ILMachineType_NativeUInt)
+{
+	ILGenSimple(info, IL_OP_POP);
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenSimple(info, IL_OP_CONV_U);
+}
+
+/*
+ * Cast to "float32".
+ */
+ILGenCast(ILMachineType_Void, ILMachineType_Float32)
+{
+	ILGenLoadFloat32(info, (ILFloat)0.0);
+	ILGenAdjust(info, 1);
+}
+ILGenCast(ILMachineType_Int8, ILMachineType_Float32),
+ILGenCast(ILMachineType_Int16, ILMachineType_Float32),
+ILGenCast(ILMachineType_Int32, ILMachineType_Float32),
+ILGenCast(ILMachineType_Int64, ILMachineType_Float32),
+ILGenCast(ILMachineType_NativeInt, ILMachineType_Float32),
+ILGenCast(ILMachineType_Float64, ILMachineType_Float32),
+ILGenCast(ILMachineType_NativeFloat, ILMachineType_Float32)
+{
+	/* Convert a signed input value */
+	ILGenSimple(info, IL_OP_CONV_R4);
+}
+ILGenCast(ILMachineType_Float32, ILMachineType_Float32)
+{
+	/* Nothing to do here */
+}
+ILGenCast(ILMachineType_Boolean, ILMachineType_Float32),
+ILGenCast(ILMachineType_UInt8, ILMachineType_Float32),
+ILGenCast(ILMachineType_UInt16, ILMachineType_Float32),
+ILGenCast(ILMachineType_Char, ILMachineType_Float32)
+{
+	/* Convert an unsigned input value */
+	ILGenSimple(info, IL_OP_CONV_R_UN);
+}
+ILGenCast(ILMachineType_UInt32, ILMachineType_Float32),
+ILGenCast(ILMachineType_UInt64, ILMachineType_Float32),
+ILGenCast(ILMachineType_NativeUInt, ILMachineType_Float32),
+ILGenCast(ILMachineType_UnmanagedPtr, ILMachineType_Float32)
+{
+	/* Convert an unsigned input value and also clamp the
+	   result to the "float32" type's precision range */
+	ILGenSimple(info, IL_OP_CONV_R_UN);
+	ILGenSimple(info, IL_OP_CONV_R4);
+}
+ILGenCast(ILMachineType_Decimal, ILMachineType_Float32)
+{
+	ILGenCallByName(info, "float32 [.library]System.Decimal::op_Explicit"
+								"(valuetype [.library]System.Decimal)");
+}
+ILGenCast(ILMachineType_String, ILMachineType_Float32)
+{
+	ILGenCallByName(info,
+			"float32 [.library]System.Single::FromString"
+					"(class [.library]System.String)");
+}
+ILGenCast(ILMachineType_ObjectRef, ILMachineType_Float32),
+ILGenCast(ILMachineType_ManagedPtr, ILMachineType_Float32),
+ILGenCast(ILMachineType_TransientPtr, ILMachineType_Float32),
+ILGenCast(ILMachineType_ManagedValue, ILMachineType_Float32)
+{
+	ILGenSimple(info, IL_OP_POP);
+	ILGenLoadFloat32(info, (ILFloat)0.0);
+}
+
+/*
+ * Cast to "float64".
+ */
+ILGenCast(ILMachineType_Void, ILMachineType_Float64)
+{
+	ILGenLoadFloat32(info, (ILFloat)0.0);
+	ILGenAdjust(info, 1);
+}
+ILGenCast(ILMachineType_Int8, ILMachineType_Float64),
+ILGenCast(ILMachineType_Int16, ILMachineType_Float64),
+ILGenCast(ILMachineType_Int32, ILMachineType_Float64),
+ILGenCast(ILMachineType_Int64, ILMachineType_Float64),
+ILGenCast(ILMachineType_NativeInt, ILMachineType_Float64),
+ILGenCast(ILMachineType_NativeFloat, ILMachineType_Float64)
+{
+	/* Convert a signed input value */
+	ILGenSimple(info, IL_OP_CONV_R8);
+}
+ILGenCast(ILMachineType_Float32, ILMachineType_Float64),
+ILGenCast(ILMachineType_Float64, ILMachineType_Float64)
+{
+	/* Nothing to do here */
+}
+ILGenCast(ILMachineType_Boolean, ILMachineType_Float64),
+ILGenCast(ILMachineType_UInt8, ILMachineType_Float64),
+ILGenCast(ILMachineType_UInt16, ILMachineType_Float64),
+ILGenCast(ILMachineType_UInt32, ILMachineType_Float64),
+ILGenCast(ILMachineType_Char, ILMachineType_Float64),
+ILGenCast(ILMachineType_UnmanagedPtr, ILMachineType_Float64)
+{
+	/* Convert an unsigned input value */
+	ILGenSimple(info, IL_OP_CONV_R_UN);
+}
+ILGenCast(ILMachineType_UInt64, ILMachineType_Float64),
+ILGenCast(ILMachineType_NativeUInt, ILMachineType_Float64)
+{
+	/* Convert an unsigned input value and also clamp the
+	   result to the "float64" type's precision range */
+	ILGenSimple(info, IL_OP_CONV_R_UN);
+	ILGenSimple(info, IL_OP_CONV_R8);
+}
+ILGenCast(ILMachineType_Decimal, ILMachineType_Float64)
+{
+	ILGenCallByName(info, "float64 [.library]System.Decimal::op_Explicit"
+								"(valuetype [.library]System.Decimal)");
+}
+ILGenCast(ILMachineType_String, ILMachineType_Float64)
+{
+	ILGenCallByName(info,
+			"float64 [.library]System.Double::FromString"
+					"(class [.library]System.String)");
+}
+ILGenCast(ILMachineType_ObjectRef, ILMachineType_Float64),
+ILGenCast(ILMachineType_ManagedPtr, ILMachineType_Float64),
+ILGenCast(ILMachineType_TransientPtr, ILMachineType_Float64),
+ILGenCast(ILMachineType_ManagedValue, ILMachineType_Float64)
+{
+	ILGenSimple(info, IL_OP_POP);
+	ILGenLoadFloat32(info, (ILFloat)0.0);
+}
+
+/*
+ * Cast to "native float".
+ */
+ILGenCast(ILMachineType_Void, ILMachineType_NativeFloat)
+{
+	ILGenLoadFloat32(info, (ILFloat)0.0);
+	ILGenAdjust(info, 1);
+}
+ILGenCast(ILMachineType_Int8, ILMachineType_NativeFloat),
+ILGenCast(ILMachineType_Int16, ILMachineType_NativeFloat),
+ILGenCast(ILMachineType_Int32, ILMachineType_NativeFloat)
+{
+	/* Convert a signed input value */
+	ILGenSimple(info, IL_OP_CONV_R8);
+}
+ILGenCast(ILMachineType_Float32, ILMachineType_NativeFloat),
+ILGenCast(ILMachineType_Float64, ILMachineType_NativeFloat),
+ILGenCast(ILMachineType_NativeFloat, ILMachineType_NativeFloat)
+{
+	/* Nothing to do here */
+}
+ILGenCast(ILMachineType_Boolean, ILMachineType_NativeFloat),
+ILGenCast(ILMachineType_UInt8, ILMachineType_NativeFloat),
+ILGenCast(ILMachineType_UInt16, ILMachineType_NativeFloat),
+ILGenCast(ILMachineType_UInt32, ILMachineType_NativeFloat),
+ILGenCast(ILMachineType_UInt64, ILMachineType_NativeFloat),
+ILGenCast(ILMachineType_NativeUInt, ILMachineType_NativeFloat),
+ILGenCast(ILMachineType_Char, ILMachineType_NativeFloat),
+ILGenCast(ILMachineType_UnmanagedPtr, ILMachineType_NativeFloat)
+{
+	/* Convert an unsigned input value */
+	ILGenSimple(info, IL_OP_CONV_R_UN);
+}
+ILGenCast(ILMachineType_NativeInt, ILMachineType_NativeFloat)
+{
+	ILGenSimple(info, IL_OP_CONV_I8);
+	ILGenCast(info, ILMachineType_Int64, ILMachineType_NativeFloat);
+}
+ILGenCast(ILMachineType_Int64, ILMachineType_NativeFloat)
+{
+	/* This is where things get nasty.  The instruction
+	   set is lacking a "conv.r" opcode which could convert
+	   large 64-bit values with accurate precision on
+	   machines with mantissas of 64-bits or greater, and
+	   truncation on machines with less than 64-bit mantissas.
+	   Since we wish to have maximal accuracy, we need to do
+	   this in a round-about fashion */
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+
+	/* First, attempt to determine whether the runtime has
+	   enough precision for 64-bit values in its mantissa */
+	ILGenUInt64(info, (((ILUInt64)1) << 63) | ((ILUInt64)1));
+	ILGenSimple(info, IL_OP_DUP);
+	ILGenSimple(info, IL_OP_CONV_R_UN);
+	ILGenSimple(info, IL_OP_CONV_U8);
+	ILGenJump(info, IL_OP_BNE_UN, &label1);
+
+	/* Bias the input value to convert it into an unsigned value */
+	ILGenUInt64(info, (((ILUInt64)1) << 63));
+	ILGenSimple(info, IL_OP_ADD);
+
+	/* Convert into a floating point value with maximal precision */
+	ILGenSimple(info, IL_OP_CONV_R_UN);
+
+	/* Subtract off the bias to get the final result */
+	ILGenUInt64(info, (((ILUInt64)1) << 63));
+	ILGenSimple(info, IL_OP_CONV_R_UN);
+	ILGenSimple(info, IL_OP_SUB);
+
+	/* Jump past the "else" case of the test */
+	ILGenJump(info, IL_OP_BR, &label2);
+
+	/* We don't have enough precision in the mantissa, so make
+	   the most of it using the "conv.r8" instruction */
+	ILGenLabel(info, &label1);
+	ILGenSimple(info, IL_OP_CONV_R8);
+
+	/* Done */
+	ILGenLabel(info, &label2);
+	ILGenExtend(info, 2);
+}
+ILGenCast(ILMachineType_Decimal, ILMachineType_NativeFloat)
+{
+	ILGenCallByName(info, "float64 [.library]System.Decimal::op_Explicit"
+								"(valuetype [.library]System.Decimal)");
+}
+ILGenCast(ILMachineType_String, ILMachineType_NativeFloat)
+{
+	ILGenCallByName(info,
+			"float64 [.library]System.Double::FromString"
+					"(class [.library]System.String)");
+}
+ILGenCast(ILMachineType_ObjectRef, ILMachineType_NativeFloat),
+ILGenCast(ILMachineType_ManagedPtr, ILMachineType_NativeFloat),
+ILGenCast(ILMachineType_TransientPtr, ILMachineType_NativeFloat),
+ILGenCast(ILMachineType_ManagedValue, ILMachineType_NativeFloat)
+{
+	ILGenSimple(info, IL_OP_POP);
+	ILGenLoadFloat32(info, (ILFloat)0.0);
+}
+
+/*
+ * Cast to "decimal".
+ */
+ILGenCast(ILMachineType_Void, ILMachineType_Decimal)
+{
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenCallByName(info, "valuetype [.library]System.Decimal "
+							"[.library]System.Decimal::op_Implicit(int32)");
+	ILGenAdjust(info, 1);
+}
+ILGenCast(ILMachineType_Boolean, ILMachineType_Decimal),
+ILGenCast(ILMachineType_Int8, ILMachineType_Decimal)
+{
+	if(info->clsCompliant)
+	{
+		/* CLS cannot convert from int8 to decimal, so use int32 instead */
+		ILGenCallByName(info, "valuetype [.library]System.Decimal "
+							"[.library]System.Decimal::op_Implicit(int32)");
+	}
+	else
+	{
+		ILGenCallByName(info, "valuetype [.library]System.Decimal "
+							"[.library]System.Decimal::op_Implicit(int8)");
+	}
+}
+ILGenCast(ILMachineType_UInt8, ILMachineType_Decimal)
+{
+	ILGenCallByName(info, "valuetype [.library]System.Decimal "
+						"[.library]System.Decimal::op_Implicit(unsigned int8)");
+}
+ILGenCast(ILMachineType_Int16, ILMachineType_Decimal)
+{
+	ILGenCallByName(info, "valuetype [.library]System.Decimal "
+						"[.library]System.Decimal::op_Implicit(int16)");
+}
+ILGenCast(ILMachineType_UInt16, ILMachineType_Decimal)
+{
+	if(info->clsCompliant)
+	{
+		/* CLS cannot convert from uint16 to decimal, so use int32 instead */
+		ILGenCallByName(info, "valuetype [.library]System.Decimal "
+							"[.library]System.Decimal::op_Implicit(int32)");
+	}
+	else
+	{
+		ILGenCallByName(info, "valuetype [.library]System.Decimal "
+						"[.library]System.Decimal::op_Implicit(unsigned int16)");
+	}
+}
+ILGenCast(ILMachineType_Char, ILMachineType_Decimal)
+{
+	ILGenCallByName(info, "valuetype [.library]System.Decimal "
+							"[.library]System.Decimal::op_Implicit(char)");
+}
+ILGenCast(ILMachineType_Int32, ILMachineType_Decimal)
+{
+	ILGenCallByName(info, "valuetype [.library]System.Decimal "
+						"[.library]System.Decimal::op_Implicit(int32)");
+}
+ILGenCast(ILMachineType_UInt32, ILMachineType_Decimal)
+{
+	if(info->clsCompliant)
+	{
+		/* CLS cannot convert from uint32 to decimal, so use int64 instead */
+		ILGenSimple(info, IL_OP_CONV_I8);
+		ILGenCallByName(info, "valuetype [.library]System.Decimal "
+						"[.library]System.Decimal::op_Implicit(int64)");
+	}
+	else
+	{
+		ILGenCallByName(info, "valuetype [.library]System.Decimal "
+					"[.library]System.Decimal::op_Implicit(unsigned int32)");
+	}
+}
+ILGenCast(ILMachineType_Int64, ILMachineType_Decimal)
+{
+	ILGenCallByName(info, "valuetype [.library]System.Decimal "
+							"[.library]System.Decimal::op_Implicit(int64)");
+}
+ILGenCast(ILMachineType_UInt64, ILMachineType_Decimal)
+{
+	if(info->clsCompliant)
+	{
+		/* CLS cannot convert directly from uint64 to decimal,
+		   so we need to do this in a round-about fashion.
+		   We subtract 0x8000000000000000, convert to decimal,
+		   and then add 0x8000000000000000 */
+		ILGenUInt64(info, (ILUInt64)IL_MIN_INT64);
+		ILGenSimple(info, IL_OP_SUB);
+		ILGenAdjust(info, -1);
+		ILGenCallByName(info, "valuetype [.library]System.Decimal "
+							"[.library]System.Decimal::op_Implicit(int64)");
+		ILGenInt32(info, 0);					/* low */
+		ILGenInt32(info, (ILInt32)0x80000000);	/* mid */
+		ILGenInt32(info, 0);					/* high */
+		ILGenInt32(info, 0);					/* isNegative */
+		ILGenInt32(info, 0);					/* scale */
+		ILGenAdjust(info, 5);
+		ILGenNewObj(info, "[.library]System.Decimal",
+		            "(int32, int32, int32, bool, unsigned int8)");
+		ILGenAdjust(info, -4);
+		ILGenCallByName(info, "valuetype [.library]System.Decimal "
+				"[.library]System.Decimal::op_Addition"
+						"(valuetype [.library]System.Decimal,"
+						 "valuetype [.library]System.Decimal)");
+		ILGenAdjust(info, -1);
+	}
+	else
+	{
+		ILGenCallByName(info, "valuetype [.library]System.Decimal "
+					"[.library]System.Decimal::op_Implicit(unsigned int64)");
+	}
+}
+ILGenCast(ILMachineType_NativeInt, ILMachineType_Decimal)
+{
+	/* Since we don't know how big native integers are,
+	   use the "int64" conversion operator */
+	ILGenSimple(info, IL_OP_CONV_I8);
+	ILGenCallByName(info, "valuetype [.library]System.Decimal "
+							"[.library]System.Decimal::op_Implicit(int64)");
+}
+ILGenCast(ILMachineType_NativeUInt, ILMachineType_Decimal),
+ILGenCast(ILMachineType_UnmanagedPtr, ILMachineType_Decimal)
+{
+	/* Since we don't know how big native integers are,
+	   use the "uint64" conversion operator */
+	ILGenSimple(info, IL_OP_CONV_U8);
+	ILGenCast(info, ILMachineType_UInt64, ILMachineType_Decimal);
+}
+ILGenCast(ILMachineType_Float32, ILMachineType_Decimal)
+{
+	ILGenCallByName(info, "valuetype [.library]System.Decimal "
+						"[.library]System.Decimal::op_Explicit(float32)");
+}
+ILGenCast(ILMachineType_Float64, ILMachineType_Decimal)
+{
+	ILGenCallByName(info, "valuetype [.library]System.Decimal "
+						"[.library]System.Decimal::op_Explicit(float64)");
+}
+ILGenCast(ILMachineType_NativeFloat, ILMachineType_Decimal)
+{
+	/* Since we don't know how big native floats are,
+	   down-convert to "float64", and convert that */
+	ILGenSimple(info, IL_OP_CONV_R8);
+	ILGenCallByName(info, "valuetype [.library]System.Decimal "
+						"[.library]System.Decimal::op_Explicit(float64)");
+}
+ILGenCast(ILMachineType_Decimal, ILMachineType_Decimal)
+{
+	/* Nothing to do here */
+}
+ILGenCast(ILMachineType_String, ILMachineType_Decimal)
+{
+	ILGenCallByName(info, "valuetype [.library]System.Decimal "
+			"[.library]System.Decimal::FromString"
+			"(class [.library]System.String)");
+}
+ILGenCast(ILMachineType_ObjectRef, ILMachineType_Decimal),
+ILGenCast(ILMachineType_ManagedPtr, ILMachineType_Decimal),
+ILGenCast(ILMachineType_TransientPtr, ILMachineType_Decimal),
+ILGenCast(ILMachineType_ManagedValue, ILMachineType_Decimal)
+{
+	ILGenSimple(info, IL_OP_POP);
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenCallByName(info, "valuetype [.library]System.Decimal "
+							"[.library]System.Decimal::op_Implicit(int32)");
+}
+
+/*
+ * Cast to "string".
+ */
+ILGenCast(ILMachineType_Void, ILMachineType_String)
+{
+	ILGenSimple(info, IL_OP_LDNULL);
+	ILGenAdjust(info, 1);
+}
+ILGenCast(ILMachineType_Boolean, ILMachineType_String)
+{
+	ILGenCallByName(info, "class [.library]System.String "
+					"[.library]System.Boolean::ToString(bool)");
+}
+ILGenCast(ILMachineType_Int8, ILMachineType_String)
+{
+	if(info->clsCompliant)
+	{
+		/* CLS does not have the SByte class, so use Int32 instead */
+		ILGenCallByName(info, "class [.library]System.String "
+									"[.library]System.Int32::ToString(int32)");
+	}
+	else
+	{
+		ILGenCallByName(info, "class [.library]System.String "
+								"[.library]System.SByte::ToString(int8)");
+	}
+}
+ILGenCast(ILMachineType_UInt8, ILMachineType_String)
+{
+	ILGenCallByName(info, "class [.library]System.String "
+							"[.library]System.Byte::ToString(unsigned int8)");
+}
+ILGenCast(ILMachineType_Int16, ILMachineType_String)
+{
+	ILGenCallByName(info, "class [.library]System.String "
+							"[.library]System.Int16::ToString(int16)");
+}
+ILGenCast(ILMachineType_UInt16, ILMachineType_String)
+{
+	if(info->clsCompliant)
+	{
+		/* CLS does not have the UInt16 class, so use Int32 instead */
+		ILGenCallByName(info, "class [.library]System.String "
+								"[.library]System.Int32::ToString(int32)");
+	}
+	else
+	{
+		ILGenCallByName(info, "class [.library]System.String "
+						"[.library]System.UInt16::ToString(unsigned int16)");
+	}
+}
+ILGenCast(ILMachineType_Char, ILMachineType_String)
+{
+	ILGenCallByName(info, "class [.library]System.String "
+							"[.library]System.Char::ToString(char)");
+}
+ILGenCast(ILMachineType_Int32, ILMachineType_String)
+{
+	ILGenCallByName(info, "class [.library]System.String "
+							"[.library]System.Int32::ToString(int32)");
+}
+ILGenCast(ILMachineType_UInt32, ILMachineType_String)
+{
+	if(info->clsCompliant)
+	{
+		/* CLS does not have the UInt32 class, so use Int64 instead */
+		ILGenSimple(info, IL_OP_CONV_U8);
+		ILGenCallByName(info, "class [.library]System.String "
+								"[.library]System.Int64::ToString(int64)");
+	}
+	else
+	{
+		ILGenCallByName(info, "class [.library]System.String "
+						"[.library]System.UInt32::ToString(unsigned int32)");
+	}
+}
+ILGenCast(ILMachineType_Int64, ILMachineType_String)
+{
+	ILGenCallByName(info, "class [.library]System.String "
+							"[.library]System.Int64::ToString(int64)");
+}
+ILGenCast(ILMachineType_UInt64, ILMachineType_String)
+{
+	if(info->clsCompliant)
+	{
+		/* CLS does not have the UInt64 class, so convert via Decimal */
+		ILGenCast(info, ILMachineType_UInt64, ILMachineType_Decimal);
+		ILGenCallByName(info, "class [.library]System.String "
+						"[.library]System.Decimal::ToString"
+						"(valuetype [.library]System.Decimal)");
+	}
+	else
+	{
+		ILGenCallByName(info, "class [.library]System.String "
+						"[.library]System.UInt64::ToString(unsigned int64)");
+	}
+}
+ILGenCast(ILMachineType_NativeInt, ILMachineType_String)
+{
+	/* We don't know how big the native integer is, so
+	   convert to "int64" and convert that */
+	ILGenSimple(info, IL_OP_CONV_I8);
+	ILGenCallByName(info, "class [.library]System.String "
+					"[.library]System.Int64::ToString(int64)");
+}
+ILGenCast(ILMachineType_NativeUInt, ILMachineType_String),
+ILGenCast(ILMachineType_UnmanagedPtr, ILMachineType_String)
+{
+	/* We don't know how big the native integer is, so
+	   convert to "uint64" and convert that */
+	ILGenSimple(info, IL_OP_CONV_U8);
+	ILGenCast(info, ILMachineType_UInt64, ILMachineType_String);
+}
+ILGenCast(ILMachineType_Float32, ILMachineType_String)
+{
+	ILGenCallByName(info, "class [.library]System.String "
+					"[.library]System.Single::ToString(float32)");
+}
+ILGenCast(ILMachineType_Float64, ILMachineType_String)
+{
+	ILGenCallByName(info, "class [.library]System.String "
+					"[.library]System.Double::ToString(float64)");
+}
+ILGenCast(ILMachineType_NativeFloat, ILMachineType_String)
+{
+	ILGenSimple(info, IL_OP_CONV_R8);
+	ILGenCallByName(info, "class [.library]System.String "
+					"[.library]System.Double::ToString(float64)");
+}
+ILGenCast(ILMachineType_Decimal, ILMachineType_String)
+{
+	ILGenCallByName(info, "class [.library]System.String "
+					"[.library]System.Decimal::ToString"
+					"(valuetype [.library]System.Decimal)");
+}
+ILGenCast(ILMachineType_String, ILMachineType_String)
+{
+	/* Nothing to do here */
+}
+ILGenCast(ILMachineType_ObjectRef, ILMachineType_String)
+{
+	/* Nothing to do here */
+}
+ILGenCast(ILMachineType_ManagedPtr, ILMachineType_String),
+ILGenCast(ILMachineType_TransientPtr, ILMachineType_String),
+ILGenCast(ILMachineType_ManagedValue, ILMachineType_String)
+{
+	ILGenSimple(info, IL_OP_POP);
+	ILGenSimple(info, IL_OP_LDNULL);
+}
+
+/*
+ * Cast to a pointer type.
+ */
+ILGenCast(ILMachineType_Void, ILMachineType_ObjectRef),
+ILGenCast(ILMachineType_Void, ILMachineType_ManagedPtr),
+ILGenCast(ILMachineType_Void, ILMachineType_TransientPtr),
+ILGenCast(ILMachineType_Void, ILMachineType_ManagedValue)
+{
+	/* The default object reference value is "null" */
+	ILGenSimple(info, IL_OP_LDNULL);
+	ILGenAdjust(info, 1);
+}
+ILGenCast(ILMachineType_Void, ILMachineType_UnmanagedPtr)
+{
+	/* The default pointer value is zero */
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenSimple(info, IL_OP_CONV_I);
+	ILGenAdjust(info, 1);
+}
+ILGenCast(ILMachineType_ObjectRef, ILMachineType_ObjectRef),
+ILGenCast(ILMachineType_String, ILMachineType_ObjectRef),
+ILGenCast(ILMachineType_UnmanagedPtr, ILMachineType_UnmanagedPtr),
+ILGenCast(ILMachineType_ManagedPtr, ILMachineType_ManagedPtr),
+ILGenCast(ILMachineType_TransientPtr, ILMachineType_TransientPtr),
+ILGenCast(ILMachineType_ManagedValue, ILMachineType_ManagedValue),
+ILGenCast(ILMachineType_ManagedValue, ILMachineType_ObjectRef),
+ILGenCast(ILMachineType_NativeInt, ILMachineType_UnmanagedPtr),
+ILGenCast(ILMachineType_NativeUInt, ILMachineType_UnmanagedPtr)
+{
+	/* Nothing to do here */
+}
+ILGenCast(ILMachineType_Int32, ILMachineType_UnmanagedPtr),
+ILGenCast(ILMachineType_Int64, ILMachineType_UnmanagedPtr)
+{
+	ILGenSimple(info, IL_OP_CONV_I);
+}
+ILGenCast(ILMachineType_UInt32, ILMachineType_UnmanagedPtr),
+ILGenCast(ILMachineType_UInt64, ILMachineType_UnmanagedPtr)
+{
+	ILGenSimple(info, IL_OP_CONV_U);
+}
+ILGenCast(ILMachineType_ManagedPtr, ILMachineType_UnmanagedPtr),
+ILGenCast(ILMachineType_UnmanagedPtr, ILMachineType_ManagedPtr)
+{
+	/* Nothing to do here */
+}
+ILGenCast(ILMachineType, ILMachineType_ObjectRef),
+ILGenCast(ILMachineType, ILMachineType_UnmanagedPtr),
+ILGenCast(ILMachineType, ILMachineType_ManagedPtr),
+ILGenCast(ILMachineType, ILMachineType_TransientPtr),
+ILGenCast(ILMachineType, ILMachineType_ManagedValue)
+{
+	/* Cannot convert numeric values into objects this way.
+	   We probably should look into boxing the value later */
+	ILGenSimple(info, IL_OP_POP);
+	ILGenSimple(info, IL_OP_LDNULL);
+}
+
+/*
+ * Cast constants to non-constant types.
+ */
+ILGenCastConst(ILMachineType, ILMachineType_Void),
+ILGenCastConst(ILMachineType, ILMachineType_UnmanagedPtr),
+ILGenCastConst(ILMachineType, ILMachineType_ManagedPtr),
+ILGenCastConst(ILMachineType, ILMachineType_TransientPtr),
+ILGenCastConst(ILMachineType, ILMachineType_ManagedValue)
+{
+	return 0;
+}
+
+/*
+ * Cast constants to "boolean".
+ */
+ILGenCastConst(ILMachineType_Boolean, ILMachineType_Boolean)
+{
+	/* Nothing to do here */
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int8, ILMachineType_Boolean),
+ILGenCastConst(ILMachineType_UInt8, ILMachineType_Boolean),
+ILGenCastConst(ILMachineType_Int16, ILMachineType_Boolean),
+ILGenCastConst(ILMachineType_UInt16, ILMachineType_Boolean),
+ILGenCastConst(ILMachineType_Char, ILMachineType_Boolean),
+ILGenCastConst(ILMachineType_Int32, ILMachineType_Boolean),
+ILGenCastConst(ILMachineType_UInt32, ILMachineType_Boolean),
+ILGenCastConst(ILMachineType_NativeInt, ILMachineType_Boolean),
+ILGenCastConst(ILMachineType_NativeUInt, ILMachineType_Boolean),
+ILGenCastConst(ILMachineType_UnmanagedPtr, ILMachineType_Boolean)
+{
+	value->un.i4Value = (value->un.i4Value != 0);
+	value->valueType = ILMachineType_Boolean;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int64, ILMachineType_Boolean),
+ILGenCastConst(ILMachineType_UInt64, ILMachineType_Boolean)
+{
+	value->un.i4Value = (value->un.i8Value != 0);
+	value->valueType = ILMachineType_Boolean;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float32, ILMachineType_Boolean)
+{
+	value->un.i4Value = (value->un.r4Value != (ILFloat)0.0);
+	value->valueType = ILMachineType_Boolean;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float64, ILMachineType_Boolean),
+ILGenCastConst(ILMachineType_NativeFloat, ILMachineType_Boolean)
+{
+	value->un.i4Value = (value->un.r8Value != (ILDouble)0.0);
+	value->valueType = ILMachineType_Boolean;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Decimal, ILMachineType_Boolean)
+{
+	value->un.i4Value = !ILDecimalIsZero(&(value->un.decValue));
+	value->valueType = ILMachineType_Boolean;
+	return 1;
+}
+ILGenCastConst(ILMachineType, ILMachineType_Boolean)
+{
+	return 0;
+}
+
+/*
+ * Cast constants to "int8".
+ */
+ILGenCastConst(ILMachineType_Boolean, ILMachineType_Int8)
+{
+	value->valueType = ILMachineType_Int8;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int8, ILMachineType_Int8)
+{
+	/* Nothing to do here */
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int16, ILMachineType_Int8),
+ILGenCastConst(ILMachineType_Int32, ILMachineType_Int8),
+ILGenCastConst(ILMachineType_NativeInt, ILMachineType_Int8)
+{
+	if(info->overflowInsns)
+	{
+		if(value->un.i4Value < (ILInt32)(-128) ||
+		   value->un.i4Value > (ILInt32)127)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(ILInt8)(value->un.i4Value);
+	value->valueType = ILMachineType_Int8;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt8, ILMachineType_Int8),
+ILGenCastConst(ILMachineType_UInt16, ILMachineType_Int8),
+ILGenCastConst(ILMachineType_Char, ILMachineType_Int8),
+ILGenCastConst(ILMachineType_UInt32, ILMachineType_Int8),
+ILGenCastConst(ILMachineType_NativeUInt, ILMachineType_Int8)
+{
+	if(info->overflowInsns)
+	{
+		if(((ILUInt32)(value->un.i4Value)) > (ILUInt32)127)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(ILInt8)(value->un.i4Value);
+	value->valueType = ILMachineType_Int8;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int64, ILMachineType_Int8)
+{
+	if(info->overflowInsns)
+	{
+		if(value->un.i8Value < (ILInt64)(-128) ||
+		   value->un.i8Value > (ILInt64)127)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(ILInt8)(value->un.i8Value);
+	value->valueType = ILMachineType_Int8;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt64, ILMachineType_Int8)
+{
+	if(info->overflowInsns)
+	{
+		if(((ILUInt64)(value->un.i8Value)) > (ILUInt64)127)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(ILInt8)(value->un.i8Value);
+	value->valueType = ILMachineType_Int8;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float32, ILMachineType_Int8)
+{
+	if(info->overflowInsns)
+	{
+		return ILGenCastConst(info, value, ILMachineType_Float32,
+							  ILMachineType_Int32) &&
+			   ILGenCastConst(info, value, ILMachineType_Int32,
+			   				  ILMachineType_Int8);
+	}
+	value->un.i4Value = (ILInt32)(ILInt8)(ILInt32)(value->un.r4Value);
+	value->valueType = ILMachineType_Int8;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float64, ILMachineType_Int8),
+ILGenCastConst(ILMachineType_NativeFloat, ILMachineType_Int8)
+{
+	if(info->overflowInsns)
+	{
+		return ILGenCastConst(info, value, ILMachineType_Float64,
+							  ILMachineType_Int32) &&
+			   ILGenCastConst(info, value, ILMachineType_Int32,
+			   				  ILMachineType_Int8);
+	}
+	value->un.i4Value = (ILInt32)(ILInt8)(ILInt32)(value->un.r8Value);
+	value->valueType = ILMachineType_Int8;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Decimal, ILMachineType_Int8)
+{
+	if(!DecimalToInt32(&(value->un.decValue), &(value->un.i4Value),
+					   -128, 127))
+	{
+		return 0;
+	}
+	value->valueType = ILMachineType_Int8;
+	return 1;
+}
+ILGenCastConst(ILMachineType, ILMachineType_Int8)
+{
+	return 0;
+}
+
+/*
+ * Cast constants to "uint8".
+ */
+ILGenCastConst(ILMachineType_Boolean, ILMachineType_UInt8)
+{
+	value->valueType = ILMachineType_UInt8;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt8, ILMachineType_UInt8)
+{
+	/* Nothing to do here */
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int8, ILMachineType_UInt8),
+ILGenCastConst(ILMachineType_Int16, ILMachineType_UInt8),
+ILGenCastConst(ILMachineType_Int32, ILMachineType_UInt8),
+ILGenCastConst(ILMachineType_NativeInt, ILMachineType_UInt8)
+{
+	if(info->overflowInsns)
+	{
+		if(value->un.i4Value < 0 || value->un.i4Value > (ILInt32)255)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(ILUInt8)(value->un.i4Value);
+	value->valueType = ILMachineType_UInt8;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt16, ILMachineType_UInt8),
+ILGenCastConst(ILMachineType_Char, ILMachineType_UInt8),
+ILGenCastConst(ILMachineType_UInt32, ILMachineType_UInt8),
+ILGenCastConst(ILMachineType_NativeUInt, ILMachineType_UInt8)
+{
+	if(info->overflowInsns)
+	{
+		if(((ILUInt32)(value->un.i4Value)) > (ILUInt32)255)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(ILUInt8)(value->un.i4Value);
+	value->valueType = ILMachineType_UInt8;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int64, ILMachineType_UInt8)
+{
+	if(info->overflowInsns)
+	{
+		if(value->un.i8Value < 0 || value->un.i8Value > (ILInt64)255)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(ILUInt8)(value->un.i8Value);
+	value->valueType = ILMachineType_UInt8;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt64, ILMachineType_UInt8)
+{
+	if(info->overflowInsns)
+	{
+		if(((ILUInt64)(value->un.i8Value)) > (ILUInt64)255)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(ILUInt8)(value->un.i8Value);
+	value->valueType = ILMachineType_UInt8;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float32, ILMachineType_UInt8)
+{
+	if(info->overflowInsns)
+	{
+		return ILGenCastConst(info, value, ILMachineType_Float32,
+							  ILMachineType_UInt32) &&
+			   ILGenCastConst(info, value, ILMachineType_UInt32,
+			   				  ILMachineType_UInt8);
+	}
+	value->un.i4Value = (ILInt32)(ILUInt8)(ILUInt32)(value->un.r4Value);
+	value->valueType = ILMachineType_UInt8;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float64, ILMachineType_UInt8),
+ILGenCastConst(ILMachineType_NativeFloat, ILMachineType_UInt8)
+{
+	if(info->overflowInsns)
+	{
+		return ILGenCastConst(info, value, ILMachineType_Float64,
+							  ILMachineType_UInt32) &&
+			   ILGenCastConst(info, value, ILMachineType_UInt32,
+			   				  ILMachineType_UInt8);
+	}
+	value->un.i4Value = (ILInt32)(ILUInt8)(ILUInt32)(value->un.r8Value);
+	value->valueType = ILMachineType_UInt8;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Decimal, ILMachineType_UInt8)
+{
+	if(!DecimalToUInt32(&(value->un.decValue), &(value->un.i4Value), 255))
+	{
+		return 0;
+	}
+	value->valueType = ILMachineType_UInt8;
+	return 1;
+}
+ILGenCastConst(ILMachineType, ILMachineType_UInt8)
+{
+	return 0;
+}
+
+/*
+ * Cast constants to "int16".
+ */
+ILGenCastConst(ILMachineType_Boolean, ILMachineType_Int16),
+ILGenCastConst(ILMachineType_Int8, ILMachineType_Int16),
+ILGenCastConst(ILMachineType_UInt8, ILMachineType_Int16)
+{
+	value->valueType = ILMachineType_Int8;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int16, ILMachineType_Int16)
+{
+	/* Nothing to do here */
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int32, ILMachineType_Int16),
+ILGenCastConst(ILMachineType_NativeInt, ILMachineType_Int16)
+{
+	if(info->overflowInsns)
+	{
+		if(value->un.i4Value < (ILInt32)(-32768) ||
+		   value->un.i4Value > (ILInt32)32767)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(ILInt16)(value->un.i4Value);
+	value->valueType = ILMachineType_Int16;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt16, ILMachineType_Int16),
+ILGenCastConst(ILMachineType_Char, ILMachineType_Int16),
+ILGenCastConst(ILMachineType_UInt32, ILMachineType_Int16),
+ILGenCastConst(ILMachineType_NativeUInt, ILMachineType_Int16)
+{
+	if(info->overflowInsns)
+	{
+		if(((ILUInt32)(value->un.i4Value)) > (ILUInt32)32767)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(ILInt16)(value->un.i4Value);
+	value->valueType = ILMachineType_Int16;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int64, ILMachineType_Int16)
+{
+	if(info->overflowInsns)
+	{
+		if(value->un.i8Value < (ILInt64)(-32768) ||
+		   value->un.i8Value > (ILInt64)32767)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(ILInt16)(value->un.i8Value);
+	value->valueType = ILMachineType_Int16;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt64, ILMachineType_Int16)
+{
+	if(info->overflowInsns)
+	{
+		if(((ILUInt64)(value->un.i8Value)) > (ILUInt64)32767)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(ILInt16)(value->un.i8Value);
+	value->valueType = ILMachineType_Int16;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float32, ILMachineType_Int16)
+{
+	if(info->overflowInsns)
+	{
+		return ILGenCastConst(info, value, ILMachineType_Float32,
+							  ILMachineType_Int32) &&
+			   ILGenCastConst(info, value, ILMachineType_Int32,
+			   				  ILMachineType_Int16);
+	}
+	value->un.i4Value = (ILInt32)(ILInt16)(ILInt32)(value->un.r4Value);
+	value->valueType = ILMachineType_Int16;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float64, ILMachineType_Int16),
+ILGenCastConst(ILMachineType_NativeFloat, ILMachineType_Int16)
+{
+	if(info->overflowInsns)
+	{
+		return ILGenCastConst(info, value, ILMachineType_Float64,
+							  ILMachineType_Int32) &&
+			   ILGenCastConst(info, value, ILMachineType_Int32,
+			   				  ILMachineType_Int16);
+	}
+	value->un.i4Value = (ILInt32)(ILInt16)(ILInt32)(value->un.r8Value);
+	value->valueType = ILMachineType_Int16;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Decimal, ILMachineType_Int16)
+{
+	if(!DecimalToInt32(&(value->un.decValue), &(value->un.i4Value),
+					   -32768, 32767))
+	{
+		return 0;
+	}
+	value->valueType = ILMachineType_Int16;
+	return 1;
+}
+ILGenCastConst(ILMachineType, ILMachineType_Int16)
+{
+	return 0;
+}
+
+/*
+ * Cast constants to "uint16".
+ */
+ILGenCastConst(ILMachineType_Boolean, ILMachineType_UInt16),
+ILGenCastConst(ILMachineType_UInt8, ILMachineType_UInt16),
+ILGenCastConst(ILMachineType_Char, ILMachineType_UInt16)
+{
+	value->valueType = ILMachineType_UInt16;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt16, ILMachineType_UInt16)
+{
+	/* Nothing to do here */
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int8, ILMachineType_UInt16),
+ILGenCastConst(ILMachineType_Int16, ILMachineType_UInt16),
+ILGenCastConst(ILMachineType_Int32, ILMachineType_UInt16),
+ILGenCastConst(ILMachineType_NativeInt, ILMachineType_UInt16)
+{
+	if(info->overflowInsns)
+	{
+		if(value->un.i4Value < 0 || value->un.i4Value > (ILInt32)65535)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(ILUInt16)(value->un.i4Value);
+	value->valueType = ILMachineType_UInt16;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt32, ILMachineType_UInt16),
+ILGenCastConst(ILMachineType_NativeUInt, ILMachineType_UInt16)
+{
+	if(info->overflowInsns)
+	{
+		if(((ILUInt32)(value->un.i4Value)) > (ILUInt32)65535)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(ILUInt16)(value->un.i4Value);
+	value->valueType = ILMachineType_UInt16;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int64, ILMachineType_UInt16)
+{
+	if(info->overflowInsns)
+	{
+		if(value->un.i8Value < 0 || value->un.i8Value > (ILInt64)65535)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(ILUInt16)(value->un.i8Value);
+	value->valueType = ILMachineType_UInt16;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt64, ILMachineType_UInt16)
+{
+	if(info->overflowInsns)
+	{
+		if(((ILUInt64)(value->un.i8Value)) > (ILUInt64)65535)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(ILUInt16)(value->un.i8Value);
+	value->valueType = ILMachineType_UInt16;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float32, ILMachineType_UInt16)
+{
+	if(info->overflowInsns)
+	{
+		return ILGenCastConst(info, value, ILMachineType_Float32,
+							  ILMachineType_UInt32) &&
+			   ILGenCastConst(info, value, ILMachineType_UInt32,
+			   				  ILMachineType_UInt16);
+	}
+	value->un.i4Value = (ILInt32)(ILUInt16)(ILUInt32)(value->un.r4Value);
+	value->valueType = ILMachineType_UInt16;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float64, ILMachineType_UInt16),
+ILGenCastConst(ILMachineType_NativeFloat, ILMachineType_UInt16)
+{
+	if(info->overflowInsns)
+	{
+		return ILGenCastConst(info, value, ILMachineType_Float64,
+							  ILMachineType_UInt32) &&
+			   ILGenCastConst(info, value, ILMachineType_UInt32,
+			   				  ILMachineType_UInt16);
+	}
+	value->un.i4Value = (ILInt32)(ILUInt16)(ILUInt32)(value->un.r8Value);
+	value->valueType = ILMachineType_UInt16;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Decimal, ILMachineType_UInt16)
+{
+	if(!DecimalToUInt32(&(value->un.decValue), &(value->un.i4Value), 65535))
+	{
+		return 0;
+	}
+	value->valueType = ILMachineType_UInt16;
+	return 1;
+}
+ILGenCastConst(ILMachineType, ILMachineType_UInt16)
+{
+	return 0;
+}
+
+/*
+ * Cast constants to "char".
+ */
+ILGenCastConst(ILMachineType_Boolean, ILMachineType_Char),
+ILGenCastConst(ILMachineType_UInt8, ILMachineType_Char),
+ILGenCastConst(ILMachineType_UInt16, ILMachineType_Char)
+{
+	value->valueType = ILMachineType_Char;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Char, ILMachineType_Char)
+{
+	/* Nothing to do here */
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int8, ILMachineType_Char),
+ILGenCastConst(ILMachineType_Int16, ILMachineType_Char),
+ILGenCastConst(ILMachineType_Int32, ILMachineType_Char),
+ILGenCastConst(ILMachineType_NativeInt, ILMachineType_Char)
+{
+	if(info->overflowInsns)
+	{
+		if(value->un.i4Value < 0 || value->un.i4Value > (ILInt32)65535)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(ILUInt16)(value->un.i4Value);
+	value->valueType = ILMachineType_Char;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt32, ILMachineType_Char),
+ILGenCastConst(ILMachineType_NativeUInt, ILMachineType_Char)
+{
+	if(info->overflowInsns)
+	{
+		if(((ILUInt32)(value->un.i4Value)) > (ILUInt32)65535)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(ILUInt16)(value->un.i4Value);
+	value->valueType = ILMachineType_Char;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int64, ILMachineType_Char)
+{
+	if(info->overflowInsns)
+	{
+		if(value->un.i8Value < 0 || value->un.i8Value > (ILInt64)65535)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(ILUInt16)(value->un.i8Value);
+	value->valueType = ILMachineType_Char;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt64, ILMachineType_Char)
+{
+	if(info->overflowInsns)
+	{
+		if(((ILUInt64)(value->un.i8Value)) > (ILUInt64)65535)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(ILUInt16)(value->un.i8Value);
+	value->valueType = ILMachineType_Char;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float32, ILMachineType_Char)
+{
+	if(info->overflowInsns)
+	{
+		return ILGenCastConst(info, value, ILMachineType_Float32,
+							  ILMachineType_UInt32) &&
+			   ILGenCastConst(info, value, ILMachineType_UInt32,
+			   				  ILMachineType_Char);
+	}
+	value->un.i4Value = (ILInt32)(ILUInt16)(ILUInt32)(value->un.r4Value);
+	value->valueType = ILMachineType_Char;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float64, ILMachineType_Char),
+ILGenCastConst(ILMachineType_NativeFloat, ILMachineType_Char)
+{
+	if(info->overflowInsns)
+	{
+		return ILGenCastConst(info, value, ILMachineType_Float64,
+							  ILMachineType_UInt32) &&
+			   ILGenCastConst(info, value, ILMachineType_UInt32,
+			   				  ILMachineType_Char);
+	}
+	value->un.i4Value = (ILInt32)(ILUInt16)(ILUInt32)(value->un.r8Value);
+	value->valueType = ILMachineType_Char;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Decimal, ILMachineType_Char)
+{
+	if(!DecimalToUInt32(&(value->un.decValue), &(value->un.i4Value), 65535))
+	{
+		return 0;
+	}
+	value->valueType = ILMachineType_Char;
+	return 1;
+}
+ILGenCastConst(ILMachineType, ILMachineType_Char)
+{
+	return 0;
+}
+
+/*
+ * Cast constants to "int32".
+ */
+ILGenCastConst(ILMachineType_Boolean, ILMachineType_Int32),
+ILGenCastConst(ILMachineType_Int8, ILMachineType_Int32),
+ILGenCastConst(ILMachineType_UInt8, ILMachineType_Int32),
+ILGenCastConst(ILMachineType_Int16, ILMachineType_Int32),
+ILGenCastConst(ILMachineType_UInt16, ILMachineType_Int32),
+ILGenCastConst(ILMachineType_Char, ILMachineType_Int32),
+ILGenCastConst(ILMachineType_NativeInt, ILMachineType_Int32)
+{
+	value->valueType = ILMachineType_Int32;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt32, ILMachineType_Int32),
+ILGenCastConst(ILMachineType_NativeUInt, ILMachineType_Int32)
+{
+	if(info->overflowInsns)
+	{
+		if(((ILUInt32)(value->un.i4Value)) > (ILUInt32)0x7FFFFFFF)
+		{
+			return 0;
+		}
+	}
+	value->valueType = ILMachineType_Int32;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int32, ILMachineType_Int32)
+{
+	/* Nothing to do here */
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int64, ILMachineType_Int32)
+{
+	if(info->overflowInsns)
+	{
+		if(value->un.i8Value < (ILInt64)IL_MIN_INT32 ||
+		   value->un.i8Value > (ILInt64)IL_MAX_INT32)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(value->un.i8Value);
+	value->valueType = ILMachineType_Int32;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt64, ILMachineType_Int32)
+{
+	if(info->overflowInsns)
+	{
+		if(((ILUInt64)(value->un.i8Value)) > (ILUInt64)0x7FFFFFFF)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(value->un.i8Value);
+	value->valueType = ILMachineType_Int32;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float32, ILMachineType_Int32)
+{
+	if(info->overflowInsns)
+	{
+		if(!ILNativeFloatIsFinite(value->un.r4Value) ||
+		   value->un.r4Value <= (ILNativeFloat)(-2147483649.0) ||
+		   value->un.r4Value >= (ILNativeFloat)2147483648.0)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(value->un.r4Value);
+	value->valueType = ILMachineType_Int32;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float64, ILMachineType_Int32),
+ILGenCastConst(ILMachineType_NativeFloat, ILMachineType_Int32)
+{
+	if(info->overflowInsns)
+	{
+		if(!ILNativeFloatIsFinite(value->un.r8Value) ||
+		   value->un.r8Value <= (ILNativeFloat)(-2147483649.0) ||
+		   value->un.r8Value >= (ILNativeFloat)2147483648.0)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(value->un.r8Value);
+	value->valueType = ILMachineType_Int32;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Decimal, ILMachineType_Int32)
+{
+	if(!DecimalToInt32(&(value->un.decValue), &(value->un.i4Value),
+					   IL_MIN_INT32, IL_MAX_INT32))
+	{
+		return 0;
+	}
+	value->valueType = ILMachineType_Int32;
+	return 1;
+}
+ILGenCastConst(ILMachineType, ILMachineType_Int32)
+{
+	return 0;
+}
+
+/*
+ * Cast constants to "uint32".
+ */
+ILGenCastConst(ILMachineType_Boolean, ILMachineType_UInt32),
+ILGenCastConst(ILMachineType_UInt8, ILMachineType_UInt32),
+ILGenCastConst(ILMachineType_UInt16, ILMachineType_UInt32),
+ILGenCastConst(ILMachineType_Char, ILMachineType_UInt32),
+ILGenCastConst(ILMachineType_NativeUInt, ILMachineType_UInt32)
+{
+	value->valueType = ILMachineType_UInt32;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int8, ILMachineType_UInt32),
+ILGenCastConst(ILMachineType_Int16, ILMachineType_UInt32),
+ILGenCastConst(ILMachineType_Int32, ILMachineType_UInt32),
+ILGenCastConst(ILMachineType_NativeInt, ILMachineType_UInt32)
+{
+	if(info->overflowInsns && value->un.i4Value < 0)
+	{
+		return 0;
+	}
+	value->valueType = ILMachineType_UInt32;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt32, ILMachineType_UInt32)
+{
+	/* Nothing to do here */
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int64, ILMachineType_UInt32)
+{
+	if(info->overflowInsns)
+	{
+		if(value->un.i8Value < 0 ||
+		   value->un.i8Value > (ILInt64)IL_MAX_UINT32)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILUInt32)(value->un.i8Value);
+	value->valueType = ILMachineType_UInt32;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt64, ILMachineType_UInt32)
+{
+	if(info->overflowInsns)
+	{
+		if(((ILUInt64)(value->un.i8Value)) > (ILUInt64)IL_MAX_UINT32)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILUInt32)(value->un.i8Value);
+	value->valueType = ILMachineType_UInt32;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float32, ILMachineType_UInt32)
+{
+	if(info->overflowInsns)
+	{
+		if(!ILNativeFloatIsFinite(value->un.r4Value) ||
+		   value->un.r4Value < (ILNativeFloat)0.0 ||
+		   value->un.r4Value >= (ILNativeFloat)4294967296.0)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILUInt32)(value->un.r4Value);
+	value->valueType = ILMachineType_UInt32;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float64, ILMachineType_UInt32),
+ILGenCastConst(ILMachineType_NativeFloat, ILMachineType_UInt32)
+{
+	if(info->overflowInsns)
+	{
+		if(!ILNativeFloatIsFinite(value->un.r8Value) ||
+		   value->un.r8Value < (ILNativeFloat)0.0 ||
+		   value->un.r8Value >= (ILNativeFloat)4294967296.0)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILUInt32)(value->un.r8Value);
+	value->valueType = ILMachineType_UInt32;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Decimal, ILMachineType_UInt32)
+{
+	if(!DecimalToUInt32(&(value->un.decValue), &(value->un.i4Value),
+					    IL_MAX_UINT32))
+	{
+		return 0;
+	}
+	value->valueType = ILMachineType_UInt32;
+	return 1;
+}
+ILGenCastConst(ILMachineType, ILMachineType_UInt32)
+{
+	return 0;
+}
+
+/*
+ * Cast constants to "native int".
+ */
+ILGenCastConst(ILMachineType_Boolean, ILMachineType_NativeInt),
+ILGenCastConst(ILMachineType_Int8, ILMachineType_NativeInt),
+ILGenCastConst(ILMachineType_UInt8, ILMachineType_NativeInt),
+ILGenCastConst(ILMachineType_Int16, ILMachineType_NativeInt),
+ILGenCastConst(ILMachineType_UInt16, ILMachineType_NativeInt),
+ILGenCastConst(ILMachineType_Char, ILMachineType_NativeInt),
+ILGenCastConst(ILMachineType_Int32, ILMachineType_NativeInt)
+{
+	value->valueType = ILMachineType_NativeInt;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt32, ILMachineType_NativeInt),
+ILGenCastConst(ILMachineType_NativeUInt, ILMachineType_NativeInt)
+{
+	if(info->overflowInsns)
+	{
+		if(((ILUInt32)(value->un.i4Value)) > (ILUInt32)0x7FFFFFFF)
+		{
+			return 0;
+		}
+	}
+	value->valueType = ILMachineType_NativeInt;
+	return 1;
+}
+ILGenCastConst(ILMachineType_NativeInt, ILMachineType_NativeInt)
+{
+	/* Nothing to do here */
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int64, ILMachineType_NativeInt)
+{
+	if(((ILInt64)(ILInt32)(value->un.i8Value)) != value->un.i8Value)
+	{
+		/* Since we don't know the size of native integers on the
+		   final machine, we deny this type of constant cast.
+		   Otherwise we will get different behaviours on 32-bit
+		   and 64-bit platforms */
+		return 0;
+	}
+	value->un.i4Value = (ILInt32)(value->un.i8Value);
+	value->valueType = ILMachineType_NativeInt;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt64, ILMachineType_NativeInt)
+{
+	if(((ILUInt64)(ILUInt32)(value->un.i8Value)) !=
+				((ILUInt64)(value->un.i8Value)))
+	{
+		/* Since we don't know the size of native integers on the
+		   final machine, we deny this type of constant cast.
+		   Otherwise we will get different behaviours on 32-bit
+		   and 64-bit platforms */
+		return 0;
+	}
+	value->un.i4Value = (ILInt32)(value->un.i8Value);
+	value->valueType = ILMachineType_NativeInt;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float32, ILMachineType_NativeInt)
+{
+	if(info->overflowInsns)
+	{
+		if(!ILNativeFloatIsFinite(value->un.r4Value) ||
+		   value->un.r4Value <= (ILNativeFloat)(-2147483649.0) ||
+		   value->un.r4Value >= (ILNativeFloat)2147483648.0)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(value->un.r4Value);
+	value->valueType = ILMachineType_NativeInt;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float64, ILMachineType_NativeInt),
+ILGenCastConst(ILMachineType_NativeFloat, ILMachineType_NativeInt)
+{
+	if(info->overflowInsns)
+	{
+		if(!ILNativeFloatIsFinite(value->un.r8Value) ||
+		   value->un.r8Value <= (ILNativeFloat)(-2147483649.0) ||
+		   value->un.r8Value >= (ILNativeFloat)2147483648.0)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILInt32)(value->un.r8Value);
+	value->valueType = ILMachineType_NativeInt;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Decimal, ILMachineType_NativeInt)
+{
+	if(!DecimalToInt32(&(value->un.decValue), &(value->un.i4Value),
+					   IL_MIN_INT32, IL_MAX_INT32))
+	{
+		return 0;
+	}
+	value->valueType = ILMachineType_NativeInt;
+	return 1;
+}
+ILGenCastConst(ILMachineType, ILMachineType_NativeInt)
+{
+	return 0;
+}
+
+/*
+ * Cast constants to "native uint".
+ */
+ILGenCastConst(ILMachineType_Boolean, ILMachineType_NativeUInt),
+ILGenCastConst(ILMachineType_UInt8, ILMachineType_NativeUInt),
+ILGenCastConst(ILMachineType_UInt16, ILMachineType_NativeUInt),
+ILGenCastConst(ILMachineType_Char, ILMachineType_NativeUInt),
+ILGenCastConst(ILMachineType_UInt32, ILMachineType_NativeUInt)
+{
+	value->valueType = ILMachineType_NativeUInt;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int8, ILMachineType_NativeUInt),
+ILGenCastConst(ILMachineType_Int16, ILMachineType_NativeUInt),
+ILGenCastConst(ILMachineType_Int32, ILMachineType_NativeUInt),
+ILGenCastConst(ILMachineType_NativeInt, ILMachineType_NativeUInt)
+{
+	if(info->overflowInsns && value->un.i4Value < 0)
+	{
+		return 0;
+	}
+	value->valueType = ILMachineType_NativeUInt;
+	return 1;
+}
+ILGenCastConst(ILMachineType_NativeUInt, ILMachineType_NativeUInt)
+{
+	/* Nothing to do here */
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int64, ILMachineType_NativeUInt)
+{
+	if(((ILInt64)(ILInt32)(value->un.i8Value)) != value->un.i8Value)
+	{
+		/* Since we don't know the size of native integers on the
+		   final machine, we deny this type of constant cast.
+		   Otherwise we will get different behaviours on 32-bit
+		   and 64-bit platforms */
+		return 0;
+	}
+	value->un.i4Value = (ILUInt32)(value->un.i8Value);
+	value->valueType = ILMachineType_NativeUInt;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt64, ILMachineType_NativeUInt)
+{
+	if(((ILUInt64)(ILUInt32)(value->un.i8Value)) !=
+				((ILUInt64)(value->un.i8Value)))
+	{
+		/* Since we don't know the size of native integers on the
+		   final machine, we deny this type of constant cast.
+		   Otherwise we will get different behaviours on 32-bit
+		   and 64-bit platforms */
+		return 0;
+	}
+	value->un.i4Value = (ILUInt32)(value->un.i8Value);
+	value->valueType = ILMachineType_NativeUInt;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float32, ILMachineType_NativeUInt)
+{
+	if(info->overflowInsns)
+	{
+		if(!ILNativeFloatIsFinite(value->un.r4Value) ||
+		   value->un.r4Value < (ILNativeFloat)0.0 ||
+		   value->un.r4Value >= (ILNativeFloat)4294967296.0)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILUInt32)(value->un.r4Value);
+	value->valueType = ILMachineType_NativeUInt;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float64, ILMachineType_NativeUInt),
+ILGenCastConst(ILMachineType_NativeFloat, ILMachineType_NativeUInt)
+{
+	if(info->overflowInsns)
+	{
+		if(!ILNativeFloatIsFinite(value->un.r8Value) ||
+		   value->un.r8Value < (ILNativeFloat)0.0 ||
+		   value->un.r8Value >= (ILNativeFloat)4294967296.0)
+		{
+			return 0;
+		}
+	}
+	value->un.i4Value = (ILUInt32)(value->un.r8Value);
+	value->valueType = ILMachineType_NativeUInt;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Decimal, ILMachineType_NativeUInt)
+{
+	if(!DecimalToUInt32(&(value->un.decValue), &(value->un.i4Value),
+					    IL_MAX_UINT32))
+	{
+		return 0;
+	}
+	value->valueType = ILMachineType_NativeUInt;
+	return 1;
+}
+ILGenCastConst(ILMachineType, ILMachineType_NativeUInt)
+{
+	return 0;
+}
+
+/*
+ * Cast constants to "int64".
+ */
+ILGenCastConst(ILMachineType_Boolean, ILMachineType_Int64),
+ILGenCastConst(ILMachineType_Int8, ILMachineType_Int64),
+ILGenCastConst(ILMachineType_Int16, ILMachineType_Int64),
+ILGenCastConst(ILMachineType_Int32, ILMachineType_Int64),
+ILGenCastConst(ILMachineType_NativeInt, ILMachineType_Int64)
+{
+	value->un.i8Value = (ILInt64)(value->un.i4Value);
+	value->valueType = ILMachineType_Int64;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt8, ILMachineType_Int64),
+ILGenCastConst(ILMachineType_UInt16, ILMachineType_Int64),
+ILGenCastConst(ILMachineType_Char, ILMachineType_Int64),
+ILGenCastConst(ILMachineType_UInt32, ILMachineType_Int64),
+ILGenCastConst(ILMachineType_NativeUInt, ILMachineType_Int64)
+{
+	value->un.i8Value = (ILInt64)(ILUInt64)(ILUInt32)(value->un.i4Value);
+	value->valueType = ILMachineType_Int64;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int64, ILMachineType_Int64)
+{
+	/* Nothing to do here */
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt64, ILMachineType_Int64)
+{
+	if(info->overflowInsns)
+	{
+		if(((ILUInt64)(value->un.i8Value)) > (ILUInt64)IL_MAX_INT64)
+		{
+			return 0;
+		}
+	}
+	value->valueType = ILMachineType_Int64;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float32, ILMachineType_Int64)
+{
+	if(info->overflowInsns)
+	{
+		value->valueType = ILMachineType_Int64;
+		return ILFloatToInt64Ovf(&(value->un.i8Value), value->un.r4Value);
+	}
+	else
+	{
+		value->un.i8Value = (ILInt64)(value->un.r4Value);
+		value->valueType = ILMachineType_Int64;
+		return 1;
+	}
+}
+ILGenCastConst(ILMachineType_Float64, ILMachineType_Int64),
+ILGenCastConst(ILMachineType_NativeFloat, ILMachineType_Int64)
+{
+	if(info->overflowInsns)
+	{
+		value->valueType = ILMachineType_Int64;
+		return ILFloatToInt64Ovf(&(value->un.i8Value), value->un.r8Value);
+	}
+	else
+	{
+		value->un.i8Value = (ILInt64)(value->un.r8Value);
+		value->valueType = ILMachineType_Int64;
+		return 1;
+	}
+}
+ILGenCastConst(ILMachineType_Decimal, ILMachineType_Int64)
+{
+	ILDecimal truncValue;
+	ILDecimalTruncate(&truncValue, &(value->un.decValue));
+	if(!ILDecimalToInt64(&truncValue, &(value->un.i8Value)))
+	{
+		return 0;
+	}
+	value->valueType = ILMachineType_Int64;
+	return 1;
+}
+ILGenCastConst(ILMachineType, ILMachineType_Int64)
+{
+	return 0;
+}
+
+/*
+ * Cast constants to "uint64".
+ */
+ILGenCastConst(ILMachineType_Boolean, ILMachineType_UInt64),
+ILGenCastConst(ILMachineType_Int8, ILMachineType_UInt64),
+ILGenCastConst(ILMachineType_Int16, ILMachineType_UInt64),
+ILGenCastConst(ILMachineType_Int32, ILMachineType_UInt64),
+ILGenCastConst(ILMachineType_NativeInt, ILMachineType_UInt64)
+{
+	if(info->overflowInsns && value->un.i4Value < 0)
+	{
+		return 0;
+	}
+	value->un.i8Value = (ILInt64)(value->un.i4Value);
+	value->valueType = ILMachineType_UInt64;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt8, ILMachineType_UInt64),
+ILGenCastConst(ILMachineType_UInt16, ILMachineType_UInt64),
+ILGenCastConst(ILMachineType_Char, ILMachineType_UInt64),
+ILGenCastConst(ILMachineType_UInt32, ILMachineType_UInt64),
+ILGenCastConst(ILMachineType_NativeUInt, ILMachineType_UInt64)
+{
+	value->un.i8Value = (ILInt64)(ILUInt64)(ILUInt32)(value->un.i4Value);
+	value->valueType = ILMachineType_UInt64;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt64, ILMachineType_UInt64)
+{
+	/* Nothing to do here */
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int64, ILMachineType_UInt64)
+{
+	if(info->overflowInsns && value->un.i8Value < 0)
+	{
+		return 0;
+	}
+	value->valueType = ILMachineType_UInt64;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float32, ILMachineType_UInt64)
+{
+	if(info->overflowInsns)
+	{
+		value->valueType = ILMachineType_UInt64;
+		return ILFloatToUInt64Ovf((ILUInt64 *)&(value->un.i8Value),
+								  value->un.r4Value);
+	}
+	else
+	{
+		value->un.i8Value = (ILInt64)ILFloatToUInt64(value->un.r4Value);
+		value->valueType = ILMachineType_UInt64;
+		return 1;
+	}
+}
+ILGenCastConst(ILMachineType_Float64, ILMachineType_UInt64),
+ILGenCastConst(ILMachineType_NativeFloat, ILMachineType_UInt64)
+{
+	if(info->overflowInsns)
+	{
+		value->valueType = ILMachineType_UInt64;
+		return ILFloatToUInt64Ovf((ILUInt64 *)&(value->un.i8Value),
+								  value->un.r8Value);
+	}
+	else
+	{
+		value->un.i8Value = (ILInt64)ILFloatToUInt64(value->un.r8Value);
+		value->valueType = ILMachineType_UInt64;
+		return 1;
+	}
+}
+ILGenCastConst(ILMachineType_Decimal, ILMachineType_UInt64)
+{
+	ILDecimal truncValue;
+	ILUInt64 intValue;
+	ILDecimalTruncate(&truncValue, &(value->un.decValue));
+	if(!ILDecimalToUInt64(&truncValue, &intValue))
+	{
+		return 0;
+	}
+	value->un.i8Value = (ILInt64)intValue;
+	value->valueType = ILMachineType_UInt64;
+	return 1;
+}
+ILGenCastConst(ILMachineType, ILMachineType_UInt64)
+{
+	return 0;
+}
+
+/*
+ * Cast constants to "float32".
+ */
+ILGenCastConst(ILMachineType_Boolean, ILMachineType_Float32),
+ILGenCastConst(ILMachineType_Int8, ILMachineType_Float32),
+ILGenCastConst(ILMachineType_Int16, ILMachineType_Float32),
+ILGenCastConst(ILMachineType_Int32, ILMachineType_Float32),
+ILGenCastConst(ILMachineType_NativeInt, ILMachineType_Float32)
+{
+	value->un.r4Value = (ILFloat)(value->un.i4Value);
+	value->valueType = ILMachineType_Float32;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt8, ILMachineType_Float32),
+ILGenCastConst(ILMachineType_UInt16, ILMachineType_Float32),
+ILGenCastConst(ILMachineType_Char, ILMachineType_Float32),
+ILGenCastConst(ILMachineType_UInt32, ILMachineType_Float32),
+ILGenCastConst(ILMachineType_NativeUInt, ILMachineType_Float32)
+{
+	value->un.r4Value = (ILFloat)(ILUInt32)(value->un.i4Value);
+	value->valueType = ILMachineType_Float32;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int64, ILMachineType_Float32)
+{
+	value->un.r4Value = (ILFloat)(value->un.i8Value);
+	value->valueType = ILMachineType_Float32;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt64, ILMachineType_Float32)
+{
+	value->un.r4Value =
+		(ILFloat)(ILUInt64ToFloat((ILUInt64)(value->un.i8Value)));
+	value->valueType = ILMachineType_Float32;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float32, ILMachineType_Float32)
+{
+	/* Nothing to do here */
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float64, ILMachineType_Float32),
+ILGenCastConst(ILMachineType_NativeFloat, ILMachineType_Float32)
+{
+	value->un.r4Value = (ILFloat)(value->un.r8Value);
+	value->valueType = ILMachineType_Float32;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Decimal, ILMachineType_Float32)
+{
+	value->un.r4Value = ILDecimalToFloat(&(value->un.decValue));
+	value->valueType = ILMachineType_Float32;
+	return 1;
+}
+ILGenCastConst(ILMachineType, ILMachineType_Float32)
+{
+	return 0;
+}
+
+/*
+ * Cast constants to "float64".
+ */
+ILGenCastConst(ILMachineType_Boolean, ILMachineType_Float64),
+ILGenCastConst(ILMachineType_Int8, ILMachineType_Float64),
+ILGenCastConst(ILMachineType_Int16, ILMachineType_Float64),
+ILGenCastConst(ILMachineType_Int32, ILMachineType_Float64),
+ILGenCastConst(ILMachineType_NativeInt, ILMachineType_Float64)
+{
+	value->un.r8Value = (ILDouble)(value->un.i4Value);
+	value->valueType = ILMachineType_Float64;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt8, ILMachineType_Float64),
+ILGenCastConst(ILMachineType_UInt16, ILMachineType_Float64),
+ILGenCastConst(ILMachineType_Char, ILMachineType_Float64),
+ILGenCastConst(ILMachineType_UInt32, ILMachineType_Float64),
+ILGenCastConst(ILMachineType_NativeUInt, ILMachineType_Float64)
+{
+	value->un.r8Value = (ILDouble)(ILUInt32)(value->un.i4Value);
+	value->valueType = ILMachineType_Float64;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int64, ILMachineType_Float64)
+{
+	value->un.r8Value = (ILDouble)(value->un.i8Value);
+	value->valueType = ILMachineType_Float64;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt64, ILMachineType_Float64)
+{
+	value->un.r8Value =
+		(ILDouble)(ILUInt64ToFloat((ILUInt64)(value->un.i8Value)));
+	value->valueType = ILMachineType_Float64;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float32, ILMachineType_Float64)
+{
+	value->un.r8Value = (ILDouble)(value->un.r4Value);
+	value->valueType = ILMachineType_Float64;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float64, ILMachineType_Float64)
+{
+	/* Nothing to do here */
+	return 1;
+}
+ILGenCastConst(ILMachineType_NativeFloat, ILMachineType_Float64)
+{
+	value->valueType = ILMachineType_Float64;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Decimal, ILMachineType_Float64)
+{
+	value->un.r8Value = ILDecimalToDouble(&(value->un.decValue));
+	value->valueType = ILMachineType_Float64;
+	return 1;
+}
+ILGenCastConst(ILMachineType, ILMachineType_Float64)
+{
+	return 0;
+}
+
+/*
+ * Cast constants to "native float".
+ */
+ILGenCastConst(ILMachineType_Boolean, ILMachineType_NativeFloat),
+ILGenCastConst(ILMachineType_Int8, ILMachineType_NativeFloat),
+ILGenCastConst(ILMachineType_Int16, ILMachineType_NativeFloat),
+ILGenCastConst(ILMachineType_Int32, ILMachineType_NativeFloat),
+ILGenCastConst(ILMachineType_NativeInt, ILMachineType_NativeFloat)
+{
+	value->un.r4Value = (ILDouble)(value->un.i4Value);
+	value->valueType = ILMachineType_NativeFloat;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt8, ILMachineType_NativeFloat),
+ILGenCastConst(ILMachineType_UInt16, ILMachineType_NativeFloat),
+ILGenCastConst(ILMachineType_Char, ILMachineType_NativeFloat),
+ILGenCastConst(ILMachineType_UInt32, ILMachineType_NativeFloat),
+ILGenCastConst(ILMachineType_NativeUInt, ILMachineType_NativeFloat)
+{
+	value->un.r8Value = (ILDouble)(ILUInt32)(value->un.i4Value);
+	value->valueType = ILMachineType_NativeFloat;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int64, ILMachineType_NativeFloat)
+{
+	value->un.r8Value = (ILDouble)(value->un.i8Value);
+	value->valueType = ILMachineType_NativeFloat;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt64, ILMachineType_NativeFloat)
+{
+	value->un.r8Value =
+		(ILDouble)(ILUInt64ToFloat((ILUInt64)(value->un.i8Value)));
+	value->valueType = ILMachineType_NativeFloat;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float32, ILMachineType_NativeFloat)
+{
+	value->un.r8Value = (ILDouble)(value->un.r4Value);
+	value->valueType = ILMachineType_NativeFloat;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float64, ILMachineType_NativeFloat)
+{
+	value->valueType = ILMachineType_NativeFloat;
+	return 1;
+}
+ILGenCastConst(ILMachineType_NativeFloat, ILMachineType_NativeFloat)
+{
+	/* Nothing to do here */
+	return 1;
+}
+ILGenCastConst(ILMachineType_Decimal, ILMachineType_NativeFloat)
+{
+	value->un.r8Value = ILDecimalToDouble(&(value->un.decValue));
+	value->valueType = ILMachineType_NativeFloat;
+	return 1;
+}
+ILGenCastConst(ILMachineType, ILMachineType_NativeFloat)
+{
+	return 0;
+}
+
+/*
+ * Cast constants to "decimal".
+ */
+ILGenCastConst(ILMachineType_Boolean, ILMachineType_Decimal),
+ILGenCastConst(ILMachineType_Int8, ILMachineType_Decimal),
+ILGenCastConst(ILMachineType_Int16, ILMachineType_Decimal),
+ILGenCastConst(ILMachineType_Int32, ILMachineType_Decimal),
+ILGenCastConst(ILMachineType_NativeInt, ILMachineType_Decimal)
+{
+	ILDecimalFromInt32(&(value->un.decValue), value->un.i4Value);
+	value->valueType = ILMachineType_Decimal;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt8, ILMachineType_Decimal),
+ILGenCastConst(ILMachineType_UInt16, ILMachineType_Decimal),
+ILGenCastConst(ILMachineType_Char, ILMachineType_Decimal),
+ILGenCastConst(ILMachineType_UInt32, ILMachineType_Decimal),
+ILGenCastConst(ILMachineType_NativeUInt, ILMachineType_Decimal)
+{
+	ILDecimalFromUInt32(&(value->un.decValue), (ILUInt32)(value->un.i4Value));
+	value->valueType = ILMachineType_Decimal;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Int64, ILMachineType_Decimal)
+{
+	ILDecimalFromInt64(&(value->un.decValue), value->un.i8Value);
+	value->valueType = ILMachineType_Decimal;
+	return 1;
+}
+ILGenCastConst(ILMachineType_UInt64, ILMachineType_Decimal)
+{
+	ILDecimalFromUInt64(&(value->un.decValue), (ILUInt64)(value->un.i8Value));
+	value->valueType = ILMachineType_Decimal;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float32, ILMachineType_Decimal)
+{
+	ILDecimalFromFloat(&(value->un.decValue), value->un.r4Value);
+	value->valueType = ILMachineType_Decimal;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Float64, ILMachineType_Decimal),
+ILGenCastConst(ILMachineType_NativeFloat, ILMachineType_Decimal)
+{
+	ILDecimalFromDouble(&(value->un.decValue), value->un.r8Value);
+	value->valueType = ILMachineType_Decimal;
+	return 1;
+}
+ILGenCastConst(ILMachineType_Decimal, ILMachineType_Decimal)
+{
+	/* Nothing to do here */
+	return 1;
+}
+ILGenCastConst(ILMachineType, ILMachineType_Decimal)
+{
+	return 0;
+}
+
+/*
+ * Cast constants to "string".
+ */
+ILGenCastConst(ILMachineType_String, ILMachineType_String)
+{
+	/* Nothing to do here */
+	return 1;
+}
+ILGenCastConst(ILMachineType_ObjectRef, ILMachineType_String)
+{
+	/* Casting "null" to a string */
+	value->valueType = ILMachineType_String;
+	value->un.strValue.str = 0;
+	value->un.strValue.len = 0;
+	return 1;
+}
+ILGenCastConst(ILMachineType, ILMachineType_String)
+{
+	return 0;
+}
+
+/*
+ * Cast constants to "object ref".
+ */
+ILGenCastConst(ILMachineType_ObjectRef, ILMachineType_ObjectRef)
+{
+	/* Normally this is casting "null", which is OK */
+	return 1;
+}
+ILGenCastConst(ILMachineType, ILMachineType_ObjectRef)
+{
+	/* Nothing else can be cast as a constant in this way */
+	return 0;
+}
+
+/*
+ * Cast constants to pointer values.
+ */
+ILGenCastConst(ILMachineType_ObjectRef, ILMachineType_UnmanagedPtr),
+ILGenCastConst(ILMachineType_UnmanagedPtr, ILMachineType_UnmanagedPtr)
+{
+	/* Normally this is casting "null", which is OK */
+	value->valueType = ILMachineType_UnmanagedPtr;
+	value->un.i4Value = 0;
+	return 1;
+}

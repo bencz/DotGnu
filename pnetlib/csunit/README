@@ -1,0 +1,138 @@
+What is CSUnit?
+--------------
+
+CSUnit is a stripped-down unit testing framework, based loosely on
+JUnit and NUnit.  It doesn't have a fancy UI, as it is designed for
+batch testing within an automake framework.
+
+CSUnit also is very conservative as to the features it uses from the
+C# system library.  It tries not to rely upon the library for critical
+data structures, because the library data structures may not work yet!
+This makes CSUnit more suitable for self-testing the C# library than
+the more general-purpose frameworks.
+
+The last reason why we use CSUnit instead of NUnit is licensing.
+The Portable.NET package is part of the DotGNU project, and as such we
+must use GPL-compatible software at all times.  NUnit's license doesn't
+appear to be compatible with the GPL.
+
+Writing test cases
+------------------
+
+To create a test class, inherit from the "TestCase" class and override
+the "Setup" and "Cleanup" methods.  Then add methods that start with
+the name "Test" to define each of the tests for this test case.
+
+    using System;
+    using CSUnit;
+
+    public class TestFoo : TestCase
+    {
+        public TestFoo(String name) : base(name) {}
+
+        protected override void Setup()
+            {
+                // Perform setup tasks for the tests in this class.
+                ...
+            }
+
+        protected override void Cleanup()
+            {
+                // Perform cleanup tasks for the tests in this class.
+                ...
+            }
+
+        public void TestFooA()
+            {
+                // First test for "Foo".
+                ...
+            }
+
+        public void TestFooB()
+            {
+                // Second test for "Foo".
+                ...
+            }
+
+        ...
+    }
+
+A test succeds when it returns successfully from the method.  A test
+fails when it throws an exception.  The easiest way to cause a test
+failure is to call the "Fail()" method, or to call "Assert()" on a
+condition that is false.  The "TestCase" base class contains a number
+of useful methods for failing on various conditions.
+
+Creating a test suite
+---------------------
+
+Once you have built your test cases, you need to wrap them up in
+a test suite so that CSUnit can find them at run time.  The easiest
+way to do this is to create a class with the same name as the
+assembly.  e.g. if your test assembly is called "TestBar.dll", then
+your should create a "TestBar" class as follows:
+
+    using System;
+    using CSUnit;
+
+    public class TestBar
+    {
+        public static TestSuite Suite()
+            {
+                // Create the primary test suite.
+                TestSuite suite = new TestSuite("Foo Tests");
+
+                // Add all of the tests in the "TestFoo" and
+                // "TestBaz" types to the suite.
+                suite.AddTests(typeof(TestFoo));
+                suite.AddTests(typeof(TestBaz));
+
+                // Return the suite to the CSUnit test engine.
+                return suite;
+            }
+    }
+
+If you have multiple test suites in the same assembly, then you should
+create a "super-suite" and chain them together.
+
+    using System;
+    using CSUnit;
+
+    public class TestBar
+    {
+        public static TestSuite Suite()
+            {
+                TestSuite suite = new TestSuite("Foo Tests");
+                suite.AddTest(TestFoo1.Suite());
+                suite.AddTest(TestFoo2.Suite());
+                return suite;
+            }
+    }
+
+    public class TestFoo1
+    {
+        public static TestSuite Suite()
+            {
+                TestSuite suite = new TestSuite("Foo1 Tests");
+                suite.AddTests(typeof(TestFoo1a));
+                suite.AddTests(typeof(TestFoo1b));
+                suite.AddTests(typeof(TestFoo1c));
+                return suite;
+            }
+    }
+
+    public class TestFoo2
+    {
+        public static TestSuite Suite()
+            {
+                TestSuite suite = new TestSuite("Foo2 Tests");
+                suite.AddTests(typeof(TestFoo2a));
+                suite.AddTests(typeof(TestFoo2b));
+                suite.AddTests(typeof(TestFoo2c));
+                suite.AddTests(typeof(TestFoo2d));
+                return suite;
+            }
+    }
+
+The test assembly must be compiled and linked against "cstest.dll" to
+obtain the necessary CSUnit definitions.

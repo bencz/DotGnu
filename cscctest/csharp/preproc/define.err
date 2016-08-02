@@ -1,0 +1,9 @@
+./define.cs:22: invalid pre-processor identifier: true
+./define.cs:23: invalid pre-processor identifier: false
+./define.cs:24: invalid pre-processor identifier: true
+./define.cs:25: invalid pre-processor identifier: false
+./define.cs:28: pre-processor identifier expected
+./define.cs:29: pre-processor identifier expected
+./define.cs:30: spurious data on pre-processor directive line
+./define.cs:31: spurious data on pre-processor directive line
+./define.cs:43: parse error at or near `x2'

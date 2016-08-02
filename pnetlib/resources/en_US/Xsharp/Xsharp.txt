@@ -1,0 +1,61 @@
+#
+# Xsharp.txt - Default English resources for the Xsharp.dll library.
+#
+# Copyright (C) 2002, 2003, 2004  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+X_Exception=An unspecified X exception occurred
+X_LibraryNotPresent=X/Windows library is not present, or could not be\nlocated on the library search path.
+X_CannotOpenTo=Cannot open display: {0}
+X_CannotOpen=Cannot open display
+X_ConnectionLost=Connection to X server has been lost
+X_WidgetDestroyed=The widget has been destroyed
+X_PixmapDestroyed=The pixmap has been destroyed
+X_BitmapDestroyed=The bitmap has been destroyed
+X_DoubleBufferDestroyed=The bitmap has been destroyed
+X_GraphicsDestroyed=The graphics object has been destroyed
+X_InvalidOperation=An invalid X operation occurred
+X_BellPercent=X server bell percentage must be between -100 and 100
+X_PointCoordRange=Point co-ordinates are out of range
+X_RectCoordRange=Rectangle co-ordinates are out of range
+X_PolygonNeeds3Pts=Polygons need at least three points specified
+X_InvalidPosition=Invalid widget position specified
+X_InvalidSize=Invalid widget size specified
+X_FillRule=Invalid fill rule value: {0}
+X_Function=Invalid function value: {0}
+X_LineWidth=Invalid line width value: {0}
+X_LineStyle=Invalid line style value: {0}
+X_CapStyle=Invalid line capping style value: {0}
+X_JoinStyle=Invalid line join style value: {0}
+X_ArcMode=Invalid arc mode value: {0}
+X_GraphicsIsOutputOnly=Graphics objects can only be created for input/output widgets
+X_NonRootParent=The parent cannot be the root window
+X_NonRootOperation=The requested operation cannot be performed on the root window
+X_NonTopLevelOperation=The requested operation cannot be performed on top-level widgets
+X_NonPlaceholderOperation=The requested operation cannot be performed on placeholder widgets
+X_BadEnumeratorPosition=The enumerator is not positioned on an element
+X_InvalidPixmapSize=Invalid pixmap size specified
+X_InvalidBitmapSize=Invalid bitmap size specified
+X_InvalidBitmapBits=Invalid bitmap bits specified
+X_Need2Points=Need at least 2 points in the specified array
+X_Need1Point=Need at least 1 point in the specified array
+X_MaxReqSizeExceeded=The specified array exceeds the X server's request size
+X_Need1Rect=Need at least 1 rectangle in the specified array
+X_InvalidIcon=Invalid format for icon resource
+X_InvalidFocusChild=Child widget cannot be set as the focus for this top-level window
+X_InvalidReparent=Reparent would create a circularity in the widget tree
+X_NonNegative=Negative values are not permitted in this context
+X_InvalidImageFile=Could not load the specified image file

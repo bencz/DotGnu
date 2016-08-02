@@ -1,0 +1,498 @@
+/*
+ * c_builtin.tc - Builtin operator and function handling for C.
+ *
+ * Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+%output "c_semantics.c"
+
+%{
+
+/*
+ * Perform semantic analysis on a "va_list" value and verify that
+ * it is an l-value of the correct type.
+ */
+static void VaListSem(ILGenInfo *info, ILNode *node, ILNode **parent)
+{
+	CSemValue value;
+
+	/* Perform semantic analysis on the value */
+	value = ILNode_CSemAnalysis(node, info, parent, 0);
+	if(!CSemIsLValue(value))
+	{
+		if(!CSemIsError(value))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  _("`va_list' value is not an l-value"));
+		}
+		return;
+	}
+
+	/* Verify that the type is correct */
+	if(!CTypeIsIdentical(CSemGetType(value), CTypeCreateVaList(info)))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("incorrect type for variable-argument list"));
+	}
+}
+
+%}
+
+/*
+ * Perform semantic analysis for the "__builtin_va_start" operator.
+ */
+ILNode_CSemAnalysis(ILNode_VaStart)
+{
+	ILMethod *method;
+	ILType *signature;
+	ILParameter *param;
+
+	/* We must use this inside a "VARARG" function */
+	method = CFunctionGetCurrent();
+	signature = ILMethod_Signature(method);
+	if((ILType_CallConv(signature) & IL_META_CALLCONV_MASK)
+			!= IL_META_CALLCONV_VARARG)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				      _("`va_start' used in function with fixed args"));
+	}
+
+	/* If a parameter name was specified, then it must be
+	   the name of the last parameter to the function */
+	if(node->name != 0)
+	{
+		if(ILTypeNumParams(signature) > 0)
+		{
+			param = 0;
+			while((param = ILMethodNextParam(method, param)) != 0)
+			{
+				if(ILParameter_Name(param) != 0 &&
+				   !strcmp(ILParameter_Name(param), node->name))
+				{
+					break;
+				}
+			}
+		}
+		else
+		{
+			param = 0;
+		}
+		if(!param || ILParameter_Num(param) != ILTypeNumParams(signature))
+		{
+			CCWarningOnLine(yygetfilename(node), yygetlinenum(node),
+			  _("second parameter of `va_start' not last named argument"));
+		}
+	}
+
+	/* Perform semantic analysis on the "va_list" value */
+	VaListSem(info, node->vaList, &(node->vaList));
+
+	/* The "va_start" declaration has no value */
+	return CSemValueDefault;
+}
+
+/*
+ * Get the type for the "__builtin_va_start" operator.
+ */
+ILNode_GetType(ILNode_VaStart)
+{
+	return ILMachineType_Void;
+}
+
+/*
+ * Generate discard code for the "__builtin_va_start" operator.
+ */
+ILNode_GenDiscard(ILNode_VaStart)
+{
+	/* Push a reference to the "va_list" value onto the stack */
+	ILNode_GenRef((ILNode_LValue *)(node->vaList), info);
+
+	/* Get the argument list for the current function */
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_ARGLIST);
+	ILGenAdjust(info, 1);
+
+	/* Call the "ArgIterator" constructor */
+	ILGenCallByName(info, "instance void [.library]System.ArgIterator::.ctor"
+			"(valuetype [.library]System.RuntimeArgumentHandle)");
+	ILGenAdjust(info, -2);
+}
+
+/*
+ * Generate value code for the "__builtin_va_start" operator.
+ */
+ILNode_GenValue(ILNode_VaStart)
+{
+	ILNode_GenDiscard(node, info);
+	return ILMachineType_Void;
+}
+JavaGenValue(ILNode_VaStart)
+{
+	/* Never called: nothing to do here */
+	return ILMachineType_Void;
+}
+
+/*
+ * Perform semantic analysis for the "__builtin_va_end" operator.
+ */
+ILNode_CSemAnalysis(ILNode_VaEnd)
+{
+	/* Perform semantic analysis on the "va_list" value */
+	VaListSem(info, node->vaList, &(node->vaList));
+
+	/* The "va_end" declaration has no value */
+	return CSemValueDefault;
+}
+
+/*
+ * Get the type for the "__builtin_va_end" operator.
+ */
+ILNode_GetType(ILNode_VaEnd)
+{
+	return ILMachineType_Void;
+}
+
+/*
+ * Generate discard code for the "__builtin_va_end" operator.
+ */
+ILNode_GenDiscard(ILNode_VaEnd)
+{
+	/* Push a reference to the "va_list" value onto the stack */
+	ILNode_GenRef((ILNode_LValue *)(node->vaList), info);
+
+	/* Call the "ArgIterator.End" method */
+	ILGenCallByName(info, "instance void [.library]System.ArgIterator::End()");
+	ILGenAdjust(info, -1);
+}
+
+/*
+ * Generate value code for the "__builtin_va_end" operator.
+ */
+ILNode_GenValue(ILNode_VaEnd)
+{
+	ILNode_GenDiscard(node, info);
+	return ILMachineType_Void;
+}
+JavaGenValue(ILNode_VaEnd)
+{
+	/* Never called: nothing to do here */
+	return ILMachineType_Void;
+}
+
+/*
+ * Perform semantic analysis for the "__builtin_va_arg" operator.
+ */
+ILNode_CSemAnalysis(ILNode_VaArg)
+{
+	CSemValue value;
+	ILType *naturalType;
+
+	/* Perform semantic analysis on the "va_list" value */
+	VaListSem(info, node->vaList, &(node->vaList));
+
+	/* The type cannot be "void" */
+	if(ILTypeIdentical(node->type, ILType_Void))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  _("`void' cannot be used with `va_arg'"));
+		return CSemValueDefault;
+	}
+
+	/* Insert a cast from the natural argument type to the actual type,
+	   which will undo the normalization that we had to apply to pass
+	   the argument to the function in the first place */
+	if(ILTypeStripPrefixes(node->type) != ILType_Float)
+	{
+		naturalType = CFunctionNaturalType(info, node->type, 1);
+		CSemSetRValue(value, naturalType);
+		CCastNode(info, (ILNode *)node, parent, value, node->type);
+	}
+
+	/* The "va_arg" declaration is an r-value of the specified type */
+	CSemSetRValue(value, node->type);
+	return value;
+}
+
+/*
+ * Get the type for the "__builtin_va_arg" operator.
+ */
+ILNode_GetType(ILNode_VaArg)
+{
+	return ILTypeToMachineType(CFunctionNaturalType(info, node->type, 1));
+}
+
+/*
+ * Generate value code for the "__builtin_va_arg" operator.
+ */
+ILNode_GenValue(ILNode_VaArg)
+{
+	ILType *naturalType;
+	ILMachineType machineType;
+
+	/* Push a reference to the "va_list" value onto the stack */
+	ILNode_GenRef((ILNode_LValue *)(node->vaList), info);
+
+	/* Get the next argument from the "va_list" value */
+	ILGenCallByName(info, "instance valuetype [.library]System.TypedReference "
+			"[.library]System.ArgIterator::GetNextArg()");
+
+	/* Unpack the typed reference using the natural passing type */
+	naturalType = ILTypeStripPrefixes
+		(CFunctionNaturalType(info, node->type, 1));
+	ILGenClassToken
+		(info, IL_OP_REFANYVAL, ILTypeToClass(info, naturalType));
+	machineType = ILTypeToMachineType(naturalType);
+	ILGenLoadManaged(info, machineType, naturalType);
+
+	/* Return the natural machine type to the caller, which will take
+	   care of casting it to the final type that was requested */
+	return machineType;
+}
+JavaGenValue(ILNode_VaArg)
+{
+	/* Never called: nothing to do here */
+	return ILMachineType_Void;
+}
+
+/*
+ * Perform semantic analysis for the "__builtin_setjmp" operator.
+ */
+ILNode_CSemAnalysis(ILNode_SetJmp)
+{
+	CSemValue value;
+	ILType *type;
+
+	/* Record that we saw a "setjmp" in the current function, so that
+	   the code generator can output the necessary support logic */
+	CFunctionSawSetJmp();
+
+	/* We must be at the "statement level" of the surrounding expression */
+	if(!stmtLevel)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  _("`setjmp' must be used at the outermost expression level"));
+	}
+
+	/* Verify that the argument is of type "int *" */
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	if(!CSemIsRValue(value))
+	{
+		if(CSemIsError(value))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  		  _("invalid argument to `setjmp'"));
+		}
+	}
+	else
+	{
+		type = CSemGetType(value);
+		if(!CTypeIsPointer(type) ||
+		   !ILTypeIdentical(CTypeGetPtrRef(type), ILType_Int32))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  		  _("`setjmp' argument must be of type `int *'"));
+		}
+	}
+
+	/* The "setjmp" operator always returns an "int" value */
+	CSemSetRValue(value, ILType_Int32);
+	return value;
+}
+
+/*
+ * Get the type for the "__builtin_setjmp" operator.
+ */
+ILNode_GetType(ILNode_SetJmp)
+{
+	return ILMachineType_Int32;
+}
+
+/*
+ * Generate value code for the "__builtin_setjmp" operator.
+ */
+ILNode_GenValue(ILNode_SetJmp)
+{
+	/* Push the pointer value for the "jmp_buf" onto the stack */
+	ILNode_GenValue(node->expr, info);
+
+	/* Generate the "setjmp" handling code */
+	CGenSetJmp(info);
+
+	/* The result is always an integer */
+	return ILMachineType_Int32;
+}
+JavaGenValue(ILNode_SetJmp)
+{
+	/* Never called: nothing to do here */
+	return ILMachineType_Int32;
+}
+
+/*
+ * Perform semantic analysis for the "__builtin_alloca" operator.
+ */
+ILNode_CSemAnalysis(ILNode_AllocA)
+{
+	CSemValue value;
+
+	/* We must be at the "statement level" of the surrounding expression */
+	if(!stmtLevel)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  _("`alloca' must be used at the outermost expression level"));
+	}
+
+	/* Coerce the argument to "unsigned long" */
+	value = ILNode_CSemAnalysis(node->expr, info, &(node->expr), stmtLevel);
+	if(!CCanCoerceValue(value, ILType_UInt))
+	{
+		if(!CSemIsError(value))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  		  _("invalid operand to `alloca'"));
+		}
+	}
+	else
+	{
+		CCoerceNode(info, node->expr, &(node->expr), value, ILType_UInt);
+	}
+
+	/* The "alloca" operator always returns a "void *" value */
+	CSemSetRValue(value, CTypeCreateVoidPtr(info));
+	return value;
+}
+
+/*
+ * Get the type for the "__builtin_alloca" operator.
+ */
+ILNode_GetType(ILNode_AllocA)
+{
+	return ILMachineType_UnmanagedPtr;
+}
+
+/*
+ * Generate value code for the "__builtin_alloca" operator.
+ */
+ILNode_GenValue(ILNode_AllocA)
+{
+	/* Push the size value onto the stack */
+	ILNode_GenValue(node->expr, info);
+
+	/* Perform local memory allocation */
+	ILGenSimple(info, IL_OP_PREFIX + IL_PREFIX_OP_LOCALLOC);
+
+	/* The result is always a pointer */
+	return ILMachineType_UnmanagedPtr;
+}
+JavaGenValue(ILNode_AllocA)
+{
+	/* Never called: nothing to do here */
+	return ILMachineType_UnmanagedPtr;
+}
+
+/*
+ * Perform semantic analysis for the "__asm__" statement.
+ */
+ILNode_CSemAnalysis(ILNode_AsmStmt)
+{
+	/* There is nothing that needs to be done here */
+	return CSemValueDefault;
+}
+
+/*
+ * Generate discard code for the "__asm__" statement.
+ */
+ILNode_GenDiscard(ILNode_AsmStmt)
+{
+	if(info->asmOutput)
+	{
+		/* We just assume that the code is correct and dump it as-is.
+		   The assembler will report any errors that are present */
+		fputs("// __asm__(\n", info->asmOutput);
+		fputs(node->code, info->asmOutput);
+		fputs("\n// )\n", info->asmOutput);
+	}
+}
+JavaGenDiscard(ILNode_AsmStmt)
+{
+	/* Never called: nothing to do here */
+}
+
+%output "c_nodes.c"
+
+%{
+
+/*
+ * Check for an assembly code instruction match.
+ */
+static int AsmCheckFor(const char *line, int len, const char *insn)
+{
+	int insnlen = strlen(insn);
+	if(insnlen <= len &&
+	   !strncmp(line, insn, insnlen) &&
+	   (insnlen == len || line[insnlen] == ' ' || line[insnlen] == '\t'))
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+%}
+
+%output "c_semantics.c"
+
+/*
+ * Determine if an "__asm__" statement ends in a return instruction.
+ */
+ILNode_EndsInReturnImpl(ILNode_AsmStmt)
+{
+	const char *code = node->code;
+	int end = strlen(code);
+	int start;
+
+	/* Find the start and end of the last line in the assembly code */
+	while(end > 0 && (code[end - 1] == ' ' || code[end - 1] == '\t' ||
+	                  code[end - 1] == '\n' || code[end - 1] == '\r'))
+	{
+		--end;
+	}
+	start = end;
+	while(start > 0 && code[start - 1] != '\n' && code[start - 1] != '\r')
+	{
+		--start;
+	}
+	while(start < end && (code[start] == ' ' || code[start] == '\t'))
+	{
+		++start;
+	}
+
+	/* Check for instructions that cause a return to occur */
+	if(AsmCheckFor(code + start, end - start, "ret") ||
+	   AsmCheckFor(code + start, end - start, "throw") ||
+	   AsmCheckFor(code + start, end - start, "rethrow") ||
+	   AsmCheckFor(code + start, end - start, "br") ||
+	   AsmCheckFor(code + start, end - start, "br.s") ||
+	   AsmCheckFor(code + start, end - start, "leave") ||
+	   AsmCheckFor(code + start, end - start, "leave.s") ||
+	   AsmCheckFor(code + start, end - start, "endfinally") ||
+	   AsmCheckFor(code + start, end - start, "endfilter"))
+	{
+		return IL_ENDS_IN_RETURN;
+	}
+	return 0;
+}

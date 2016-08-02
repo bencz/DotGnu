@@ -1,0 +1,61 @@
+When libgc is compiled under cygwin, GC_CreateThread doesn't
+register the new thread with the GC and instead redirects the
+call directly to the windows CreateThread function.  This
+does not occur if libgc is compiled using ming (e.g. with the
+--no-cygwin compiler flag).  Threads that aren't registered
+with the GC *will* eventaully segfault.  When compiled under
+cygwin, libgc expects you to use pthreads and not windows
+threads.
+
+Portable.Net uses windows threads (and never pthreads) under
+cygwin so the following changes needed to be made to libgc:
+
+configure.in:
+
+	Added AC_DEFINE(GC_DISABLE_CYGWIN_PTHREADS) when
+	a cygwin compile is detected.
+	
+win32_threads.c:
+
+	All checks for CYGWIN32 are changed to checks for
+	CYGWIN32 && !defined(GC_DISABLE_CYGWIN_PTHREADS).
+	
+	GC_CreateThread needs to return a duplicate handle
+	rather than the original handle.
+	
+include/gc.h:
+
+	GC_PTHREADS is defined if GC_WIN32_THREADS and 
+	__CYGWIN32__ are defined but only if
+	GC_DISABLE_CYGWIN_PTHREADS is not defined.
+
+
+Other changes:
+
+win32_threads.c:  MAX_THREADS increased to 1024.
+
+dyn_load.gc: Changes needed for the AIX C compiler:
+
+--- pnet-0.6.0-org/libgc/dyn_load.c	2003-02-06 02:36:13.000000000 +0100
++++ pnet-0.6.0-new/libgc/dyn_load.c	2003-11-13 09:52:58.000000000 +0100
+@@ -439,7 +439,7 @@
+     memcpy(prot_buf, buf_ptr+OFFSET_MAP_PROT, 4); // do the protections first
+     prot_buf[4] = '\0';
+
+-    if (prot_buf[1] == 'w') { // we can skip all of this if it's not writable
++    if (prot_buf[1] == 'w') { // we can skip all of this if it is not writable
+
+         tok = buf_ptr;
+         buf_ptr[OFFSET_MAP_START+ADDR_WIDTH] = '\0';
+@@ -1069,8 +1069,8 @@
+ 		len = ldi->ldinfo_next;
+ 		GC_add_roots_inner(
+ 				ldi->ldinfo_dataorg,
+-				(unsigned long)ldi->ldinfo_dataorg
+-			        + ldi->ldinfo_datasize,
++				(ptr_t) ((unsigned long)ldi->ldinfo_dataorg
++			        + ldi->ldinfo_datasize),
+ 				TRUE);
+ 		ldi = len ? (struct ld_info *)((char *)ldi + len) : 0;
+ 	}
+

@@ -1,0 +1,7 @@
+.dirstamp
+Makefile
+*.la
+*.lo
+*.o
+.libs
+.deps

@@ -1,0 +1,30 @@
+./is1.cs:49: warning: `is' expression is equivalent to a test against `null'
+./is1.cs:50: warning: `is' expression is equivalent to a test against `null'
+./is1.cs:51: warning: `is' expression is equivalent to a test against `null'
+./is1.cs:53: warning: `is' expression is equivalent to a test against `null'
+./is1.cs:54: warning: `is' expression is equivalent to a test against `null'
+./is1.cs:55: warning: `is' expression is equivalent to a test against `null'
+./is1.cs:57: warning: `is' expression is equivalent to a test against `null'
+./is1.cs:58: warning: `is' expression is equivalent to a test against `null'
+./is1.cs:59: warning: `is' expression is equivalent to a test against `null'
+./is1.cs:61: warning: `is' expression is equivalent to a test against `null'
+./is1.cs:62: warning: `is' expression is equivalent to a test against `null'
+./is1.cs:63: warning: `is' expression is equivalent to a test against `null'
+./is1.cs:65: warning: `is' expression is equivalent to a test against `null'
+./is1.cs:66: warning: `is' expression is equivalent to a test against `null'
+./is1.cs:67: warning: `is' expression is equivalent to a test against `null'
+./is1.cs:70: warning: `is' expression is always true
+./is1.cs:71: warning: `is' expression is always true
+./is1.cs:72: warning: `is' expression is always true
+./is1.cs:74: warning: `is' expression is always true
+./is1.cs:75: warning: `is' expression is always true
+./is1.cs:76: warning: `is' expression is always true
+./is1.cs:78: warning: `is' expression is always true
+./is1.cs:79: warning: `is' expression is always true
+./is1.cs:80: warning: `is' expression is always true
+./is1.cs:82: warning: `is' expression is always true
+./is1.cs:83: warning: `is' expression is always true
+./is1.cs:84: warning: `is' expression is always true
+./is1.cs:101: warning: `is' expression is always false
+./is1.cs:102: warning: `is' expression is always false
+./is1.cs:103: warning: `is' expression is always false

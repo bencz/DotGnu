@@ -1,0 +1,27 @@
+#
+# Config.txt - Resources for System.Configuration errors and exceptions.
+#
+# Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Config_HasChildNodes=XML node has children when it should not have
+Config_MustBeElement=XML node is not an element
+Config_NotRecognized=XML element name is not recognized in this context
+Config_UnrecognizedAttribute=An unrecognized attribute is present
+Config_RequiredAttribute=A required attribute was not present
+Config_DocNameMatch=Document name does not match the expected element name
+Config_KeyNotPresent=The specified key is not present in the application settings
+Config_CannotConvert=Cannot convert the value into the required type

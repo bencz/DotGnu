@@ -1,0 +1,11 @@
+./using2.cs:21: `System' is already declared
+./using2.cs:30: invalid type specification `System.Bar' 
+./using2.cs:31: called object is not a method or delegate
+./using2.cs:24: using aliases may not refer to other aliases
+./using2.cs:23: circularity detected in `using' declaration
+./using2.cs:24: using aliases may not refer to other aliases
+./using2.cs:23: circularity detected in `using' declaration
+./using2.cs:32: called object is not a method or delegate
+./using2.cs:22: circularity detected in `using' declaration
+./using2.cs:22: circularity detected in `using' declaration
+./using2.cs:33: called object is not a method or delegate

@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+
+<project name="Mono.Data.DB2Client" default="all">
+	<target name="all">
+		<compile target="library"
+				 output="Mono.Data.DB2Client.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="true"
+				 installasdefault="true">
+
+			<sources basedir="${mono.sources}/class/Mono.Data.DB2Client/">
+				<includes name="**/*.cs"/> 
+				<excludes name="Test/**"/>
+				<excludes name="Mono.Data.DB2Client/Test.cs"/>
+			</sources>
+
+			<references>
+				<file name="System.dll"/>
+				<file name="System.Xml.dll"/>
+				<file name="../Mono.Security/Mono.Security.dll"/>
+				<file name="../System.Data/System.Data.dll"/>
+				<file name="../Mono.Data.Tds/Mono.Data.Tds.dll"/>
+				<file name="System.EnterpriseServices.dll"/>
+			</references>
+
+		</compile>
+	</target>
+</project>

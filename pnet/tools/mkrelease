@@ -1,0 +1,155 @@
+#!/bin/sh
+#
+# mkrelease - Helper script for building release versions.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+# Validate the command-line argments.
+if [ -z "$1" -o -z "$2" -o -z "$3" ]; then
+	echo 'Usage: "mkrelease dir version src".  e.g. "mkrelease $HOME/release 0.1.4 $HOME/work/dotgnu/clean_copy/pnet"'
+	exit 1
+fi
+if [ ! -d "$1" ]; then
+	echo "$1: Release directory does not exist"
+	exit 1
+fi
+cd "$1"
+RELDIR=`pwd`
+VERSION="$2"
+
+# Check for an existing version with the same number.
+if [ -f "pnet-$VERSION.tar.gz" ]; then
+	echo "There already appears to be a $VERSION release"
+	exit 1
+fi
+
+# Create the log file.
+LOGFILE="$RELDIR/build-$VERSION.log"
+echo "Release build for version $VERSION started on" `date` >$LOGFILE
+
+# Helper function that echoes a command-line and then executes it.
+function call()
+{
+	echo '$' $* >>$LOGFILE
+	echo $*
+	$*
+}
+
+# Helper function to echo an error message to stdout and the log file.
+function error()
+{
+	echo '***' $* '***' >>$LOGFILE
+	echo 'Release build ended with an error on' `date` >>$LOGFILE
+	echo '***' $* '***'
+	echo "Log is in $LOGFILE"
+}
+
+# Remove an existing pnet directory, if present.
+call rm -rf pnet
+
+# Check out the current version of the source.
+#call cvs -Q checkout pnet
+call cp -pr "$3" pnet
+
+# Make sure that the version number matches.
+SRCVERSION=`grep ^AM_INIT_AUTOMAKE pnet/configure.in | sed 's/^[^(]*(pnet, //' | sed 's/)//g'`
+if [ "$SRCVERSION" != "$VERSION" ]; then
+	error "The source version is set to $SRCVERSION, not $VERSION"
+	exit 1
+fi
+
+# Perform automake and autoconf.
+echo '$' cd pnet >>$LOGFILE
+echo cd pnet
+cd pnet
+call aclocal
+call autoheader
+call automake
+call autoconf
+
+# Verify that the source will build cleanly.
+echo '$' ./configure >>$LOGFILE
+echo ./configure
+if ./configure >>$LOGFILE 2>&1; then
+	# Configure succeeded.
+	echo -n ''
+else
+	error "Configure failed"
+	exit 1
+fi
+echo '$' make >>$LOGFILE
+echo make
+if make >>$LOGFILE 2>&1; then
+	# Build succeeded.
+	echo -n ''
+else
+	error "Source did not build cleanly"
+	exit 1
+fi
+
+# Create a binary install tarball.
+call rm -rf "../pnetbin-$VERSION"
+echo '$' make DESTDIR="$RELDIR/pnetbin-$VERSION" install-strip >>$LOGFILE
+make DESTDIR="$RELDIR/pnetbin-$VERSION" install-strip >>$LOGFILE 2>&1
+call cp tools/bininstall "../pnetbin-$VERSION"
+call cp tools/binuninstall "../pnetbin-$VERSION"
+echo '$' "sed -e '1,\$s/@VERSION@/$VERSION/g' tools/binmakefile >../pnetbin-$VERSION/Makefile" >>$LOGFILE
+echo "sed -e '1,\$s/@VERSION@/$VERSION/g' tools/binmakefile >../pnetbin-$VERSION/Makefile"
+sed -e "1,\$s/@VERSION@/$VERSION/g" tools/binmakefile >"../pnetbin-$VERSION/Makefile"
+echo '$' cd .. >>$LOGFILE
+echo cd ..
+cd ..
+call tar cfz "pnetbin-$VERSION.tar.gz" "pnetbin-$VERSION"
+
+# Clean up now that we know it builds.
+call rm -rf pnet
+
+# Check out again and run automake/autoconf.
+#call cvs -Q checkout pnet
+call cp -pr "$3" pnet
+echo '$' cd pnet >>$LOGFILE
+echo cd pnet
+cd pnet
+call aclocal
+call autoheader
+call automake
+call autoconf
+echo '$' cd .. >>$LOGFILE
+echo cd ..
+cd ..
+
+# Remove CVS directories.
+echo '$ find pnet -name CVS -print | xargs rm -rf' >>$LOGFILE
+echo 'find pnet -name CVS -print | xargs rm -rf'
+find pnet -name CVS -print | xargs rm -rf
+
+# Remove obsolete directories.
+echo '$ rm -rf pnet/library' >>$LOGFILE
+rm -rf pnet/library
+
+# Rename the directory to its version.
+call mv pnet "pnet-$VERSION"
+
+# Tar up the release.
+call tar cfz "pnet-$VERSION.tar.gz" "pnet-$VERSION"
+
+# Clean up the source and binary directories, which we no longer require.
+call rm -rf "pnet-$VERSION" "pnetbin-$VERSION"
+
+# Done
+echo "Release build for version $VERSION succeeded on" `date` >>$LOGFILE
+exit 0

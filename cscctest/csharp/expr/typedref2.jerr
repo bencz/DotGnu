@@ -1,0 +1,14 @@
+./typedref2.cs:30: `__refvalue' disallowed when compiling to Java bytecode
+./typedref2.cs:30: invalid type specification `fld' 
+./typedref2.cs:39: `__makeref' disallowed when compiling to Java bytecode
+./typedref2.cs:39: invalid lvalue in `__makeref' expression
+./typedref2.cs:40: `__makeref' disallowed when compiling to Java bytecode
+./typedref2.cs:40: invalid lvalue in `__makeref' expression
+./typedref2.cs:41: `__makeref' disallowed when compiling to Java bytecode
+./typedref2.cs:41: invalid lvalue in `__makeref' expression
+./typedref2.cs:42: `__makeref' disallowed when compiling to Java bytecode
+./typedref2.cs:42: invalid lvalue in `__makeref' expression
+./typedref2.cs:47: `__reftype' disallowed when compiling to Java bytecode
+./typedref2.cs:47: invalid argument to `__reftype'
+./typedref2.cs:48: `__refvalue' disallowed when compiling to Java bytecode
+./typedref2.cs:48: invalid first argument to `__refvalue'

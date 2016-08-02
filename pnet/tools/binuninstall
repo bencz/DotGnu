@@ -1,0 +1,76 @@
+#!/bin/sh
+#
+# binuninstall - Uninstall a binary version from a system.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+
+# Validate the command-line arguments.
+if [ -z "$1" -o -z "$2" ]; then
+	echo "Usage: $0 dir version" 1>&2
+	exit 1
+fi
+INSTDIR="$1"
+VERSION="$2"
+
+# Verify the install directory.
+if [ ! -d "$INSTDIR" ]; then
+	echo "$INSTDIR: No such file or directory" 1>&2
+	exit 1
+fi
+if [ ! -w "$INSTDIR" ]; then
+	echo "$INSTDIR: directory is not writable" 1>&2
+	exit 1
+fi
+
+# Determine the name of the install file list.
+FILELIST="$INSTDIR/lib/cscc/install-$VERSION.lst"
+
+# Bail out if that version is not currently installed.
+if [ ! -f "$FILELIST" ]; then
+	echo "$0: version $VERSION is not currently installed" 1>&2
+	exit 1
+fi
+
+# Helper function that echoes a command-line and then executes it.
+function call()
+{
+	echo $*
+	$*
+}
+
+# Helper function that removes a directory without complaining.
+function removedir()
+{
+	echo rmdir "$1"
+	rmdir "$1" 2>/dev/null
+}
+
+# Remove the files in the file list.
+for i in `cat "$FILELIST"`; do
+	call rm -f "$i"
+done
+
+# Remove the file list.
+rm -f "$FILELIST"
+
+# Remove directories that are specific to us, but not system directories.
+removedir $INSTDIR/lib/cscc/plugins
+removedir $INSTDIR/lib/cscc
+removedir $INSTDIR/include/pnet
+
+# Done.
+exit 0

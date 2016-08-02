@@ -1,0 +1,3 @@
+./interface2.cs:30: `Test' does not implement `virtual bool IEnumerator.MoveNext()'
+./interface2.cs:30: `Test' does not implement `virtual void IEnumerator.Reset()'
+./interface2.cs:30: `Test' does not implement `virtual System.Object IEnumerator.Current[]'

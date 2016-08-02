@@ -1,0 +1,1347 @@
+/*
+ * java_oper.tc - Semantic analysis for arithmetic and other operators 
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ * Copyright (C) 2003  Gopal.V
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+%{
+
+/*
+ * Perform constant evaluation on an operator node.
+ */
+static void EvalOperator(ILGenInfo *info, ILNode *node,
+					     ILNode **parent, JavaSemValue *result)
+{
+	ILEvalValue evalValue;
+	if(ILNode_EvalConst(node, info, &evalValue))
+	{
+		JavaSemSetConstant(*result, JavaSemGetType(*result), evalValue);
+		JavaSemReplaceWithConstant(parent, *result);
+	}
+}
+
+/*
+ * Determine if a semantic value is zero.  Used to support
+ * implicit coercions from zero to enumerated types.
+ */
+static int IsEnumZero(JavaSemValue *value)
+{
+	ILEvalValue *evalValue = JavaSemGetConstant(*value);
+	if(evalValue)
+	{
+		switch(evalValue->valueType)
+		{
+			case ILMachineType_Int8:
+			case ILMachineType_UInt8:
+			case ILMachineType_Int16:
+			case ILMachineType_UInt16:
+			case ILMachineType_Int32:
+				return (evalValue->un.i4Value == 0);
+
+			default: break;
+		}
+	}
+	return 0;
+}
+
+/*
+ * Coerce the elements of an array initializer to a common type.
+ */
+static void CoerceArrayInit(ILGenInfo *info, ILNode *expr,
+							ILNode **parent, ILType *type)
+{
+	ILNode_ListIter iter;
+	ILNode *node;
+	JavaSemValue value;
+
+	if(yyisa(expr, ILNode_ArrayInit))
+	{
+		/* Recursively visit all array elements */
+		ILNode_ListIter_Init(&iter, ((ILNode_ArrayInit *)expr)->expr);
+		while((node = ILNode_ListIter_Next(&iter)) != 0)
+		{
+			CoerceArrayInit(info, node, iter.last, type);
+		}
+	}
+	else
+	{
+		/* This is a normal array element */ 
+
+		/*  Do semantic analysis on expr. Note expr and *parent
+			are equivalent at this point, but *parent may be
+			updated during semantic analysis.  Therefore, we must 
+			subsequently coerce *parent instead of expr. */
+		if(!JavaSemExpectValue(expr, info, parent, &value))
+		{
+			CCErrorOnLine(yygetfilename(expr), yygetlinenum(expr),
+						  _("invalid array initializer element"));
+		}
+		else if(!ILCanCoerceNode(info, *parent, JavaSemGetType(value), type,1))
+		{
+			CCErrorOnLine(yygetfilename(expr), yygetlinenum(expr),
+			  _("incompatible types in initializer: no conversion "
+			  		"from `%s' to `%s'"),
+			  JavaTypeToName(JavaSemGetType(value)), JavaTypeToName(type));
+		}
+		else
+		{
+			ILCoerce(info, *parent, parent, JavaSemGetType(value), type,1);
+		}
+	}
+}
+
+
+%}
+
+/*
+ * Perform semantic analysis for the assignment operator.
+ */
+ILNode_JSemAnalysis(ILNode_Assign)
+{
+	JavaSemValue value1;
+	JavaSemValue value2;
+
+	/* Perform semantic analysis on the lvalue */
+	value1 = ILNode_JSemAnalysis(node->expr1, info, &(node->expr1));
+	if(!JavaSemIsLValue(value1) && !JavaSemIsSValue(value1))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid lvalue in assignment");
+		if(!JavaSemIsRValue(value1))
+		{
+			JavaSemSetRValue(value1, ILType_Int32);
+		}
+		return value1;
+	}
+	/* Check for array initializers in the assigned expression */
+	if(yyisa(node->expr2, ILNode_ArrayInit))
+	{
+		/* Make sure that the destination type is an array */
+		if(!ILType_IsArray(JavaSemGetType(value1)))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  "array initializer assigned to non-array destination");
+			JavaSemSetRValue(value1, JavaSemGetType(value1));
+			return value1;
+		}
+
+		/* Check the shape of the array initializer */
+		if(!ILArrayInitShapeOK(info, node->expr2, JavaSemGetType(value1)))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  "incorrect pattern of elements in array initializer");
+			JavaSemSetRValue(value1, JavaSemGetType(value1));
+			return value1;
+		}
+
+		/* Coerce all initializer members to the element type */
+		CoerceArrayInit(info, node->expr2, &(node->expr2),
+					    ILTypeGetElemType(JavaSemGetType(value1)));
+		JavaSemSetRValue(value1, JavaSemGetType(value1));
+		return value1;
+	}
+	/* Perform semantic analysis and coercion on the rvalue */
+	if(!JavaSemExpectValue(node->expr2, info, &(node->expr2), &value2) ||
+	   !ILCanCoerceNode(info, node->expr2, JavaSemGetType(value2),
+	   					JavaSemGetType(value1),1))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+		  "incompatible types in assignment: no conversion from `%s' to `%s'",
+		  JavaTypeToName(JavaSemGetType(value2)),
+		  JavaTypeToName(JavaSemGetType(value1)));
+		JavaSemSetRValue(value1, JavaSemGetType(value1));
+		return value1;
+	}
+	/* Insert coercion nodes to convert the rvalue appropriately */
+	ILCoerce(info, node->expr2, &(node->expr2),
+			 JavaSemGetType(value2), JavaSemGetType(value1),1);
+
+	/* Convert value1 into an rvalue and return its type */
+	JavaSemSetRValue(value1, JavaSemGetType(value1));
+	return value1;
+}
+
+%{
+/*
+ * Common semantic analysis for operation-based assignment operators.
+ */
+static JavaSemValue AssignSem(ILGenInfo *info, 
+                            ILNode_AssignExpression *anode,
+					        ILNode **assignParent,
+							const ILOperator *table, const char *name,
+							const char *errorName)
+{
+	/*  Re-jigger arguments from the original version  */
+	ILNode_BinaryExpression *node = (ILNode_BinaryExpression *)anode->assign;
+	ILNode **parent = &(anode->assign);
+	const ILOperator *oper;
+	JavaSemValue value1;
+	JavaSemValue value2;
+	ILType *resultType;
+
+	/* Perform semantic analysis on the arguments */
+	value1 = ILNode_JSemAnalysis(node->expr1, info, &(node->expr1));
+	anode->lvalue = node->expr1;  /* Preserve lvalue for later */
+	value2 = ILNode_JSemAnalysis(node->expr2, info, &(node->expr2));
+
+	if(!JavaSemIsLValue(value1))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid lvalue in assignment");
+		if(!JavaSemIsRValue(value1))
+		{
+			JavaSemSetRValue(value1, ILType_Int32);
+		}
+		return value1;
+	}
+
+	/* The second argument must be a value */
+	if(!JavaSemIsValue(value2))
+	{
+		goto error;
+	}
+
+	/* Replace node->expr1 with an empty expression, so that it
+	   doesn't double-evaluate during code generation */
+	node->expr1 = ILNode_EmptyExpr_create
+			(ILTypeToMachineType(JavaSemGetType(value1)));
+
+	/* Look for a builtin operator */
+	oper = ILFindBinaryOperator(table, JavaSemGetType(value1),
+								JavaSemGetType(value2), &resultType,
+								IsEnumZero(&value1), IsEnumZero(&value2));
+	if(oper)
+	{
+		ILApplyBinaryOperator(info, (ILNode *)node, parent, oper);
+		if(resultType)
+		{
+			JavaSemSetRValue(value1, resultType);
+		}
+		else
+		{
+			JavaSemSetRValue(value1, ILFindSystemType(info, "Decimal"));
+		}
+		return value1;
+	}
+
+	/* Should we be performing string concatenation? */
+	if(ILTypeIsStringClass(JavaSemGetType(value1)) && yyisa(node, ILNode_Add))
+	{
+		if(!ILTypeIsStringClass(JavaSemGetType(value2)))
+		{
+			/* Convert the second argument into "ObjectRef" */
+			ILCast(info, node->expr2, &(node->expr2), JavaSemGetType(value2),
+				   ILFindSystemType(info, "Object"),1);
+		}
+		*parent = ILNode_Concat_create(node->expr1, node->expr2);
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		JavaSemSetRValue(value1, JavaSemGetType(value1));
+		return value1;
+	}
+
+	/* Could not find a suitable operator */
+error:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "invalid operands to binary `%s'", errorName);
+	if(JavaSemIsLValue(value1))
+	{
+		JavaSemSetRValue(value1, JavaSemGetType(value1));
+	}
+	else
+	{
+		JavaSemSetRValue(value1, ILType_Int32);
+	}
+	return value1;
+}
+%}
+
+/*
+ * Perform semantic analysis for the addition assignment operator.
+ */
+ILNode_JSemAnalysis(ILNode_AssignAdd)
+{
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_Add, "op_Addition", "+");
+}
+
+/*
+ * Perform semantic analysis for the subtraction assignment operator.
+ */
+ILNode_JSemAnalysis(ILNode_AssignSub)
+{
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_Sub, "op_Subtraction", "-");
+}
+
+/*
+ * Perform semantic analysis for the multiplication assignment operator.
+ */
+ILNode_JSemAnalysis(ILNode_AssignMul)
+{
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_Mul, "op_Multiply", "*");
+}
+
+/*
+ * Perform semantic analysis for the division assignment operator.
+ */
+ILNode_JSemAnalysis(ILNode_AssignDiv)
+{
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_Div, "op_Division", "/");
+}
+
+/*
+ * Perform semantic analysis for the remainder assignment operator.
+ */
+ILNode_JSemAnalysis(ILNode_AssignRem)
+{
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_Rem, "op_Modulus", "%");
+}
+
+/*
+ * Perform semantic analysis for the bitwise AND assignment operator.
+ */
+ILNode_JSemAnalysis(ILNode_AssignAnd)
+{
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_And, "op_BitwiseAnd", "&");
+}
+
+/*
+ * Perform semantic analysis for the bitwise XOR assignment operator.
+ */
+ILNode_JSemAnalysis(ILNode_AssignXor)
+{
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_Xor, "op_ExclusiveOr", "^");
+}
+
+/*
+ * Perform semantic analysis for the bitwise OR assignment operator.
+ */
+ILNode_JSemAnalysis(ILNode_AssignOr)
+{
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_Or, "op_BitwiseOr", "|");
+}
+
+/*
+ * Perform semantic analysis for the left shift assignment operator.
+ */
+ILNode_JSemAnalysis(ILNode_AssignShl)
+{
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_Shl, "op_LeftShift", "<<");
+}
+
+/*
+ * Perform semantic analysis for the right shift assignment operator.
+ */
+ILNode_JSemAnalysis(ILNode_AssignShr)
+{
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_Shr, "op_RightShift", ">>");
+}
+
+/*
+ * Perform semantic analysis for the unsigned right shift assignment operator.
+ */
+ILNode_JSemAnalysis(ILNode_AssignUShr)
+{
+	/* C# does not have an unsigned right shift, so use the signed version */
+	return AssignSem(info, (ILNode_AssignExpression *)node,
+					 parent, ILOp_UShr, "op_RightShift", ">>>");
+}
+
+%{
+
+/*
+ * Common semantic analysis function for binary arithmetic operators.
+ */
+static JavaSemValue BinarySem(ILGenInfo *info, ILNode_BinaryExpression *node,
+					        ILNode **parent, const ILOperator *table,
+					        const char *name, const char *errorName,
+							int canCoerce)
+{
+	const ILOperator *oper;
+	JavaSemValue value1;
+	JavaSemValue value2;
+	ILType *resultType;
+
+	/* Perform semantic analysis on the arguments */
+	value1 = ILNode_JSemAnalysis(node->expr1, info, &(node->expr1));
+	value2 = ILNode_JSemAnalysis(node->expr2, info, &(node->expr2));
+
+	/* The two arguments must be values */
+	if(!JavaSemIsValue(value1) || !JavaSemIsValue(value2))
+	{
+		goto error;
+	}
+
+	/* try constant coercion before operator lookup */
+	if(canCoerce && ILCanCoerceNodeKind(info,node->expr1,JavaSemGetType(value1),
+			JavaSemGetType(value2),IL_CONVERT_CONSTANT,1))
+	{
+		ILCoerceKind(info,node->expr1,&(node->expr1),JavaSemGetType(value1),
+			JavaSemGetType(value2),IL_CONVERT_CONSTANT,1);
+		JavaSemSetRValue(value1,JavaSemGetType(value2));
+	}
+	else if(canCoerce && 
+			ILCanCoerceNodeKind(info,node->expr2,JavaSemGetType(value2),
+				JavaSemGetType(value1),IL_CONVERT_CONSTANT,1))
+	{
+		ILCoerceKind(info,node->expr2,&(node->expr2),JavaSemGetType(value2),
+			JavaSemGetType(value1),IL_CONVERT_CONSTANT,1);
+		JavaSemSetRValue(value2,JavaSemGetType(value1));
+	}
+
+	/* Look for a builtin operator */
+	oper = ILFindBinaryOperator(table, JavaSemGetType(value1),
+								JavaSemGetType(value2), &resultType,
+								IsEnumZero(&value1), IsEnumZero(&value2));
+	if(oper)
+	{
+		ILApplyBinaryOperator(info, (ILNode *)node, parent, oper);
+		if(resultType)
+		{
+			JavaSemSetRValue(value1, resultType);
+		}
+		else
+		{
+			JavaSemSetRValue(value1, ILFindSystemType(info, "Decimal"));
+		}
+		EvalOperator(info, *parent, parent, &value1);
+		return value1;
+	}
+
+	/* As a last measure , try coercing the nodes */
+	if(ILCanCoerceNode(info, node->expr1, JavaSemGetType(value1),
+					   JavaSemGetType(value2),1))
+	{
+		ILCoerce(info, node->expr1, &(node->expr1), JavaSemGetType(value1),
+				 JavaSemGetType(value2),1);
+		JavaSemSetRValue(value1, JavaSemGetType(value2));
+	}
+	else if(ILCanCoerceNode(info, node->expr2, JavaSemGetType(value2),
+					   JavaSemGetType(value1),1))
+	{
+		ILCoerce(info, node->expr2, &(node->expr2), JavaSemGetType(value2),
+				 JavaSemGetType(value1),1);
+		JavaSemSetRValue(value2, JavaSemGetType(value1));
+	}
+
+	/* Look for a builtin operator */
+	oper = ILFindBinaryOperator(table, JavaSemGetType(value1),
+								JavaSemGetType(value2), &resultType,
+								IsEnumZero(&value1), IsEnumZero(&value2));
+	if(oper)
+	{
+		ILApplyBinaryOperator(info, (ILNode *)node, parent, oper);
+		if(resultType)
+		{
+			JavaSemSetRValue(value1, resultType);
+		}
+		else
+		{
+			JavaSemSetRValue(value1, ILFindSystemType(info, "Decimal"));
+		}
+		EvalOperator(info, *parent, parent, &value1);
+		return value1;
+	}
+
+	/* Could not find a suitable operator */
+error:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "invalid operands to binary `%s'", errorName);
+	JavaSemSetRValue(value1, ILType_Int32);
+	return value1;
+}
+
+%}
+
+/*
+ * Perform semantic analysis for the multiplication operator.
+ */
+ILNode_JSemAnalysis(ILNode_Add)
+{
+	const ILOperator *oper;
+	JavaSemValue value1;
+	JavaSemValue value2;
+	ILType *resultType;
+
+	/* Perform semantic analysis on the arguments */
+	value1 = ILNode_JSemAnalysis(node->expr1, info, &(node->expr1));
+	value2 = ILNode_JSemAnalysis(node->expr2, info, &(node->expr2));
+
+	/* The two arguments must be values */
+	if(!JavaSemIsValue(value1) || !JavaSemIsValue(value2))
+	{
+		goto error;
+	}
+
+	/* try constant coercion first */
+	if(ILCanCoerceNodeKind(info,node->expr1,JavaSemGetType(value1),
+			JavaSemGetType(value2),IL_CONVERT_CONSTANT,1))
+	{
+		ILCoerceKind(info,node->expr1,&(node->expr1),JavaSemGetType(value1),
+			JavaSemGetType(value2),IL_CONVERT_CONSTANT,1);
+		JavaSemSetRValue(value1,JavaSemGetType(value2));
+	}
+	else if(ILCanCoerceNodeKind(info,node->expr2,JavaSemGetType(value2),
+			JavaSemGetType(value1),IL_CONVERT_CONSTANT,1))
+	{
+		ILCoerceKind(info,node->expr2,&(node->expr2),JavaSemGetType(value2),
+			JavaSemGetType(value1),IL_CONVERT_CONSTANT,1);
+		JavaSemSetRValue(value2,JavaSemGetType(value1));
+	}
+	
+	/* Look for a builtin operator */
+	oper = ILFindBinaryOperator
+				(ILOp_Add, JavaSemGetType(value1),
+				 JavaSemGetType(value2), &resultType,
+				 IsEnumZero(&value1), IsEnumZero(&value2));
+	if(oper)
+	{
+		ILApplyBinaryOperator(info, (ILNode *)node, parent, oper);
+		if(resultType)
+		{
+			JavaSemSetRValue(value1, resultType);
+		}
+		else
+		{
+			JavaSemSetRValue(value1, ILFindSystemType(info, "Decimal"));
+		}
+		EvalOperator(info, *parent, parent, &value1);
+		return value1;
+	} 
+
+	/* If one of the arguments is a string, then perform concatenation */
+	if(ILTypeIsStringClass(JavaSemGetType(value1)) ||
+	   ILTypeIsStringClass(JavaSemGetType(value2)))
+	{
+		if(!ILTypeIsStringClass(JavaSemGetType(value1)))
+		{
+			/* Convert the first argument into "ObjectRef" */
+			ILCast(info, node->expr1, &(node->expr1), JavaSemGetType(value1),
+				   ILFindSystemType(info, "Object"),1);
+		}
+		if(!ILTypeIsStringClass(JavaSemGetType(value2)))
+		{
+			/* Convert the second argument into "ObjectRef" */
+			ILCast(info, node->expr2, &(node->expr2), JavaSemGetType(value2),
+				   ILFindSystemType(info, "Object"),1);
+		}
+		*parent = ILNode_Concat_create(node->expr1, node->expr2);
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		JavaSemSetRValue(value1, ILFindSystemType(info, "String"));
+		EvalOperator(info, *parent, parent, &value1);
+		return value1;
+	}
+
+	/* As a last measure , try coercing the nodes */
+	if(ILCanCoerceNode(info, node->expr1, JavaSemGetType(value1),
+					   JavaSemGetType(value2),1))
+	{
+		ILCoerce(info, node->expr1, &(node->expr1), JavaSemGetType(value1),
+				 JavaSemGetType(value2),1);
+		JavaSemSetRValue(value1, JavaSemGetType(value2));
+	}
+	else if(ILCanCoerceNode(info, node->expr2, JavaSemGetType(value2),
+					   JavaSemGetType(value1),1))
+	{
+		ILCoerce(info, node->expr2, &(node->expr2), JavaSemGetType(value2),
+				 JavaSemGetType(value1),1);
+		JavaSemSetRValue(value2, JavaSemGetType(value1));
+	}
+
+	/* Look for a builtin operator again */
+	oper = ILFindBinaryOperator
+				(ILOp_Add, JavaSemGetType(value1),
+				 JavaSemGetType(value2), &resultType,
+				 IsEnumZero(&value1), IsEnumZero(&value2));
+	if(oper)
+	{
+		ILApplyBinaryOperator(info, (ILNode *)node, parent, oper);
+		if(resultType)
+		{
+			JavaSemSetRValue(value1, resultType);
+		}
+		else
+		{
+			JavaSemSetRValue(value1, ILFindSystemType(info, "Decimal"));
+		}
+		EvalOperator(info, *parent, parent, &value1);
+		return value1;
+	} 
+
+	/* Could not find a suitable operator */
+error:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "invalid operands to binary `+'");
+	JavaSemSetRValue(value1, ILType_Int32);
+	return value1;
+}
+
+/*
+ * Perform semantic analysis for the subtraction operator.
+ */
+ILNode_JSemAnalysis(ILNode_Sub)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Sub, "op_Subtract", "*",1);
+}
+
+/*
+ * Perform semantic analysis for the multiplication operator.
+ */
+ILNode_JSemAnalysis(ILNode_Mul)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Mul, "op_Multiply", "*",1);
+}
+
+/*
+ * Perform semantic analysis for the division operator.
+ */
+ILNode_JSemAnalysis(ILNode_Div)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Div, "op_Division", "/",1);
+}
+
+/*
+ * Perform semantic analysis for the remainder operator.
+ */
+ILNode_JSemAnalysis(ILNode_Rem)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Rem, "op_Modulus", "%",1);
+}
+
+
+/*
+ * Perform semantic analysis for the bitwise AND operator.
+ */
+ILNode_JSemAnalysis(ILNode_And)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_And, "op_BitwiseAnd", "&",1);
+}
+
+/*
+ * Perform semantic analysis for the bitwise XOR operator.
+ */
+ILNode_JSemAnalysis(ILNode_Xor)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Xor, "op_ExclusiveOr", "^",1);
+}
+
+/*
+ * Perform semantic analysis for the bitwise OR operator.
+ */
+ILNode_JSemAnalysis(ILNode_Or)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Or, "op_BitwiseOr", "|",1);
+}
+
+/*
+ * Perform semantic analysis for the left shift operator.
+ */
+ILNode_JSemAnalysis(ILNode_Shl)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Shl, "op_LeftShift", "<<",0);
+}
+
+/*
+ * Perform semantic analysis for the right shift operator.
+ */
+ILNode_JSemAnalysis(ILNode_Shr)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Shr, "op_RightShift", ">>",0);
+}
+
+/*
+ * Perform semantic analysis for the unsigned right shift operator.
+ */
+ILNode_JSemAnalysis(ILNode_UShr)
+{
+	/* C# doesn't actually have an unsigned right shift, but we
+	   still need to include this case for completeness sake */
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_UShr, "op_RightShift", ">>>",0);
+}
+
+/* UNARY OPERATORS */
+%{
+
+/*
+ * Common semantic analysis function for unary arithmetic operators.
+ */
+static JavaSemValue UnarySem(ILGenInfo *info, ILNode_UnaryExpression *node,
+					 	   ILNode **parent, const ILOperator *table,
+						   const char *name, const char *errorName)
+{
+	const ILOperator *oper;
+	JavaSemValue value;
+	ILType *resultType;
+
+	/* Perform semantic analysis on the argument */
+	value = ILNode_JSemAnalysis(node->expr, info, &(node->expr));
+
+	/* The argument must be a value */
+	if(!JavaSemIsValue(value))
+	{
+		goto error;
+	}
+
+	/* Look for a builtin operator */
+	oper = ILFindUnaryOperator(table, JavaSemGetType(value), &resultType);
+	if(oper)
+	{
+		ILApplyUnaryOperator(info, (ILNode *)node, parent, oper);
+		if(resultType)
+		{
+			JavaSemSetRValue(value, resultType);
+		}
+		else
+		{
+			JavaSemSetRValue(value, ILFindSystemType(info, "Decimal"));
+		}
+		EvalOperator(info, *parent, parent, &value);
+		return value;
+	}
+
+	/* Could not find a suitable operator */
+error:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "invalid operands to unary `%s'", errorName);
+	JavaSemSetRValue(value, ILType_Int32);
+	return value;
+}
+%}
+
+/*
+ * Perform semantic analysis for the negation operator.
+ */
+ILNode_JSemAnalysis(ILNode_Neg)
+{
+	return UnarySem(info, (ILNode_UnaryExpression *)node,
+					parent, ILOp_Neg, "op_UnaryNegation", "-");
+}
+
+/*
+ * Perform semantic analysis for the "unary +" operator.
+ */
+ILNode_JSemAnalysis(ILNode_UnaryPlus)
+{
+	return UnarySem(info, (ILNode_UnaryExpression *)node,
+				  	parent, ILOp_UnaryPlus, "op_UnaryPlus", "+");
+}
+/*
+ * Perform semantic analysis for the bitwise NOT operator.
+ */
+ILNode_JSemAnalysis(ILNode_Not)
+{
+	return UnarySem(info, (ILNode_UnaryExpression *)node, parent, ILOp_Not,
+					"op_OnesComplement", "~");
+}
+
+/* Increment and decrement operators */
+%{
+
+/*
+ * Perform semantic analysis for increment or decrement operators.
+ */
+static JavaSemValue IncOrDecSem(ILGenInfo *info, ILNode_UnaryExpression *node,
+							  ILNode **parent, const char *opName,
+							  const char *errorName)
+{
+	JavaSemValue value;
+	ILMachineType machineType;
+
+	/* Perform semantic analysis on the argument, which must be an lvalue */
+	value = ILNode_JSemAnalysis(node->expr, info, &(node->expr));
+	if(!JavaSemIsLValue(value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid lvalue in increment");
+		if(!JavaSemIsRValue(value))
+		{
+			JavaSemSetRValue(value, ILType_Int32);
+		}
+		return value;
+	}
+
+	/* The final result will be an rvalue */
+	JavaSemSetRValue(value, JavaSemGetType(value));
+
+	/* Can we use the builtin version of the operator? */
+	machineType = ILTypeToMachineType(JavaSemGetType(value));
+	switch(machineType)
+	{
+		case ILMachineType_Int8:
+		case ILMachineType_UInt8:
+		case ILMachineType_Int16:
+		case ILMachineType_UInt16:
+		case ILMachineType_Char:
+		case ILMachineType_Int32:
+		case ILMachineType_UInt32:
+		case ILMachineType_Int64:
+		case ILMachineType_UInt64:
+		case ILMachineType_Float32:
+		case ILMachineType_Float64:
+		case ILMachineType_Decimal:
+		{
+			/* Semantic analysis is finished: the code generator
+			   has enough information to do the rest */
+			return value;
+		}
+		/* Not reached */
+
+		default: break;
+	}
+
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid operands to unary `%s'", errorName);
+	if(!JavaSemIsRValue(value))
+	{
+		JavaSemSetRValue(value, ILType_Int32);
+	}
+	return value;
+}
+
+%}
+
+/*
+ * Perform semantic analysis for the pre-increment operator.
+ */
+ILNode_JSemAnalysis(ILNode_PreInc)
+{
+	return IncOrDecSem(info, (ILNode_UnaryExpression *)node, parent,
+					   "op_Increment", "++");
+}
+
+/*
+ * Perform semantic analysis for the pre-decrement operator.
+ */
+ILNode_JSemAnalysis(ILNode_PreDec)
+{
+	return IncOrDecSem(info, (ILNode_UnaryExpression *)node, parent,
+					   "op_Decrement", "--");
+}
+
+/*
+ * Perform semantic analysis for the post-increment operator.
+ */
+ILNode_JSemAnalysis(ILNode_PostInc)
+{
+	return IncOrDecSem(info, (ILNode_UnaryExpression *)node, parent,
+					   "op_Increment", "++");
+}
+
+/*
+ * Perform semantic analysis for the post-decrement operator.
+ */
+ILNode_JSemAnalysis(ILNode_PostDec)
+{
+	return IncOrDecSem(info, (ILNode_UnaryExpression *)node, parent,
+					   "op_Decrement", "--");
+}
+
+/*
+ * Perform semantic analysis for the "ToBool" operator.
+ */
+ILNode_JSemAnalysis(ILNode_ToBool)
+{
+	JavaSemValue value;
+
+	/* Perform semantic analysis on the value */
+	if(!JavaSemExpectValue(node->expr, info, &(node->expr), &value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid boolean expression");
+		JavaSemSetRValue(value, ILType_Boolean);
+		return value;
+	}
+
+	/* If the type is boolean, then we are done */
+	if(JavaSemGetType(value) == ILType_Boolean)
+	{
+		return value;
+	}
+
+	/* We need a class or a value type if not boolean */
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "no conversion from `%s' to `boolean'",
+				  JavaTypeToName(JavaSemGetType(value)));
+	JavaSemSetRValue(value, ILType_Boolean);
+	return value;
+}
+
+%{
+
+/*
+ * Perform semantic analysis for the equality or inequality operators.
+ */
+static JavaSemValue EqualitySem(ILGenInfo *info, ILNode_BinaryExpression *node,
+							  ILNode **parent, const ILOperator *table,
+							  const char *name, const char *errorName)
+{
+	const ILOperator *oper;
+	JavaSemValue value1;
+	JavaSemValue value2;
+	ILType *resultType;
+
+	/* Perform semantic analysis on the arguments */
+	value1 = ILNode_JSemAnalysis(node->expr1, info, &(node->expr1));
+	value2 = ILNode_JSemAnalysis(node->expr2, info, &(node->expr2));
+
+	/* The two arguments must be values */
+	if(!JavaSemIsValue(value1) || !JavaSemIsValue(value2))
+	{
+		goto error;
+	}
+
+	/* Look for a builtin operator */
+	oper = ILFindBinaryOperator(table, JavaSemGetType(value1),
+								JavaSemGetType(value2), &resultType,
+								IsEnumZero(&value1), IsEnumZero(&value2));
+	if(oper)
+	{
+		ILApplyBinaryOperator(info, (ILNode *)node, parent, oper);
+		JavaSemSetRValue(value1, ILType_Boolean);
+		EvalOperator(info, *parent, parent, &value1);
+		return value1;
+	}
+
+	/* If one of the arguments is a string and the other is null,
+	   then the code generator knows how to handle the operation */
+	if(ILTypeIsStringClass(JavaSemGetType(value1)))
+	{
+		if(JavaSemGetType(value2) == ILType_Null)
+		{
+			if(table == ILOp_Eq)
+			{
+				*parent = ILNode_IsNull_create(node->expr1);
+			}
+			else
+			{
+				*parent = ILNode_IsNonNull_create(node->expr1);
+			}
+			yysetfilename(*parent, yygetfilename(node));
+			yysetlinenum(*parent, yygetlinenum(node));
+			JavaSemSetRValue(value1, ILType_Boolean);
+			return value1;
+		}
+	}
+	else if(JavaSemGetType(value1) == ILType_Null &&
+			ILTypeIsStringClass(JavaSemGetType(value2)))
+	{
+		if(table == ILOp_Eq)
+		{
+			*parent = ILNode_IsNull_create(node->expr2);
+		}
+		else
+		{
+			*parent = ILNode_IsNonNull_create(node->expr2);
+		}
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		JavaSemSetRValue(value1, ILType_Boolean);
+		return value1;
+	}
+
+	/* If both arguments are object references, then we can compare them
+	   using the built-in code generator logic */
+	if(JavaSemGetType(value1) != ILType_Null &&
+	   ILTypeIsReference(JavaSemGetType(value1)))
+	{
+		if(JavaSemGetType(value2) == ILType_Null)
+		{
+			if(table == ILOp_Eq)
+			{
+				*parent = ILNode_IsNull_create(node->expr1);
+			}
+			else
+			{
+				*parent = ILNode_IsNonNull_create(node->expr1);
+			}
+			yysetfilename(*parent, yygetfilename(node));
+			yysetlinenum(*parent, yygetlinenum(node));
+			JavaSemSetRValue(value1, ILType_Boolean);
+			return value1;
+		}
+		else if(ILTypeIsReference(JavaSemGetType(value2)))
+		{
+			if(ILCanCoerceNode(info, node->expr1, JavaSemGetType(value1),
+							   JavaSemGetType(value2),1) ||
+			   ILCanCoerceNode(info, node->expr2, JavaSemGetType(value2),
+			   				   JavaSemGetType(value1),1))
+			{
+				JavaSemSetRValue(value1, ILType_Boolean);
+				return value1;
+			}
+		}
+	}
+	else if(JavaSemGetType(value1) == ILType_Null &&
+			ILTypeIsReference(JavaSemGetType(value2)))
+	{
+		if(table == ILOp_Eq)
+		{
+			*parent = ILNode_IsNull_create(node->expr2);
+		}
+		else
+		{
+			*parent = ILNode_IsNonNull_create(node->expr2);
+		}
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		JavaSemSetRValue(value1, ILType_Boolean);
+		return value1;
+	}
+
+	/* Try coercion as a last resort */
+	if(ILCanCoerceNode(info, node->expr1, JavaSemGetType(value1),
+					   JavaSemGetType(value2),1))
+	{
+		ILCoerce(info, node->expr1, &(node->expr1), JavaSemGetType(value1),
+				 JavaSemGetType(value2),1);
+		JavaSemSetRValue(value1, ILType_Boolean);
+	}
+	else if(ILCanCoerceNode(info, node->expr2, JavaSemGetType(value2),
+					   JavaSemGetType(value1),1))
+	{
+		ILCoerce(info, node->expr2, &(node->expr2), JavaSemGetType(value2),
+				 JavaSemGetType(value1),1);
+		JavaSemSetRValue(value1, ILType_Boolean);
+	}
+	/* Look for a builtin operator */
+	oper = ILFindBinaryOperator(table, JavaSemGetType(value1),
+								JavaSemGetType(value2), &resultType,
+								IsEnumZero(&value1), IsEnumZero(&value2));
+	if(oper)
+	{
+		ILApplyBinaryOperator(info, (ILNode *)node, parent, oper);
+		JavaSemSetRValue(value1, ILType_Boolean);
+		EvalOperator(info, *parent, parent, &value1);
+		return value1;
+	}
+
+	/* Could not find a suitable operator */
+error:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "invalid operands to binary `%s'", errorName);
+	JavaSemSetRValue(value1, ILType_Int32);
+	return value1;
+}
+
+%}
+
+/*
+ * Perform semantic analysis for the equality operator.
+ */
+ILNode_JSemAnalysis(ILNode_Eq)
+{
+	return EqualitySem(info, (ILNode_BinaryExpression *)node, parent,
+					   ILOp_Eq, "op_Equality", "==");
+}
+
+/*
+ * Perform semantic analysis for the inequality operator.
+ */
+ILNode_JSemAnalysis(ILNode_Ne)
+{
+	return EqualitySem(info, (ILNode_BinaryExpression *)node, parent,
+					   ILOp_Ne, "op_Inequality", "!=");
+}
+
+/*
+ * Perform semantic analysis for the less than operator.
+ */
+ILNode_JSemAnalysis(ILNode_Lt)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Lt, "op_LessThan", "<",1);
+}
+
+/*
+ * Perform semantic analysis for the less than or equal to operator.
+ */
+ILNode_JSemAnalysis(ILNode_Le)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Le, "op_LessThanOrEqual", "<=",1);
+}
+
+/*
+ * Perform semantic analysis for the greater than operator.
+ */
+ILNode_JSemAnalysis(ILNode_Gt)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Gt, "op_GreaterThan", ">",1);
+}
+
+/*
+ * Perform semantic analysis for the greater than or equal to operator.
+ */
+ILNode_JSemAnalysis(ILNode_Ge)
+{
+	return BinarySem(info, (ILNode_BinaryExpression *)node,
+					 parent, ILOp_Ge, "op_GreaterThanOrEqual", ">=",1);
+}
+
+/* LOGICAL OPERATORS */
+
+/*
+ * Perform semantic analysis for the logical NOT operator.
+ */
+ILNode_JSemAnalysis(ILNode_LogicalNot)
+{
+	JavaSemValue value;
+
+	/* Perform semantic analysis on the argument value */
+	if(!JavaSemExpectValue(node->expr, info, &(node->expr), &value))
+	{
+		goto error;
+	}
+
+	/* If the type is not boolean, we need to look for an operator */
+	if(JavaSemGetType(value) == ILType_Boolean)
+	{
+		/* Builtin "!" operator: the result is always boolean */
+		JavaSemSetRValue(value, ILType_Boolean);
+		EvalOperator(info, *parent, parent, &value);
+		return value;
+	}
+
+error:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "invalid operand to unary `!'");
+	JavaSemSetRValue(value, ILType_Boolean);
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the logical AND operator.
+ */
+ILNode_JSemAnalysis(ILNode_LogicalAnd)
+{
+	JavaSemValue value1;
+	JavaSemValue value2;
+
+	/* Perform semantic analysis on the arguments */
+	if(!JavaSemExpectValue(node->expr1, info, &(node->expr1), &value1) ||
+	   !JavaSemExpectValue(node->expr2, info, &(node->expr2), &value2))
+	{
+		goto error;
+	}
+
+	/* We must have boolean arguments at this point */
+	if(!ILCanCoerceNode(info, node->expr1, JavaSemGetType(value1),
+						ILType_Boolean,1) ||
+	   !ILCanCoerceNode(info, node->expr2, JavaSemGetType(value2),
+	   					ILType_Boolean,1))
+	{
+		goto error;
+	}
+
+	/* Coerce the two arguments to `bool' */
+	ILCoerce(info, node->expr1, &(node->expr1),
+			 JavaSemGetType(value1), ILType_Boolean,1);
+	ILCoerce(info, node->expr2, &(node->expr2),
+			 JavaSemGetType(value2), ILType_Boolean,1);
+
+	/* The result is boolean */
+	JavaSemSetRValue(value1, ILType_Boolean);
+	EvalOperator(info, *parent, parent, &value1);
+	return value1;
+
+	/* Report an argument error */
+error:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "invalid operands to binary `&&'");
+	JavaSemSetRValue(value1, ILType_Boolean);
+	return value1;
+}
+
+/*
+ * Perform semantic analysis for the logical OR operator.
+ */
+ILNode_JSemAnalysis(ILNode_LogicalOr)
+{
+	JavaSemValue value1;
+	JavaSemValue value2;
+
+	/* Perform semantic analysis on the arguments */
+	if(!JavaSemExpectValue(node->expr1, info, &(node->expr1), &value1) ||
+	   !JavaSemExpectValue(node->expr2, info, &(node->expr2), &value2))
+	{
+		goto error;
+	}
+
+	/* We must have boolean arguments at this point */
+	if(!ILCanCoerceNode(info, node->expr1, JavaSemGetType(value1),
+						ILType_Boolean,1) ||
+	   !ILCanCoerceNode(info, node->expr2, JavaSemGetType(value2),
+	   					ILType_Boolean,1))
+	{
+		goto error;
+	}
+
+	/* Coerce the two arguments to `bool' */
+	ILCoerce(info, node->expr1, &(node->expr1),
+			 JavaSemGetType(value1), ILType_Boolean,1);
+	ILCoerce(info, node->expr2, &(node->expr2),
+			 JavaSemGetType(value2), ILType_Boolean,1);
+
+	/* The result is boolean */
+	JavaSemSetRValue(value1, ILType_Boolean);
+	EvalOperator(info, *parent, parent, &value1);
+	return value1;
+
+	/* Report an argument error */
+error:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "invalid operands to binary `||'");
+	JavaSemSetRValue(value1, ILType_Boolean);
+	return value1;
+}
+
+ILNode_JSemAnalysis(ILNode_InstanceOf)
+{
+	JavaSemValue value;
+	JavaSemValue result;
+	ILType *type;
+	ILClass *classInfo;
+
+	/* Perform semantic analysis on the two arguments */
+	if(!JavaSemExpectValue(node->expr1, info, &(node->expr1), &value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "invalid operands to binary `is'");
+		JavaSemSetRValue(value, ILFindSystemType(info, "Object"));
+	}
+	type = JavaSemType(node->expr2, info, &(node->expr2));
+
+	/* Create the result semantic value */
+	JavaSemSetRValue(result, ILType_Boolean);
+
+	/* Determine if there is an implicit reference or boxing coercion */
+	if(ILCanCoerceKind(info, JavaSemGetType(value), type,
+					   IL_CONVERT_REFERENCE,1))					   
+	{
+		if(ILTypeIsReference(JavaSemGetType(value)))
+		{
+			/* Reference types: test the expression against null */
+			CCWarningOnLine(yygetfilename(node), yygetlinenum(node),
+				    "`is' expression is equivalent to a test against `null'");
+			*parent = ILNode_Ne_create(node->expr1, ILNode_Null_create());
+		}
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		return result;
+	}
+
+	/* Determine if there is an explicit reference or unboxing conversion */
+	classInfo = ILGetExplicitConv(info, JavaSemGetType(value), type,
+								  IL_CONVERT_REFERENCE | IL_CONVERT_UNBOXING);
+	if(classInfo != 0)
+	{
+		*parent = ILNode_Is_create(node->expr1, classInfo, 0);
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		return result;
+	}
+
+	/* The result will always be "false", but we should still
+	   evaluate the expression for its side-effects */
+	CCWarningOnLine(yygetfilename(node), yygetlinenum(node),
+		  		    "`is' expression is always false");
+	*parent = ILNode_Comma_create(node->expr1, ILNode_False_create());
+	return result;
+}
+
+/*
+ * Perform semantic analysis for the conditional operator.
+ *
+ * Note: we assume that the condition has been wrapped in
+ * a "ToBool" node to take care of the semantic analysis
+ * for the boolean cast.
+ */
+ILNode_JSemAnalysis(ILNode_Conditional)
+{
+	JavaSemValue value1;
+	JavaSemValue value2;
+
+	/* Perform semantic analysis on the boolean condition */
+	ILNode_JSemAnalysis(node->expr1, info, &(node->expr1));
+
+	/* Perform semantic analysis on the "then" and "else" clauses */
+	if(!JavaSemExpectValue(node->expr2, info, &(node->expr2), &value1) ||
+	   !JavaSemExpectValue(node->expr3, info, &(node->expr3), &value2))
+	{
+		goto error;
+	}
+
+	/* If the types are the same, then we are done */
+	if(ILTypeIdentical(JavaSemGetType(value1), JavaSemGetType(value2)))
+	{
+		JavaSemSetRValue(value1, JavaSemGetType(value1));
+		EvalOperator(info, *parent, parent, &value1);
+		return value1;
+	}
+
+	/* Determine which of the types is the result type */
+	if(ILCanCoerceNode(info, node->expr2, JavaSemGetType(value1),
+					   JavaSemGetType(value2),1) &&
+	   !ILCanCoerceNode(info, node->expr3, JavaSemGetType(value2),
+	   					JavaSemGetType(value1),1))
+	{
+		ILCoerce(info, node->expr2, &(node->expr2), JavaSemGetType(value1),
+				 JavaSemGetType(value2),1);
+		JavaSemSetRValue(value2, JavaSemGetType(value2));
+		EvalOperator(info, *parent, parent, &value2);
+		return value2;
+	}
+	else if(ILCanCoerceNode(info, node->expr3, JavaSemGetType(value2),
+							JavaSemGetType(value1),1) &&
+	        !ILCanCoerceNode(info, node->expr2, JavaSemGetType(value1),
+							 JavaSemGetType(value2),1))
+	{
+		ILCoerce(info, node->expr3, &(node->expr3), JavaSemGetType(value2),
+				 JavaSemGetType(value1),1);
+		JavaSemSetRValue(value1, JavaSemGetType(value1));
+		EvalOperator(info, *parent, parent, &value1);
+		return value1;
+	}
+
+	/* Report an error with the arguments to "?:" */
+error:
+	CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "invalid operands to ternary `?:'");
+	JavaSemSetRValue(value1, ILType_Int32);
+	return value1;
+}

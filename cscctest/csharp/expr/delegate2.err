@@ -1,0 +1,5 @@
+./delegate2.cs:40: invalid delegate creation expression for `D1'
+./delegate2.cs:46: invalid delegate creation expression for `D1'
+./delegate2.cs:52: delegate expression does not refer to a method
+./delegate2.cs:58: delegate expression does not refer to a method
+./delegate2.cs:64: delegate expression is not compatible with `D1'

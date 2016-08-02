@@ -1,0 +1,358 @@
+%{
+/*
+ * JNode.tc - Input file for "treecc" that defines the JScript nodes.
+ *
+ * Copyright (C) 2003 Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+using Microsoft.JScript.Vsa;
+using System.Reflection;
+using System.Collections;
+
+%}
+ 
+// Configure treecc the way we want it.
+%option lang = "C#"
+%option internal_access
+%option no_track_lines
+%option state_type = "JNodeState"
+%option namespace = "Microsoft.JScript"
+
+// Define the nodes.
+%node JNode %abstract %typedef =
+{
+	Context context;
+}
+%node JScriptBlock JNode =
+{
+	JNode functions;
+	JNode statements;
+}
+%node JBlock JNode =
+{
+	JNode statements;
+}
+
+// Constant and literal nodes.
+%node JConstant JNode =
+{
+	Object value;
+}
+%node JUndefined JNode
+%node JExprList JNode %abstract =
+{
+	%nocreate JExprListElem first = {null};
+	%nocreate JExprListElem last = {null};
+}
+%node JExprListElem JNode =
+{
+	Object name;
+	JNode expr;
+	JExprListElem next;
+}
+%node JArrayLiteral JExprList =
+{
+	int size;
+}
+%node JObjectLiteral JExprList
+
+// Expression nodes.
+%node JThis JNode
+%node JSuper JNode
+%node JIdentifier JNode =
+{
+	String name;
+}
+%node JUnaryExpression JNode %abstract =
+{
+	JNode expr;
+}
+%node JBinaryExpression JNode %abstract =
+{
+	JNode expr1;
+	JNode expr2;
+}
+%node JAsIs JUnaryExpression
+%node JComma JBinaryExpression
+%node JAssign JNode =
+{
+	JNode expr1;
+	JNode expr2;
+}
+%node JAssignOp JNode =
+{
+	JSToken oper;
+	JNode expr1;
+	JNode expr2;
+}
+%node JIfExpr JNode =
+{
+	JNode expr1;
+	JNode expr2;
+	JNode expr3;
+}
+%node JLogicalOr JBinaryExpression
+%node JLogicalAnd JBinaryExpression
+%node JBitwiseOr JBinaryExpression
+%node JBitwiseXor JBinaryExpression
+%node JBitwiseAnd JBinaryExpression
+%node JEq JBinaryExpression
+%node JNe JBinaryExpression
+%node JStrictEq JBinaryExpression
+%node JStrictNe JBinaryExpression
+%node JLt JBinaryExpression
+%node JLe JBinaryExpression
+%node JGt JBinaryExpression
+%node JGe JBinaryExpression
+%node JInstanceof JBinaryExpression
+%node JIn JBinaryExpression
+%node JShl JBinaryExpression
+%node JShr JBinaryExpression
+%node JUShr JBinaryExpression
+%node JAdd JBinaryExpression
+%node JSub JBinaryExpression
+%node JMul JBinaryExpression
+%node JDiv JBinaryExpression
+%node JRem JBinaryExpression
+%node JNeg JUnaryExpression
+%node JUnaryPlus JUnaryExpression
+%node JDelete JUnaryExpression
+%node JVoid JUnaryExpression
+%node JTypeof JUnaryExpression
+%node JPreInc JUnaryExpression
+%node JPreDec JUnaryExpression
+%node JPostInc JUnaryExpression
+%node JPostDec JUnaryExpression
+%node JBitwiseNot JUnaryExpression
+%node JLogicalNot JUnaryExpression
+%node JNew JBinaryExpression
+%node JArrayAccess JBinaryExpression
+%node JFieldAccess JNode =
+{
+	JNode expr;
+	String name;
+}
+%node JCall JBinaryExpression
+%node JArgList JBinaryExpression
+%node JEval JUnaryExpression
+%node JPrint JUnaryExpression
+
+// Statement nodes.
+%node JStatement JNode %abstract =
+{
+	%nocreate String[] labels;
+}
+%node JEmpty JStatement
+%node JCompound JStatement =
+{
+	%nocreate JNode stmt1;
+	%nocreate JNode stmt2;
+	%nocreate JNode stmt3;
+	%nocreate JNode stmt4;
+	%nocreate JCompound next;
+}
+%node JExprStmt JStatement =
+{
+	JNode expr;
+}
+%node JIf JStatement =
+{
+	JNode condition;
+	JNode thenClause;
+	JNode elseClause;
+}
+%node JWhile JStatement =
+{
+	JNode condition;
+	JNode body;
+}
+%node JDo JStatement =
+{
+	JNode body;
+	JNode condition;
+}
+%node JFor JStatement =
+{
+	JNode init;
+	JNode cond;
+	JNode incr;
+	JNode body;
+}
+%node JForIn JStatement =
+{
+	JNode decl;
+	JNode expr;
+	JNode body;
+}
+%node JSwitch JStatement =
+{
+	JNode expr;
+	JNode cases;
+}
+%node JCase JStatement =
+{
+	JNode expr;
+	JNode body;
+}
+%node JDefault JStatement =
+{
+	JNode body;
+}
+%node JFallThrough JStatement =
+{
+	JNode stmt;
+}
+%node JContinue JStatement =
+{
+	String label;
+}
+%node JBreak JStatement =
+{
+	String label;
+}
+%node JReturn JStatement
+%node JReturnExpr JStatement =
+{
+	JNode expr;
+}
+%node JThrow JStatement =
+{
+	JNode expr;
+}
+%node JWith JStatement =
+{
+	JNode expr;
+	JNode body;
+}
+%node JVarDecl JStatement =
+{
+	String name;
+	JNode initializer;
+}
+%node JTry JStatement =
+{
+	JNode body;
+	String catchName;
+	JNode catchClause;
+	JNode finallyClause;
+}
+
+// Function definitions.
+%node JFunction JNode =
+{
+	String name;
+	JFormalParams fparams;
+	JNode body;
+}
+%node JFormalParams JExprList
+
+// Declare the evaluation operation on nodes.
+%operation %virtual Object Eval([JNode this], VsaEngine engine)
+
+// Declare the assignment preparation operation on nodes.
+%operation %virtual void Prepare([JNode this], VsaEngine engine,
+								 ref Object data1, ref Object data2)
+
+// Declare the assignment get-preparation operation on nodes.
+%operation %virtual Object GetAndPrepare([JNode this], VsaEngine engine,
+										 ref Object data1, ref Object data2)
+
+// Declare the assignment store operation on nodes.
+%operation %virtual void Store([JNode this], VsaEngine engine,
+							   Object data1, Object data2, Object value)
+
+// Stub out assignment for most node types.
+Prepare(JNode),
+GetAndPrepare(JNode),
+Store(JNode)
+{
+	throw new JScriptException(JSError.IllegalAssignment, context);
+}
+
+// Evaluate script blocks.
+Eval(JScriptBlock)
+{
+	// Declare the functions into the global scope.  We do this by
+	// evaluating them - JFunction.Eval does the rest.
+	if(functions != null)
+	{
+		functions.Eval(engine);
+	}
+
+	// Execute the global statements within the block.
+	if(statements != null)
+	{
+		return statements.Eval(engine);
+	}
+	else
+	{
+		return Empty.Value;
+	}
+}
+
+// Evaluate regular "eval" blocks.
+Eval(JBlock)
+{
+	if(statements != null)
+	{
+		return statements.Eval(engine);
+	}
+	else
+	{
+		return Empty.Value;
+	}
+}
+
+// Evaluate a function definition.
+Eval(JFunction)
+{
+	// Get the scope to declare the function within.
+	ScriptObject scope = engine.ScriptObjectStackTop();
+
+	// Create a function object to wrap up this function.
+	FunctionObject obj = new FunctionObject
+		(EngineInstance.GetEngineInstance(engine).GetFunctionPrototype(),
+		 this, scope);
+	
+	// javascript allows for anonymous functions
+	if(name != null)
+	{
+		// Add the function to the scope.
+		if(scope is IVariableAccess)
+		{
+			((IVariableAccess)scope).SetVariable(name, obj);
+		}
+		else
+		{
+			scope.Put(name, obj);
+		}
+	}
+
+	// Return compiled function object
+	return obj;
+}
+
+// Evaluate a formal parameter list.
+Eval(JFormalParams)
+{
+	// Never called - nothing to do here.
+	return null;
+}
+
+// Include operation cases for expressions and statements.
+%include "JExpr.tc"
+%include "JStmt.tc"

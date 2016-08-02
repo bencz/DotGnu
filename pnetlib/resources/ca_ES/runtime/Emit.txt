@@ -1,0 +1,62 @@
+#
+# Emit.txt - Resources for Reflection.Emit errors.
+#
+# Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Emit_NoDynamicAssemblies=El motor en temps d'execució no permet ensemblats dinamics.
+Emit_AlreadySaved=Els ensemblats dinàmics ja han estat grabats
+Emit_ModuleNameInvalid=El nom del mòdul dinamic incorrecte
+Emit_AssemblyNameInvalid=El nom del ensemblat dinamic incorrecte
+Emit_SingleModuleOnly=Multiples mòduls en un sol ensemblat no està suportat
+Emit_ExternalModule=Fitxer de mòdul extern no està suportat
+Emit_NameEmpty=El nom no pot estar buit
+Emit_InvalidParamNum=Parametre de indexació invàlid
+Emit_InvalidTypeAttrs=Tipus d'atributs invàlid
+Emit_InvalidConstant=Valor de la constant invàlid
+Emit_NeedExceptionBlock=No esta situat dins del bloc d'excepció
+Emit_CatchAfterFinally=El block de 'catch' no pot estar després del block final
+Emit_NoExceptionClauses=No s'han especificat clausules d'excepcions
+Emit_VarArgsWithNonVarArgMethod=Variable arguments specified for a non-variable method
+Emit_InvalidLabel=El valor de l'etiqueta és invàlid
+Emit_LabelAlreadyDefined=L'etiqueta ja ha estat definida
+Emit_MissingWriteLine=No s'ha pogut trobar el mètode Console.WriteLine
+Emit_NotAnExceptionType=El tipus especificat no és inherent desde System.Exception
+Emit_NeedDefaultConstructor=El tipus d'excepció no té un constructor per defecte
+Emit_BothStaticAndVirtual=No es poden especificar ambdós "static" i "virtual"
+Emit_InterfaceMethodAttrs=La interfície dels atributs del mètode son incorrectes
+Emit_BodyAlreadySet=El cos del mètode ja ha estat definit
+Emit_CannotHaveBody=Aquest tipus de mètode no pot tenir un cos
+Emit_GlobalNonStatic=El mètode global ha de ser de tipus "static"
+Emit_CannotImportItem=No es pot importar el item especificat dins de l'ensamblat
+Emit_CannotImportRefType=No es poden importar tipus amb "byref"
+Emit_GetAlreadyDefined=El mètode "set" ja esta definit en aquesta propietat
+Emit_SetAlreadyDefined=El mètode "set" ja esta definit en aquesta propietat
+Emit_NeedDynamicModule=El modul no és dinàmic
+Emit_GenericsNotSupported=Els tipus genèrics no estàn suportats desde System.Reflection.Emit
+Emit_InvalidSigArgument=Argument invàlid per la signatura
+Emit_TypeAlreadyExists=El tipus especificat ja existeix
+Emit_UnderlyingNotSet=El tipus subjacent del tipus "enum" no ha estat definit
+Emit_NestingParentNotCreated=El tipus que està aniuant el seu parent no ha estat creat
+Emit_TypeInvalid=El tipus dinamic és invàlid
+Emit_DataSize=Mida incorrecte pel bloc de dades
+Emit_OverrideBodyNotInType=La sobreescriptura del cos no està definida en el mateix tipus que la seva declaració
+Emit_PInvokeInInterface=PInvoke methods cannot be defined in interfaces
+Emit_PInvokeAbstract=El mètode PInvoke no pot ser abstracte
+Emit_NotSimpleUnmanagedType=El tipus no manejat no és simple i necessita més elements
+Emit_NoUnmanagedBaseType=Les bases de tipus no manejades no estan suportades
+Emit_NoUnmanagedElementCount=El contador d'elements no manejat no esta especificat
+Emit_NotCustom=El tipus no manejat no està especificat

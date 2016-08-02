@@ -1,0 +1,507 @@
+/*
+ * cs_cast.tc - Semantic analysis for C# cast operators.
+ *
+ * Copyright (C) 2001, 2002  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+%decls %{
+
+/*
+ * Convert a type into a printable name, suitable for use in error messages.
+ */
+const char *CSTypeToName(ILType *type);
+
+#if IL_VERSION_MAJOR > 1
+/*
+ * Cast a method group to a delegate type.
+ */
+int CSCastMethod(ILGenInfo *info, ILNode *node, ILNode **parent,
+				 void *method, ILType *toType, int reportError);
+#endif /* IL_VERSION_MAJOR > 1 */
+
+%}
+
+/*
+ * Perform semantic analysis for a user-level cast operator.
+ */
+ILNode_SemAnalysis(ILNode_UserCast)
+{
+	CSSemValue type;
+	CSSemValue value;
+	ILEvalValue evalValue;
+
+	/* Perform semantic analysis on the type and value expressions */
+	type = ILNode_SemAnalysisType(node->expr1, info, &(node->expr1));
+	/* TODO: fix here when we refactor SemAnalysisType */
+	value = ILNode_SemAnalysis(node->expr2, info, &(node->expr2));
+
+	/* Validate the value */
+#if IL_VERSION_MAJOR > 1
+	if(CSSemIsMethodGroup(value))
+	{
+		if(CSSemIsType(type))
+		{
+			CSCastMethod(info, node->expr2, parent, CSSemGetGroup(value), CSSemGetType(type), 1);
+			CSSemSetRValue(value, CSSemGetType(type));
+			return value;
+		}
+	}
+	else
+#endif /* IL_VERSION_MAJOR > 1 */
+	if(!CSSemIsValue(value))
+	{
+		CCErrorOnLine(yygetfilename(node->expr2), yygetlinenum(node->expr2),
+					  "invalid value supplied to cast");
+		if(CSSemIsType(type))
+		{
+			CSSemSetRValue(value, CSSemGetType(type));
+		}
+		else
+		{
+			CSSemSetRValue(value, ILType_Int32);
+		}
+	}
+
+	/* Validate the type */
+	if(!CSSemIsType(type))
+	{
+		CCErrorOnLine(yygetfilename(node->expr1), yygetlinenum(node->expr1),
+					  "invalid type supplied to cast");
+		CSSemSetType(type, CSSemGetType(value));
+	}
+
+	/* Determine if we can cast between the types */
+	if(CSSemGetType(value) == ILType_Null && 
+		CSSemGetType(type) == ILType_Int)
+	{
+		// Special case (IntPtr)(null) is possible even without a NULL
+		// replacing with IntPtr.Zero
+		*parent = ILNode_Int_create(0,0,0); 
+		node->expr2 = *parent;
+		CSSemSetRValue(value, CSSemGetType(type));
+	}
+
+	if(!ILCast(info, node->expr2, &(node->expr2),
+			   CSSemGetType(value), CSSemGetType(type),1))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "cannot cast from `%s' to `%s'",
+					  CSTypeToName(CSSemGetType(value)),
+					  CSTypeToName(CSSemGetType(type)));
+	}
+	else
+	{
+		/* Replace this node with the converted node */
+		*parent = node->expr2;
+	}
+
+	/* Return an rvalue of the final type to the caller */
+	if(ILNode_EvalConst(*parent, info, &evalValue))
+	{
+		if(!(info->overflowInsns) && !(info->overflowChanged))
+		{
+			/* Re-evaluate in overflow mode to see if an explicit
+			   "unchecked(x)" is required around the expression */
+			ILEvalValue evalValue2;
+			int result;
+			info->overflowInsns = -1;
+			info->overflowChanged = -1;
+			result = ILNode_EvalConst(*parent, info, &evalValue2);
+			info->overflowInsns = 0;
+			info->overflowChanged = 0;
+			if(!result)
+			{
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+							  "constant value cannot be converted to `%s' "
+							  "without an explicit `unchecked' context",
+							  CSTypeToName(CSSemGetType(type)));
+			}
+		}
+		CSSemSetConstant(value, CSSemGetType(type), evalValue);
+		CSSemReplaceWithConstant(parent, value);
+	}
+	else
+	{
+		CSSemSetRValue(value, CSSemGetType(type));
+	}
+	return value;
+}
+
+%end %{
+
+#if IL_VERSION_MAJOR > 1
+
+/* Get the number of generic prameters for the nested patent class */
+static unsigned long NumNestedParentGenericPars(ILClass *classInfo)
+{
+	ILClass *nestedParentInfo;
+
+	nestedParentInfo = ILClass_NestedParent(classInfo);
+	if(nestedParentInfo)
+	{
+		return ILClassGetNumGenericPars(nestedParentInfo);
+	}
+	return 0;
+}
+
+#endif /* IL_VERSION_MAJOR > 1 */
+
+const char *CSTypeToName(ILType *type)
+{
+	if(ILType_IsPrimitive(type))
+	{
+		/* Get the name of a primitive type */
+		switch(ILType_ToElement(type))
+		{
+			case IL_META_ELEMTYPE_VOID:			return "void";
+			case IL_META_ELEMTYPE_BOOLEAN:		return "bool";
+			case IL_META_ELEMTYPE_I1:			return "sbyte";
+			case IL_META_ELEMTYPE_U1:			return "byte";
+			case IL_META_ELEMTYPE_I2:			return "short";
+			case IL_META_ELEMTYPE_U2:			return "ushort";
+			case IL_META_ELEMTYPE_CHAR:			return "char";
+			case IL_META_ELEMTYPE_I4:			return "int";
+			case IL_META_ELEMTYPE_U4:			return "uint";
+			case IL_META_ELEMTYPE_I8:			return "long";
+			case IL_META_ELEMTYPE_U8:			return "ulong";
+			case IL_META_ELEMTYPE_R4:			return "float";
+			case IL_META_ELEMTYPE_R8:			return "double";
+			case IL_META_ELEMTYPE_R:			return "double";
+			case IL_META_ELEMTYPE_I:			return "System.IntPtr";
+			case IL_META_ELEMTYPE_U:			return "System.UIntPtr";
+			case IL_META_ELEMTYPE_STRING:		return "System.String";
+			case IL_META_ELEMTYPE_OBJECT:		return "System.Object";
+			case IL_META_ELEMTYPE_TYPEDBYREF:	return "System.TypedReference";
+		}
+		if(type == ILType_Null)
+		{
+			return "null";
+		}
+	}
+	else if(ILType_IsValueType(type) || ILType_IsClass(type))
+	{
+		/* Get the name of a value or class type */
+		ILClass *classInfo = ILType_ToClass(type);
+		const char *name = ILClass_Name(classInfo);
+		const char *namespace = ILClass_Namespace(classInfo);
+		const char *finalName;
+		if(namespace)
+		{
+			finalName = ILInternStringConcat3
+							(ILInternString(namespace, -1),
+							 ILInternString(".", 1),
+							 ILInternString(name, -1)).string;
+		}
+		else
+		{
+			finalName = name;
+		}
+		if(ILClass_NestedParent(classInfo) != 0)
+		{
+			/* Prepend the name of the enclosing nesting class */
+			const char *parentName = CSTypeToName
+				(ILType_FromClass(ILClass_NestedParent(classInfo)));
+			finalName = ILInternStringConcat3
+							(ILInternString(parentName, -1),
+							 ILInternString(".", 1),
+							 ILInternString(finalName, -1)).string;
+		}
+		return finalName;
+	}
+	else if(type != ILType_Invalid)
+	{
+		/* Get the name of a complex type */
+		int kind = ILType_Kind(type);
+		if(kind == IL_TYPE_COMPLEX_BYREF)
+		{
+			return ILInternAppendedString
+					(ILInternString(CSTypeToName(ILType_Ref(type)), -1),
+					 ILInternString(" &", 2)).string;
+		}
+		else if(kind == IL_TYPE_COMPLEX_PTR)
+		{
+			return ILInternAppendedString
+					(ILInternString(CSTypeToName(ILType_Ref(type)), -1),
+					 ILInternString(" *", 2)).string;
+		}
+		else if(kind == IL_TYPE_COMPLEX_ARRAY ||
+			    kind == IL_TYPE_COMPLEX_ARRAY_CONTINUE)
+		{
+			ILType *elemType = ILType_ElemType(type);
+			ILIntString str;
+			ILIntString open;
+			ILIntString close;
+			ILIntString comma;
+			while(ILType_IsComplex(elemType) && elemType != ILType_Invalid &&
+			      (ILType_Kind(elemType) == IL_TYPE_COMPLEX_ARRAY ||
+				   ILType_Kind(elemType) == IL_TYPE_COMPLEX_ARRAY))
+			{
+				elemType = ILType_ElemType(elemType);
+			}
+			str = ILInternString(CSTypeToName(elemType), -1);
+			open = ILInternString("[", 1);
+			close = ILInternString("]", 1);
+			comma = ILInternString(",", 1);
+			str = ILInternAppendedString(str, open);
+			while(type != elemType)
+			{
+				if(ILType_Kind(type) == IL_TYPE_COMPLEX_ARRAY)
+				{
+					str = ILInternAppendedString(str, close);
+					type = ILType_ElemType(type);
+					if(type != elemType)
+					{
+						str = ILInternAppendedString(str, open);
+					}
+				}
+				else
+				{
+					str = ILInternAppendedString(str, comma);
+					type = ILType_ElemType(type);
+				}
+			}
+			return str.string;
+		}
+#if IL_VERSION_MAJOR > 1
+		else if(kind == IL_TYPE_COMPLEX_WITH)
+		{
+			unsigned long current;
+			unsigned long numGenericPars;
+			unsigned long numParentGenericPars;
+			const char *typeName;
+			const char *temp;
+			ILType *mainType;
+			ILIntString str;
+
+			mainType = ILTypeGetWithMain(type);
+			typeName = CSTypeToName(mainType);
+
+			/* Strip the part including the arity fromm the type name */
+			temp = strchr(typeName, '`');
+			if(temp)
+			{
+				str = ILInternString(typeName, (int)(temp - typeName));
+			}
+			else
+			{
+				/* A non generic class nested in a generic class */
+				str = ILInternString(typeName, -1);
+			}
+			numParentGenericPars = NumNestedParentGenericPars(ILType_ToClass(mainType));
+			numGenericPars = ILTypeNumWithParams(type);
+			if(numGenericPars > numParentGenericPars)
+			{
+				ILIntString open;
+				ILIntString close;
+				ILIntString comma;
+				ILIntString tempString;
+
+				open = ILInternString("<", 1);
+				close = ILInternString(">", 1);
+				comma = ILInternString(",", 1);
+				str = ILInternAppendedString(str, open);
+				current = numParentGenericPars + 1;
+				while(current <= numGenericPars)
+				{
+					if(current > numParentGenericPars + 1)
+					{
+						str = ILInternAppendedString(str, comma);
+					}
+					typeName = CSTypeToName(ILTypeGetWithParam(type, current));
+					tempString = ILInternString(typeName, -1);
+					str = ILInternAppendedString(str, tempString);
+					++current;
+				}
+				str = ILInternAppendedString(str, close);
+			}
+			return str.string;
+		}
+		else if(kind == IL_TYPE_COMPLEX_VAR)
+		{
+			/* TODO */
+		}
+		else if(kind == IL_TYPE_COMPLEX_MVAR)
+		{
+			/* TODO */
+		}
+#endif	/* IL_VERSION_MAJOR > 1 */
+		else if(kind == IL_TYPE_COMPLEX_CMOD_REQD ||
+				kind == IL_TYPE_COMPLEX_CMOD_OPT)
+		{
+			ILIntString str;
+			ILIntString temp;
+			if(kind == IL_TYPE_COMPLEX_CMOD_REQD)
+			{
+				str = ILInternString("/* reqd ", -1);
+			}
+			else
+			{
+				str = ILInternString("/* opt ", -1);
+			}
+			temp = ILInternString
+			  (CSTypeToName(ILType_FromClass
+			  				(type->un.modifier__.info__)), -1);
+			str = ILInternAppendedString(str, temp);
+			temp = ILInternString(" */ ", -1);
+			str = ILInternAppendedString(str, temp);
+			temp = ILInternString
+				(CSTypeToName(type->un.modifier__.type__), -1);
+			str = ILInternAppendedString(str, temp);
+			return str.string;
+		}
+		else if((kind & IL_TYPE_COMPLEX_METHOD) != 0)
+		{
+			ILIntString str;
+			ILIntString temp;
+			unsigned long num;
+			unsigned long param;
+			ILType *paramType;
+
+			/* Convert the return type */
+			str = ILInternString
+				(CSTypeToName(ILTypeGetReturnWithPrefixes(type)), -1);
+
+			/* Add the start of the parameter list */
+			temp = ILInternString(" * (", -1);
+			str = ILInternAppendedString(str, temp);
+
+			/* Indicate if the type has a "this" parameter */
+			if(ILType_HasThis(type))
+			{
+				temp = ILInternString("/*this,*/ ", -1);
+				str = ILInternAppendedString(str, temp);
+			}
+
+			/* Add the parameters to the list */
+			num = ILTypeNumParams(type);
+			for(param = 1; param <= num; ++param)
+			{
+				paramType = ILTypeGetParamWithPrefixes(type, param);
+				temp = ILInternString(CSTypeToName(paramType), -1);
+				str = ILInternAppendedString(str, temp);
+				if(param < num)
+				{
+					temp = ILInternString(", ", 2);
+					str = ILInternAppendedString(str, temp);
+				}
+			}
+
+			/* Terminate the parameter list and return */
+			temp = ILInternString(")", 1);
+			str = ILInternAppendedString(str, temp);
+			return str.string;
+		}
+	}
+	return "invalid type";
+}
+
+#if IL_VERSION_MAJOR > 1
+int CSCastMethod(ILGenInfo *info, ILNode *node, ILNode **parent,
+				 void *method, ILType *toType, int reportError)
+{
+	unsigned long itemNum;
+	ILProgramItem *itemInfo;
+	ILMethod *firstMatch;
+
+	if(!ILTypeIsDelegate(toType))
+	{
+		if(reportError)
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			"the type casted to `%s' is no delegate", CSTypeToName(toType));
+		}
+		return 0;
+	}
+
+	/* Find the set of candidate methods */
+	itemNum = 0;
+	firstMatch = 0;
+	while((itemInfo = CSGetGroupMember(method, itemNum)) != 0)
+	{
+		if(ILTypeDelegateSignatureMatch(toType, itemInfo))
+		{
+			if(firstMatch)
+			{
+				/* We have two (or possibly more) matches for the delegate */
+				if(reportError)
+				{
+						CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+	  					  "delegate expression supplies multiple candidates for `%s'",
+						  CSTypeToName(toType));
+				}
+				return 0;
+			}
+			firstMatch = (ILMethod *)itemInfo;
+		}
+		++itemNum;
+	}
+
+	/* If there was no candidates found then bail out */
+	if(!firstMatch)
+	{
+		/* We weren't able to find a match for the delegate */
+		if(reportError)
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+  				  "delegate expression is not compatible with `%s'",
+				  CSTypeToName(toType));
+		}
+		return 0;
+	}
+
+	/* Build the DelegateCreationExpression node */
+	if(ILMethod_IsStatic(firstMatch))
+	{
+		*parent = ILNode_DelegateCreationExpression_create
+			(ILType_ToClass(toType), 0, firstMatch);
+	}
+	else
+	{
+		if(yyisa(node, ILNode_Argument))
+		{
+			ILNode *thisExpr;
+
+			thisExpr = ((ILNode_Argument*)(node))->expression;
+			if(yyisa(thisExpr, ILNode_This) ||
+		  	  (yyisa(thisExpr, ILNode_MarkType) &&
+			   yyisa(((ILNode_MarkType *)(thisExpr))->expr, ILNode_This)))
+			{
+				ILNode_MethodDeclaration *caller;
+
+				caller = (ILNode_MethodDeclaration *)(info->currentMethod);
+				if(!caller || 
+					(caller->modifiers & CS_MODIFIER_STATIC) != 0)
+				{
+					/* Attempt to call an instance method using "this"
+					   from within a static method */
+					CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "cannot access instance members in static methods");
+				}
+			}
+		}
+		*parent = ILNode_DelegateCreationExpression_create
+			(ILType_ToClass(toType), node, firstMatch);
+	}
+	yysetfilename(*parent, yygetfilename(node));
+	yysetlinenum(*parent, yygetlinenum(node));
+
+	return 1;
+}
+#endif /* IL_VERSION_MAJOR > 1 */
+
+%}
+

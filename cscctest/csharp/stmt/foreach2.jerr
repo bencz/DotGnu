@@ -1,0 +1,2 @@
+./foreach2.cs:27: invalid type specification `fld' 
+./foreach2.cs:30: invalid collection expression in `foreach' statement

@@ -1,0 +1,41 @@
+#
+# Generics.txt - String resources for the "Generics" library.
+#
+# Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Arg_ABMustBeComparable=a or b must implement IComparable<T>
+Arg_CannotReduceCapacity=Cannot reduce the capacity of an array list below its current length
+Arg_ExistingEntry=There is already an existing entry with the specified key
+Arg_InvalidArrayIndex=Array index is invalid
+Arg_InvalidArrayRange=Array range is invalid
+Arg_NotInDictionary=There is no entry with the specified key
+ArgRange_Array=Array position or length is out of range
+ArgRange_HashLoadFactor=Invalid hash table load factor
+ArgRange_NonNegative=Value must not be negative
+Invalid_BadEnumeratorPosition=The enumerator is not positioned on an element
+Invalid_BadIteratorPosition=The iterator is not positioned on an element
+Invalid_CollectionModified=The collection has been modified
+Invalid_EmptyQueue=The requested operation is invalid on an empty queue
+Invalid_EmptyStack=The requested operation is invalid on an empty stack
+Invalid_EmptyList=The requested operation is invalid on an empty list
+Invalid_KeyType=Invalid type for dictionary key
+Invalid_NotCloneable=The specified collection is not cloneable
+Invalid_UnderlyingModified=The underlying collection has been modified
+Invalid_ValueType=Invalid type for collection value
+NotSupp_FixedSizeCollection=Operation not supported on fixed sized objects
+NotSupp_ReadOnly=Operation not supported on read-only objects
+NotSupp_Remove=Cannot remove from the specified collection

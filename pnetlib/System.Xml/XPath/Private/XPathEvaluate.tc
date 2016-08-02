@@ -1,0 +1,477 @@
+/*
+ * XPathEvaluate.tc - Evaluation operations for XPath 
+ *
+ * Copyright (C) 2004  Southern Storm Software, Pty Ltd.
+ * 
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+%operation %virtual object EvaluateInternal(Expression node, XPathNodeIterator iterator) = {null}
+
+EvaluateInternal(Expression)
+{
+	throw new Exception(node.GetType() + " doesn't have an EvaluateInternal");
+}
+
+EvaluateInternal(RootPathExpression)
+{
+	XPathNavigator nav = iterator.Current.Clone();
+	nav.MoveToRoot();
+	return new XPathSelfIterator(nav, this.NamespaceManager);
+}
+
+EvaluateInternal(NodeTest)
+{
+	// TODO handle various axes
+	XPathSimpleIterator axis = null;
+	
+	switch(node.axis)
+	{
+		case XPathAxis.Self:
+		{
+			axis = new XPathSelfIterator(
+									(XPathBaseIterator)iterator);
+		}
+		break;
+		
+		case XPathAxis.Child:
+		{
+			axis = new XPathChildIterator(
+									(XPathBaseIterator)iterator);
+		}
+		break;
+		
+		case XPathAxis.Parent:
+		{
+			axis = new XPathParentIterator(
+									(XPathBaseIterator)iterator);
+		}
+		break;
+
+		case XPathAxis.Attribute:
+		{
+			axis = new XPathAttributeIterator(
+									(XPathBaseIterator)iterator);
+		}
+		break;
+
+		case XPathAxis.Ancestor:
+		{
+			axis = new XPathAncestorIterator(
+									(XPathBaseIterator)iterator);
+		}
+		break;
+		
+		case XPathAxis.AncestorOrSelf:
+		{
+			axis = new XPathAncestorOrSelfIterator(
+									(XPathBaseIterator)iterator);
+		}
+		break;
+		
+		case XPathAxis.Descendant:
+		{
+			axis = new XPathDescendantIterator(
+									(XPathBaseIterator)iterator);
+		}
+		break;
+		
+		case XPathAxis.DescendantOrSelf:
+		{
+			axis = new XPathDescendantOrSelfIterator(
+									(XPathBaseIterator)iterator);
+		}
+		break;
+
+		case XPathAxis.Following:
+		{
+			axis = new XPathFollowingIterator(
+									(XPathBaseIterator)iterator);
+		}
+		break;
+
+		case XPathAxis.FollowingSibling:
+		{
+			axis = new XPathFollowingSiblingIterator(
+									(XPathBaseIterator)iterator);
+		}
+		break;
+		
+		case XPathAxis.Preceding:
+		{
+			axis = new XPathPrecedingIterator(
+									(XPathBaseIterator)iterator);
+		}
+		break;
+		
+		case XPathAxis.PrecedingSibling:
+		{
+			axis = new XPathPrecedingSiblingIterator(
+									(XPathBaseIterator)iterator);
+		}
+		break;
+
+		case XPathAxis.Namespace:
+		{
+			axis = new XPathNamespaceIterator(
+									(XPathBaseIterator)iterator);
+		}
+		break;
+		
+		default:
+		{
+			throw new NotImplementedException(node.axis + " is not implemented");
+		}
+		break;
+	}
+	
+	return new XPathAxisIterator(axis, this);
+}
+
+EvaluateInternal(SlashExpression)
+{
+	XPathBaseIterator lhs = (XPathBaseIterator)node.left.Evaluate(iterator);
+	return new XPathSlashIterator(lhs, node.right);
+}
+
+EvaluateInternal(RecursiveDescentPathExpression)
+{
+	XPathBaseIterator lhs = (XPathBaseIterator)node.left.Evaluate(iterator);
+	NodeTest test = new NodeTest(XPathAxis.DescendantOrSelf, 
+								 XPathNodeType.All, null);
+	return new XPathSlashIterator(
+					new XPathSlashIterator(lhs, test ),
+					node.right);
+}
+
+EvaluateInternal(FilterExpression)
+{
+	XPathBaseIterator left = (XPathBaseIterator)node.expr.Evaluate(iterator);
+	return new XPathPredicateIterator(left, node.predicate);
+}
+
+EvaluateInternal(LiteralExpression)
+{
+	return node.value; 
+}
+
+EvaluateInternal(NumberExpression)
+{
+	return node.number; 
+}
+
+EvaluateInternal(EqualityExpression)
+{
+	Object lhs = node.left.Evaluate(iterator);
+	Object rhs = node.right.Evaluate(iterator);
+	
+	XPathResultType ltype = node.left.ReturnType;
+	XPathResultType rtype = node.right.ReturnType;
+	
+	// TODO: remove double evaluation of iterators 
+	//       implement proper coercion methods or at least some memoization
+
+	if(ltype == XPathResultType.NodeSet || rtype == XPathResultType.NodeSet)
+	{
+		Expression left = node.left;
+		Expression right = node.right;
+		
+		// Flip the order as a == b is the same as b == a
+		// TODO: do this while compiling itself , if possible
+		if(ltype != XPathResultType.NodeSet)
+		{
+			left = node.right;
+			right = node.left;
+			XPathResultType tmp = ltype;
+			ltype = rtype;
+			rtype = tmp;
+		}
+		switch(rtype)
+		{
+			case XPathResultType.Boolean:
+			{
+				return (node.invert != 
+							(left.EvaluateAs(iterator, rtype) == 
+								left.EvaluateAs(iterator, rtype)));
+			}
+			break;
+			case XPathResultType.Number:
+			{
+				XPathNodeIterator iterleft = (XPathNodeIterator)left.Evaluate(iterator);
+				double d = (double) right.EvaluateAs(iterator, XPathResultType.Number);
+				while(iterleft.MoveNext())
+				{
+					return node.invert != 
+						((Convert.ToDouble(iterleft.Current.Value) == d));
+				}
+			}
+			break;
+			case XPathResultType.String:
+			{
+				XPathNodeIterator iterleft = (XPathNodeIterator)left.Evaluate(iterator);
+				String  s = (String)right.EvaluateAs(iterator, XPathResultType.String);
+				while(iterleft.MoveNext())
+				{
+					return(invert != (iterleft.Current.Value == s));
+				}
+			}
+			break;
+			case XPathResultType.NodeSet:
+			{
+			}
+			break;
+			
+		}
+	}
+	else if( ltype == XPathResultType.Boolean || 
+	         rtype == XPathResultType.Boolean)
+	{
+		bool lbool = (bool)(node.left.EvaluateAs(iterator, 
+												XPathResultType.Boolean));
+		bool rbool = (bool)(node.right.EvaluateAs(iterator, 
+												XPathResultType.Boolean));
+		return (node.invert != (lbool == rbool));
+	}
+	else if( ltype == XPathResultType.Number || 
+	         rtype == XPathResultType.Number)
+	{
+		double ldouble = (double) (node.left.EvaluateAs(
+													iterator, 
+													XPathResultType.Number));
+													
+		double rdouble = (double) (node.right.EvaluateAs(
+													iterator, 
+													XPathResultType.Number));
+		return (node.invert != (ldouble == rdouble));
+	}
+	else if( ltype == XPathResultType.String || 
+	         rtype == XPathResultType.String)
+	{
+		String lstring = (String) (node.left.EvaluateAs(
+											iterator, 
+											XPathResultType.String));
+		String rstring = (String) (node.right.EvaluateAs(
+											iterator, 
+											XPathResultType.String));
+													
+		return (node.invert != (lstring == rstring)); 
+	}
+	return false;
+}
+
+EvaluateInternal(AndExpression)
+{
+	return	
+	(((bool)node.left.EvaluateAs(iterator, XPathResultType.Boolean) == true) && 
+	((bool)node.right.EvaluateAs(iterator, XPathResultType.Boolean) == true));
+}
+
+EvaluateInternal(OrExpression)
+{
+	return	
+	(((bool)node.left.EvaluateAs(iterator, XPathResultType.Boolean) == true) ||
+	((bool)node.right.EvaluateAs(iterator, XPathResultType.Boolean) == true));
+}
+
+EvaluateInternal(UnionExpression)
+{
+	XPathBaseIterator left = (XPathBaseIterator)node.left.Evaluate(iterator);
+	XPathBaseIterator right = (XPathBaseIterator)node.right.Evaluate(iterator);
+	return new XPathUnionIterator((XPathBaseIterator)iterator, left, right); 
+}
+
+
+EvaluateInternal(FunctionCallExpression)
+{
+	throw new NotImplementedException("XSLT external functions are not implemented yet");
+}
+
+/* Nodeset Functions */
+EvaluateInternal(XPathCountFunction)
+{
+	XPathNodeIterator argIter = (XPathNodeIterator)node.args.expr.EvaluateAs(
+												iterator, 
+												XPathResultType.NodeSet);
+	
+	if(argIter != null)
+	{
+		return (double) argIter.Count;
+	}
+	
+	return 0.0;
+}
+EvaluateInternal(XPathIdFunction)
+{
+	return null; /* TODO */
+}
+EvaluateInternal(XPathLastFunction)
+{
+	return (double)iterator.Count;
+}
+EvaluateInternal(XPathLocalNameFunction)
+{
+	if(node.args == null)
+	{
+		return iterator.Current.LocalName;
+	}
+
+	XPathNodeIterator argIter = (XPathNodeIterator)node.args.expr.EvaluateAs(
+												iterator, 
+												XPathResultType.NodeSet);
+	
+	if(argIter != null && argIter.MoveNext())
+	{
+		return argIter.Current.LocalName; 
+	}
+
+	return String.Empty;
+}
+
+EvaluateInternal(XPathNameFunction)
+{
+	if(node.args == null)
+	{
+		return iterator.Current.Name;
+	}
+
+	XPathNodeIterator argIter = (XPathNodeIterator)node.args.expr.EvaluateAs(
+												iterator, 
+												XPathResultType.NodeSet);
+	
+	if(argIter != null && argIter.MoveNext())
+	{
+		return argIter.Current.Name; 
+	}
+
+	return String.Empty;
+}
+
+EvaluateInternal(XPathNamespaceUriFunction)
+{
+	return null; /* TODO */
+}
+EvaluateInternal(XPathPositionFunction)
+{
+	return (double)iterator.CurrentPosition;
+}
+
+/* Boolean functions */
+EvaluateInternal(XPathBooleanFunction)
+{
+	return null; /* TODO */
+}
+EvaluateInternal(XPathTrueFunction)
+{
+	return true; /* TODO */
+}
+EvaluateInternal(XPathFalseFunction)
+{
+	return false; /* TODO */
+}
+EvaluateInternal(XPathLangFunction)
+{
+	return null; /* TODO */
+}
+EvaluateInternal(XPathNotFunction)
+{
+	bool value = (bool)node.args.expr.EvaluateAs(iterator, 
+												 XPathResultType.Boolean);
+	return !(value); /* TODO */
+}
+
+/* Number functions */
+
+EvaluateInternal(XPathCeilingFunction)
+{
+	return null; /* TODO */
+}
+EvaluateInternal(XPathFloorFunction)
+{
+	return null; /* TODO */
+}
+EvaluateInternal(XPathNumberFunction)
+{
+	return null; /* TODO */
+}
+EvaluateInternal(XPathRoundFunction)
+{
+	return null; /* TODO */
+}
+EvaluateInternal(XPathSumFunction)
+{
+	return null; /* TODO */
+}
+
+/* String functions */
+EvaluateInternal(XPathConcatFunction)
+{
+	String [] parts = new String[node.argCount];
+	
+	ArgumentList args = node.args;
+	
+	for(int i = 0; i < parts.Length ; i++)
+	{
+		parts[i] = (String) (args.expr.EvaluateAs(iterator,
+													XPathResultType.String));
+		args = args.next;
+	}
+
+	return String.Concat(parts);
+}
+EvaluateInternal(XPathContainsFunction)
+{
+	return null; /* TODO */
+}
+EvaluateInternal(XPathNormalizeFunction)
+{
+	return null; /* TODO */
+}
+EvaluateInternal(XPathStartsWithFunction)
+{
+	return null; /* TODO */
+}
+EvaluateInternal(XPathStringFunction)
+{
+	String retval = (String) (args.expr.EvaluateAs(iterator,
+											XPathResultType.String));
+	return (retval == null) ? String.Empty : retval;
+}
+EvaluateInternal(XPathStringLengthFunction)
+{
+	String retval = (String) (args.expr.EvaluateAs(iterator,
+											XPathResultType.String));
+
+	return (double) ((retval == null) ? 0 : retval.Length);
+}
+EvaluateInternal(XPathSubstringFunction)
+{
+	return null; /* TODO */
+}
+EvaluateInternal(XPathSubstringAfterFunction)
+{
+	return null; /* TODO */
+}
+EvaluateInternal(XPathSubstringBeforeFunction)
+{
+	return null; /* TODO */
+}
+EvaluateInternal(XPathTranslateFunction)
+{
+	return null; /* TODO */
+}
+
+/*
+ * vim: sw=4 ts=4 syntax=cs
+ */

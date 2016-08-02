@@ -1,0 +1,176 @@
+<html>
+
+<head>
+<title>CSUnit in a Nutshell</title>
+</head>
+
+<body text="#000000" bgcolor="#FFFFFF">
+
+
+<p align="right"><i>13-04-2001</i></p>
+<h1>CSUnit For Dummies</h1>
+
+<br>
+<p>
+This document is a brief introduction to CSunit, a Unit
+Testing framework for C# programs, written in C#.
+</p>
+
+<h3>About CSUnit</h3>
+<p>
+CSUnit is part of the DotGNU 
+<a href="http://www.southern-storm.com.au">Portable.NET </a> system that can be
+used to perform Unit Testing of C# programs. It has been designed with a 
+minimum dependency on our C# library &middot; Pnetlib , so that this can
+be used to test our library functionality.
+</p>
+
+<h3>What is Unit Testing?</h3>
+
+<p>
+A <b>Unit Test</b> is a simple piece of test code that tests one
+teeny-weeny bit of your program.
+A Unit Test <b>does not </b>test application level
+functionality. A Unit Testing tool is a framework that makes it 
+Easy to write, maintain, execute, , collect &amp;
+present results from, a number of unit tests.
+</p>
+
+<h3> What can I do with CSUnit</h3>
+<p>
+With CSUnit, we can do all of the above. CSUnit comes with a a command line interface as of now.
+We will be building support into a number of IDE's like SharpDevelop or the
+DotGNU Development Environment later.
+</p>
+
+<h3> Using CSUnit </h3>
+<p>
+Using the CSUnit testing framework will involve the following:
+
+</p>
+
+<ul>
+ <li> Writing tests</li>
+ <li> Executing the tests and collecting/viewing results.[TODO]</li>
+</ul>
+
+<h3>Writing tests</h3>
+
+
+<h4>
+You should first write a class that extends
+CSUnit.TestCase like this:
+</h4>
+&gt;&gt; TestFoo.cs<hr width="90%">
+<tt>
+<pre>
+using CSUnit;
+using System;
+
+public class TestFoo : TestCase
+{
+
+	public TestFoo(String name) : base(name)
+	{
+	}
+	
+	protected override void Setup()
+	{
+		// do the initial setup -- most likely none :)
+	}
+
+	protected override void Cleanup()
+	{
+		// cleanup the mess this test makes
+	}
+
+	// we consider any function that starts with a Test or test as a
+	// CSUnit test -- thank God for Reflection
+
+	public void TestFeature()
+	{
+		
+		Assert("I'm testing Foo.Feature()",Foo.Feature() == expected_value);
+
+		// AssertEquals is especially good for testing String/Object retvals
+
+		AssertEquals("Foo.Feature() should be \"1\" here","1",Foo.Feature());
+
+		// OR be a bit more specific
+		
+		AssertEquals("Foo.Feature()==\"1\"","1",Foo.Feature());
+
+		try
+		{
+			Foo a=null;
+			Foo.Feature("foo");
+			Fail("NullReferenceException not caught !");
+			// it's obvious that I went a little overboard with the
+			// error messages -- be a little less alarming :)
+		}
+		catch(NullReferenceException err)
+		{
+			//woooohooo caught it !.
+		}
+	}
+}
+</pre>
+</tt>
+<br>
+<hr>
+<p>
+Each unit test you write will be a method of this
+class, and should start with &quot;Test&quot; or
+&quot;test&quot;
+</p>
+
+<p>
+Assert() is a function that is available via the TestCase
+class. The assert succeeds if the condition passed to it is true, 
+and it fails otherwise. The AssertEquals() is a function that
+avoids the use of the <b><i>==</i></b> operator overloading for
+comparing Objects. When an assert fails, the CSUnit makes a note
+that the test has failed, and if a test routine returns without any
+error/failure, CSUnit makes a note that the test has succeeded.</p>
+
+<p>
+Add as many unit tests as you like . Unlike the more famous JUnit,
+CSUnit does not support a GUI as of now -- but the really picky
+guys may contact me for a kewl hack on this issue.
+</p>
+
+<p>
+What we have seen is the simplest way to write CSUnit tests.
+It is more than likely that testing non-trivial code will need 
+non-trivial testing. I'll move into more detail later in a
+full fledged documentation effort for CSUnit. As well as the
+methods to run CSUnit tests.
+</p>
+
+
+<p>
+CSUnit is a very simple tool that can be used to organize and easily 
+execute a number of test cases, which can be built incrementally.This
+document did not cover all features of CSUnit but is only meant to be 
+a first step into Unit testing using CSUnit.
+</p>
+<hr>
+<p> Orginally for JUnit by 
+<a href="mailto:sriramkarra [GET HIS MAIL AT] yahoo [PUT THE DOT HERE] com ">
+Sriram Karra
+</a>. 
+
+Hacked for CSUnit by 
+<a href="mailto:gopalv82 [GET HIS MAIL AT] yahoo [PUT THE DOT HERE] com ">
+Gopal.V
+</a>
+</p>
+<p align="center">
+<font size="-1">
+	This Document is Licensed under the GNU FDL.<br>
+	(C) Southern Storm Inc 2002
+</font>
+</p>
+</body>
+
+</html>

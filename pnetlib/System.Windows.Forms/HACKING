@@ -1,0 +1,207 @@
+
+Introduction
+------------
+
+This is the HACKING file for Portable.NET's implementation of the
+System.Windows.Forms API.  It is intended for developers who wish to
+help out on the implementation.
+
+Unlike other attempts at implementing System.Windows.Forms, we don't
+try to wrap up third party widget sets like Gtk, Qt, Wine, etc.
+Instead, we provide a basic drawing layer and then render the controls
+ourselves.  The approach is similar to Java Swing, in that all controls
+are implemented in pure C#.
+
+This approach should allow us to emulate peculiar Windows behaviours
+more closely than other approaches have done so far because we don't
+need to work around the quirks in foreign toolkits.
+
+Please contact Rhys Weatherley, "rweather@southern-storm.com.au",
+if you have any questions about this document.  See the main
+"pnetlib/HACKING" file for general guidelines on submitting code
+and bug reports to the Portable.NET project.
+
+Documentation
+-------------
+
+If you don't have a copy of the .NET Framework SDK, then you can access
+the documentation for "System.Windows.Forms" and "System.Drawing" at
+"http://msdn.microsoft.com/".
+
+How it is structured
+--------------------
+
+The Portable.NET Forms implementation is structured into three layers, which
+are found in the directories "System.Drawing", "System.Drawing/Toolkit",
+and "System.Windows.Forms".
+
+    System.Drawing
+
+        Provides the basic drawing functionality, emulating the
+        Windows GDI layer as faithfully as possible.  When drawing
+        to a control, use the definitions in "System.Drawing.Graphics".
+
+    System.Drawing/Toolkit
+
+        Defines an interface to primitive drawing toolkits.  Toolkits
+        provide simple line/text/etc drawing (IToolkitGraphics), plus
+        a simple window mechanism (IToolkitWindow).
+
+        There may be multiple toolkits in the system, each providing
+        drawing functionality in a different manner.  The current
+        toolkit is "System.Drawing.Xsharp", which wraps around the
+        Portable.NET "Xsharp" library.
+
+    System.Windows.Forms
+
+        Builds upon the primitive drawing and window facilities from
+        "System.Drawing" and "System.Drawing/Toolkit" to implement
+        the various controls, forms, dialogs, etc, that are defined
+        by the Forms API.
+
+Most of the time you will not need to care about the toolkit layer
+(unless you wish to port Forms to a new graphical system of course).
+
+The "System.Windows.Forms.Control" class does most of the hard work
+of wrapping up the toolkit and exposing an easy to use event API.
+
+Writing a control
+-----------------
+
+The most basic type of class in Forms is the "control".  Controls normally
+inherit from the "Control" class.  You will probably need to override a
+number of events to handle painting, mouse movements, and the keyboard.
+
+To hook an event, override the corresponding "OnXXX" method in "Control".
+e.g. "OnPaint", "OnMouseDown", "OnMouseEnter", etc.  Don't use the C#
+event mechanism (e.g. "Paint += new PaintEventHandler(XXX)"), because
+it is less efficient and not required for direct control implementation.
+
+C# events are intended for use by application programs, not Forms itself.
+
+Try to avoid using "Invalidate()" and "Update()", since they aren't
+terribly efficient to implement under X/Windows.  For simple controls,
+clear the whole control with the background pattern and repaint everything
+each time.  "Control.CreateBackgroundBrush()" will create a brush that you
+can use to clear to the background color using "Graphics.FillRectangle".
+
+It is highly recommended that you use "CreateBackgroundBrush()", instead
+of creating your own brush, because then your code should work smoothly
+when we introduce background images later.
+
+Here is a hypothetical control, which provides paint and redraw facilities.
+The "Redraw()" method is typically called from mouse and keyboard event
+handlers to force an immediate redraw.
+
+    public class HypotheticalControl : Control
+    {
+        public HypotheticalControl() {}
+
+        // Draw the contents of the control.
+        private void Draw(Graphics graphics)
+                {
+                    // ... put your drawing code here ...
+                }
+
+        // Redraw the contents of the control.
+        private void Redraw()
+                {
+                    // Bail out if the control is not visible.
+                    if(!Visible || !IsHandleCreated)
+                    {
+                        return;
+                    }
+
+                    // Get a graphics object and clear to the background color.
+                    Graphics graphics = CreateGraphics();
+                    Brush brush = CreateBackgroundBrush();
+                    graphics.FillRectangle(brush, ClientRectangle);
+                    brush.Dispose();
+
+                    // Draw the foreground parts of the control.
+                    Draw(graphics);
+
+                    // Clean up.
+                    graphics.Dispose();
+                }
+
+        // Override the paint event.
+        protected override void OnPaint(PaintEventArgs e)
+                {
+                    base.OnPaint(e);
+                    Draw(e.Graphics);
+                }
+
+        // ... other event handlers and control API methods ...
+
+    }; // class HypotheticalControl
+
+Stubbing
+--------
+
+If you are in the beginning stages of implementing a standard SWF
+control from the MSDN docs its probably a good idea to begin by stubbing
+all non-inherited methods, events, and properties.
+
+During this process if there are some methods your not sure what to do
+with, just call its matching base class method.
+
+One case we found this to be a problem was the CreateHandle() method
+from some controls, if you stub it but don't call the base class method
+it makes your control not work as expected.
+
+Then later on as you go implementing events and such you may encounter
+the reasons as to why these methods were overriden and you can do what
+you want there.
+
+Theme support
+-------------
+
+While the Forms implementation doesn't currently have support for Unix
+desktop themes, there are some things that you can do to make sure that
+your controls will be theme-capable in the future.
+
+    - use the definitions in "System.Drawing.SystemColors" whenever you
+      need a standard background, foreground, or button shadow color.
+
+    - use the methods in "System.Windows.Forms.ControlPaint" to draw
+      3D effects and the like.
+
+If you need to render some effect that isn't defined in "ControlPaint",
+then add an "internal" method to "ControlPaint".  Then we will have one
+place to look when we get to themes later.
+
+Window procedures
+-----------------
+
+The Windows-style "WndProc"'s are not currently used in this implementation
+because they are highly insecure, requiring access to raw pointers.
+
+However, we do need to leave room for "WndProc"'s in case some application
+program wants to access some funky Windows feature that is only available
+via "WndProc"'s.
+
+For the time being, any control class that needs a "WndProc" should be
+declared as follows:
+
+    #if !CONFIG_COMPACT_FORMS
+
+        // Process a message.
+        protected override void WndProc(ref Message m)
+                {
+                    base.WndProc(ref m);
+                }
+
+    #endif // !CONFIG_COMPACT_FORMS
+
+(WndProc's aren't used in the compact version of Forms).
+
+You should never need to hook "WndProc" yourself: all events of interest
+are available via the "OnXXX" methods, and dispatched by "Control".
+If an event is missing from the toolkit layer, then contact Rhys and
+he'll add support for it.
+
+Note to Developers:
+When implementing classes don't hesitate to compare the stub's class, me
+thod, and member declarations to the MSDN documentation before beginning
+the implementation.

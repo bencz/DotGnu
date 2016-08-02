@@ -1,0 +1,40 @@
+#
+# Reflection.txt - Resources for reflection classes.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Reflection_AmbiguousAttr=Es gab mehr als ein Attribut mit dem angegebenen Name
+Reflection_AssemblyName=Ungueltiger assembly name angegeben
+Reflection_AssemblyFile=Kann assembly "{0}" nicht finden
+Reflection_AssemblySecurity=Nicht genug Sicherheitsbescheinigungen um "{0}" zu laden
+Reflection_BadImage=Format der executable oder Bibliothek "{0}" ist unguetlig
+Reflection_NoEventAdd=Konnte auf die add Methode fuer ein event nicht zugreifen
+Reflection_NoEventRemove=Konnte auf die remove Methode fuer ein event nicht zugreifen
+Reflection_InvalidEventHandler=Event handler war nicht vom richtigen Typ
+Reflection_NoPropertyGet=Konnte auf die get Methode fuer eine Eigenschaft nicht zugreifen
+Reflection_NoPropertySet=Konnte auf die set Methode fuer eine Eigenschaft nicht zugreifen
+Reflection_NoPropertyAccess=Der Aufruf hat keinen Zugriff auf die get oder set Methode der angegebenen Eigenschaft
+Reflection_InvokeAttr=Ungueltige Attribute fuer Type.InvokeMember
+Reflection_CtorTarget=Kann kein Ziel angeben wenn ein Konstruktor hervorgerufen wird
+Reflection_MissingField=Fehlendes Feld bei der Benutzung von Type.InvokeMember
+Reflection_MissingMethod=Fehlende Methode bei der Benutzung von Type.InvokeMember
+Reflection_MissingProperty=Fehlende Eigenschaft bei der Benutzung von Type.InvokeMember
+Reflection_GetField=Ungueltige Argumente fuer GetField Anfrage
+Reflection_SetField=Ungueltige Argumente fuer SetField Anfrage
+Reflection_InvalidArgs=Ungueltige Argumente an die member invocation
+Reflection_ParamName=Ungueltiger Parameter Name in Argumenten an die member invocation
+Reflection_UnknownField=Der angegebene Feld Namen ist unbekannt

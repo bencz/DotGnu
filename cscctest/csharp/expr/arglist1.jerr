@@ -1,0 +1,4 @@
+./arglist1.cs:23: `__arglist' is disallowed when compiling to Java bytecode
+./arglist1.cs:28: `__arglist' is disallowed when compiling to Java bytecode
+./arglist1.cs:25: `__arglist' is disallowed when compiling to Java bytecode
+./arglist1.cs:30: `__arglist' is disallowed when compiling to Java bytecode

@@ -1,0 +1,34 @@
+#
+# System.Drawing.txt - Resources for the "System.Drawing" assembly.
+#
+# Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Arg_ColorComponent=Farb Komponenten muessen zwischen 0 und 255 (inclusive) liegen
+Arg_InvalidColor=Ungueltige Farbangabe
+Arg_InvalidCurveOffset=Ungueltiger Offset in das Kurve Punkt Array
+Arg_InvalidCurveSegments=Ungueltige Anzahl an Kurvensegmenten
+Arg_NeedsAtLeastNPoints=Benoetige mindestens {0} Punkte
+Arg_UnknownResource=Unbekannter Ressourcen Name
+Arg_InvalidPoint=Ungueltige Punkt Angabe
+Arg_InvalidRectangle=Ungueltige Rechteck Angabe
+Arg_InvalidSize=Ungueltige Groessenangabe
+Arg_NotSystemColor=Die angegebene Farbe ist keine Systemfarbe
+Arg_PaperSizeNotCustom=Kann die Groesse eines nicht Anwenderspezifischen Papiergroesse nicht veraendern
+ArgRange_NonNegative=Der Wert darf nicht negativ sein
+Exception_InvalidPrinter=Ungueltige Druckerangabe
+NotSupp_CannotGetDevMode=HDEVMODE Werte werden nicht unterstuetzt
+NotSupp_CannotGetDevNames=DEVNAMES werden nicht unterstuetzt

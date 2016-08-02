@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<project name="pnetlib TestSystem" default="all">
+	<target name="all">
+
+		<!-- Build the TestSystem.dll library -->
+		<compile output="TestSystem.dll"
+				 target="library"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true">
+
+			<sources>
+				<includes name="**/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="../../csunit/cstest.dll"/>
+				<file name="../../System/first/System.dll"/>
+				<file name="../../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<file name="../../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-g"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+	</target>
+</project>

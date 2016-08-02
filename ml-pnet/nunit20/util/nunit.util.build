@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+
+<project name="nunit.util" default="all">
+	<target name="all">
+
+		<compile target="library"
+				 output="nunit.util.dll"
+				 debug="${debug.flag}"
+				 unsafe="false"
+				 install="true"
+				 installasdefault="true">
+
+			<define name="MONO" value="true"/>
+
+			<sources basedir="${mono.sources}/nunit20/util/">
+				<includes name="**/*.cs"/> 
+			</sources>
+
+			<references>
+				<file name="../core/nunit.core.dll"/>
+				<file name="../framework/nunit.framework.dll"/>
+				<file name="${pnet.libdir}/runtime/mscorlib.dll"/>
+				<file name="${pnet.libdir}/System/System.dll"/>
+				<file name="${pnet.libdir}/System.Xml/System.Xml.dll"/>
+				<file name="${pnet.libdir}/System.Drawing/System.Drawing.dll"/>
+				<file name="${pnet.libdir}/System.Windows.Forms/System.Windows.Forms.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=neutral"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+		</compile>
+	</target>
+</project>

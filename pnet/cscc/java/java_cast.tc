@@ -1,0 +1,87 @@
+/*
+ * java_cast.tc - Cast and other type cast operators
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ * Copyright (C) 2003  Gopal.V
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/*
+ * Perform semantic analysis for a user-level cast operator.
+ */
+ILNode_JSemAnalysis(ILNode_UserCast)
+{
+	JavaSemValue type;
+	JavaSemValue value;
+/*	ILEvalValue evalValue;*/
+
+	/* Perform semantic analysis on the type and value expressions */
+	type = ILNode_JSemAnalysis(node->expr1, info, &(node->expr1));
+	value = ILNode_JSemAnalysis(node->expr2, info, &(node->expr2));
+
+	/* Validate the value */
+	if(!JavaSemIsValue(value))
+	{
+		CCErrorOnLine(yygetfilename(node->expr2), yygetlinenum(node->expr2),
+					  "invalid value supplied to cast");
+		if(JavaSemIsType(type))
+		{
+			JavaSemSetRValue(value, JavaSemGetType(type));
+		}
+		else
+		{
+			JavaSemSetRValue(value, ILType_Int32);
+		}
+	}
+
+	/* Validate the type */
+	if(!JavaSemIsType(type))
+	{
+		CCErrorOnLine(yygetfilename(node->expr1), yygetlinenum(node->expr1),
+					  "invalid type supplied to cast");
+		JavaSemSetType(type, JavaSemGetType(value));
+	}
+
+	/* Determine if we can cast between the types */
+	if(!ILCast(info, node->expr2, &(node->expr2),
+			   JavaSemGetType(value), JavaSemGetType(type),69))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "cannot cast from `%s' to `%s'",
+					  JavaTypeToName(JavaSemGetType(value)),
+					  JavaTypeToName(JavaSemGetType(type)));
+	}
+	else
+	{
+		/* Replace this node with the converted node */
+		*parent = node->expr2;
+	}
+
+	/* Return an rvalue of the final type to the caller */
+/*
+	if(ILNode_EvalConst(*parent, info, &evalValue))
+	{
+		JavaSemSetConstant(value, JavaSemGetType(type), evalValue);
+		JavaSemReplaceWithConstant(parent, value);
+	}
+	else
+	{*/
+		JavaSemSetRValue(value, JavaSemGetType(type));
+//	}
+	return value;
+}
+
+

@@ -1,0 +1,212 @@
+.\" Copyright (c) 2003 Southern Storm Software, Pty Ltd.
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.TH ilgac 1 "11 November 2003" "Southern Storm Software" "Portable.NET Development Tools"
+.SH NAME
+ilgac \- manage the Portable.NET assembly cache
+.SH SYNOPSIS
+\fBilgac\fR [ options ] \fI[ assembly [ version ] ]\fR
+.SH DESCRIPTION
+.B Ilgac
+manages the Portable.NET assembly cache, allowing library assemblies
+to be installed, uninstalled, or listed.
+.SH OPTIONS
+.TP
+.B \-i, \-\-install
+Install the specified assemblies into the cache.  See the section
+"INSTALLING ASSEMBLIES" below for more information.
+.TP
+.B \-u, \-\-uninstall
+Uninstall the specified assemblies from the cache.  See the section
+"UNINSTALLING ASSEMBLIES" below for more information.
+.TP
+.B \-l, \-\-list
+List the contents of the assembly cache.  See the section
+"LISTING ASSEMBLIES" below for more information.
+.TP
+.B \-f, \-\-force
+Force installation to proceed even if there is an existing
+assembly with the specified name and version.
+.TP
+.B \-d, \-\-default
+Install the assembly as the fallback default version.  When used with
+`\fB--list\fR', this will list the fallback default versions in addition
+to the regular assembly versions.
+.TP
+.B \-L, \-\-link
+Create a symbolic link within the cache rather than copying the assembly.
+.TP
+.B \-S DIR, \-\-subdir DIR
+Specify a resource sub-directory (e.g. "de").
+.TP
+.B \-c DIR, \-\-cache DIR
+Specify the location of the assembly cache.
+.TP
+.B \-s, \-\-silent
+Do not print status messages.
+.TP
+.B \-\-help
+Print a usage message for the \fBilgac\fR program.
+.TP
+.B \-v, \-\-version
+Print the version of the \fBilgac\fR program.
+.TP
+.B \-\-
+Marks the end of the command-line options, and the beginning of
+the input filenames.  You may need to use this if your filename
+begins with '-'.  e.g. "ilgac -i -- -input.dll".
+.SH "INSTALLING ASSEMBLIES"
+In the examples that follow, we assume that the assemblies
+have the version number `\fR1.2.3400.0\fR' unless otherwise stated.
+
+The following command-line installs the assembly `\fBfoobar.dll\fR'
+within the assembly cache and makes it the default version:
+.RS
+.nf
+\fC
+ilgac --install --default foobar.dll
+\fR
+.fi
+.RE
+This will create the following file and symbolic link under the
+top-level cache directory:
+.RS
+.nf
+\fC
+1.2.3400.0/foobar.dll
+foobar.dll -> 1.2.3400.0/foobar.dll
+\fR
+.fi
+.RE
+Note: if the assembly version number is `\fB0.0.0.0\fR', then the
+assembly will be stored in the main directory without a symbolic link.
+
+You can install an older version (\fB1.1.5000.0\fR) of `\fBfoobar.dll\fR'
+side by side by omitting the `\fB--default\fR' option:
+.RS
+.nf
+\fC
+ilgac --install foobar.dll
+\fR
+.fi
+.RE
+After installing both, the assembly cache directory structure will
+look like this:
+.RS
+.nf
+\fC
+1.1.5000.0/foobar.dll
+1.2.3400.0/foobar.dll
+foobar.dll -> 1.2.3400.0/foobar.dll
+\fR
+.fi
+.RE
+The runtime engine, \fBilrun\fR(1), will first look in the version
+sub-directory for an exact match.  If a match is not found, it will
+then look for the default version in the top-level cache directory.
+
+If you had a satelite resource assembly for German, then you would
+install it as follows:
+.RS
+.nf
+\fC
+ilgac --install --default --subdir de foobar.resources.dll
+\fR
+.fi
+.RE
+After all of the above commands, the directory structure will appear
+as follows:
+.RS
+.nf
+\fC
+1.1.5000.0/foobar.dll
+1.2.3400.0/foobar.dll
+1.2.3400.0/de/foobar.resources.dll
+foobar.dll -> 1.2.3400.0/foobar.dll
+de/foobar.resources.dll -> 1.2.3400.0/de/foobar.resources.dll
+\fR
+.fi
+.RE
+You can install multiple assemblies at once by specifying them one
+at a time on the command-line:
+.RS
+.nf
+\fC
+ilgac --install --default foobar.dll example.dll
+\fR
+.fi
+.RE
+.SH "UNINSTALLING ASSEMBLIES"
+The easiest way to uninstall an assembly is to specify its name
+and version number:
+.RS
+.nf
+\fC
+ilgac --uninstall foobar 1.2.3400.0
+\fR
+.fi
+.RE
+This will search the assembly cache for a match and remove the
+corresponding assembly.  If the assembly is registered as a
+default fallback, then the default symbolic link will also be
+removed.
+
+If the version number is unknown, you can retrieve it from an existing
+assembly with the same version.  For example:
+.RS
+.nf
+\fC
+ilgac --uninstall foobar.dll
+\fR
+.fi
+.RE
+.SH "LISTING ASSEMBLIES"
+The entire contents of the assembly cache can be listed using
+the following command:
+.RS
+.nf
+\fC
+ilgac --list
+\fR
+.fi
+.RE
+Normally, only the main version of an assembly is listed - symbolic
+links for default versions are omitted.  They can be included in the
+output by specifying the `\fB--default\fR' command-line option.
+
+You can list all assemblies that match particular name or version
+combinations as follows:
+.RS
+.nf
+\fC
+ilgac --list foobar
+ilgac --list 1.2.3400.0
+ilgac --list foobar 1.2.3400.0 example 1.1.5000.0
+\fR
+.fi
+.RE
+.SH "AUTHOR"
+Written by Southern Storm Software, Pty Ltd.
+
+http://www.southern-storm.com.au/
+.SH "SEE ALSO"
+ilrun(1), cscc(1), csant(1)
+.SH "DIAGNOSTICS"
+Exit status is 1 if an error occurred while processing the input.
+Otherwise the exit status is 0.
+.SH "BUGS"
+Under Windows, the default versions of assemblies are always stored
+in the main cache directory because it isn't possible to create
+symbolic links.

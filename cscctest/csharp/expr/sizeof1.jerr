@@ -1,0 +1,6 @@
+./sizeof1.cs:29: unsafe method declaration not permitted with Java output
+./sizeof1.cs:31: unsafe `sizeof' operator not permitted with Java output
+./sizeof1.cs:32: unsafe `sizeof' operator not permitted with Java output
+./sizeof1.cs:32: `sizeof' disallowed when compiling to Java bytecode
+./sizeof1.cs:33: unsafe `sizeof' operator not permitted with Java output
+./sizeof1.cs:33: `sizeof' disallowed when compiling to Java bytecode

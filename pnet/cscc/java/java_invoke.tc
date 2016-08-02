@@ -1,0 +1,1014 @@
+/*
+ * java_invoke.tc - Semantic analysis for Java method invocations 
+ *
+ * Copyright (C) 2001, 2008  Southern Storm Software, Pty Ltd.
+ * Copyright (C) 2003  Gopal.V
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+%decls %{
+
+/*
+ * Convert a program item (method, property, or delegate)
+ * into a printable name, suitable for use in error messages.
+ */
+const char *JavaItemToName(ILProgramItem *item);
+
+/*
+ * Information that is kept about an evaluated argument.
+ */
+typedef struct
+{
+	ILType	   *type;
+	ILNode     *node;
+	ILNode    **parent;
+} JavaEvalArg;
+
+/*
+ * Evaluate a list of arguments for a method invocation.
+ * Returns the number of arguments, or -1 on error.
+ */
+int JavaEvalArguments(ILGenInfo *info, ILNode *argList,
+					ILNode **argListParent, JavaEvalArg **args);
+
+/*
+ * Free an evaluated argument list.
+ */
+void JavaEvalFreeArguments(JavaEvalArg *args);
+
+/*
+ * Determine if a program item (method, property, or delegate)
+ * is a candidate for evaluation.  Returns 0 if not a candidate,
+ * 1 if a candidate in its normal form, and 2 if a candidate
+ * in its expanded form.
+ */
+int JavaItemIsCandidate(ILGenInfo *info, ILProgramItem *item,
+					  JavaEvalArg *args, int numArgs);
+
+/*
+ * Determine the best item candidate in a group.
+ * Returns NULL if none of the methods are "best".
+ */
+ILProgramItem *JavaBestCandidate(ILGenInfo *info, void *group,
+						       JavaEvalArg *args, int numArgs);
+
+/*
+ * Coerce the arguments and set up the final argument list.
+ * Returns the item's return type.
+ */
+ILType *JavaItemCoerceArgs(ILGenInfo *info, ILProgramItem *item,
+						 JavaEvalArg *args, int numArgs,
+						 ILNode **argListParent);
+
+/*
+ * Report an error message for a failed item signature match,
+ * listing the candidates for the call.
+ */
+void JavaItemCandidateError(ILNode *node, const char *itemName, int isCtor,
+						  void *group, JavaEvalArg *args, int numArgs);
+%}
+
+%{
+/*
+ * Reduce a method group to a set of candidates.
+ */
+static void ReduceMethodGroup(ILGenInfo *info, JavaEvalArg *args,
+							  int numArgs, JavaSemValue *method)
+{
+	unsigned long itemNum;
+	int candidateForm;
+	ILProgramItem *itemInfo;
+	ILMember *member;
+	ILClass *lowestOwner = 0;
+	ILClass *owner;
+
+	/* Remove methods that aren't candidates */
+	itemNum = 0;
+	while((itemInfo = JavaGetGroupMember(JavaSemGetGroup(*method), itemNum)) != 0)
+	{
+		candidateForm = JavaItemIsCandidate(info, itemInfo, args, numArgs);
+		if(candidateForm)
+		{
+			JavaSetGroupMemberForm(JavaSemGetGroup(*method), itemNum,
+								 candidateForm);
+			++itemNum;
+			member = ILProgramItemToMember(itemInfo);
+			if(member)
+			{
+
+				owner = ILClassResolve(ILMember_Owner(member));
+				if(!lowestOwner)
+				{
+					lowestOwner = owner;
+				}
+				else if(JavaIsBaseTypeFor(lowestOwner, owner))
+				{
+					lowestOwner = owner;
+				}
+			}
+		}
+		else
+		{
+			JavaSemModifyGroup(*method, JavaRemoveGroupMember
+								(JavaSemGetGroup(*method), itemNum));
+		}
+	}
+
+	/* Remove candidates in base classes */
+	if(lowestOwner)
+	{
+		itemNum = 0;
+		while((itemInfo = JavaGetGroupMember(JavaSemGetGroup(*method), itemNum))
+					!= 0)
+		{
+			member = ILProgramItemToMember(itemInfo);
+			if(member)
+			{
+				owner = ILClassResolve(ILMember_Owner(member));
+				if(owner != lowestOwner)
+				{
+					JavaSemModifyGroup(*method, JavaRemoveGroupMember
+										(JavaSemGetGroup(*method), itemNum));
+				}
+				else
+				{
+					++itemNum;
+				}
+			}
+			else
+			{
+				++itemNum;
+			}
+		}
+	}
+}
+
+%}
+
+/*
+ * Perform semantic analysis for a method invocation.
+ */
+ILNode_JSemAnalysis(ILNode_InvocationExpression)
+{
+	JavaSemValue value;
+	JavaSemValue method;
+	ILProgramItem *itemInfo;
+	ILMethod *methodInfo;
+	ILType *retType;
+	JavaEvalArg *args;
+	int numArgs;
+	unsigned long itemNum;
+	const char *itemName;
+	ILNode_MethodDeclaration *caller;
+	int isCtor = 0;
+
+	/* Get the method name for later error reporting */
+	if(ILIsQualIdent(node->expr1))
+	{
+		itemName = ILQualIdentName(node->expr1, 0);
+	}
+	else if(yyisa(node->expr1, ILNode_MemberAccess))
+	{
+		itemName = ILQualIdentName
+			(((ILNode_MemberAccess *)(node->expr1))->expr2, 0);
+	}
+	else if(yyisa(node->expr1, ILNode_ThisInit))
+	{
+		itemName = 0;
+		isCtor = 1;
+	}
+	else if(yyisa(node->expr1, ILNode_BaseInit))
+	{
+		itemName = 0;
+		isCtor = 2;
+	}
+	else
+	{
+		itemName = 0;
+	}
+
+	/* Perform semantic analysis on the method expression */
+	method = ILNode_JSemAnalysis(node->expr1, info, &(node->expr1));
+
+	if(!JavaSemIsMethodGroup(method))
+	{
+		CCErrorOnLine(yygetfilename(node->expr1), yygetlinenum(node->expr1),
+					  "called object is not a method");
+		return JavaSemValueDefault;
+	}
+
+	/* Evaluate the arguments */
+	numArgs = JavaEvalArguments(info, node->expr2, &(node->expr2), &args);
+	if(numArgs < 0)
+	{
+		return JavaSemValueDefault;
+	}
+
+	/* Find the set of candidate methods */
+	ReduceMethodGroup(info, args, numArgs, &method);
+
+	/* If there are no candidates left, then bail out */
+	itemNum = 0;
+	itemInfo = JavaGetGroupMember(JavaSemGetGroup(method), itemNum);
+	if(!itemInfo)
+	{
+		JavaItemCandidateError((ILNode *)node, itemName, isCtor,
+						     JavaSemGetGroup(method), args, numArgs);
+		JavaEvalFreeArguments(args);
+		return JavaSemValueDefault;
+	}
+
+	/* There are two or more candidates, then try to find the best one */
+	if(JavaGetGroupMember(JavaSemGetGroup(method), 1) != 0)
+	{
+		itemInfo = JavaBestCandidate(info, JavaSemGetGroup(method),
+								   args, numArgs);
+		if(!itemInfo)
+		{
+			JavaItemCandidateError((ILNode *)node, itemName, isCtor,
+							     JavaSemGetGroup(method), args, numArgs);
+			JavaEvalFreeArguments(args);
+			return JavaSemValueDefault;
+		}
+	}
+
+	/* Import the method into this image, and set it within the node */
+	methodInfo = (ILMethod *)itemInfo;
+	methodInfo = (ILMethod *)ILMemberImport
+						(info->image, (ILMember *)methodInfo);
+	node->methodInfo = methodInfo;
+
+	/* Handle the "this" parameter if necessary */
+	if(!ILMethod_IsStatic(methodInfo))
+	{
+		node->thisExpr = node->expr1;
+		if(yyisa(node->thisExpr, ILNode_This) ||
+		   (yyisa(node->thisExpr, ILNode_MarkType) &&
+		    yyisa(((ILNode_MarkType *)(node->thisExpr))->expr, ILNode_This)))
+		{
+			caller = (ILNode_MethodDeclaration *)(info->currentMethod);
+			if(!caller || (caller->modifiers & IL_META_METHODDEF_STATIC) != 0)
+			{
+				/* Attempt to call an instance method using "this"
+				   from within a static method */
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "cannot access instance members in static methods");
+			}
+		}
+	}
+
+	/* Coerce the arguments and build the final argument list */
+	retType = JavaItemCoerceArgs(info, ILToProgramItem(methodInfo),
+							   args, numArgs, &(node->expr2));
+	JavaEvalFreeArguments(args);
+
+	/* The semantic value is the method's return type as an r-value */
+	if(retType == ILType_Void)
+	{
+		JavaSemSetVoid(value);
+	}
+	else
+	{
+		JavaSemSetRValue(value, retType);
+	}
+	return value;
+}
+
+%{
+
+void JavaItemCandidateError(ILNode *node, const char *itemName, int isCtor,
+						  void *group, JavaEvalArg *args, int numArgs)
+{
+	unsigned long num;
+	ILProgramItem *item;
+	ILIntString str;
+	int argNum;
+
+	/* Report the item name and argument types */
+	if(itemName)
+	{
+		/* Construct a list of the argument types for the error */
+		str = ILInternString(itemName, -1);
+		str = ILInternAppendedString(str, ILInternString("(", 1));
+		for(argNum = 0; argNum < numArgs; ++argNum)
+		{
+			if(argNum != 0)
+			{
+				str = ILInternAppendedString(str, ILInternString(", ", 2));
+			}
+			str = ILInternAppendedString
+					(str, ILInternString
+							((char *)JavaTypeToName(args[argNum].type), -1));
+		}
+		str = ILInternAppendedString(str, ILInternString(")", 1));
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "no matching method for call to `%s'",
+					  str.string);
+	}
+	else if(isCtor == 2)
+	{
+		/* Don't know what the method name is */
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "no matching constructor for base class initialization");
+	}
+	else if(isCtor)
+	{
+		/* Don't know what the method name is */
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "no matching constructor");
+	}
+	else
+	{
+		/* Don't know what the method name is */
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "no matching method for call");
+	}
+
+	/* Report the candidates */
+	num = 0;
+	while((item = JavaGetGroupMember(group, num)) != 0)
+	{
+		if(!num)
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "candidates are: %s", JavaItemToName(item));
+		}
+		else
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "                %s", JavaItemToName(item));
+		}
+		++num;
+	}
+}
+
+/*
+ * Get the signature of a program item (method, property, or delegate).
+ */
+static ILType *GetItemSignature(ILProgramItem *item)
+{
+	ILMethod *method;
+
+	/* Determine what kind of item we are dealing with */
+	if((method = ILProgramItemToMethod(item)) != 0)
+	{
+		return ILMethod_Signature(method);
+	}
+
+	/* If we get here, then we do not know how to obtain the signature */
+	return 0;
+}
+
+
+const char *JavaItemToName(ILProgramItem *item)
+{
+	ILType *signature = GetItemSignature(item);
+	const char *name;
+	ILIntString str;
+	ILType *type;
+	ILParameterModifier paramMod;
+	unsigned numParams;
+	unsigned param;
+	int kind;
+	ILMethod *method;
+	ILClass *owner;
+
+	/* Get the name of the item, and find an underlying method */
+	if((method = ILProgramItemToMethod(item)) != 0)
+	{
+		name = ILMethod_Name(method);
+		kind = IL_META_MEMBERKIND_METHOD;
+		owner = ILMethod_Owner(method);
+	}
+	else
+	{
+		name = "unknown";
+		kind = IL_META_MEMBERKIND_METHOD;
+		method = 0;
+		owner = 0;
+	}
+
+	/* Put "static" or "virtual" on the front if necessary */
+	if(method && ILMethod_IsStatic(method))
+	{
+		str = ILInternString("static ", 7);
+	}
+	else if(method && ILMethod_IsVirtual(method))
+	{
+		str = ILInternString("virtual ", 8);
+	}
+	else
+	{
+		str = ILInternString("", 0);
+	}
+
+	/* Get the type of the class that contains the method */
+	type = (owner ? ILType_FromClass(owner) : 0);
+
+	/* The formatting is slightly different for constructors */
+	if(!strcmp(name, ".ctor") || !strcmp(name, ".cctor"))
+	{
+		/* Append the class name to the string */
+		str = ILInternAppendedString
+				(str, ILInternString((char *)JavaTypeToName(type), -1));
+	}
+	else
+	{
+		/* Convert the return type into a string */
+		str = ILInternAppendedString
+				(str, ILInternString((char *)JavaTypeToName
+										(ILTypeGetReturn(signature)), -1));
+		str = ILInternAppendedString(str, ILInternString(" ", 1));
+
+		/* Append the class name to the string */
+		str = ILInternAppendedString
+				(str, ILInternString((char *)JavaTypeToName(type), -1));
+
+		/* Don't add the method name for delegates */
+		if(kind != 0)
+		{
+			/* Append a dot to the string */
+			str = ILInternAppendedString(str, ILInternString(".", 1));
+
+			/* Append the method name to the string */
+			str = ILInternAppendedString(str, ILInternString((char *)name, -1));
+		}
+	}
+
+	numParams = ILGenNumUsableParams(signature);
+	for(param = 1; param <= numParams; ++param)
+	{
+		if(method && kind != IL_META_MEMBERKIND_PROPERTY)
+		{
+			/* Use method information to resolve the parameter */
+			paramMod = ILGenGetParamInfo(method, signature, param, &type);
+		}
+		else
+		{
+			/* Don't use method information to resolve the parameter */
+			paramMod = ILGenGetParamInfo(0, signature, param, &type);
+		}
+		if(param != 1)
+		{
+			str = ILInternAppendedString(str, ILInternString(", ", 2));
+		}
+	}
+	str = ILInternAppendedString(str, ILInternString(")", 1));
+	/* Return the final string to the caller */
+	return str.string;
+}
+
+/*
+ * Count the number of arguments in an ArgList.
+ */
+static unsigned CountArgList(ILNode *argList)
+{
+	unsigned count;
+	if(!argList)
+	{
+		return 0;
+	}
+	count = 1;
+	while(yyisa(argList, ILNode_ArgList))
+	{
+		++count;
+		argList = ((ILNode_ArgList *)argList)->expr1;
+	}
+	return count;
+}
+
+int JavaEvalArguments(ILGenInfo *info, ILNode *argList,
+					ILNode **argListParent, JavaEvalArg **args)
+{
+	int argCount;
+	int argNum;
+	JavaEvalArg *argArray;
+	ILNode *tempList;
+	ILNode **tempParent;
+	int tempNum;
+	int haveErrors;
+	JavaSemValue value;
+
+	/* Get the number of arguments that have been supplied */
+	argCount = CountArgList(argList);
+
+	/* Bail out if there are no arguments */
+	if(!argCount)
+	{
+		*args = 0;
+		return 0;
+	}
+
+	/* Allocate an argument array */
+	argArray = (JavaEvalArg *)ILMalloc(sizeof(JavaEvalArg) * argCount);
+	if(!argArray)
+	{
+		CCOutOfMemory();
+	}
+
+	/* Perform semantic analysis on the arguments and fill the array */
+	haveErrors = 0;
+	for(argNum = 0; argNum < argCount; ++argNum)
+	{
+		/* Find the argument node and its parent */
+		tempList = argList;
+		tempParent = argListParent;
+		tempNum = argNum + 1;
+		while(tempNum < argCount)
+		{
+			tempParent = &(((ILNode_ArgList *)tempList)->expr1);
+			tempList = ((ILNode_ArgList *)tempList)->expr1;
+			++tempNum;
+		}
+		if(yyisa(tempList, ILNode_ArgList))
+		{
+			tempParent = &(((ILNode_ArgList *)tempList)->expr2);
+			tempList = ((ILNode_ArgList *)tempList)->expr2;
+		}
+
+		/* Populate the argument array element */
+		if(!yyisa(tempList, ILNode_Argument))
+		{
+			/* Ordinary argument */
+			value = ILNode_JSemAnalysis(tempList, info, tempParent);
+			argArray[argNum].node = *tempParent;
+			argArray[argNum].parent = tempParent;
+			if(JavaSemIsValue(value))
+			{
+				argArray[argNum].type = JavaSemGetType(value);
+			}
+			else
+			{
+				argArray[argNum].type = ILType_Void;
+				CCErrorOnLine(yygetfilename(tempList),
+							  yygetlinenum(tempList),
+							  "invalid value for argument %u", argNum + 1);
+				haveErrors = 1;
+			}
+		}
+	}
+
+	/* Report either an error, or the argument count */
+	if(haveErrors)
+	{
+		ILFree(argArray);
+		*args = 0;
+		return -1;
+	}
+	else
+	{
+		*args = argArray;
+		return argCount;
+	}
+}
+
+void JavaEvalFreeArguments(JavaEvalArg *args)
+{
+	if(args)
+	{
+		ILFree(args);
+	}
+}
+
+/*
+ * Get the type and modifier information associated with
+ * an item parameter.  The first parameter is 0.  Returns
+ * ILType_Invalid if the parameter index is invalid.
+ */
+static ILType *GetItemParamType(ILProgramItem *item, ILType *signature,
+								int paramNum)
+{
+	int numParams = ILGenNumUsableParams(signature);
+	int firstParam;
+	ILType *paramType;
+	ILMethod *method;
+
+	/* If we have an "explicit this" method, then we need to
+	   adjust for the first parameter, which is always "this" */
+	if((ILType_CallConv(signature) & IL_META_CALLCONV_HASTHIS) != 0 &&
+	   (ILType_CallConv(signature) & IL_META_CALLCONV_EXPLICITTHIS) != 0 &&
+	   numParams > 0)
+	{
+		firstParam = 2;
+	}
+	else
+	{
+		firstParam = 1;
+	}
+
+	/* Bail out if the parameter number is out of range */
+	if(paramNum > (numParams - firstParam))
+	{
+		return ILType_Invalid;
+	}
+
+	/* Get the parameter type information and return it */
+	if((method = ILProgramItemToMethod(item)) != 0)
+	{
+		ILGenGetParamInfo(method, signature, paramNum + firstParam,
+									  &paramType);
+	}
+	return paramType;
+}
+
+/*
+ * Get the type information associated with an item parameter,
+ * given that its expansion form is known.
+ */
+static ILType *GetItemExpandedType(ILProgramItem *item, ILType *signature,
+								   int form, int paramNum)
+{
+	ILType *paramType;
+	paramType = GetItemParamType(item, signature, paramNum);
+	if(paramType == ILType_Invalid)
+	{
+		return ILType_Invalid;
+	}
+	return paramType;
+}
+
+int JavaItemIsCandidate(ILGenInfo *info, ILProgramItem *item,
+					  JavaEvalArg *args, int numArgs)
+{
+	ILType *signature = GetItemSignature(item);
+	ILType *paramType;
+	int argNum, paramNum;
+
+	/* If the item does not have a signature, then bail out */
+	if(!signature)
+	{
+		return 0;
+	}
+
+	/* Scan through the parameters looking for a match */
+	paramNum = 0;
+	for(argNum = 0; argNum < numArgs; ++argNum)
+	{
+		paramType = GetItemParamType(item, signature, paramNum);
+		if(paramType == ILType_Invalid)
+		{
+			/* Too many arguments were supplied */
+			return 0;
+		}
+		else
+		{
+			/* Match anything that can coerce to the parameter type */
+			if (!ILCanCoerceNode(info, args[argNum].node, 
+									args[argNum].type, paramType,1))
+			{
+				return 0;
+			}
+			++paramNum;
+		}
+	}
+
+	/* Get the next parameter type, which must either be
+	   a "params" array, or the end of the parameter list */
+	paramType = GetItemParamType(item, signature, paramNum);
+	if(paramType == ILType_Invalid)
+	{
+		/* The candidate was matched in its normal form */
+		return 1;
+	}
+	else
+	{
+		/* The candidate did not match */
+		return 0;
+	}
+}
+
+/*
+ * Determine which of two items is better than the other one.
+ * Returns IL_BETTER_T1 if "item1" is better, or IL_BETTER_T2
+ * if "item2" is better, or IL_BETTER_NEITHER if neither is better.
+ */
+static int BetterItem(ILGenInfo *info,
+					  ILProgramItem *item1, int form1,
+					  ILProgramItem *item2, int form2,
+					  JavaEvalArg *args, int numArgs)
+{
+	ILType *signature1 = GetItemSignature(item1);
+	ILType *signature2 = GetItemSignature(item2);
+	int argNum;
+	int paramNum1;
+	int paramNum2;
+	ILType *type1;
+	ILType *type2;
+	ILType *atype;
+	int better, betterTest;
+
+	/* Compare the argument types */
+	paramNum1 = 0;
+	paramNum2 = 0;
+	better = IL_BETTER_NEITHER;
+	for(argNum = 0; argNum < numArgs; ++argNum)
+	{
+		/* Get the types of the two parameters and the argument */
+		type1 = GetItemExpandedType(item1, signature1,
+									form1, paramNum1++);
+		type2 = GetItemExpandedType(item2, signature2,
+									form2, paramNum2++);
+		atype = args[argNum].type;
+
+		/* Skip the argument if "out", "ref", or "arglist", because such
+		   arguments must always be identical, so neither can be better */
+		/* Determine which is the better coercion */
+		betterTest = ILBetterConversion(info, args[argNum].type, type1, type2);
+		if(betterTest == IL_BETTER_T1)
+		{
+			if(better == IL_BETTER_T2)
+			{
+				/* The first item is better in this parameter,
+				   but worse in others */
+				better = -1;
+			}
+			else if(better != -1)
+			{
+				/* The first item is better so far */
+				better = IL_BETTER_T1;
+			}
+		}
+		else if(betterTest == IL_BETTER_T2)
+		{
+			if(better == IL_BETTER_T1)
+			{
+				/* The second item is better in this parameter,
+				   but worse in others */
+				better = -1;
+			}
+			else if(better != -1)
+			{
+				/* The second item is better so far */
+				better = IL_BETTER_T2;
+			}
+		}
+
+	}
+
+	/* Return the result to the caller */
+	if(better != -1)
+	{
+		return better;
+	}
+	else
+	{
+		return IL_BETTER_NEITHER;
+	}
+}
+
+ILProgramItem *JavaBestCandidate(ILGenInfo *info, void *group,
+						       JavaEvalArg *args, int numArgs)
+{
+	unsigned long itemNum = 1;
+	ILProgramItem *bestItem = JavaGetGroupMember(group, 0);
+	ILProgramItem *testItem;
+	int better;
+	int form1 = JavaGetGroupMemberForm(group, 0);
+	int form2;
+	int sawBetter = 0;
+	while((testItem = JavaGetGroupMember(group, itemNum)) != 0)
+	{
+		form2 = JavaGetGroupMemberForm(group, itemNum);
+		better = BetterItem(info, bestItem, form1, testItem,
+							form2, args, numArgs);
+		if(better == IL_BETTER_T1)
+		{
+			sawBetter = 1;
+		}
+		else if(better == IL_BETTER_T2)
+		{
+			bestItem = testItem;
+			sawBetter = 1;
+		}
+		else if(better == IL_BETTER_NEITHER && (form1 == 2 && form2 != 2))
+		{
+			/* We've found an item that is just as applicable as
+			   a previous one.  However, the previous one involved
+			   "params" and this one doesn't.  So use this one */
+			bestItem = testItem;
+			sawBetter = 1;
+		}
+		else if(better == IL_BETTER_NEITHER && (form1 != 2 && form2 == 2))
+		{
+			/* We've found an item that is just as applicable as
+			   a previous one.  However, this one involved "params"
+			   and the previous one didn't.  So use the previous one */
+			sawBetter = 1;
+		}
+		++itemNum;
+	}
+	if(sawBetter)
+	{
+		return bestItem;
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+ILType *JavaItemCoerceArgs(ILGenInfo *info, ILProgramItem *item,
+						 JavaEvalArg *args, int numArgs,
+						 ILNode **argListParent)
+{
+	ILType *signature = GetItemSignature(item);
+	int argNum, paramNum;
+	ILType *paramType;
+
+	/* Coerce the fixed parameters */
+	paramNum = 0;
+	for(argNum = 0; argNum < numArgs; ++argNum)
+	{
+		paramType = GetItemParamType(item, signature, paramNum);
+		ILCoerce(info, args[argNum].node,
+				 args[argNum].parent, args[argNum].type, paramType,0);
+		++paramNum;
+	}
+
+	/* Return the item's return type to the caller */
+	return ILTypeGetReturn(signature);
+}
+
+%}
+
+/*
+ * Perform semantic analysis for a reference to a base constructor.
+ */
+ILNode_JSemAnalysis(ILNode_BaseInit)
+{
+	JavaSemValue value;
+	ILClass *classInfo;
+	ILClass *parentInfo;
+
+	/* If we are compiling "System.Object", then we need to
+	   bail out with an empty method group.  This tells
+	   "InvocationExpression" to ignore the call */
+	classInfo = ((ILNode_ClassDefn *)(info->currentClass))->classInfo;
+	parentInfo = (classInfo ? ILClass_ParentClass(classInfo) : 0);
+	if(!parentInfo)
+	{
+		JavaSemSetMethodGroup(value, 0);
+		return value;
+	}
+
+	/* Resolve the constructor within the base class */
+	JavaSemSetRValue(value, ILType_FromClass(parentInfo));
+	value = JavaResolveConstructor(info, (ILNode *)node, JavaSemGetType(value));
+
+	/* Report an error if we could not find any accessible constructors */
+	if(!JavaSemIsMethodGroup(value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "no accessible base class constructors");
+	}
+
+	/* Replace the current expression with "this" */
+	*parent = ILNode_This_create();
+	JavaSemSetSuper(value);
+	return value;
+}
+
+/*
+ * Perform semantic analysis for a reference to a non-static initializer.
+ */
+ILNode_JSemAnalysis(ILNode_NonStaticInit)
+{
+	/* Non-static initializer calls are always "void" statements */
+	return JavaSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for an object creation expression.
+ */
+ILNode_JSemAnalysis(ILNode_ObjectCreationExpression)
+{
+	JavaSemValue value;
+	JavaSemValue method;
+	ILProgramItem *itemInfo;
+	ILMethod *methodInfo;
+	ILType *objectType;
+	ILClass *objectClass;
+	JavaEvalArg *args;
+	int numArgs;
+	unsigned long itemNum;
+	int candidateForm;
+
+	/* Perform semantic analysis on the type */
+	objectType = JavaSemTypeLiteral(node->type, info, &(node->type));
+
+	/* Set up the default return value */
+	JavaSemSetRValue(value, objectType);
+
+	if(ILType_IsClass(objectType))
+	{
+		objectClass = ILClassResolve(ILType_ToClass(objectType));
+		if(ILClass_IsInterface(objectClass))
+		{
+			CCErrorOnLine(yygetfilename(node->type), yygetlinenum(node->type),
+			  "cannot instantiate interface `%s' with the `new' operator",
+			  JavaTypeToName(objectType));
+			return value;
+		}
+		else if(ILClass_IsAbstract(objectClass))
+		{
+			CCErrorOnLine(yygetfilename(node->type), yygetlinenum(node->type),
+			  "cannot instantiate abstract class `%s' with the `new' operator",
+			  JavaTypeToName(objectType));
+			return value;
+		}
+	}
+	else
+	{
+		CCErrorOnLine(yygetfilename(node->type), yygetlinenum(node->type),
+			  		  "`%s' is not a class",
+					  JavaTypeToName(objectType));
+		return value;
+	}
+
+	/* Get the list of accessible constructors for the type */
+	method = JavaResolveConstructor(info, node->type, objectType);
+	if(!JavaSemIsMethodGroup(method))
+	{
+		CCErrorOnLine(yygetfilename(node->type), yygetlinenum(node->type),
+					  "`%s' does not have an accessible constructor",
+					  JavaTypeToName(objectType));
+		return value;
+	}
+
+	/* Evaluate the arguments */
+	numArgs = JavaEvalArguments(info, node->argList, &(node->argList), &args);
+	if(numArgs < 0)
+	{
+		return value;
+	}
+
+	/* Find the set of candidate methods */
+	itemNum = 0;
+	while((itemInfo = JavaGetGroupMember(JavaSemGetGroup(method), itemNum)) != 0)
+	{
+		candidateForm = JavaItemIsCandidate(info, itemInfo, args, numArgs);
+		if(candidateForm)
+		{
+			JavaSetGroupMemberForm(JavaSemGetGroup(method), itemNum,
+								 candidateForm);
+			++itemNum;
+		}
+		else
+		{
+			JavaSemModifyGroup(method, JavaRemoveGroupMember
+								(JavaSemGetGroup(method), itemNum));
+		}
+	}
+
+	/* If there are no candidates left, then bail out */
+	itemNum = 0;
+	itemInfo = JavaGetGroupMember(JavaSemGetGroup(method), itemNum);
+	if(!itemInfo)
+	{
+		JavaItemCandidateError((ILNode *)node, 0, 1,
+						     JavaSemGetGroup(method), args, numArgs);
+		JavaEvalFreeArguments(args);
+		return value;
+	}
+
+	/* There are two or more candidates, then try to find the best one */
+	if(JavaGetGroupMember(JavaSemGetGroup(method), 1) != 0)
+	{
+		itemInfo = JavaBestCandidate(info, JavaSemGetGroup(method),
+								   args, numArgs);
+		if(!itemInfo)
+		{
+			JavaItemCandidateError((ILNode *)node, 0, 1,
+							     JavaSemGetGroup(method), args, numArgs);
+			JavaEvalFreeArguments(args);
+			return value;
+		}
+	}
+
+	/* Import the method into this image, and set it within the node */
+	methodInfo = (ILMethod *)itemInfo;
+	methodInfo = (ILMethod *)ILMemberImport
+						(info->image, (ILMember *)methodInfo);
+	node->methodInfo = methodInfo;
+
+	/* Coerce the arguments and build the final argument list */
+	JavaItemCoerceArgs(info, ILToProgramItem(methodInfo),
+					 args, numArgs, &(node->argList));
+	JavaEvalFreeArguments(args);
+
+	/* Return the final semantic value */
+	return value;
+}

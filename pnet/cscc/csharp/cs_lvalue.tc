@@ -1,0 +1,2138 @@
+/*
+ * cs_lvalue.tc - Semantic analysis for C# identifiers and l-values.
+ *
+ * Copyright (C) 2001, 2002, 2008, 2009  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+%{
+
+/*
+ * Check to see if we are permitted to use the "this" expression
+ * to access an instance member.
+ */
+static void CheckForInstanceAccess(ILGenInfo *info, ILNode *node)
+{
+	ILNode_MethodDeclaration *caller;
+	caller = (ILNode_MethodDeclaration *)(info->currentMethod);
+	if(!caller || (caller->modifiers & CS_MODIFIER_STATIC) != 0)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "cannot access instance members in static methods");
+	}
+}
+
+%}
+
+/*
+ * Perform semantic analysis for the "this" expression.
+ */
+ILNode_SemAnalysis(ILNode_This)
+{
+	CSSemValue value;
+	ILNode_MethodDeclaration *method;
+	ILType *type;
+
+	/* Find the method declaration */
+	method = (ILNode_MethodDeclaration *)(info->currentMethod);
+
+	/* If the method is static, then we cannot use "this" */
+	if((method->modifiers & CS_MODIFIER_STATIC) != 0)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "cannot use `this' in static methods");
+	}
+
+	/* Get the type from the method's class and return */
+	type = ILClassToType(ILMethod_Owner(method->methodInfo));
+	if(ILTypeIsValue(type) && !(info->outputIsJava))
+	{
+		CSSemSetLValue(value, type);
+	}
+	else
+	{
+		CSSemSetRValue(value, type);
+	}
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the "new scope" statement.
+ */
+ILNode_SemAnalysis(ILNode_NewScope)
+{
+	ILScope *savedScope = info->currentScope;
+	if(!(node->scope))
+	{
+		node->scope = ILScopeCreate(info, savedScope);
+	}
+	info->currentScope = node->scope;
+	StmtSem(node->stmt, info, &(node->stmt));
+	info->currentScope = savedScope;
+	return CSSemValueDefault;
+}
+
+%{
+
+/*
+ * Convert a field into a literal constant node if possible.
+ * Returns NULL if not possible.
+ */
+static ILNode *FieldToConstant(ILGenInfo *info, ILNode *node, ILField *field)
+{
+	ILConstant *constValue;
+	ILNode_ClassDefn *defn;
+
+	/* Make sure that semantic analysis has been performed on the item */
+	if(ILTypeIsEnum(ILClassToType(ILField_Owner(field))))
+	{
+		/* This is an enumerated type, so perform semantic analysis
+		   on the type instead of the field, so that we create the
+		   members with default values in the correct order */
+		defn = (ILNode_ClassDefn *)ILProgramItemToNode
+			(info, ILToProgramItem(ILField_Owner(field)));
+		if(defn != 0 && defn->visited == ILVisitMode_NotVisited)
+		{
+			CSSemProgramItem(info, ILToProgramItem(ILField_Owner(field)));
+		}
+		else
+		{
+			/* We may already be inside the enumerated type, so go
+			   directly to the field to avoid circularity problems */
+			CSSemProgramItem(info, ILToProgramItem(field));
+		}
+	}
+	else
+	{
+		/* Perform semantic analysis on the value directly */
+		CSSemProgramItem(info, ILToProgramItem(field));
+	}
+
+	/* Get the constant value, if present */
+	if(ILField_IsLiteral(field))
+	{
+		if((constValue = ILConstantGetFromOwner(ILToProgramItem(field))) != 0)
+		{
+			/* Convert the constant into an appropriate node */
+			ILType *baseType = ILTypeGetEnumType(ILField_Type(field));
+			const unsigned char *value;
+			ILUInt32 valueLen;
+			value = ILConstantGetValue(constValue, &valueLen);
+			switch(ILConstantGetElemType(constValue))
+			{
+				case IL_META_ELEMTYPE_BOOLEAN:
+				{
+					/* Create a boolean constant */
+					if(value && valueLen > 0 && baseType == ILType_Boolean)
+					{
+						if(value[0])
+						{
+							return ILNode_True_create();
+						}
+						else
+						{
+							return ILNode_False_create();
+						}
+					}
+				}
+				break;
+
+				case IL_META_ELEMTYPE_I1:
+				case IL_META_ELEMTYPE_U1:
+				{
+					/* Create an 8-bit constant */
+					if(value && valueLen > 0)
+					{
+						if(baseType == ILType_Int8)
+						{
+							ILInt8 val = (ILInt8)(value[0]);
+							if(val >= 0)
+							{
+								return ILNode_Int8_create
+									((ILUInt64)(-((ILInt32)val)), 1, 0);
+							}
+							else
+							{
+								return ILNode_Int8_create
+									((ILUInt64)val, 0, 0);
+							}
+						}
+						else if(baseType == ILType_UInt8)
+						{
+							return ILNode_UInt8_create
+								((ILUInt64)(value[0]), 0, 0);
+						}
+					}
+				}
+				break;
+
+				case IL_META_ELEMTYPE_I2:
+				case IL_META_ELEMTYPE_U2:
+				{
+					/* Create a 16-bit constant */
+					if(value && valueLen > 1)
+					{
+						if(baseType == ILType_Int16)
+						{
+							ILInt16 val = (ILInt16)(IL_READ_INT16(value));
+							if(val >= 0)
+							{
+								return ILNode_Int16_create
+									((ILUInt64)(-((ILInt32)val)), 1, 0);
+							}
+							else
+							{
+								return ILNode_Int16_create
+									((ILUInt64)val, 0, 0);
+							}
+						}
+						else if(baseType == ILType_UInt16)
+						{
+							return ILNode_UInt16_create
+								((ILUInt64)(IL_READ_UINT16(value)), 0, 0);
+						}
+					}
+				}
+				break;
+
+				case IL_META_ELEMTYPE_CHAR:
+				{
+					/* Create a character constant */
+					if(value && valueLen > 1)
+					{
+						if(baseType == ILType_Char)
+						{
+							return ILNode_Char_create
+								((ILUInt64)(IL_READ_UINT16(value)), 0, 0);
+						}
+					}
+				}
+				break;
+
+				case IL_META_ELEMTYPE_I4:
+				case IL_META_ELEMTYPE_U4:
+				{
+					/* Create a 32-bit constant */
+					if(value && valueLen > 3)
+					{
+						if(baseType == ILType_Int32)
+						{
+							ILInt32 val = IL_READ_INT32(value);
+							if(val >= 0)
+							{
+								return ILNode_Int32_create
+									((ILUInt64)(ILUInt32)(-val), 1, 0);
+							}
+							else
+							{
+								return ILNode_Int32_create
+									((ILUInt64)val, 0, 0);
+							}
+						}
+						else if(baseType == ILType_UInt32)
+						{
+							return ILNode_UInt32_create
+								((ILUInt64)(IL_READ_UINT32(value)), 0, 0);
+						}
+					}
+				}
+				break;
+
+				case IL_META_ELEMTYPE_I8:
+				case IL_META_ELEMTYPE_U8:
+				{
+					/* Create a 64-bit constant */
+					if(value && valueLen > 7)
+					{
+						if(baseType == ILType_Int64)
+						{
+							ILInt64 val = IL_READ_INT64(value);
+							if(val < 0)
+							{
+								return ILNode_Int64_create
+									((ILUInt64)(-val), 1, 0);
+							}
+							else
+							{
+								return ILNode_Int64_create
+									((ILUInt64)val, 0, 0);
+							}
+						}
+						else if(baseType == ILType_UInt64)
+						{
+							return ILNode_UInt64_create
+								(IL_READ_UINT64(value), 0, 0);
+						}
+					}
+				}
+				break;
+
+				case IL_META_ELEMTYPE_R4:
+				{
+					/* Create a 32-bit floating-point constant */
+					if(value && valueLen > 3)
+					{
+						if(baseType == ILType_Float32)
+						{
+							return ILNode_Float32_create
+								(IL_READ_FLOAT(value));
+						}
+					}
+				}
+				break;
+
+				case IL_META_ELEMTYPE_R8:
+				{
+					/* Create a 64-bit floating-point constant */
+					if(value && valueLen > 7)
+					{
+						if(baseType == ILType_Float64)
+						{
+							return ILNode_Float64_create
+								(IL_READ_DOUBLE(value));
+						}
+					}
+				}
+				break;
+
+				case IL_META_ELEMTYPE_STRING:
+				{
+					/* Create a string constant */
+					if(value && ILTypeIsStringClass(baseType))
+					{
+						int posn = 0;
+						int len = 0;
+						char *newStr;
+						ILIntString interned;
+						while(posn < (int)valueLen)
+						{
+							len += ILUTF8WriteChar
+							  (0, ILUTF16ReadCharAsBytes
+								((const char *)value, (int)valueLen, &posn));
+						}
+						newStr = (char *)ILMalloc(len + 1);
+						if(!newStr)
+						{
+							CCOutOfMemory();
+						}
+						posn = 0;
+						len = 0;
+						while(posn < (int)valueLen)
+						{
+							len += ILUTF8WriteChar
+							  (newStr + len, ILUTF16ReadCharAsBytes
+								((const char *)value, (int)valueLen, &posn));
+						}
+						interned = ILInternString(newStr, len);
+						ILFree(newStr);
+						return ILNode_String_create(interned.string,
+													interned.len);
+					}
+				}
+				break;
+
+				case IL_META_ELEMTYPE_CLASS:
+				{
+					/* Create a "null" constant */
+					if(value &&
+					   ((valueLen == 4 && IL_READ_UINT32(value) == 0) ||
+					    (valueLen == 8 && IL_READ_UINT64(value) == 0)))
+					{
+						if(ILTypeAssignCompatible(info->image, 0, baseType))
+						{
+							return ILNode_Null_create();
+						}
+					}
+				}
+				break;
+			}
+
+			/* If we get here, then the constant is not compatible
+			   with the type of the field */
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "literal field has an incorrect constant value");
+			return 0;
+		}
+		else if(ILField_IsLiteral(field) &&
+		        ILTypeIsStringClass(ILField_Type(field)))
+		{
+			/* Sometimes the empty string constant is stored as a literal
+			   field with no value associated with it */
+			return ILNode_String_create(ILInternString("", 0).string, 0);
+		}
+		else
+		{
+			/* This is a literal without an actual constant value */
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "literal field does not have a constant value");
+			return 0;
+		}
+	}
+	else if(ILField_IsInitOnly(field))
+	{
+		/* Check for "DecimalConstantAttribute" values, which are
+		   attached to "readonly" fields of type "System.Decimal" */
+		ILType *decimalType = ILFindSystemType(info, "Decimal");
+		if(ILTypeIdentical(decimalType, ILField_Type(field)))
+		{
+			ILAttribute *attr = 0;
+			ILMethod *ctor;
+			const char *namespace;
+			const unsigned char *value;
+			ILUInt32 valueLen;
+			ILDecimal decValue;
+
+			while((attr = ILProgramItemNextAttribute(ILToProgramItem(field),
+													 attr)) != 0)
+			{
+				ctor = ILProgramItemToMethod(ILAttributeTypeAsItem(attr));
+				if(ctor && !strcmp(ILMethod_Name(ctor), ".ctor") &&
+				   !strcmp(ILClass_Name(ILMethod_Owner(ctor)),
+				   		   "DecimalConstantAttribute"))
+				{
+					namespace = ILClass_Namespace(ILMethod_Owner(ctor));
+					if(namespace &&
+					   !strcmp(namespace, "System.Runtime.CompilerServices"))
+					{
+						value = (const unsigned char *)
+							ILAttributeGetValue(attr, &valueLen);
+						if(value && valueLen == 18 &&
+						   value[0] == 0x01 && value[1] == 0x00 &&
+						   value[2] < 29 && (value[3] == 0x00 ||
+						   					 value[3] == 0x80))
+						{
+							decValue.flags =
+								(((ILUInt32)(value[2])) << 16) |
+								(((ILUInt32)(value[3])) << 24);
+							decValue.high = IL_READ_UINT32(value + 4);
+							decValue.middle = IL_READ_UINT32(value + 8);
+							decValue.low = IL_READ_UINT32(value + 12);
+							return ILNode_Decimal_create(decValue);
+						}
+					}
+				}
+			}
+		}
+
+		/* Check for "IntPtr.Zero", which is very common in unmanaged code */
+		if(!strcmp(ILField_Name(field), "Zero") &&
+		   ILClassToType(ILField_Owner(field)) == ILType_Int)
+		{
+			return ILNode_Int_create(0, 0, 0);
+		}
+
+		/* Load the contents of the read-only field using regular techniques */
+		return 0;
+	}
+	else
+	{
+		/* Regular static field */
+		return 0;
+	}
+}
+
+/*
+ * Get the type of the current class.  NULL if not possible.
+ */
+static ILType *CurrentClassType(ILGenInfo *info)
+{
+	if(info->currentClass)
+	{
+		ILClass *classInfo = ((ILNode_ClassDefn *)(info->currentClass))
+									->classInfo;
+		if(classInfo)
+		{
+			return ILClassToType(classInfo);
+		}
+		else
+		{
+			return 0;
+		}
+	}
+	else
+	{
+		return 0;
+	}
+}
+
+/*
+ * Check if the method is the psuedo method ".init" which is expanded
+ * into the constructor body inline.
+ */
+static int ILMethodIsPsuedoConstructor(ILMethod *method)
+{
+	ILType *signature=ILMethod_Signature(method);
+	ILUInt32 attrs=	(IL_META_METHODDEF_PRIVATE| IL_META_METHODDEF_HIDE_BY_SIG);
+
+	return (!strcmp(ILMethod_Name(method),".init") && 
+			((ILMethod_Attrs(method) & attrs) !=0) &&
+			(ILTypeNumParams(signature)==0) &&
+			ILTypeIdentical(ILTypeGetReturn(signature),ILType_Void));
+}
+
+/*
+ * Convert a semantic value into an l-value or r-value if necessary.
+ */
+static CSSemValue SemToLRValue(ILNode *node, ILGenInfo *info, ILNode **parent,
+							   CSSemValue value, const char *name, ILNode *expr,
+							   CSSemValue *exprSem)
+{
+	ILField *field;
+	ILProperty *property;
+	ILType *signature;
+	ILMethod *getter;
+	ILMethod *setter;
+	ILNode *constNode;
+	ILMethod *method;
+	ILEvent *event;
+	int allowConst;
+	ILType *thisType;
+	ILType *type;
+
+	switch(CSSemGetKind(value))
+	{
+		case CS_SEMKIND_FIELD:
+		{
+			/* Reference to a class field */
+			field = CSSemGetField(value);
+			if(!(info->currentMethod))
+			{
+				/* We are performing semantic analysis of declarations,
+				   where only literals and types are allowed */
+				if(!ILField_IsStatic(field) || !ILField_IsLiteral(field))
+				{
+					CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "`%s' is not declared as a type in the current scope",
+					  name);
+					CSSemSetType(value, ILType_Int32);
+					return value;
+				}
+			}
+
+			/* Create the final semantic type */
+			CSSemSetLValue(value, ILField_Type(field));
+
+			/* Check the usage of "readonly" fields */
+			allowConst = 1;
+			if(ILField_IsInitOnly(field))
+			{
+				method = ((ILNode_MethodDeclaration *)(info->currentMethod))
+							->methodInfo;
+				if(method && CSGetAccessScope(info, 1) == ILField_Owner(field))
+				{
+					/* The field is being used inside the class */
+					if(ILField_IsStatic(field) &&
+					   ILMethodIsStaticConstructor(method))
+					{
+						/* Static readonly used within static constructor */
+						allowConst = 0;
+					}
+					else if(!ILField_IsStatic(field) &&
+					        (ILMethodIsConstructor(method)||
+							ILMethodIsPsuedoConstructor(method)))
+					{
+						/* Instance readonly used within instance constructor
+						   or the ".init" psuedo constructor
+						   Nothing needs to be done here */
+					}
+					else
+					{
+						/* The field is used elsewhere, so make it an 
+						r-value */
+						CSSemSetRValue(value, ILField_Type(field));
+					}
+				}
+				else
+				{
+					/* The field is used elsewhere, so make it an r-value */
+					CSSemSetRValue(value, ILField_Type(field));
+				}
+			}
+
+			/* Replace this identifier with a field access node */
+			if(ILField_IsStatic(field))
+			{
+				/* Convert the field into a constant node if possible */
+				if(allowConst &&
+				   (constNode = FieldToConstant(info, node, field)) != 0)
+				{
+					ILEvalValue evalValue;
+					*parent = constNode;
+					ILNode_EvalConst(constNode, info, &evalValue);
+					thisType = ILClassToType(ILField_Owner(field));
+					type = ILField_Type(field);
+					if(ILTypeIsEnum(thisType) &&
+					   ILTypeIdentical(type, ILTypeGetEnumType(thisType)))
+					{
+						/* The enum definition erroneously used the
+						   underlying type for the constant, instead
+						   of using the enum type.  Work around it */
+						type = thisType;
+					}
+					if(ILTypeIsEnum(thisType) && 
+					   ILProgramItemToNode(info, 
+						   ILToProgramItem(ILField_Owner(field))) 
+						   == info->currentClass)
+					{
+						/* inside an enum declaration the enum fields
+						   are treated as values of the underlying 
+						   type - this is behavior observed in CSC and
+						   NOT according to spec */
+						   type = ILTypeGetEnumType(type);
+					}
+					CSSemSetConstant(value, type, evalValue);
+				}
+				else
+				{
+					*parent = ILNode_StaticField_create(field);
+				}
+			}
+			else if(expr)
+			{
+				*parent = ILNode_MemberField_create
+						(ILNode_MarkType_create
+							(expr, CSSemGetType(*exprSem)), field);
+			}
+			else
+			{
+				CheckForInstanceAccess(info, node);
+				thisType = CurrentClassType(info);
+				if(thisType)
+				{
+					*parent = ILNode_MemberField_create
+							(ILNode_MarkType_create
+								(ILNode_This_create(), thisType), field);
+				}
+				else
+				{
+					*parent = ILNode_MemberField_create
+							(ILNode_This_create(), field);
+				}
+			}
+			yysetfilename(*parent, yygetfilename(node));
+			yysetlinenum(*parent, yygetlinenum(node));
+		}
+		break;
+
+		case CS_SEMKIND_METHOD_GROUP:
+		{
+			/* Reference to a method group */
+			if(!(info->currentMethod))
+			{
+				/* We are performing semantic analysis of declarations,
+				   which does not permit methods to be used as types */
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "`%s' is not declared as a type in the current scope",
+					  name);
+				CSSemSetType(value, ILType_Int32);
+				return value;
+			}
+
+			/* Replace the node with either the object expression or "this" */
+			if(expr && !yyisa(expr, ILNode_This))
+			{
+				*parent = ILNode_MarkType_create(expr, CSSemGetType(*exprSem));
+			}
+			else
+			{
+				thisType = CurrentClassType(info);
+				if(thisType)
+				{
+					if(expr && yyisa(expr, ILNode_This))
+					{
+						*parent = ILNode_MarkType_create
+							(expr, thisType);
+					}
+					else
+					{
+						*parent = ILNode_MarkType_create
+							(ILNode_This_create(), thisType);
+					}
+				}
+				else
+				{
+					*parent = ILNode_This_create();
+				}
+			}
+			yysetfilename(*parent, yygetfilename(node));
+			yysetlinenum(*parent, yygetlinenum(node));
+
+			/* Copy the "base" indication to the method group */
+			if(exprSem && CSSemIsBase(*exprSem))
+			{
+				CSSemSetBase(value);
+			}
+		}
+		break;
+
+		case CS_SEMKIND_PROPERTY:
+		{
+			/* Reference to a class field */
+			if(!(info->currentMethod))
+			{
+				/* We are performing semantic analysis of declarations,
+				   which does not permit properties to be used as types */
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "`%s' is not declared as a type in the current scope",
+					  name);
+				CSSemSetType(value, ILType_Int32);
+				return value;
+			}
+
+			/* Find the property descriptor */
+			property = CSSemGetProperty(value);
+			signature = ILProperty_Signature(property);
+			type = ILTypeGetReturn(signature);
+
+			/* Create the final semantic type */
+			getter = ILProperty_Getter(property);
+			setter = ILProperty_Setter(property);
+			if(getter != 0)
+			{
+				if(setter != 0)
+				{
+					/* Both "get" and "set" are supported */
+					CSSemSetLValue(value, type);
+				}
+				else
+				{
+					/* Only "get" is supported */
+					CSSemSetRValue(value, type);
+				}
+			}
+			else if(setter != 0)
+			{
+				/* Only "set" is supported */
+				CSSemSetSValue(value, type);
+			}
+			else
+			{
+				/* Neither "get" nor "set" is supported */
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+							  "property has neither `get' nor `set' methods");
+				CSSemSetLValue(value, type);
+			}
+
+			/* Replace this identifier with a property access node */
+			if((getter != 0 && ILMethod_IsStatic(getter)) ||
+			   (setter != 0 && ILMethod_IsStatic(setter)))
+			{
+				*parent = ILNode_StaticProperty_create(property);
+			}
+			else if(expr)
+			{
+				*parent = ILNode_MemberProperty_create
+					(ILNode_MarkType_create
+						(expr, CSSemGetType(*exprSem)), property);
+				/* Copy the "base" indication to the method group */
+				if(exprSem && CSSemIsBase(*exprSem))
+				{
+					CSSemSetBase(value);
+					((ILNode_MemberProperty*)(*parent))->baseCall=1;
+				}
+			}
+			else
+			{
+				CheckForInstanceAccess(info, node);
+				thisType = CurrentClassType(info);
+				if(thisType)
+				{
+					*parent = ILNode_MemberProperty_create
+						(ILNode_MarkType_create
+							(ILNode_This_create(), thisType), property);
+				}
+				else
+				{
+					*parent = ILNode_MemberProperty_create
+						(ILNode_This_create(), property);
+				}
+				/* Copy the "base" indication to the method group */
+				if(exprSem && CSSemIsBase(*exprSem))
+				{
+					CSSemSetBase(value);
+					((ILNode_MemberProperty*)(*parent))->baseCall=1;
+				}
+			}
+			yysetfilename(*parent, yygetfilename(node));
+			yysetlinenum(*parent, yygetlinenum(node));
+	
+		}
+		break;
+
+		case CS_SEMKIND_EVENT:
+		{
+			/* Reference to a class event */
+			event = CSSemGetEvent(value);
+			if(!(info->currentMethod))
+			{
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+				  "`%s' is not declared as a type in the current scope",
+				  name);
+				CSSemSetType(value, ILType_Int32);
+				return value;
+			}
+
+			/* Replace this identifier node with the "this"
+			   expression for the event access */
+			method = ILEvent_AddOn(event);
+			if(!method)
+			{
+				method = ILEvent_RemoveOn(event);
+			}
+			if(method && ILMethod_IsStatic(method))
+			{
+				*parent = 0;
+			}
+			else if(expr)
+			{
+				*parent = expr;
+			}
+			else
+			{
+				CheckForInstanceAccess(info, node);
+				thisType = CurrentClassType(info);
+				if(thisType)
+				{
+					*parent = ILNode_MarkType_create
+								(ILNode_This_create(), thisType);
+				}
+				else
+				{
+					*parent = ILNode_This_create();
+				}
+			}
+			if(*parent)
+			{
+				yysetfilename(*parent, yygetfilename(node));
+				yysetlinenum(*parent, yygetlinenum(node));
+			}
+		}
+		break;
+	}
+	return value;
+}
+
+static CSSemValue GetFullyQualifiedType(ILGenInfo *info, const char * ns,
+										const char * name)
+{
+	CSSemValue value;
+	ILScopeData * data = NULL;
+	ILNode *usingNode;
+
+	if(name && ns)
+	{
+		ILType * type = ILFindNonSystemType(info, name, ns);
+		if(type != NULL)
+		{
+			// Note: had to do this to match the 'System.Intptr' type properly
+			type = ILClassToType(ILClassResolve(ILType_ToClass(type)));
+			CSSemSetType(value, type);
+			return value;
+		}
+		
+		// check if "ns" is really an alias for something
+		if(info->currentNamespace && ((ILNode_Namespace*)info->currentNamespace)->localScope)
+		{
+			data = ILScopeLookup(((ILNode_Namespace*)info->currentNamespace)->localScope, ns, 1);
+		}
+
+		if(data && ILScopeDataGetKind(data) == IL_SCOPE_ALIAS)
+		{
+			usingNode = ILScopeDataGetData1(data);
+			ns = ILQualIdentName(usingNode, 0);
+		}
+		
+		if(ns)
+		{
+			ILType * type = ILFindNonSystemType(info, name, ns);
+			if(type != NULL)
+			{
+				// Note: had to do this to match the 'System.Intptr' type properly
+				type = ILClassToType(ILClassResolve(ILType_ToClass(type)));
+				CSSemSetType(value, type);
+				return value;
+			}
+		}
+	}
+
+	
+	return CSSemValueDefault;
+}
+
+%}
+
+/*
+ * Perform semantic analysis for singleton identifiers.
+ */
+ILNode_SemAnalysis(ILNode_Identifier)
+{
+	CSSemValue value;
+	ILScopeData *data=NULL;
+	unsigned long index;
+	ILNode_MethodDeclaration *method;
+	ILParameterModifier paramMod;
+  	ILNode_SemGuard *constVar;
+	ILType *type;
+	ILEvalValue evalValue;
+
+	if(!info->inSemType)
+	{
+		/* Look for local variables in the current scope */
+		data = ILScopeLookup(info->currentScope, node->name, 1);
+	}
+	if(data && ILScopeDataGetKind(data) == IL_SCOPE_LOCAL)
+	{
+		index = ILScopeDataGetIndex(data);
+		method = (ILNode_MethodDeclaration *)(info->currentMethod);
+		if((index & CS_LOCAL_IS_ARG) == 0)
+		{
+			/* Local variable reference */
+			type = ILTypeGetLocal(method->localVarSig, index);
+			CSSemSetLValue(value, type);
+			*parent = ILNode_LocalVar_create(index, ILTypeToMachineType(type));
+		}
+		else
+		{
+			/* Argument reference */
+			index &= ~CS_LOCAL_IS_ARG;
+			if((method->modifiers & CS_MODIFIER_STATIC) == 0)
+			{
+				paramMod = ILGenGetParamInfo(method->methodInfo, 0,
+											 index, &type);
+			}
+			else
+			{
+				paramMod = ILGenGetParamInfo(method->methodInfo, 0,
+											 index + 1, &type);
+			}
+			if(paramMod == ILParamMod_ref)
+			{
+				/* Handle by-reference parameters */
+				*parent = ILNode_RefArgumentVar_create
+					(index, ILTypeToMachineType(type), type);
+			}
+			else if(paramMod == ILParamMod_out)
+			{
+				/* Handle output-only parameters.  Technically, this should
+				   probably be an s-value, not an l-value, but other C#
+				   compilers allow "out" parameters to be read */
+				*parent = ILNode_RefArgumentVar_create
+					(index, ILTypeToMachineType(type), type);
+			}
+			else if(paramMod == ILParamMod_params)
+			{
+				/* Use the array form of the parameter inside the method */
+				if((method->modifiers & CS_MODIFIER_STATIC) == 0)
+				{
+					type = ILTypeGetParam
+						(ILMethod_Signature(method->methodInfo), index);
+				}
+				else
+				{
+					type = ILTypeGetParam
+						(ILMethod_Signature(method->methodInfo), index + 1);
+				}
+				*parent = ILNode_ArgumentVar_create
+					(index, ILMachineType_ObjectRef);
+			}
+			else
+			{
+				*parent = ILNode_ArgumentVar_create
+							(index, ILTypeToMachineType(type));
+			}
+			CSSemSetLValue(value, type);
+		}
+		if((void*)(*parent) != (void*)node)
+		{
+			yysetfilename(*parent, yygetfilename(node));
+			yysetlinenum(*parent, yygetlinenum(node));
+		}
+		return value;
+	}
+	else if(data && ILScopeDataGetKind(data) == IL_SCOPE_LOCAL_CONST)
+	{
+		method = (ILNode_MethodDeclaration *)(info->currentMethod);
+		constVar = (ILNode_SemGuard *)(ILScopeDataGetData1(data));
+		if(ILNode_EvalConst(constVar->expr, info, &evalValue))
+		{
+			CSSemSetConstant(value, CSSemGetType(constVar->value), evalValue);
+			CSSemReplaceWithConstant(parent, value);
+		}
+		if((void*)(*parent) != (void*)node)
+		{
+			yysetfilename(*parent, yygetfilename(node));
+			yysetlinenum(*parent, yygetlinenum(node));
+		}
+		return value;
+	}
+
+	/* Resolve the simple name now. */
+	/* This two step stuff is pretty ugly but the static filtering is only */
+	/* done in the quiet mode. */
+	value = CSResolveSimpleNameQuiet(info, (ILNode *)node, node->name, 0);
+
+	if (CSSemGetKind(value) != CS_SEMKIND_VOID)
+	{
+		/* Convert the result into an l-value or r-value and return it */
+		return SemToLRValue((ILNode *)node, info, parent, 
+							value, node->name, 0, 0);
+	}
+
+	value = CSResolveSimpleName(info, (ILNode *)node, node->name, 0);
+
+	/* Convert the result into an l-value or r-value and return it */
+	return SemToLRValue((ILNode *)node, info, parent, 
+						value, node->name, 0, 0);
+}
+
+/*
+ *  Perform semantic analysis with a bias to returning Type objects.
+ */
+ILNode_SemAnalysisType(ILNode_Identifier)
+{
+	CSSemValue value;
+	int savedState=info->inSemType;
+
+	info->inSemType = -1;
+	/* Resolve the simple name */
+	value = CSResolveSimpleNameQuiet(info, (ILNode *)node, node->name, 1);
+	info->inSemType=savedState;
+
+	if (CSSemGetKind(value) == CS_SEMKIND_TYPE || CSSemGetKind(value) == CS_SEMKIND_NAMESPACE || CSSemGetKind(value) == CS_SEMKIND_TYPE_NODE)
+	{
+		/* Convert the result into an l-value or r-value and return it */
+		return SemToLRValue((ILNode *)node, info, parent, 
+							value, node->name, 0, 0);
+	}
+
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis with a bias to returning Type objects.
+ * Also handle names that optionally end in "Attribute".
+ */
+ILNode_SemAnalysisType(ILNode_AttrIdentifier)
+{
+	CSSemValue value;
+	int savedState=info->inSemType;
+	int savedAliasState;
+	const char *name;
+
+	/* Resolve the simple name */
+	info->inSemType = -1;
+	value = CSResolveSimpleNameQuiet(info, (ILNode *)node, node->name, 1);
+	info->inSemType=savedState;
+
+	if (CSSemGetKind(value) == CS_SEMKIND_TYPE &&
+	    ILTypeAssignCompatible(info->image, CSSemGetType(value),
+	   					       ILFindSystemType(info, "Attribute")))
+	{
+		/* Convert the result into an l-value or r-value and return it */
+		return SemToLRValue((ILNode *)node, info, parent, 
+							value, node->name, 0, 0);
+	}
+
+	/* Try again, this time with "Attribute" appended */
+	/* but don't allow alias resolution in this case. */
+	name = ILInternAppendedString
+		(ILInternString(node->name, strlen(node->name)),
+		 ILInternString("Attribute", 9)).string;
+	info->inSemType = -1;
+	savedAliasState = info->resolvingAlias;
+	info->resolvingAlias = -1;
+	value = CSResolveSimpleNameQuiet(info, (ILNode *)node, name, 1);
+	info->resolvingAlias = savedAliasState;
+	info->inSemType=savedState;
+
+	if (CSSemGetKind(value) == CS_SEMKIND_TYPE &&
+	    ILTypeAssignCompatible(info->image, CSSemGetType(value),
+	   					       ILFindSystemType(info, "Attribute")))
+	{
+		/* Convert the result into an l-value or r-value and return it */
+		return SemToLRValue((ILNode *)node, info, parent, 
+							value, node->name, 0, 0);
+	}
+
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for qualified identifiers.
+ */
+ILNode_SemAnalysis(ILNode_QualIdent)
+{
+	CSSemValue value;
+	CSSemValue value2;
+	const char *name;
+
+	/* Get the semantic value for the left part of the identifier */
+	value = ILNode_SemAnalysisType(node->left, info, &(node->left));
+
+	/* Resolve the member */
+	name = node->name;
+	value2 = CSResolveMemberName(info, (ILNode *)node, value, name, 0);
+
+	/* Convert the result into an l-value or r-value and return it */
+	return SemToLRValue((ILNode *)node, info, parent, value2,
+						name, node->left, &value);
+}
+
+/*
+ *  Perform semantic analysis with a bias to returning Type objects.
+ */
+ILNode_SemAnalysisType(ILNode_QualIdent)
+{
+	CSSemValue value;
+	CSSemValue value2;
+	const char *name;
+	const char *ns;
+	int savedState = info->inSemType;
+	
+	ns = ILQualIdentName(node->left, 0);
+	name = node->name;
+	
+	value = GetFullyQualifiedType(info, ns, name);
+
+	if(CSSemGetKind(value) == CS_SEMKIND_TYPE)
+	{
+		return value;
+	}
+
+	/* Restrict lookups for types only (ie namespaces , types, nested types */
+	info->inSemType = -1;
+
+	/* Get the semantic value for the left part of the identifier */
+	value = ILNode_SemAnalysisType(node->left, info, &(node->left));
+
+	/* Resolve the member */
+	value2 = CSResolveMemberName(info, (ILNode *)node, value, name, 1);
+	
+	info->inSemType = savedState;
+
+	if (CSSemGetKind(value2) == CS_SEMKIND_TYPE || CSSemGetKind(value2) == CS_SEMKIND_NAMESPACE || CSSemGetKind(value2) == CS_SEMKIND_TYPE_NODE)
+	{
+		/* Convert the result into an l-value or r-value and return it */
+		return SemToLRValue((ILNode *)node, info, parent, value2,
+						name, node->left, &value);
+	}
+	else
+	{
+		return CSSemValueDefault;
+	}
+}
+
+/*
+ * Perform semantic analysis for qualified identifiers.
+ */
+ILNode_SemAnalysis(ILNode_GenericQualIdent)
+{
+	CSSemValue value;
+	ILClass *classInfo;
+	ILUInt32 numFormals;
+	ILType *withType;
+	const char *name;
+	char buffer[261];
+
+	/* Get the type name with the generic arity appended */
+	sprintf(buffer, "%s`%i", node->name, node->numTypeArgs);
+	name = buffer;
+
+	if(node->left)
+	{
+		CSSemValue value2;
+
+		/* Get the semantic value for the left part of the identifier */
+		value2 = ILNode_SemAnalysisType(node->left, info, &(node->left));
+
+		/* Resolve the member */
+		value = CSResolveMemberName(info, (ILNode *)node, value2, name, 1);
+	}
+	else
+	{
+		value = CSResolveSimpleNameQuiet(info, (ILNode *)node, name, 1);
+	}
+	if(!CSSemIsType(value))
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "type name expected in generic type reference");
+		return value;
+	}
+
+	/* Find the number of generic parameters that we expect */
+	classInfo = ILClassResolve(ILTypeToClass(info, CSSemGetType(value)));
+	numFormals = ILGenericParGetNumParams(ILToProgramItem(classInfo));
+
+	/* Check the counts for consistency */
+	/* TODO: This check is not correct for nested types. */
+	if(numFormals != node->numTypeArgs)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "incorrect number of generic parameters supplied to "
+					  "`%s'; was %d but should be %d",
+					  CSTypeToName(CSSemGetType(value)),
+					  (int)node->numTypeArgs, (int)numFormals);
+	}
+
+	/* Build the "with" type and return it */
+	withType = ILTypeCreateWith(info->context, CSSemGetType(value));
+	if(!withType)
+	{
+		CCOutOfMemory();
+	}
+	CSSemWithType(node->typeArgs, info, &(node->typeArgs), withType);
+	CSSemSetType(value, withType);
+	return value;
+}
+
+/*
+ *  Perform semantic analysis with a bias to returning Type objects.
+ */
+ILNode_SemAnalysisType(ILNode_GenericQualIdent)
+{
+	CSSemValue value;
+	const char *name;
+	int savedState=info->inSemType;
+	char buffer[261];
+
+	/* Get the type name with the generic arity appended */
+	sprintf(buffer, "%s`%i", node->name, node->numTypeArgs);
+	name = buffer;
+
+	info->inSemType = -1;
+
+	/* Perform semantic analysis on the main part of the type */
+	if(node->left)
+	{
+		CSSemValue value2;
+
+		/* Get the semantic value for the left part of the identifier */
+		value2 = ILNode_SemAnalysisType(node->left, info, &(node->left));
+
+		/* Resolve the member */
+		value = CSResolveMemberName(info, (ILNode *)node, value2, name, 1);
+	}
+	else
+	{
+		value = CSResolveSimpleNameQuiet(info, (ILNode *)node, name, 1);
+	}
+	info->inSemType = savedState;
+	
+	if(info->typeGather)
+	{
+		/* During type gathering only underlying classes are required */
+
+		if((CSSemGetKind(value) == CS_SEMKIND_TYPE) ||
+		   (CSSemGetKind(value) == CS_SEMKIND_TYPE_NODE))
+		{
+			/* Convert the result into an l-value or r-value and return it */
+			return SemToLRValue((ILNode *)node, info, parent, value,
+								name, node->left, &value);
+		}
+		return CSSemValueDefault;
+	}
+
+	if(CSSemGetKind(value) == CS_SEMKIND_TYPE)
+	{
+		ILType *withType;
+		/* TODO: perform the analysis for the TypeActuals. */
+
+		/* Build the "with" type and return it */
+		withType = ILTypeCreateWith(info->context, CSSemGetType(value));
+		if(!withType)
+		{
+			CCOutOfMemory();
+		}
+		CSSemWithType(node->typeArgs, info, &(node->typeArgs),
+					  withType);
+		CSSemSetType(value, withType);
+
+		/* Convert the result into an l-value or r-value and return it */
+		return SemToLRValue((ILNode *)node, info, parent, value,
+							name, node->left, &value);
+	}
+	else if(CSSemGetKind(value) == CS_SEMKIND_TYPE_NODE)
+	{
+		/* TODO: perform the analysis for the TypeActuals. */
+
+		/* Convert the result into an l-value or r-value and return it */
+		return SemToLRValue((ILNode *)node, info, parent, value,
+							name, node->left, &value);
+
+	}
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis with a bias to returning Type objects.
+ * If the first lookup fails, another is tried where the right-hand
+ * part of the identifier ends in "Attribute".
+ */
+ILNode_SemAnalysisType(ILNode_AttrQualIdent)
+{
+	CSSemValue value;
+	CSSemValue value2;
+	const char *name;
+	int savedState = info->inSemType;
+
+	/* Restrict lookups for types only (ie namespaces , types, nested types */
+	info->inSemType = -1;
+
+	/* Get the semantic value for the left part of the identifier */
+	value = ILNode_SemAnalysis(node->left, info, &(node->left));
+
+	/* Resolve the member */
+	name = node->name;
+	value2 = CSResolveMemberNameQuiet(info, (ILNode *)node, value, name, 1);
+
+	/* If the resolution failed, then try again with "Attribute" appended */
+	if(CSSemGetKind(value2) != CS_SEMKIND_TYPE ||
+	   !ILTypeAssignCompatible(info->image, CSSemGetType(value2),
+	   					       ILFindSystemType(info, "Attribute")))
+	{
+		name = ILInternAppendedString
+			(ILInternString(name, strlen(name)),
+			 ILInternString("Attribute", 9)).string;
+		value2 = CSResolveMemberName(info, (ILNode *)node, value, name, 1);
+	}
+
+	info->inSemType = savedState;
+
+	if (CSSemGetKind(value2) != CS_SEMKIND_TYPE)
+	{
+		return CSSemValueDefault;
+	}
+	else
+	{
+		/* Convert the result into an l-value or r-value and return it */
+		return SemToLRValue((ILNode *)node, info, parent, value2,
+						name, node->left, &value);
+	}
+}
+
+ILNode_SemAnalysis(ILNode_GenericConstraint)
+{
+	/* This should never be called because they are merged into the
+	   GenericTypeParameter during parsing. */
+	return CSSemValueDefault;
+}
+
+ILNode_SemAnalysis(ILNode_GenericTypeConstraint)
+{
+	CSSemValue value;
+
+	if(node->visited == ILVisitMode_NotVisited)
+	{
+		node->visited = ILVisitMode_Processing;
+
+		node->type = CSSemType(node->identifier, info, &(node->identifier));
+
+		node->visited = ILVisitMode_Done;
+	}
+	CSSemSetType(value, node->type);
+	return value;
+}
+
+ILNode_SemAnalysisType(ILNode_GenericTypeConstraint)
+{
+	CSSemValue value;
+
+	if(node->visited == ILVisitMode_NotVisited)
+	{
+		node->visited = ILVisitMode_Processing;
+
+		node->type = CSSemType(node->identifier, info, &(node->identifier));
+
+		node->visited = ILVisitMode_Done;
+	}
+	CSSemSetType(value, node->type);
+	return value;
+}
+
+
+/*
+ * Perform semantic analysis for local variables.
+ */
+ILNode_SemAnalysis(ILNode_LocalVar)
+{
+	ILNode_MethodDeclaration *method;
+
+	/* Locate the method that this local is declared within */
+	method = (ILNode_MethodDeclaration *)(info->currentMethod);
+
+	/* Get the type of the local from the local variable signature */
+	if(method->localVarSig)
+	{
+		ILType *type;
+
+		type = ILTypeGetLocal(method->localVarSig, node->index);
+		if(type)
+		{
+			CSSemValue value;
+
+			CSSemSetLValue(value, type);
+			return value;
+		}
+	}
+
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for argument variables.
+ */
+ILNode_SemAnalysis(ILNode_ArgumentVar),
+ILNode_SemAnalysis(ILNode_RefArgumentVar)
+{
+	/* This should never be called: these node types are
+	   synthesised when ILNode_Identifier is analysed */
+	return CSSemValueDefault;
+}
+
+/*
+ * Perform semantic analysis for member access operators.
+ */
+ILNode_SemAnalysis(ILNode_MemberAccess)
+{
+	CSSemValue value;
+	CSSemValue value2;
+	CSSemValue nsvalue;
+	const char *name;
+	ILEvalValue evalue;
+	ILNode *save1;
+
+	/*  PART I  - Try it in the usual fashion  */
+
+	/*  Stow the original node contents for later  */
+	save1 = node->expr1;
+	
+
+	if(info->inSemStatic)
+	{
+		// reset static lookup flag immediately
+		info->inSemStatic = 0;
+		value = ILNode_SemAnalysisType(node->expr1, info, &(node->expr1));
+	}
+	else
+	{
+		/* Get the semantic value for the left part of the identifier */
+		value = ILNode_SemAnalysis(node->expr1, info, &(node->expr1));
+	}
+
+	/* Set the rvalue if it is a constant expression */
+	if(yyisa(node->expr1,ILNode_Constant))
+	{
+		if(ILNode_EvalConst(node->expr1,info,&evalue))
+		{
+			/* Set the RValue to the type .. to handle Boxing later on*/
+			if(CSSemGetType(value)==ILType_Null)
+			{
+				CSSemSetRValue(value,ILValueTypeToType(info,evalue.valueType));
+			}
+			else
+			{
+				CSSemSetRValue(value,CSSemGetType(value));
+			}
+		}
+	}
+
+	/* Convert the second subexpression into a name */
+	name = ILQualIdentName(node->expr2, 0);
+
+	/* Check for the special case of "array.Length" */
+	if(CSSemIsValue(value) && !strcmp(name, "Length") &&
+	   ILType_IsSimpleArray(CSSemGetType(value)))
+	{
+		*parent = ILNode_ArrayLength_create(node->expr1);
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		*parent = ILNode_CastSimple_create(*parent, ILMachineType_Int32);
+		CSSemSetRValue(value, ILType_Int32);
+		return value;
+	}
+
+	/* Resolve the member */
+	value2 = CSResolveMemberNameQuiet(info, (ILNode *)node, value, name, 0);
+
+	if (CSSemGetKind(value2) != CS_SEMKIND_VOID)
+	{
+		/* Convert the result into an l-value or r-value and return it */
+		return SemToLRValue((ILNode *)node, info, parent, value2,
+					    name, node->expr1, &value);
+	}
+
+	/*  PART II - Try again, this time limiting parsing to types  */
+	node->expr1 = save1;
+
+	value = ILNode_SemAnalysisType(node->expr1, info, &(node->expr1));
+
+	value2 = CSResolveMemberNameQuiet(info, (ILNode *)node, value, name, 0);
+
+	if (CSSemGetKind(value2) != CS_SEMKIND_VOID)
+	{
+		/* Convert the result into an l-value or r-value and return it */
+		return SemToLRValue((ILNode *)node, info, parent, value2,
+					    name, node->expr1, &value);
+	}
+
+	/*  PART III - Assume the left side of the '.' is a namespace and try
+	 *  to locate a corresponding type.  */
+
+	/*  Manufacture a Semantic value for the "namespace"  */
+	/*
+	CSSemSetKind(nsvalue, 
+					CS_SEMKIND_NAMESPACE, ILMemberAccessName(node->expr1));
+
+	value2 = CSResolveNamespaceMemberName(info, (ILNode *)node, nsvalue, name);
+
+	if (CSSemGetKind(value2) != CS_SEMKIND_VOID) {
+		return SemToLRValue((ILNode *)node, info, parent, value2,
+						name, node->expr1, &value);
+	}
+*/
+	/*  PART IV - Punt.  */
+	if (!yyisa(*parent,ILNode_MemberAccess))
+	{
+		/*  Do it once more, but not so quiet about the errors :-)  */
+		CSResolveMemberName(info, (ILNode *)node, nsvalue, name, 0);
+	}
+
+	/* Convert the result into an l-value or r-value and return it */
+	return SemToLRValue((ILNode *)node, info, parent, value2,
+					    name, node->expr1, &value);
+}
+
+/*
+ * Perform semantic analysis for member access operators favouring types.
+ */
+
+ILNode_SemAnalysisType(ILNode_MemberAccess)
+{
+	CSSemValue value;
+	int savedState = info->inSemType;
+	const char *name;
+	
+	/* Convert the second subexpression into a name */
+	name = ILQualIdentName(node->expr2, 0);
+
+	info->inSemType = -1;
+	/* Get the semantic value for the left part of the identifier */
+	value = ILNode_SemAnalysisType(node->expr1, info, &(node->expr1));
+
+	/* Resolve the member */
+	value = CSResolveMemberName(info, (ILNode *)node, value, name, 0);
+
+	info->inSemType=savedState;
+	
+	/* the result is a type */
+	return value ;
+}
+
+/*
+ * Perform semantic analysis for base member access operators.
+ */
+ILNode_SemAnalysis(ILNode_BaseAccess)
+{
+	CSSemValue value;
+	CSSemValue value2;
+	ILNode_MethodDeclaration *caller;
+	ILClass *classInfo;
+	ILNode *thisExpr;
+	const char *name;
+
+	/* Bail out if "base" is used within a static method */
+	caller = (ILNode_MethodDeclaration *)(info->currentMethod);
+	if(!caller || (caller->modifiers & CS_MODIFIER_STATIC) != 0)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  "cannot use base reference in a static method");
+		CSSemSetType(value, ILType_Int32);
+		return value;
+	}
+
+	/* Find the parent class to start searching from */
+	classInfo = ILClass_ParentClass(ILMethod_Owner(caller->methodInfo));
+	if(!classInfo)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  "cannot use base reference in `System.Object'");
+		CSSemSetType(value, ILType_Int32);
+		return value;
+	}
+
+	/* Get the semantic value for the "base" part of the node */
+	CSSemSetRValue(value, ILClassToType(classInfo));
+	CSSemSetBase(value);
+
+	/* Construct a dummy "this" expression to represent the object */
+	thisExpr = ILNode_This_create();
+
+	/* Resolve the member */
+	name = ILQualIdentName(node->expr, 0);
+	value2 = CSResolveMemberName(info, (ILNode *)node, value, name, 0);
+
+	/* Convert the result into an l-value or r-value and return it */
+	return SemToLRValue((ILNode *)node, info, parent, value2,
+						name, thisExpr, &value);
+}
+
+/*
+ * Perform semantic analysis for base element access operators.
+ */
+ILNode_SemAnalysis(ILNode_BaseElement)
+{
+	CSSemValue value;
+	ILNode_MethodDeclaration *caller;
+	ILClass *classInfo;
+	ILNode *thisExpr;
+	CSSemValue indexers;
+	CSEvalArg *args;
+	int numArgs;
+	unsigned long itemNum;
+	ILProgramItem *itemInfo;
+	int candidateForm, kind;
+	ILMethod *getMethod;
+	ILMethod *setMethod;
+	ILType *objectType;
+	
+	/* Bail out if "base" is used within a static method */
+	caller = (ILNode_MethodDeclaration *)(info->currentMethod);
+	if(!caller || (caller->modifiers & CS_MODIFIER_STATIC) != 0)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  "cannot use base reference in a static method");
+		CSSemSetType(value, ILType_Int32);
+		return value;
+	}
+
+	/* Find the parent class to start searching from */
+	classInfo = ILClass_ParentClass(ILMethod_Owner(caller->methodInfo));
+	if(!classInfo)
+	{
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+			  "cannot use base reference in `System.Object'");
+		CSSemSetType(value, ILType_Int32);
+		return value;
+	}
+
+	/* Construct a dummy "this" expression to represent the object */
+	thisExpr = ILNode_This_create();
+
+	/* Perform semantic analysis on the index argument list */
+	numArgs = CSEvalArguments(info, node->expr, &(node->expr), &args);
+	if(numArgs < 0)
+	{
+		CSSemSetLValue(value, ILType_Int32);
+		return value;
+	}
+
+	/* Resolve the indexer for this type */
+	objectType = ILClassToType(classInfo);
+
+	indexers = CSResolveIndexers(info, (ILNode *)node,
+								 ILType_ToClass(objectType),1);
+	
+	if(CSSemIsIndexerGroup(indexers))
+	{
+		/* Scan through the indexer group looking for something
+		   that is applicable to the expression list */
+		itemNum = 0;
+		while((itemInfo = CSGetGroupMember
+					(CSSemGetGroup(indexers), itemNum)) != 0)
+		{
+			candidateForm = CSItemIsCandidate
+					(info, itemInfo, args, numArgs);
+			if(candidateForm)
+			{
+				CSSetGroupMemberForm(CSSemGetGroup(indexers), itemNum,
+									 candidateForm);
+				++itemNum;
+			}
+			else
+			{
+				CSSemModifyGroup(indexers, (ILType *)CSRemoveGroupMember
+									(CSSemGetGroup(indexers), itemNum));
+			}
+		}
+
+		/* If there are no candidates left, then bail out */
+		itemNum = 0;
+		itemInfo = CSGetGroupMember(CSSemGetGroup(indexers), itemNum);
+		if(!itemInfo)
+		{
+			CSItemCandidateError((ILNode *)node, 0, 0,
+							     CSSemGetGroup(indexers), args, numArgs);
+			CSEvalFreeArguments(args);
+			CSSemSetType(value, ILType_Int32);
+			return value;
+		}
+
+		/* If there are two or more candidates, then try to
+		   find the best one */
+		if(CSGetGroupMember(CSSemGetGroup(indexers), 1) != 0)
+		{
+			itemInfo = CSBestCandidate(info, CSSemGetGroup(indexers),
+									   args, numArgs);
+			if(!itemInfo)
+			{
+				CSItemCandidateError((ILNode *)node, 0, 0,
+								     CSSemGetGroup(indexers),
+									 args, numArgs);
+				CSEvalFreeArguments(args);
+				CSSemSetType(value, ILType_Int32);
+				return value;
+			}
+		}
+
+		/* Locate the "get" and "set" methods for the indexer */
+		getMethod = ILProperty_Getter((ILProperty *)itemInfo);
+		setMethod = ILProperty_Setter((ILProperty *)itemInfo);
+
+		/* Determine the semantic kind for the value */
+		if(getMethod && setMethod)
+		{
+			kind = CS_SEMKIND_LVALUE;
+		}
+		else if(getMethod)
+		{
+			kind = CS_SEMKIND_RVALUE;
+		}
+		else if(setMethod)
+		{
+			kind = CS_SEMKIND_SVALUE;
+		}
+		else
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "indexer does not have `get' or `set' accessors");
+			kind = CS_SEMKIND_LVALUE;
+		}
+
+		/* Import the methods into this image */
+		if(getMethod)
+		{
+			getMethod = (ILMethod *)ILMemberImport
+					(info->image, (ILMember *)getMethod);
+		}
+		if(setMethod)
+		{
+			setMethod = (ILMethod *)ILMemberImport
+					(info->image, (ILMember *)setMethod);
+		}
+
+		/* Coerce the arguments and build the final argument list */
+		CSSemSetValueKind(value, kind, CSItemCoerceArgs
+					(info, ILToProgramItem(itemInfo),
+					 args, numArgs, &(node->expr)));
+
+		/* Replace this node with an indexer access node */
+		*parent = ILNode_IndexerAccess_create
+				(thisExpr, node->expr, getMethod, setMethod,
+				 objectType, CSSemGetType(value),
+				 ILTypeToMachineType(CSSemGetType(value)),1);
+	}
+	else
+	{
+		/* No indexers are defined for this type */
+		CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+					  "array or indexed value expected");
+		CSSemSetLValue(value, ILType_Int32);
+	}
+	return value;
+}
+
+/*
+ * Perform semantic analysis for an unsafe pointer field dereference.
+ */
+ILNode_SemAnalysis(ILNode_DerefField)
+{
+	CSSemValue value;
+	ILType *type;
+	const char *name;
+	ILClass *classInfo;
+	ILField *field;
+
+	/* Emit an "unsafe" message if necessary */
+	CCUnsafeMessage(info, (ILNode *)node, "unsafe field dereference");
+
+	/* Perform semantic analysis on the left hand sub-expression */
+	value = ILNode_SemAnalysis(node->expr1, info, &(node->expr1));
+	if(!CSSemIsValue(value) || !ILType_IsPointer(CSSemGetType(value)))
+	{
+		CCErrorOnLine(yygetfilename(node->expr1), yygetlinenum(node->expr1),
+					  "pointer value expected");
+		CSSemSetLValue(value, ILType_Int32);
+		return value;
+	}
+
+	/* Make sure that this is a pointer to a struct value type */
+	type = ILTypeStripPrefixes(ILType_Ref(CSSemGetType(value)));
+	if(!ILType_IsValueType(type) || ILTypeIsEnum(type))
+	{
+		CCErrorOnLine(yygetfilename(node->expr1), yygetlinenum(node->expr1),
+					  "`%s' is not a struct type", CSTypeToName(type));
+		CSSemSetLValue(value, ILType_Int32);
+		return value;
+	}
+
+	/* Resolve the field reference */
+	name = ILQualIdentName(node->expr2, 0);
+	classInfo = ILType_ToValueType(type);
+	field = 0;
+	while((field = (ILField *)ILClassNextMemberByKind
+				(classInfo, (ILMember *)field, IL_META_MEMBERKIND_FIELD)) != 0)
+	{
+		if(!ILField_IsStatic(field) && !strcmp(ILField_Name(field), name))
+		{
+			break;
+		}
+	}
+	if(!field)
+	{
+		CCErrorOnLine(yygetfilename(node->expr1), yygetlinenum(node->expr1),
+					  "`%s' is not a member of `%s'",
+					  name, CSTypeToName(type));
+		CSSemSetLValue(value, ILType_Int32);
+		return value;
+	}
+
+	/* Set up the node for code generation and return */
+	type = ILField_Type(field);
+	node->field = field;
+	node->machineType = ILTypeToMachineType(type);
+	CSSemSetLValue(value, type);
+	return value;
+}
+
+%{
+
+/*
+ * Wrap an array index expression in an overflow conversion to "int".
+ */
+static ILNode *ArrayIndexToInt(ILGenInfo *info, ILNode *node,
+							   ILNode **parent, ILType *currentType,
+							   int pointerAccess)
+{
+	ILNode *result;
+	if(pointerAccess)
+	{
+		/* Cast to a native integer if accessing by pointer */
+		if(currentType == ILType_Int32 || currentType == ILType_Int64)
+		{
+			result = ILNode_CastSimple_create(node, ILMachineType_NativeInt);
+		}
+		else
+		{
+			result = ILNode_CastSimple_create(node, ILMachineType_NativeUInt);
+		}
+	}
+	else if(info->overflowInsns)
+	{
+		/* We are already in overflow mode, so just wrap it */
+		result = ILNode_CastSimple_create(node, ILMachineType_Int32);
+	}
+	else
+	{
+		/* The index is not being computed in overflow mode,
+		   but we want an overflow conversion for the cast */
+		result = ILNode_Overflow_create
+					(ILNode_CastSimple_create
+						(ILNode_NoOverflow_create(node), ILMachineType_Int32));
+	}
+	*parent = result;
+	return result;
+}
+
+/*
+ * Coerce an array index to "int", "uint", "long", or "ulong".
+ */
+static void CoerceArrayIndex(ILGenInfo *info, ILNode **node,
+							 ILNode **parent, ILType *type,
+							 int pointerAccess)
+{
+	if(ILCoerce(info, *node, parent, type, ILType_Int32, 1))
+	{
+		*node = ArrayIndexToInt
+			(info, *parent, parent, ILType_Int32, pointerAccess);
+	}
+	else if(ILCoerce(info, *node, parent, type, ILType_UInt32, 1))
+	{
+		*node = ArrayIndexToInt
+			(info, *parent, parent, ILType_UInt32, pointerAccess);
+	}
+	else if(ILCoerce(info, *node, parent, type, ILType_Int64, 1))
+	{
+		*node = ArrayIndexToInt
+			(info, *parent, parent, ILType_Int64, pointerAccess);
+	}
+	else if(ILCoerce(info, *node, parent, type, ILType_UInt64, 1))
+	{
+		*node = ArrayIndexToInt
+			(info, *parent, parent, ILType_Int64, pointerAccess);
+	}
+	else
+	{
+		CCErrorOnLine(yygetfilename(*node), yygetlinenum(*node),
+					  "no conversion from `%s' to `int'",
+					  CSTypeToName(type));
+	}
+}
+
+%}
+
+/*
+ * Perform semantic analysis for an array access operation.
+ */
+ILNode_SemAnalysis(ILNode_ArrayAccess)
+{
+	CSSemValue value;
+	CSSemValue indexers;
+	CSEvalArg *args;
+	int numArgs, argNum;
+	unsigned long itemNum;
+	ILProgramItem *itemInfo;
+	int candidateForm, kind;
+	ILMethod *getMethod;
+	ILMethod *setMethod;
+	ILType *objectType;
+	ILNode *tempNode;
+
+	/* Perform semantic analysis on the array expression */
+	if(!CSSemExpectValue(node->array, info, &(node->array), &value))
+	{
+		CCErrorOnLine(yygetfilename(node->array), yygetlinenum(node->array),
+					  "array or indexed value expected");
+		CSSemSetLValue(value, ILType_Int32);
+		return value;
+	}
+
+	/* Perform semantic analysis on the index argument list */
+	numArgs = CSEvalArguments(info, node->indices, &(node->indices), &args);
+	if(numArgs < 0)
+	{
+		CSSemSetLValue(value, ILType_Int32);
+		return value;
+	}
+
+	/* Is this an array element or an indexer access? */
+	if(ILType_IsArray(CSSemGetType(value)))
+	{
+		/* All arguments must be coercable to one of "int", "uint",
+		   "long", or "ulong", and are converted to "int" */
+		for(argNum = 0; argNum < numArgs; ++argNum)
+		{
+			CoerceArrayIndex(info, &(args[argNum].node), args[argNum].parent,
+			            	 args[argNum].type, 0);
+		}
+
+		/* Check the array's rank */
+		if(numArgs != ILTypeGetRank(CSSemGetType(value)))
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "incorrect number of indices for `%s'",
+						  CSTypeToName(CSSemGetType(value)));
+		}
+
+		/* Store the type information in the node for the code generator */
+		node->arrayType = CSSemGetType(value);
+		node->elemType = ILTypeGetElemType(node->arrayType);
+
+		/* Construct the semantic value for the element type */
+		CSSemSetLValue(value, node->elemType);
+	}
+	else if(ILType_IsPointer(CSSemGetType(value)))
+	{
+		CSSemValue value1;
+		
+		/* Access to an array defined by a pointer */
+		CCUnsafeMessage(info, (ILNode *)node,
+						"unsafe pointer-based array access");
+		objectType = CSSemGetType(value);
+		if(numArgs != 1)
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "incorrect number of indices for `%s'",
+						  CSTypeToName(objectType));
+		}
+		objectType = ILTypeStripPrefixes(ILType_Ref(objectType));
+		if(objectType == ILType_Void)
+		{
+			CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+						  "`void *' cannot be used for an array access");
+			objectType = ILType_UInt8;
+		}
+		CoerceArrayIndex(info, &(args[0].node), args[0].parent,
+		            	 args[0].type, 1);
+		if(objectType == ILType_Int8 || objectType == ILType_UInt8 ||
+		   objectType == ILType_Boolean)
+		{
+			tempNode = ILNode_Add_create(node->array, args[0].node);
+		}
+		else
+		{
+			tempNode = PointerDelta(info, objectType, args[0].node,
+									args[0].type, ILType_Int);
+			tempNode = ILNode_Add_create(node->array, tempNode);
+		}
+		yysetfilename(tempNode, yygetfilename(node));
+		yysetlinenum(tempNode, yygetlinenum(node));
+
+		/* Perform constant propagation if possible */
+		CSSemSetRValue(value1, ILType_Int);
+		EvalOperator(info, tempNode, &tempNode, &value1);
+
+		*parent = ILNode_Deref_create(tempNode, objectType);
+		yysetfilename(*parent, yygetfilename(node));
+		yysetlinenum(*parent, yygetlinenum(node));
+		CSSemSetLValue(value, objectType);
+	}
+	else if(ILType_IsClass(CSSemGetType(value)) ||
+			ILType_IsValueType(CSSemGetType(value)))
+	{
+		/* Resolve the indexer for this type */
+		objectType = CSSemGetType(value);
+		indexers = CSResolveIndexers(info, (ILNode *)node,
+									 ILType_ToClass(objectType),0);
+		if(CSSemIsIndexerGroup(indexers))
+		{
+			/* Scan through the indexer group looking for something
+			   that is applicable to the expression list */
+			itemNum = 0;
+			while((itemInfo = CSGetGroupMember
+						(CSSemGetGroup(indexers), itemNum)) != 0)
+			{
+				candidateForm = CSItemIsCandidate
+						(info, itemInfo, args, numArgs);
+				if(candidateForm)
+				{
+					CSSetGroupMemberForm(CSSemGetGroup(indexers), itemNum,
+										 candidateForm);
+					++itemNum;
+				}
+				else
+				{
+					CSSemModifyGroup(indexers, (ILType *)CSRemoveGroupMember
+										(CSSemGetGroup(indexers), itemNum));
+				}
+			}
+
+			/* If there are no candidates left, then bail out */
+			itemNum = 0;
+			itemInfo = CSGetGroupMember(CSSemGetGroup(indexers), itemNum);
+			if(!itemInfo)
+			{
+				CSItemCandidateError((ILNode *)node, 0, 0,
+								     CSSemGetGroup(indexers), args, numArgs);
+				CSEvalFreeArguments(args);
+				return value;
+			}
+
+			/* If there are two or more candidates, then try to
+			   find the best one */
+			if(CSGetGroupMember(CSSemGetGroup(indexers), 1) != 0)
+			{
+				itemInfo = CSBestCandidate(info, CSSemGetGroup(indexers),
+										   args, numArgs);
+				if(!itemInfo)
+				{
+					CSItemCandidateError((ILNode *)node, 0, 0,
+									     CSSemGetGroup(indexers),
+										 args, numArgs);
+					CSEvalFreeArguments(args);
+					return value;
+				}
+			}
+
+			/* Locate the "get" and "set" methods for the indexer */
+			getMethod = ILProperty_Getter((ILProperty *)itemInfo);
+			setMethod = ILProperty_Setter((ILProperty *)itemInfo);
+
+			/* Determine the semantic kind for the value */
+			if(getMethod && setMethod)
+			{
+				kind = CS_SEMKIND_LVALUE;
+			}
+			else if(getMethod)
+			{
+				kind = CS_SEMKIND_RVALUE;
+			}
+			else if(setMethod)
+			{
+				kind = CS_SEMKIND_SVALUE;
+			}
+			else
+			{
+				CCErrorOnLine(yygetfilename(node), yygetlinenum(node),
+							  "indexer does not have `get' or `set' accessors");
+				kind = CS_SEMKIND_LVALUE;
+			}
+
+			/* Import the methods into this image */
+			if(getMethod)
+			{
+				getMethod = (ILMethod *)ILMemberImport
+						(info->image, (ILMember *)getMethod);
+			}
+			if(setMethod)
+			{
+				setMethod = (ILMethod *)ILMemberImport
+						(info->image, (ILMember *)setMethod);
+			}
+
+			/* Coerce the arguments and build the final argument list */
+			CSSemSetValueKind(value, kind, CSItemCoerceArgs
+						(info, ILToProgramItem(itemInfo),
+						 args, numArgs, &(node->indices)));
+
+			/* Replace this node with an indexer access node */
+			*parent = ILNode_IndexerAccess_create
+					(node->array, node->indices, getMethod, setMethod,
+					 objectType, CSSemGetType(value),
+					 ILTypeToMachineType(CSSemGetType(value)),0);
+		}
+		else
+		{
+			/* No indexers are defined for this type */
+			CCErrorOnLine(yygetfilename(node->array), yygetlinenum(node->array),
+						  "array or indexed value expected");
+			CSSemSetLValue(value, ILType_Int32);
+		}
+	}
+	else
+	{
+		/* Not an appropriate value for array or indexer access */
+		CCErrorOnLine(yygetfilename(node->array), yygetlinenum(node->array),
+					  "array or indexed value expected");
+		CSSemSetLValue(value, ILType_Int32);
+	}
+
+	/* Free the argument list and return the element type */
+	CSEvalFreeArguments(args);
+	return value;
+}
+
+/*
+ * Perform semantic analysis for the synthesised node types used above.
+ */
+ILNode_SemAnalysis(ILNode_StaticField),
+ILNode_SemAnalysis(ILNode_MemberField),
+ILNode_SemAnalysis(ILNode_StaticProperty),
+ILNode_SemAnalysis(ILNode_MemberProperty),
+ILNode_SemAnalysis(ILNode_IndexerAccess)
+{
+	return CSSemValueDefault;
+}
+

@@ -1,0 +1,947 @@
+line 3: %option lang C++
+line 4: %option reentrant
+line 6: %node expression no_parent 6
+line 8: %field type type_code no_value 1
+line 11: %node binary expression 2
+line 13: %field expr1 expression * no_value 0
+line 14: %field expr2 expression * no_value 0
+line 17: %node unary expression 2
+line 20: %field expr expression * no_value 0
+line 24: %node intnum expression 0
+line 26: %field num int no_value 0
+line 29: %node plus binary 0
+line 30: %node minus binary 0
+line 31: %node multiply binary 0
+line 32: %node divide binary 0
+line 33: %node negate unary 0
+line 34: %node power binary 0
+line 36: %operation void infer_type 1
+line 36: %param expression * this 1
+line 36: %virtual expression infer_type
+line 38: %case binary infer_type
+line 58: %case unary infer_type
+line 64: %case intnum infer_type
+line 69: %case power infer_type
+/* output.h.  Generated automatically by treecc */
+#ifndef __yy_output_h
+#define __yy_output_h
+
+#include <new>
+
+const int expression_kind = 1;
+const int binary_kind = 2;
+const int unary_kind = 3;
+const int intnum_kind = 4;
+const int plus_kind = 5;
+const int minus_kind = 6;
+const int multiply_kind = 7;
+const int divide_kind = 8;
+const int power_kind = 10;
+const int negate_kind = 9;
+
+class expression;
+class binary;
+class unary;
+class intnum;
+class plus;
+class minus;
+class multiply;
+class divide;
+class power;
+class negate;
+
+class YYNODESTATE
+{
+public:
+
+	YYNODESTATE();
+	virtual ~YYNODESTATE();
+
+#line 1 "cpp_skel.h"
+private:
+
+	struct YYNODESTATE_block *blocks__;
+	struct YYNODESTATE_push *push_stack__;
+	int used__;
+#line 43 "output.h"
+public:
+
+	intnum *intnumCreate(int num);
+	plus *plusCreate(expression * expr1, expression * expr2);
+	minus *minusCreate(expression * expr1, expression * expr2);
+	multiply *multiplyCreate(expression * expr1, expression * expr2);
+	divide *divideCreate(expression * expr1, expression * expr2);
+	power *powerCreate(expression * expr1, expression * expr2);
+	negate *negateCreate(expression * expr);
+
+public:
+
+	void *alloc(size_t);
+	void dealloc(void *, size_t);
+	int push();
+	void pop();
+	void clear();
+	virtual void failed();
+	virtual char *currFilename();
+	virtual long currLinenum();
+
+};
+
+class expression
+{
+protected:
+
+	int kind__;
+	char *filename__;
+	long linenum__;
+
+public:
+
+	int getKind() const { return kind__; }
+	const char *getFilename() const { return filename__; }
+	long getLinenum() const { return linenum__; }
+	void setFilename(char *filename) { filename__ = filename; }
+	void setLinenum(long linenum) { linenum__ = linenum; }
+
+protected:
+
+	friend class YYNODESTATE;
+
+	expression(YYNODESTATE *state__);
+
+public:
+
+	type_code type;
+
+	virtual void infer_type() = 0;
+
+	virtual int isA(int kind) const;
+	virtual const char *getKindName() const;
+
+protected:
+
+	virtual ~expression();
+
+};
+
+class binary : public expression
+{
+protected:
+
+	friend class YYNODESTATE;
+
+	binary(YYNODESTATE *state__, expression * expr1, expression * expr2);
+
+public:
+
+	expression * expr1;
+	expression * expr2;
+
+	virtual void infer_type();
+
+	virtual int isA(int kind) const;
+	virtual const char *getKindName() const;
+
+protected:
+
+	virtual ~binary();
+
+};
+
+class unary : public expression
+{
+protected:
+
+	friend class YYNODESTATE;
+
+	unary(YYNODESTATE *state__, expression * expr);
+
+public:
+
+	expression * expr;
+
+	virtual void infer_type();
+
+	virtual int isA(int kind) const;
+	virtual const char *getKindName() const;
+
+protected:
+
+	virtual ~unary();
+
+};
+
+class intnum : public expression
+{
+protected:
+
+	friend class YYNODESTATE;
+
+	intnum(YYNODESTATE *state__, int num);
+
+public:
+
+	int num;
+
+	virtual void infer_type();
+
+	virtual int isA(int kind) const;
+	virtual const char *getKindName() const;
+
+protected:
+
+	virtual ~intnum();
+
+};
+
+class plus : public binary
+{
+protected:
+
+	friend class YYNODESTATE;
+
+	plus(YYNODESTATE *state__, expression * expr1, expression * expr2);
+
+public:
+
+
+	virtual int isA(int kind) const;
+	virtual const char *getKindName() const;
+
+protected:
+
+	virtual ~plus();
+
+};
+
+class minus : public binary
+{
+protected:
+
+	friend class YYNODESTATE;
+
+	minus(YYNODESTATE *state__, expression * expr1, expression * expr2);
+
+public:
+
+
+	virtual int isA(int kind) const;
+	virtual const char *getKindName() const;
+
+protected:
+
+	virtual ~minus();
+
+};
+
+class multiply : public binary
+{
+protected:
+
+	friend class YYNODESTATE;
+
+	multiply(YYNODESTATE *state__, expression * expr1, expression * expr2);
+
+public:
+
+
+	virtual int isA(int kind) const;
+	virtual const char *getKindName() const;
+
+protected:
+
+	virtual ~multiply();
+
+};
+
+class divide : public binary
+{
+protected:
+
+	friend class YYNODESTATE;
+
+	divide(YYNODESTATE *state__, expression * expr1, expression * expr2);
+
+public:
+
+
+	virtual int isA(int kind) const;
+	virtual const char *getKindName() const;
+
+protected:
+
+	virtual ~divide();
+
+};
+
+class power : public binary
+{
+protected:
+
+	friend class YYNODESTATE;
+
+	power(YYNODESTATE *state__, expression * expr1, expression * expr2);
+
+public:
+
+	virtual void infer_type();
+
+	virtual int isA(int kind) const;
+	virtual const char *getKindName() const;
+
+protected:
+
+	virtual ~power();
+
+};
+
+class negate : public unary
+{
+protected:
+
+	friend class YYNODESTATE;
+
+	negate(YYNODESTATE *state__, expression * expr);
+
+public:
+
+
+	virtual int isA(int kind) const;
+	virtual const char *getKindName() const;
+
+protected:
+
+	virtual ~negate();
+
+};
+
+
+
+#endif
+/* output.c.  Generated automatically by treecc */
+
+#define YYNODESTATE_REENTRANT 1
+#define YYNODESTATE_TRACK_LINES 1
+#define YYNODESTATE_USE_ALLOCATOR 1
+#line 1 "cpp_skel.cc"
+/*
+ * treecc node allocation routines for C++.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ * As a special exception, when this file is copied by treecc into
+ * a treecc output file, you may use that output file without restriction.
+ */
+
+#ifndef YYNODESTATE_BLKSIZ
+#define	YYNODESTATE_BLKSIZ	2048
+#endif
+
+/*
+ * Types used by the allocation routines.
+ */
+struct YYNODESTATE_block
+{
+	char data__[YYNODESTATE_BLKSIZ];
+	struct YYNODESTATE_block *next__;
+
+};
+struct YYNODESTATE_push
+{
+	struct YYNODESTATE_push *next__;
+	struct YYNODESTATE_block *saved_block__;
+	int saved_used__;
+};
+
+/*
+ * Initialize the singleton instance.
+ */
+#ifndef YYNODESTATE_REENTRANT
+YYNODESTATE *YYNODESTATE::state__ = 0;
+#endif
+
+/*
+ * Some macro magic to determine the default alignment
+ * on this machine.  This will compile down to a constant.
+ */
+#define	YYNODESTATE_ALIGN_CHECK_TYPE(type,name)	\
+	struct _YYNODESTATE_align_##name { \
+		char pad; \
+		type field; \
+	}
+#define	YYNODESTATE_ALIGN_FOR_TYPE(type)	\
+	((unsigned)(unsigned long)(&(((struct _YYNODESTATE_align_##type *)0)->field)))
+#define	YYNODESTATE_ALIGN_MAX(a,b)	\
+	((a) > (b) ? (a) : (b))
+#define	YYNODESTATE_ALIGN_MAX3(a,b,c) \
+	(YYNODESTATE_ALIGN_MAX((a), YYNODESTATE_ALIGN_MAX((b), (c))))
+YYNODESTATE_ALIGN_CHECK_TYPE(int, int);
+YYNODESTATE_ALIGN_CHECK_TYPE(long, long);
+#if defined(WIN32) && !defined(__CYGWIN__)
+YYNODESTATE_ALIGN_CHECK_TYPE(__int64, long_long);
+#else
+YYNODESTATE_ALIGN_CHECK_TYPE(long long, long_long);
+#endif
+YYNODESTATE_ALIGN_CHECK_TYPE(void *, void_p);
+YYNODESTATE_ALIGN_CHECK_TYPE(float, float);
+YYNODESTATE_ALIGN_CHECK_TYPE(double, double);
+#define	YYNODESTATE_ALIGNMENT	\
+	YYNODESTATE_ALIGN_MAX( \
+			YYNODESTATE_ALIGN_MAX3	\
+			(YYNODESTATE_ALIGN_FOR_TYPE(int), \
+		     YYNODESTATE_ALIGN_FOR_TYPE(long), \
+			 YYNODESTATE_ALIGN_FOR_TYPE(long_long)), \
+  	     YYNODESTATE_ALIGN_MAX3 \
+		 	(YYNODESTATE_ALIGN_FOR_TYPE(void_p), \
+			 YYNODESTATE_ALIGN_FOR_TYPE(float), \
+			 YYNODESTATE_ALIGN_FOR_TYPE(double)))
+
+/*
+ * Constructor for YYNODESTATE.
+ */
+YYNODESTATE::YYNODESTATE()
+{
+	/* Initialize the allocation state */
+	blocks__ = 0;
+	push_stack__ = 0;
+	used__ = 0;
+
+#ifndef YYNODESTATE_REENTRANT
+	/* Register this object as the singleton instance */
+	if(!state__)
+	{
+		state__ = this;
+	}
+#endif
+}
+
+/*
+ * Destructor for YYNODESTATE.
+ */
+YYNODESTATE::~YYNODESTATE()
+{
+	/* Free all node memory */
+	clear();
+
+#ifndef YYNODESTATE_REENTRANT
+	/* We are no longer the singleton instance */
+	if(state__ == this)
+	{
+		state__ = 0;
+	}
+#endif
+}
+
+#ifdef YYNODESTATE_USE_ALLOCATOR
+
+/*
+ * Allocate a block of memory.
+ */
+void *YYNODESTATE::alloc(size_t size__)
+{
+	struct YYNODESTATE_block *block__;
+	void *result__;
+
+	/* Round the size to the next alignment boundary */
+	size__ = (size__ + YYNODESTATE_ALIGNMENT - 1) &
+				~(YYNODESTATE_ALIGNMENT - 1);
+
+	/* Do we need to allocate a new block? */
+	block__ = blocks__;
+	if(!block__ || (used__ + size__) > YYNODESTATE_BLKSIZ)
+	{
+		if(size__ > YYNODESTATE_BLKSIZ)
+		{
+			/* The allocation is too big for the node pool */
+			return (void *)0;
+		}
+		block__ = new YYNODESTATE_block;
+		if(!block__)
+		{
+			/* The system is out of memory.  The programmer can
+			   inherit the "failed" method to report the
+			   out of memory state and/or abort the program */
+			failed();
+			return (void *)0;
+		}
+		block__->next__ = blocks__;
+		blocks__ = block__;
+		used__ = 0;
+	}
+
+	/* Allocate the memory and return it */
+	result__ = (void *)(block__->data__ + used__);
+	used__ += size__;
+	return result__;
+}
+
+/*
+ * Deallocate a block of memory.
+ */
+void YYNODESTATE::dealloc(void *ptr__, size_t size__)
+{
+	/* Nothing to do for this type of node allocator */
+}
+
+/*
+ * Push the node allocation state.
+ */
+int YYNODESTATE::push()
+{
+	struct YYNODESTATE_block *saved_block__;
+	int saved_used__;
+	struct YYNODESTATE_push *push_item__;
+
+	/* Save the current state of the node allocation pool */
+	saved_block__ = blocks__;
+	saved_used__ = used__;
+
+	/* Allocate space for a push item */
+	push_item__ = (struct YYNODESTATE_push *)
+			alloc(sizeof(struct YYNODESTATE_push));
+	if(!push_item__)
+	{
+		return 0;
+	}
+
+	/* Copy the saved information to the push item */
+	push_item__->saved_block__ = saved_block__;
+	push_item__->saved_used__ = saved_used__;
+
+	/* Add the push item to the push stack */
+	push_item__->next__ = push_stack__;
+	push_stack__ = push_item__;
+	return 1;
+}
+
+/*
+ * Pop the node allocation state.
+ */
+void YYNODESTATE::pop()
+{
+	struct YYNODESTATE_push *push_item__;
+	struct YYNODESTATE_block *saved_block__;
+	struct YYNODESTATE_block *temp_block__;
+
+	/* Pop the top of the push stack */
+	push_item__ = push_stack__;
+	if(push_item__ == 0)
+	{
+		saved_block__ = 0;
+		used__ = 0;
+	}
+	else
+	{
+		saved_block__ = push_item__->saved_block__;
+		used__ = push_item__->saved_used__;
+		push_stack__ = push_item__->next__;
+	}
+
+	/* Free unnecessary blocks */
+	while(blocks__ != saved_block__)
+	{
+		temp_block__ = blocks__;
+		blocks__ = temp_block__->next__;
+		delete temp_block__;
+	}
+}
+
+/*
+ * Clear the node allocation pool completely.
+ */
+void YYNODESTATE::clear()
+{
+	struct YYNODESTATE_block *temp_block__;
+	while(blocks__ != 0)
+	{
+		temp_block__ = blocks__;
+		blocks__ = temp_block__->next__;
+		delete temp_block__;
+	}
+	push_stack__ = 0;
+	used__ = 0;
+}
+
+#endif /* YYNODESTATE_USE_ALLOCATOR */
+
+/*
+ * Default implementation of functions which may be overridden.
+ */
+void YYNODESTATE::failed()
+{
+}
+
+#ifdef YYNODESTATE_TRACK_LINES
+
+char *YYNODESTATE::currFilename()
+{
+	return (char *)0;
+}
+
+long YYNODESTATE::currLinenum()
+{
+	return 0;
+}
+
+#endif
+#line 282 "output.c"
+intnum *YYNODESTATE::intnumCreate(int num)
+{
+	void *buf__ = this->alloc(sizeof(intnum));
+	if(buf__ == 0) return 0;
+	return new (buf__) intnum(this, num);
+}
+
+plus *YYNODESTATE::plusCreate(expression * expr1, expression * expr2)
+{
+	void *buf__ = this->alloc(sizeof(plus));
+	if(buf__ == 0) return 0;
+	return new (buf__) plus(this, expr1, expr2);
+}
+
+minus *YYNODESTATE::minusCreate(expression * expr1, expression * expr2)
+{
+	void *buf__ = this->alloc(sizeof(minus));
+	if(buf__ == 0) return 0;
+	return new (buf__) minus(this, expr1, expr2);
+}
+
+multiply *YYNODESTATE::multiplyCreate(expression * expr1, expression * expr2)
+{
+	void *buf__ = this->alloc(sizeof(multiply));
+	if(buf__ == 0) return 0;
+	return new (buf__) multiply(this, expr1, expr2);
+}
+
+divide *YYNODESTATE::divideCreate(expression * expr1, expression * expr2)
+{
+	void *buf__ = this->alloc(sizeof(divide));
+	if(buf__ == 0) return 0;
+	return new (buf__) divide(this, expr1, expr2);
+}
+
+power *YYNODESTATE::powerCreate(expression * expr1, expression * expr2)
+{
+	void *buf__ = this->alloc(sizeof(power));
+	if(buf__ == 0) return 0;
+	return new (buf__) power(this, expr1, expr2);
+}
+
+negate *YYNODESTATE::negateCreate(expression * expr)
+{
+	void *buf__ = this->alloc(sizeof(negate));
+	if(buf__ == 0) return 0;
+	return new (buf__) negate(this, expr);
+}
+
+expression::expression(YYNODESTATE *state__)
+{
+	this->kind__ = expression_kind;
+	this->filename__ = state__->currFilename();
+	this->linenum__ = state__->currLinenum();
+}
+
+expression::~expression()
+{
+	// not used
+}
+
+int expression::isA(int kind) const
+{
+	if(kind == expression_kind)
+		return 1;
+	else
+		return 0;
+}
+
+const char *expression::getKindName() const
+{
+	return "expression";
+}
+
+binary::binary(YYNODESTATE *state__, expression * expr1, expression * expr2)
+	: expression(state__)
+{
+	this->kind__ = binary_kind;
+	this->expr1 = expr1;
+	this->expr2 = expr2;
+}
+
+binary::~binary()
+{
+	// not used
+}
+
+void binary::infer_type()
+#line 39 "output5.tst"
+{
+	type_code type1, type2;
+
+	expr1->infer_type();
+	type1 = expr1->type;
+
+	expr2->infer_type();
+	type2 = expr2->type;
+
+	if(type1 == float_type || type2 == float_type)
+	{
+		type = float_type;
+	}
+	else
+	{
+		type = int_type;
+	}
+}
+#line 390 "output.c"
+
+int binary::isA(int kind) const
+{
+	if(kind == binary_kind)
+		return 1;
+	else
+		return expression::isA(kind);
+}
+
+const char *binary::getKindName() const
+{
+	return "binary";
+}
+
+unary::unary(YYNODESTATE *state__, expression * expr)
+	: expression(state__)
+{
+	this->kind__ = unary_kind;
+	this->expr = expr;
+}
+
+unary::~unary()
+{
+	// not used
+}
+
+void unary::infer_type()
+#line 59 "output5.tst"
+{
+	expr->infer_type();
+	type = expr->type;
+}
+#line 423 "output.c"
+
+int unary::isA(int kind) const
+{
+	if(kind == unary_kind)
+		return 1;
+	else
+		return expression::isA(kind);
+}
+
+const char *unary::getKindName() const
+{
+	return "unary";
+}
+
+intnum::intnum(YYNODESTATE *state__, int num)
+	: expression(state__)
+{
+	this->kind__ = intnum_kind;
+	this->num = num;
+}
+
+intnum::~intnum()
+{
+	// not used
+}
+
+void intnum::infer_type()
+#line 65 "output5.tst"
+{
+	type = int_type;
+}
+#line 455 "output.c"
+
+int intnum::isA(int kind) const
+{
+	if(kind == intnum_kind)
+		return 1;
+	else
+		return expression::isA(kind);
+}
+
+const char *intnum::getKindName() const
+{
+	return "intnum";
+}
+
+plus::plus(YYNODESTATE *state__, expression * expr1, expression * expr2)
+	: binary(state__, expr1, expr2)
+{
+	this->kind__ = plus_kind;
+}
+
+plus::~plus()
+{
+	// not used
+}
+
+int plus::isA(int kind) const
+{
+	if(kind == plus_kind)
+		return 1;
+	else
+		return binary::isA(kind);
+}
+
+const char *plus::getKindName() const
+{
+	return "plus";
+}
+
+minus::minus(YYNODESTATE *state__, expression * expr1, expression * expr2)
+	: binary(state__, expr1, expr2)
+{
+	this->kind__ = minus_kind;
+}
+
+minus::~minus()
+{
+	// not used
+}
+
+int minus::isA(int kind) const
+{
+	if(kind == minus_kind)
+		return 1;
+	else
+		return binary::isA(kind);
+}
+
+const char *minus::getKindName() const
+{
+	return "minus";
+}
+
+multiply::multiply(YYNODESTATE *state__, expression * expr1, expression * expr2)
+	: binary(state__, expr1, expr2)
+{
+	this->kind__ = multiply_kind;
+}
+
+multiply::~multiply()
+{
+	// not used
+}
+
+int multiply::isA(int kind) const
+{
+	if(kind == multiply_kind)
+		return 1;
+	else
+		return binary::isA(kind);
+}
+
+const char *multiply::getKindName() const
+{
+	return "multiply";
+}
+
+divide::divide(YYNODESTATE *state__, expression * expr1, expression * expr2)
+	: binary(state__, expr1, expr2)
+{
+	this->kind__ = divide_kind;
+}
+
+divide::~divide()
+{
+	// not used
+}
+
+int divide::isA(int kind) const
+{
+	if(kind == divide_kind)
+		return 1;
+	else
+		return binary::isA(kind);
+}
+
+const char *divide::getKindName() const
+{
+	return "divide";
+}
+
+power::power(YYNODESTATE *state__, expression * expr1, expression * expr2)
+	: binary(state__, expr1, expr2)
+{
+	this->kind__ = power_kind;
+}
+
+power::~power()
+{
+	// not used
+}
+
+void power::infer_type()
+#line 70 "output5.tst"
+{
+	expr1->infer_type();
+	expr2->infer_type();
+
+	if(expr2->type != int_type)
+	{
+		error("second sub-expression to `^' is not an integer");
+	}
+
+	type = expr1->type;
+}
+#line 590 "output.c"
+
+int power::isA(int kind) const
+{
+	if(kind == power_kind)
+		return 1;
+	else
+		return binary::isA(kind);
+}
+
+const char *power::getKindName() const
+{
+	return "power";
+}
+
+negate::negate(YYNODESTATE *state__, expression * expr)
+	: unary(state__, expr)
+{
+	this->kind__ = negate_kind;
+}
+
+negate::~negate()
+{
+	// not used
+}
+
+int negate::isA(int kind) const
+{
+	if(kind == negate_kind)
+		return 1;
+	else
+		return unary::isA(kind);
+}
+
+const char *negate::getKindName() const
+{
+	return "negate";
+}
+

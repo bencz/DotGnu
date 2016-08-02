@@ -1,0 +1,62 @@
+#
+# Arg.txt - Resources for argument errors.
+#
+# Copyright (C) 2001, 2002  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Exception_UriFormat=Die angegebene URI hatte nicht die korrekte Form
+Arg_UriPartial=Das ist kein gueltiger UriPartial Wert
+Arg_HexDigit=Das ist keine gueltige hexadezimal Stelle
+Arg_UriScheme=Der Entwurf der mit der URI geliefert wurde war ungueltig
+Arg_UriPort=Der Port der mit der URI angegeben wurde war nicht vorhanden
+Arg_UriPathAbs=Der relative Pfad der mit der URI angegeben wurde konnte nicht in einen absoluten Pfad konvertiert werden
+Arg_UriHostName=URI host Name muessen im DNS oder IPv4 Format angegeben werden
+Arg_InvalidIdentifier=Ungueltiger identifier angegeben
+Arg_InvalidCodeDom=Ungueltiger CodeDom node in diesem Zusammenhang
+Arg_MaskDone=CreateMask hat alle Masken generiert
+Arg_AccessAlreadySet=Access Wert ist bereits gesetzt
+Arg_TransportAlreadySet=Transport Wert ist bereits gesetzt
+Arg_HostAlreadySet=Host Wert ist bereits gesetzt
+Arg_PortAlreadySet=Port Wert ist bereits gesetzt
+Arg_SocketPermission=Unvollstaendige socket Berechtigungswerte
+Arg_SocketOption=Ungueltige socket Option
+Arg_SocketOptionValue=Ungueltiger socket Option Wert
+Arg_NotSocket=Der angegebene Wert ist kein geoeffneter socket
+Arg_TraceLevel=Ungueltiger Trace Level Wert
+Arg_AssertFailed=Assertion fehlgeschlagen: {0}
+Arg_CounterCategory=Ungueltiger Performance Zaehler Kategorie Name
+Arg_NoSuchProcess=Der Prozess existiert nicht
+Arg_NotEnumType=Der angegebene Typ ist keine enumeration
+Arg_EmptyArray=Das angegebene Array ist leer
+Arg_InvalidSockAddr=Ungueltige Socket Adresse
+Arg_InvalidIPv6Address=Ungueltige IPv6 Addresse
+Arg_InvalidIPv6Scope=Ungueltiger IPv6 scope
+ArgRange_NonNegative=Wert darf nicht negativ sein
+ArgRange_Port=Port Nummer ist ausserhalb des zulaessigen Bereichs
+ArgRange_SwitchValue={0} ist ausserhalb des Bereichs fuer den Schalter "{1}"
+Arg_InvalidHeader=Der angegebene Header ist fehlerhaft
+Arg_RestrictedHeader=Der angegebene Header ist eingeschraenkt (Restricted)
+Arg_DuplicateCredentials=Doppelte Bescheinigungen (credentials) wurden dem credential Cache hinzugefuegt
+Arg_DuplicateTempFilename=Doppelte Dateinamen in der temporaeren Datei collection
+ArgRange_InterfaceIndex=IPv6 Interface Index ausserhalb des zulaessigen Bereichs
+Arg_ArraysSameSize=Die beiden Arrays muessen die gleiche groesse haben
+Arg_InvalidElement=Ungueltiges Element fuer diese Art von Collection
+Arg_InvalidCultureName=Ungueltiger Kultur (culture) Name
+Arg_CookieCapacity=Cookie Container Kapazitaet ist ausserhalb des zulaessigen Bereichs
+Arg_WebAcceptAlreadySet=Accept web permissions are already set
+Arg_WebConnectAlreadySet=Accept connect permissions are already set
+Arg_DuplicateComponent=Es existiert bereits eine Komponente mit dem angegebenen Namen in dem Container
+Arg_NotCollMember=Das angegebene Element befindet sich nicht in der Collection

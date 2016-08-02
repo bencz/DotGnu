@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+
+<project name="Mono.Security.Win32" default="all">
+	<target name="all">
+		<compile target="library"
+				 output="Mono.Security.Win32.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="true"
+				 installasdefault="true">
+
+			<sources basedir="${mono.sources}/class/Mono.Security.Win32">
+				<includes name="**/*.cs"/> 
+				<excludes name="Test/**"/>
+			</sources>
+
+<!--
+			<references>
+				<file name="System.dll"/>
+			</references>
+-->
+
+		</compile>
+	</target>
+</project>

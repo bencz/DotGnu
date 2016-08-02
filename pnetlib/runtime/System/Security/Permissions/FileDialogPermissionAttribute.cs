@@ -1,0 +1,106 @@
+/*
+ * FileDialogPermissionAttribute.cs - Implementation of the
+ *			"System.Security.Permissions.FileDialogPermissionAttribute" class.
+ *
+ * Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+namespace System.Security.Permissions
+{
+
+#if CONFIG_PERMISSIONS && !ECMA_COMPAT
+
+using System;
+using System.Security;
+
+[AttributeUsage(AttributeTargets.Assembly |
+			 	AttributeTargets.Class |
+			 	AttributeTargets.Struct |
+			 	AttributeTargets.Constructor |
+			 	AttributeTargets.Method,
+			 	AllowMultiple=true, Inherited=false)]
+public sealed class FileDialogPermissionAttribute : CodeAccessSecurityAttribute
+{
+	// Internal state.
+	private FileDialogPermissionAccess flags;
+
+	// Constructors.
+	public FileDialogPermissionAttribute(SecurityAction action)
+			: base(action)
+			{
+				// Nothing to do here.
+			}
+
+	// Get or set specific flags.
+	public bool Open
+			{
+				get
+				{
+					return ((flags & FileDialogPermissionAccess.Open)
+								!= 0);
+				}
+				set
+				{
+					if(value)
+					{
+						flags |= FileDialogPermissionAccess.Open;
+					}
+					else
+					{
+						flags &= ~FileDialogPermissionAccess.Open;
+					}
+				}
+			}
+	public bool Save
+			{
+				get
+				{
+					return ((flags & FileDialogPermissionAccess.Save)
+								!= 0);
+				}
+				set
+				{
+					if(value)
+					{
+						flags |= FileDialogPermissionAccess.Save;
+					}
+					else
+					{
+						flags &= ~FileDialogPermissionAccess.Save;
+					}
+				}
+			}
+
+	// Create a permission object that corresponds to this attribute.
+	public override IPermission CreatePermission()
+			{
+				if(Unrestricted)
+				{
+					return new FileDialogPermission
+						(PermissionState.Unrestricted);
+				}
+				else
+				{
+					return new FileDialogPermission(flags);
+				}
+			}
+
+}; // class FileDialogPermissionAttribute
+
+#endif // CONFIG_PERMISSIONS && !ECMA_COMPAT
+
+}; // namespace System.Security.Permissions

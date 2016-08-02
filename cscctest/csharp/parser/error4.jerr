@@ -1,0 +1,2 @@
+./error4.cs:23: parse error, expecting `{', at or near `class'
+./error4.cs:27: parse error at or near `}'

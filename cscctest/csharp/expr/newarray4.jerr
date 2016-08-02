@@ -1,0 +1,7 @@
+./newarray4.cs:25: incompatible types in initializer: no conversion from `System.Decimal' to `int'
+./newarray4.cs:26: array initializer used with non-array type
+./newarray4.cs:26: incompatible types in assignment: no conversion from `int' to `int[]'
+./newarray4.cs:27: incorrect pattern of elements in array initializer
+./newarray4.cs:28: dimension 1 does not match initializer
+./newarray4.cs:29: dimension 2 does not match initializer
+./newarray4.cs:29: dimension 1 does not match initializer

@@ -1,0 +1,67 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(csharp/lexer/literal1.cs)
+AM_INIT_AUTOMAKE(cscctest, 0.0.0)
+
+dnl Extra substitution variables.
+AC_SUBST(CSCC)
+AC_SUBST(CSCC_SYSTEM_FLAGS)
+
+dnl Checks for programs.
+AC_PROG_AWK
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+
+dnl The --with-pnet option can be used to specify the location of
+dnl Portable.NET, so that we know where to get the C# compiler, etc.
+dnl The default location is assumed to be "../pnet".
+AC_ARG_WITH(pnet,
+[  --with-pnet=DIR         specify the location of Portable.NET],
+[
+	if test -n "$withval"; then
+		case "$withval" in
+		  ../*) PNET_PATH="`pwd`/$withval" ;;
+		     *) PNET_PATH="$withval" ;;
+		esac
+	else
+		PNET_PATH="`pwd`/../pnet"
+	fi
+],
+[
+	PNET_PATH="`pwd`/../pnet"
+])
+
+dnl Find the C# compiler to use.
+AC_PATH_PROG(CSCC, cscc,, $PNET_PATH/cscc:$PATH)
+if test "x$CSCC" = "x" ; then
+	echo '******************************************************'
+	echo "Portable.NET's C# compiler is required to test.  Use"
+	echo "the --with-pnet option to specify the location of the"
+	echo "Portable.NET source tree."
+	echo '******************************************************'
+	exit 1
+else
+	CSCC_SYSTEM_FLAGS=`sh "${srcdir}/tools/csccflags.sh" "$CSCC" "$PNET_PATH"`
+fi
+
+AC_OUTPUT([
+Makefile
+tools/Makefile
+tools/make_test.sh
+tools/run_test.sh
+csharp/Makefile
+csharp/lexer/Makefile
+csharp/preproc/Makefile
+csharp/parser/Makefile
+csharp/stmt/Makefile
+csharp/expr/Makefile
+csharp/class/Makefile
+csharp/class/generics/Makefile
+c/Makefile
+c/decl/Makefile
+c/expr/Makefile
+c/stmt/Makefile
+java/Makefile])
+
+chmod +x ${srcdir}/tools/make_test.sh
+chmod +x ${srcdir}/tools/run_test.sh

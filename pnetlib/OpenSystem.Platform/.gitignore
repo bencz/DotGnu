@@ -1,0 +1,12 @@
+Makefile
+Makefile.in
+.deps
+.libs
+*.dll
+*.exe
+*.pdb
+*.iltmp
+*.xml
+*.lo
+*.la
+Types.cs

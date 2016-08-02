@@ -1,0 +1,12 @@
+
+This directory contains an implementation of the "System.Deployment"
+assembly from the .NET Framework SDK 2.0.  This is also known as the
+"ClickOnce" deployment mechanism.
+
+We don't currently support deploying an application via ClickOnce.
+Applications in Portable.NET are either installed manually, via an
+operating system package (rpm, deb, gentoo, etc), or via DGEE.
+
+All ClickOnce applications are supposed to be able to be run standalone.
+We indicate this by returning "false" from the "IsNetworkDeployed" property
+in "ApplicationDeployment" and stubbing out the remaining methods.

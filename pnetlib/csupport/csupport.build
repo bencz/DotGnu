@@ -1,0 +1,35 @@
+<?xml version="1.0"?>
+<project name="csupport" default="all">
+	<target name="all">
+
+		<!-- Build the OpenSystem.C.dll library -->
+		<compile output="OpenSystem.C.dll"
+				 target="library"
+				 unsafe="true"
+				 nostdlib="true"
+				 optimize="true"
+				 debug="${CONFIG_DEBUG_LINES}"
+				 install="true"
+				 installasdefault="${INSTALL_AS_DEFAULT}">
+
+			<sources>
+				<includes name="**/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-fminimize-parameters"/>
+			<arg compiler="cscc" value="-flatin1-charset"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+	</target>
+</project>

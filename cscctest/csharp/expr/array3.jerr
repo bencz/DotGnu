@@ -1,0 +1,4 @@
+./array3.cs:29: `ref' parameters not permitted when compiling to Java bytecode
+./array3.cs:33: `out' parameters not permitted when compiling to Java bytecode
+./array3.cs:25: `ref' arguments not permitted when compiling to Java bytecode
+./array3.cs:26: `out' arguments not permitted when compiling to Java bytecode

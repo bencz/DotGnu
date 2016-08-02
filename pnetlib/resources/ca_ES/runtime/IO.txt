@@ -1,0 +1,55 @@
+#
+# IO.txt - Resources for I/O-related errors and exceptions.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+IO_StreamClosed=El fluxe ja ha estat tancat
+IO_FileAccess=Valor d'accés a fitxer invàlid
+IO_FileMode=S'ha especificat un mode de fitxer incorrecte
+IO_FileShare=Invalid file share value specified
+IO_InvalidPathname=Nom de camí invàlid
+IO_IncorrectAccess=S'ha especificat un mode d'acces incorrecte en el manejador de fitxer
+IO_WriteFailed=Ha fallat l'operació d'escriptura
+IO_FlushFailed=Operació de volcat fallida
+IO_ReadFailed=Ha fallat l'operació de lectura
+IO_SeekFailed=Operació de busqueda fallida
+IO_SetLengthFailed=No s'ha pogut definir la longitut
+IO_EndOfStream=S'ha intentat buscar més enllà de la fi del fluxe
+IO_ReadEndOfStream=Intent de lectura més enllà del final del fluxe
+IO_NotSupp_Seek=El fluxe no suporta operacions de busqueda
+IO_NotSupp_SetLength=El fluxe no permet definir la seva longitut
+IO_NotSupp_Read=El fluxe no suporta lectura
+IO_NotSupp_Write=El fluxe no suporta escriptura
+IO_NotSupp_Async=El fluxe no suporta operacions asincrones
+IO_PathNotFound=La ruta no existeix
+IO_DirNotFound=El directori no existeix
+IO_FileNotFound=No s'ha pogut trobar el fitxer "{0}"
+IO_FileLoad=No s'ha pogut obrir el fitxer "{0}"
+IO_RegistryKeyClosed=La clau de registre ja ha estat tancada
+IO_RegistryReadOnly=La clau de registre és de només lectura
+IO_RegistryKeyNotExist=La clau del registre no existeix
+IO_RegistryHasSubKeys=La clau del registre manté les seves sub-claus
+IO_UnknownFile=Nom de fitxer desconegut
+IO_AccessDenied=No està permès accedir a la ruta especificada
+IO_InvalidLength=No s'ha pogut canviar la mida de la longitut del fluxe
+IO_InvalidSeekPosition=Posició incorrecte de búsqueda
+IO_InvalidWhence=Busqueda incorrecte de l'origen
+IO_IsolatedStorage=Ha succeït un error intentant accedir al magatzem aïllat
+IO_FixedCapacity=No s'ha pogut incrementar la capacitat del fluxe de memòria
+IO_CannotReduceCapacity=No s'ha pogut reduir la capacitat de la longitut del fluxe
+IO_LockFailed=Ha fallat en l'adquisició del bloqueig
+IO_UnlockFailed=L'actualització del bloqueig ha fallat

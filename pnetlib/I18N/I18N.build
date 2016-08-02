@@ -1,0 +1,227 @@
+<?xml version="1.0"?>
+<project name="pnetlib I18N" default="all">
+	<target name="all">
+
+		<!-- Build the first phase I18N.dll library -->
+		<compile output="first/I18N.dll"
+				 target="library"
+				 unsafe="true"
+				 debug="${CONFIG_DEBUG_LINES}"
+				 nostdlib="true"
+				 optimize="true">
+
+			<sources>
+				<includes name="Common/*.cs"/>
+			</sources>
+
+			<resources>
+				<file name="../resources/en_US/I18N/I18N.resources"/>
+			</resources>
+
+			<references>
+				<file name="../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-fminimize-parameters"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the I18N.CJK.dll library -->
+		<compile output="I18N.CJK.dll"
+				 target="library"
+				 unsafe="true"
+				 debug="${CONFIG_DEBUG_LINES}"
+				 nostdlib="true"
+				 optimize="true"
+				 install="true"
+				 installasdefault="${INSTALL_AS_DEFAULT}">
+
+			<sources>
+				<includes name="CJK/*.cs"/>
+			</sources>
+
+			<resources>
+				<file basedir="${csant.src.dir}" name="CJK/jis.table"/>
+				<file basedir="${csant.src.dir}" name="CJK/ksc.table"/>
+				<file basedir="${csant.src.dir}" name="CJK/johab.table"/>
+				<file basedir="${csant.src.dir}" name="CJK/big5.table"/>
+				<file basedir="${csant.src.dir}" name="CJK/gb.table"/>
+			</resources>
+
+			<references>
+				<file name="first/I18N.dll"/>
+				<file name="../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-fminimize-parameters"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the I18N.MidEast.dll library -->
+		<compile output="I18N.MidEast.dll"
+				 target="library"
+				 unsafe="true"
+				 debug="${CONFIG_DEBUG_LINES}"
+				 nostdlib="true"
+				 optimize="true"
+				 install="true"
+				 installasdefault="${INSTALL_AS_DEFAULT}">
+
+			<sources>
+				<includes name="MidEast/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="first/I18N.dll"/>
+				<file name="../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-fminimize-parameters"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the I18N.Other.dll library -->
+		<compile output="I18N.Other.dll"
+				 target="library"
+				 unsafe="true"
+				 debug="${CONFIG_DEBUG_LINES}"
+				 nostdlib="true"
+				 optimize="true"
+				 install="true"
+				 installasdefault="${INSTALL_AS_DEFAULT}">
+
+			<sources>
+				<includes name="Other/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="first/I18N.dll"/>
+				<file name="../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-fminimize-parameters"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the I18N.Rare.dll library -->
+		<compile output="I18N.Rare.dll"
+				 target="library"
+				 unsafe="true"
+				 debug="${CONFIG_DEBUG_LINES}"
+				 nostdlib="true"
+				 optimize="true"
+				 install="true"
+				 installasdefault="${INSTALL_AS_DEFAULT}">
+
+			<sources>
+				<includes name="Rare/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="first/I18N.dll"/>
+				<file name="../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-fminimize-parameters"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+		<!-- Build the I18N.West.dll library -->
+		<compile output="I18N.West.dll"
+				 target="library"
+				 unsafe="true"
+				 debug="${CONFIG_DEBUG_LINES}"
+				 nostdlib="true"
+				 optimize="true"
+				 install="true"
+				 installasdefault="${INSTALL_AS_DEFAULT}">
+
+			<sources>
+				<includes name="West/*.cs"/>
+			</sources>
+
+			<references>
+				<file name="first/I18N.dll"/>
+				<file name="../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-fminimize-parameters"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+	</target>
+
+	<target name="phase-two">
+
+		<!-- Build the second phase I18N.dll library -->
+		<compile output="I18N.dll"
+				 target="library"
+				 unsafe="true"
+				 debug="${CONFIG_DEBUG_LINES}"
+				 nostdlib="true"
+				 optimize="true"
+				 install="true"
+				 installasdefault="${INSTALL_AS_DEFAULT}">
+
+			<sources>
+				<includes name="Common/*.cs"/>
+			</sources>
+
+			<resources>
+				<file name="../resources/en_US/I18N/I18N.resources"/>
+				<file name="I18N-handlers.def"/>
+			</resources>
+
+			<references>
+				<file name="../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="cscc" value="-fminimize-parameters"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+	</target>
+
+</project>

@@ -1,0 +1,5 @@
+./method9.cs:23: `abstract' used on a member in a non-abstract class
+./method9.cs:24: `abstract' used on a member in a non-abstract class
+./method9.cs:24: `abstract' cannot be used with a method body
+./method9.cs:27: `extern' cannot be used with a method body
+./method9.cs:29: method with no body requires `abstract' or `extern'

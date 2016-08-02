@@ -1,0 +1,658 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(runtime/System/Object.cs)
+AM_INIT_AUTOMAKE(pnetlib, 0.8.1)
+AM_MAINTAINER_MODE
+
+dnl Extra substitution variables.
+AC_SUBST(CSANT)
+AC_SUBST(CSANT_FLAGS)
+AC_SUBST(CSHARP_COMPILER)
+AC_SUBST(CSHARP_COMPILER_CYGWIN)
+AC_SUBST(CSHARP_PLUGIN)
+AC_SUBST(CSCC_FLAGS)
+AC_SUBST(RESGEN)
+AC_SUBST(RESGEN_FLAGS)
+AC_SUBST(RESGEN_LATIN1)
+AC_SUBST(ILRUN)
+AC_SUBST(ILFIND)
+AC_SUBST(ASSEMBLY_LINKER)
+AC_SUBST(PNET_PATH)
+AC_SUBST(X11_LIB)
+AC_SUBST(XFT_LIB)
+AC_SUBST(XFT_INC)
+AC_SUBST(CYG_RESGEN)
+AC_SUBST(CYG_ILGAC)
+AC_SUBST(CYG_CACHE)
+AC_SUBST(INSTALL_AS_DEFAULT)
+AC_SUBST(FRAMEWORK_VERSION)
+AC_SUBST(SECONDARY_VERSION)
+
+dnl Checks for programs.
+AC_PROG_AWK
+AC_PROG_CC
+AC_PROG_INSTALL
+AC_PROG_LN_S
+AC_PROG_MAKE_SET
+AC_LIBTOOL_WIN32_DLL
+AM_PROG_LIBTOOL
+AC_PATH_PROG(CYGPATH, cygpath)
+
+AC_PATH_PROG(TREECC, treecc,, ${prefix}/bin:$PATH)
+if test -z "$TREECC" ; then
+    echo "treecc is required to build and can be obtained from"
+    echo "http://www.southern-storm.com.au/treecc.html"
+    exit 1
+fi
+TREECC_VERSION=`"$TREECC" -v | (read name version rest; echo $version)`
+AC_SUBST(TREECC_VERSION)
+
+dnl Option to enable the Xft library for Freetype font support.
+AC_ARG_ENABLE(xft,
+[  --enable-xft            Enable Xft for Freetype font support],
+[case "${enableval}" in
+  yes) xft=true ;;
+  no)  xft=false ;;
+  *) AC_MSG_ERROR(bad value ${enableval} for --enable-xft) ;;
+esac],[xft=true])
+
+dnl Check for file extensions.
+AC_EXEEXT
+AC_OBJEXT
+
+dnl Find X and related definitions, for building "libXsharpSupport.so".
+AC_PATH_XTRA
+AC_HEADER_STDC
+AC_HEADER_TIME
+AC_CHECK_HEADERS(time.h sys/time.h sys/types.h sys/select.h unistd.h)
+AC_CHECK_HEADERS(sys/stat.h)
+AC_CHECK_FUNCS(select)
+AC_PATH_PROG(XFT_CONFIG, xft-config, no)
+
+dnl Determine if we should add -lX11 and -lXft to the link line
+dnl of "libXsharpSupport.so".
+if test "x$no_x" = "xyes" ; then
+	X11_LIB=
+	XFT_LIB=
+	XFT_INC=
+else
+	X11_LIB=-lX11
+	if test "x$xft" != "xfalse" && test "x$XFT_CONFIG" != "xno" ; then
+		XFT_LIB="`$XFT_CONFIG --libs`"
+		XFT_INC="`$XFT_CONFIG --cflags`"
+		AC_DEFINE(USE_XFT_EXTENSION)
+	else
+		XFT_LIB=
+		XFT_INC=
+	fi
+fi
+
+dnl The --with-pnet option can be used to specify the location of
+dnl Portable.NET, so that we know where to get the C# compiler, etc.
+dnl The default location is assumed to be "../pnet".
+AC_ARG_WITH(pnet,
+[  --with-pnet=DIR         specify the location of Portable.NET],
+[
+	if test -n "$withval"; then
+		case "$withval" in
+		  ../*) PNET_PATH="`pwd`/$withval" ;;
+		     *) PNET_PATH="$withval" ;;
+		esac
+	else
+		PNET_PATH="`pwd`/../pnet"
+	fi
+],
+[
+	PNET_PATH="`pwd`/../pnet"
+])
+
+dnl The --with-mstools option can be used to force the use of
+dnl Microsoft's toolchain instead of Portable.NET's.
+AC_ARG_WITH(mstools,
+[  --with-mstools          use Microsoft tools instead of Portable.NET's],
+[
+	MSTOOLS=yes
+],
+[
+	MSTOOLS=no
+])
+
+dnl The --with-profile=NAME option is used to change the build profile.
+AC_SUBST(PROFILE_NAME)
+AC_ARG_WITH(profile,
+[  --with-profile=NAME     use build profile NAME],
+[
+	if test -f "${srcdir}/profiles/${withval}" ; then
+		PROFILE_NAME="${withval}"
+	else
+		AC_MSG_ERROR(unknown build profile ${withval})
+	fi
+],
+[
+	PROFILE_NAME=full
+])
+
+dnl Find the Portable.NET "csant" program.
+AC_PATH_PROG(CSANT, csant,, $PNET_PATH/csant:${prefix}/bin:$PATH)
+if test "$CSANT" = "" ; then
+	echo '**************************************************************'
+	echo "Portable.NET's csant tool is required to build the system."
+	echo "Use the --with-pnet option to specify Portable.NET's location."
+	echo '**************************************************************'
+	exit 1
+fi
+
+dnl Find the .NET resource generator to use.
+if test "$MSTOOLS" = "no"; then
+	AC_PATH_PROG(RESGEN, resgen,, $PNET_PATH/resgen:${prefix}/bin:$PATH)
+	if test "$RESGEN" = "" ; then
+		echo '**************************************************************'
+		echo "Portable.NET's or Microsoft's resgen is required to build."
+		echo "Use the --with-pnet option to specify Portable.NET's location."
+		echo '**************************************************************'
+		exit 1
+	fi
+else
+	AC_PATH_PROG(RESGEN, resgen)
+	if test "$RESGEN" = "" ; then
+		echo '***********************************************************'
+		echo "Could not locate Microsoft's resource utility (resgen.exe)."
+		echo '***********************************************************'
+		exit 1
+	fi
+fi
+
+dnl Find the Microsoft "al" assembly linker, for satellite resources.
+if test "$MSTOOLS" = "yes"; then
+	AC_PATH_PROG(ASSEMBLY_LINKER, al)
+else
+	ASSEMBLY_LINKER=pnet
+fi
+
+dnl Find the Portable.NET "ilgac" program.
+AC_PATH_PROG(ILGAC, ilgac,, $PNET_PATH/ilgac:${prefix}/bin:$PATH)
+if test "$ILGAC" = "" ; then
+	echo '**************************************************************'
+	echo "Portable.NET's ilgac tool is required to build the system."
+	echo "Use the --with-pnet option to specify Portable.NET's location."
+	echo '**************************************************************'
+	exit 1
+fi
+
+dnl Find the Portable.NET "clrwrap" program.
+AC_PATH_PROG(CLRWRAP, clrwrap,, $PNET_PATH/clrwrap:${prefix}/bin:$PATH)
+if test "$CLRWRAP" = "" ; then
+	echo '**************************************************************'
+	echo "Portable.NET's clrwrap tool is required to build the system."
+	echo "Use the --with-pnet option to specify Portable.NET's location."
+	echo '**************************************************************'
+	exit 1
+fi
+
+dnl Find the C# compiler to use.
+if test "$MSTOOLS" = "no"; then
+	AC_PATH_PROG(CSHARP_COMPILER, cscc,, $PNET_PATH/cscc:${prefix}/bin:$PATH)
+	if test "$CSHARP_COMPILER" = "" ; then
+		AC_PATH_PROG(CSHARP_COMPILER, csc)
+		if test "$CSHARP_COMPILER" = ""; then
+			echo '******************************************************'
+			echo "Portable.NET's cscc or Microsoft's csc.exe is required"
+			echo "to build.  Use the --with-pnet option to specify the"
+			echo "location of the Portable.NET source tree."
+			echo '******************************************************'
+			exit 1
+		fi
+		CSANT_FLAGS='--compiler csc -Dcsc="$(CSHARP_COMPILER)$(EXEEXT)" --profile "$(top_srcdir)/profiles/$(PROFILE_NAME)" -Dresgen="$(RESGEN)$(EXEEXT)" -Dilgac="$(ILGAC)$(EXEEXT)" --assembly-cache "$(libdir)/cscc/lib"'
+		CSHARP_COMPILER_CYGWIN="$CSHARP_COMPILER"
+	else
+		AC_PATH_PROG(CSHARP_PLUGIN, cscc-cs,, $PNET_PATH/cscc:${prefix}/lib/cscc/plugins:${prefix}/bin:$PATH)
+		if test "x$CYGPATH" = "x" ; then
+			CSHARP_COMPILER_CYGWIN="$CSHARP_COMPILER"
+			CYG_RESGEN="$RESGEN"
+			CYG_ILGAC="$ILGAC"
+			CYG_CACHE="${libdir}/cscc/lib"
+		else
+			# Convert the cscc and cscc-cs paths into their Windows
+			# forms, to ensure that spawns from csant work correctly.
+			CSHARP_COMPILER_CYGWIN="$CSHARP_COMPILER"
+			CSHARP_COMPILER=`"$CYGPATH" -w "$CSHARP_COMPILER"`
+			CSHARP_PLUGIN=`"$CYGPATH" -w "$CSHARP_PLUGIN"`
+			CYG_RESGEN=`"$CYGPATH" -w "$RESGEN"`
+			CYG_ILGAC=`"$CYGPATH" -w "$ILGAC"`
+			if test "x$prefix" = "xNONE" ; then
+				CYG_CACHE=`"$CYGPATH" -w "${ac_default_prefix}/lib/cscc/lib"`
+			else
+				CYG_CACHE=`"$CYGPATH" -w "${prefix}/lib/cscc/lib"`
+			fi
+		fi
+		CSANT_FLAGS='--compiler cscc -Dcscc="$(CSHARP_COMPILER)$(EXEEXT)" -Dcscc.plugins.cs="$(CSHARP_PLUGIN)$(EXEEXT)" --profile "$(top_srcdir)/profiles/$(PROFILE_NAME)" -Dresgen="$(CYG_RESGEN)$(EXEEXT)" -Dilgac="$(CYG_ILGAC)$(EXEEXT)" --assembly-cache "$(DESTDIR)$(CYG_CACHE)"'
+	fi
+else
+	AC_PATH_PROG(CSHARP_COMPILER, csc)
+	if test "$CSHARP_COMPILER" = ""; then
+		echo '***************************************************'
+		echo "Could not locate Microsoft's C# compiler (csc.exe)."
+		echo '***************************************************'
+		exit 1
+	fi
+	CSANT_FLAGS='--compiler csc -Dcsc="$(CSHARP_COMPILER)" --profile "$(top_srcdir)/profiles/$(PROFILE_NAME)" -Dresgen="$(RESGEN)" -Dilgac="$(ILGAC)" --assembly-cache "$(libdir)/cscc/lib"'
+	CSHARP_COMPILER_CYGWIN="$CSHARP_COMPILER"
+fi
+
+dnl Determine which version of RESGEN we are using (Portable.NET or Microsoft).
+RESGEN_ERROR=`"$RESGEN" -v.txt 2>&1`
+case "$RESGEN_ERROR" in
+  RESGEN*) RESGEN_FLAGS="-tR"
+  		   RESGEN_LATIN1="-l" ;;
+        *) RESGEN_FLAGS="/compile"
+		   RESGEN_LATIN1="" ;;
+esac
+AM_CONDITIONAL(PNET_RESGEN, test "$RESGEN_LATIN1" != "")
+
+dnl Find the Portable.NET runtime engine.
+AC_PATH_PROG(ILRUN, ilrun,, $PNET_PATH/engine:${prefix}/bin:$PATH)
+if test "$ILRUN" = "" ; then
+	echo '**************************************************************'
+	echo "Portable.NET is required to run the test suite."
+	echo "Use the --with-pnet option to specify Portable.NET's location."
+	echo '**************************************************************'
+	exit 1
+fi
+
+dnl Find the Portable.NET ilfind program.
+AC_PATH_PROG(ILFIND, ilfind,, $PNET_PATH/ilfind:${prefix}/bin:$PATH)
+if test "$ILFIND" = "" ; then
+	echo '**************************************************************'
+	echo "Portable.NET's ilfind is required to build the system."
+	echo "Use the --with-pnet option to specify Portable.NET's location."
+	echo '**************************************************************'
+	exit 1
+fi
+
+dnl Determine if the system supports reflection, because there
+dnl are some things that we can't build or test without reflection.
+REF_FLAG=`grep 'CONFIG_REFLECTION" value="true"' "${srcdir}/profiles/${PROFILE_NAME}"`
+AM_CONDITIONAL(HAS_REFLECTION, test "x$REF_FLAG" != "x")
+
+dnl Determine if the system supports floating point, because there
+dnl are some things that we can't build or test without floating point.
+FP_FLAG=`grep 'CONFIG_EXTENDED_NUMERICS" value="true"' "${srcdir}/profiles/${PROFILE_NAME}"`
+AM_CONDITIONAL(HAS_EXTENDED_NUMERICS, test "x$FP_FLAG" != "x")
+
+dnl Determine if assemblies should be installed as default versions.
+DEF_FLAG=`grep 'INSTALL_AS_DEFAULT" value="true"' "${srcdir}/profiles/${PROFILE_NAME}"`
+if test "x$DEF_FLAG" != "x" ; then
+	INSTALL_AS_DEFAULT=true
+else
+	INSTALL_AS_DEFAULT=false
+fi
+
+dnl Extract the framework and secondary versions for the Makefiles.
+AC_MSG_CHECKING(primary framework version)
+FRAMEWORK_VERSION=`grep 'FRAMEWORK_VERSION" value="' "${srcdir}/profiles/${PROFILE_NAME}" | "$AWK" 'BEGIN{FS="\""}{print $4}' -`
+AC_MSG_RESULT($FRAMEWORK_VERSION)
+AC_MSG_CHECKING(secondary framework version)
+SECONDARY_VERSION=`grep 'SECONDARY_VERSION" value="' "${srcdir}/profiles/${PROFILE_NAME}" | "$AWK" 'BEGIN{FS="\""}{print $4}' -`
+AC_MSG_RESULT($SECONDARY_VERSION)
+
+dnl The --with-types option can be used to specify the sizes of
+dnl the native int and long types for Xsharp.  Set to one of:
+dnl
+dnl		--with-types=il32
+dnl			int and long are both 32-bit.
+dnl		--with-types=il64
+dnl			int and long are both 64-bit.
+dnl		--with-types=i32l64
+dnl			int is 32-bit, long is 64-bit.
+dnl		--with-types=i64l32
+dnl			int is 64-bit, long is 32-bit.
+dnl
+dnl If none of these are supplied, configure will auto-detect.
+AC_ARG_WITH(types,
+[  --with-types=SPEC       specify the location of Portable.NET],
+[
+	if test -n "$withval"; then
+		case "$withval" in
+		  il32|il64|i32l64|i64l32) TYPE_SPEC="${withval}" ;;
+		  *) AC_MSG_ERROR([invalid type size specification ${withval}]) ;;
+		esac
+	else
+		TYPE_SPEC=no
+	fi
+],
+[
+	TYPE_SPEC=no
+])
+
+dnl A macro that helps detect the size of types in a cross-compile environment.
+AC_DEFUN([AC_COMPILE_CHECK_SIZEOF],
+[changequote(<<, >>)dnl
+dnl The name to #define.
+define(<<AC_TYPE_NAME>>, translit(sizeof_$1, [a-z *], [A-Z_P]))dnl
+dnl The cache variable name.
+define(<<AC_CV_NAME>>, translit(ac_cv_sizeof_$1, [ *], [_p]))dnl
+changequote([, ])dnl
+AC_MSG_CHECKING(size of $1)
+AC_CACHE_VAL(AC_CV_NAME,
+[for ac_size in 4 8 1 2 12 16 $2 ; do # List sizes in rough order of prevalence.
+  AC_TRY_COMPILE([#include "confdefs.h"
+#if TIME_WITH_SYS_TIME
+	#include <sys/time.h>
+    #include <time.h>
+#else
+    #if HAVE_SYS_TIME_H
+		#include <sys/time.h>
+    #else
+        #include <time.h>
+    #endif
+#endif
+#ifdef HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#ifdef HAVE_SYS_STAT_H
+#include <sys/stat.h>
+#endif
+#ifdef HAVE_UNISTD_H
+#include <unistd.h>
+#endif
+], [switch (0) case 0: case (sizeof ($1) == $ac_size):;], AC_CV_NAME=$ac_size)
+  if test x$AC_CV_NAME != x ; then break; fi
+done
+])
+if test x$AC_CV_NAME = x ; then
+  AC_CV_NAME=0
+fi
+AC_MSG_RESULT($AC_CV_NAME)
+undefine([AC_TYPE_NAME])dnl
+undefine([AC_CV_NAME])dnl
+])
+
+dnl A macro that sets a signed data type based on a detected size.
+dnl Example: AC_SET_CSHARP_TYPE(int, X_int, int, int)
+AC_DEFUN([AC_SET_CSHARP_TYPE],
+[changequote(<<, >>)dnl
+dnl The type name to set.
+define(<<AC_CV_TYPE>>, $2)dnl
+dnl The cache variable name.
+define(<<AC_CV_NAME>>, translit(ac_cv_sizeof_$3, [ *], [_p]))dnl
+changequote([, ])dnl
+AC_MSG_CHECKING(for the csharp $1 mapping)
+if test x$AC_CV_NAME = x1 ; then
+	AC_CV_TYPE=sbyte
+elif test x$AC_CV_NAME = x2 ; then
+	AC_CV_TYPE=short
+elif test x$AC_CV_NAME = x4 ; then
+	AC_CV_TYPE=int
+elif test x$AC_CV_NAME = x8 ; then
+	AC_CV_TYPE=long
+else
+	AC_CV_TYPE=$4
+fi
+AC_MSG_RESULT($AC_CV_TYPE)
+undefine([AC_CV_TYPE])dnl
+undefine([AC_CV_NAME])dnl
+])
+
+dnl A macro that sets an unsigned data type based on a detected size.
+dnl Example: AC_SET_UNSIGNED_CSHARP_TYPE(unsigned int, X_uint, int, int)
+AC_DEFUN([AC_SET_UNSIGNED_CSHARP_TYPE],
+[changequote(<<, >>)dnl
+dnl The type name to set.
+define(<<AC_CV_TYPE>>, $2)dnl
+dnl The cache variable name.
+define(<<AC_CV_NAME>>, translit(ac_cv_sizeof_$3, [ *], [_p]))dnl
+changequote([, ])dnl
+AC_MSG_CHECKING(for the csharp $1 mapping)
+if test x$AC_CV_NAME = x1 ; then
+	AC_CV_TYPE=byte
+elif test x$AC_CV_NAME = x2 ; then
+	AC_CV_TYPE=ushort
+elif test x$AC_CV_NAME = x4 ; then
+	AC_CV_TYPE=uint
+elif test x$AC_CV_NAME = x8 ; then
+	AC_CV_TYPE=ulong
+else
+	AC_CV_TYPE=$4
+fi
+AC_MSG_RESULT($AC_CV_TYPE)
+undefine([AC_CV_TYPE])dnl
+undefine([AC_CV_NAME])dnl
+])
+
+dnl A macro that helps detect if char is unsigned in a cross-compile env.
+AC_DEFUN([AC_COMPILE_CHAR_UNSIGNED],
+[changequote(<<, >>)dnl
+dnl The cache variable name.
+define(<<AC_CV_NAME>>, ac_cv_compile_char_unsigned)dnl
+changequote([, ])dnl
+AC_MSG_CHECKING(if char is unsigned)
+AC_CACHE_VAL(AC_CV_NAME,
+[AC_TRY_COMPILE([#include "confdefs.h"
+#include <sys/types.h>
+], [switch (0) case 0: case (((char)255) != -1):;], AC_CV_NAME=yes)
+])
+if test x$AC_CV_NAME = x ; then
+  AC_CV_NAME=no
+fi
+AC_MSG_RESULT($AC_CV_NAME)
+undefine([AC_CV_NAME])dnl
+])
+
+dnl Get the size of various interesting types.
+AC_COMPILE_CHECK_SIZEOF(char, 1)
+AC_COMPILE_CHECK_SIZEOF(short, 2)
+AC_COMPILE_CHECK_SIZEOF(int, 4)
+AC_COMPILE_CHECK_SIZEOF(long, 4)
+AC_COMPILE_CHECK_SIZEOF(long long, 8)
+AC_COMPILE_CHECK_SIZEOF(size_t, 4)
+AC_COMPILE_CHECK_SIZEOF(time_t, 4)
+AC_COMPILE_CHECK_SIZEOF(off_t, 4)
+AC_COMPILE_CHECK_SIZEOF(off64_t, 8)
+AC_COMPILE_CHECK_SIZEOF(ino_t, 4)
+AC_COMPILE_CHECK_SIZEOF(ino64_t, 8)
+AC_COMPILE_CHECK_SIZEOF(uid_t, 4)
+AC_COMPILE_CHECK_SIZEOF(gid_t, 4)
+AC_COMPILE_CHECK_SIZEOF(pid_t, 4)
+AC_COMPILE_CHECK_SIZEOF(mode_t, 4)
+AC_COMPILE_CHECK_SIZEOF(dev_t, 4)
+AC_COMPILE_CHECK_SIZEOF(nlink_t, 4)
+AC_COMPILE_CHAR_UNSIGNED
+
+dnl Determine the C# definitions of various types on this platform.
+AC_SUBST(X_char)
+AC_SUBST(X_schar)
+AC_SUBST(X_uchar)
+AC_SUBST(X_short)
+AC_SUBST(X_ushort)
+AC_SUBST(X_int)
+AC_SUBST(X_uint)
+AC_SUBST(X_long)
+AC_SUBST(X_ulong)
+AC_SUBST(X_longlong)
+AC_SUBST(X_ulonglong)
+AC_SUBST(X_size_t)
+AC_SUBST(X_ssize_t)
+AC_SUBST(X_time_t)
+AC_SUBST(X_off_t)
+AC_SUBST(X_off64_t)
+AC_SUBST(X_ino_t)
+AC_SUBST(X_ino64_t)
+AC_SUBST(X_uid_t)
+AC_SUBST(X_gid_t)
+AC_SUBST(X_pid_t)
+AC_SUBST(X_mode_t)
+AC_SUBST(X_dev_t)
+AC_SUBST(X_nlink_t)
+if test x$ac_cv_compile_char_unsigned = xyes ; then
+	AC_SET_UNSIGNED_CSHARP_TYPE(char, X_char, char, byte)
+else
+	AC_SET_CSHARP_TYPE(char, X_char, char, sbyte)
+fi
+AC_SET_CSHARP_TYPE(signed char, X_schar, char, sbyte)
+AC_SET_UNSIGNED_CSHARP_TYPE(unsigned char, X_uchar, char, byte)
+AC_SET_CSHARP_TYPE(short, X_short, short, short)
+AC_SET_UNSIGNED_CSHARP_TYPE(unsigned short, X_ushort, short, ushort)
+AC_SET_CSHARP_TYPE(int, X_int, int, int)
+AC_SET_UNSIGNED_CSHARP_TYPE(unsigned int, X_uint, int, uint)
+AC_SET_CSHARP_TYPE(long, X_long, long, int)
+AC_SET_UNSIGNED_CSHARP_TYPE(unsigned long, X_ulong, long, uint)
+AC_SET_CSHARP_TYPE(long long, X_longlong, long long, long)
+AC_SET_UNSIGNED_CSHARP_TYPE(unsigned long long, X_ulonglong, long long, ulong)
+AC_SET_UNSIGNED_CSHARP_TYPE(size_t, X_size_t, size_t, uint)
+AC_SET_CSHARP_TYPE(ssize_t, X_ssize_t, size_t, int)
+AC_SET_CSHARP_TYPE(time_t, X_time_t, time_t, int)
+AC_SET_CSHARP_TYPE(off_t, X_off_t, off_t, int)
+AC_SET_CSHARP_TYPE(off64_t, X_off64_t, off64_t, long)
+AC_SET_UNSIGNED_CSHARP_TYPE(ino_t, X_ino_t, ino_t, uint)
+AC_SET_UNSIGNED_CSHARP_TYPE(ino64_t, X_ino64_t, ino64_t, ulong)
+AC_SET_UNSIGNED_CSHARP_TYPE(uid_t, X_uid_t, uid_t, uint)
+AC_SET_UNSIGNED_CSHARP_TYPE(gid_t, X_gid_t, gid_t, uint)
+AC_SET_CSHARP_TYPE(pid_t, X_pid_t, pid_t, uint)
+AC_SET_UNSIGNED_CSHARP_TYPE(mode_t, X_mode_t, mode_t, uint)
+AC_SET_UNSIGNED_CSHARP_TYPE(dev_t, X_dev_t, dev_t, uint)
+AC_SET_UNSIGNED_CSHARP_TYPE(nlink_t, X_nlink_t, nlink_t, uint)
+
+dnl List of libraries that need .so version mappings.
+so_imports="ICE X11 Xext ssl gnutls jpeg"
+dnl Add gnome libraries that need .so version mappings.
+so_imports="$so_imports art_lgpl atk-1.0 gconf-2 gda-2 gdk-x11-2.0 gdk_pixbuf-2.0 glade-2.0 glib-2.0 gnome-2 gnomecanvas-2 gnomeprint-2-2 gnomeprintui-2-2 gnomeui-2 gnomevfs-2 gobject-2.0 gthread-2.0 gtk-html-3.0 gtk-x11-2.0 panel-applet-2 pango-1.0 vte"
+dnl Add gtk# 1.0.x glue libraries that need .so version mappings.
+so_imports="$so_imports gdksharpglue gladesharpglue glibsharpglue gnomesharpglue gtksharpglue pangosharpglue"
+dnl Add gtk# 1.9.x glue libraries that need .so version mappings.
+so_imports="$so_imports gladesharpglue-2 glibsharpglue-2 gnomesharpglue-2"
+
+dnl Get the full list of library paths to search.
+so_lib_path=`echo "$LD_LIBRARY_PATH" | sed -e '1,$s/:/ /g'`
+so_lib_path="$so_lib_path /lib /usr/lib /usr/local/lib /usr/X11R6/lib"
+if test "x$prefix" != "xNONE" ; then
+	so_lib_path="${prefix}/lib $so_lib_path"
+fi
+if test -f /etc/ld.so.conf ; then
+	so_lib_path="$so_lib_path "`cat /etc/ld.so.conf`
+fi
+
+dnl Find the actual version of various .so files.
+AC_PATH_PROG(OBJDUMP, objdump)
+mappings=""
+if test "x$OBJDUMP" != "x" ; then
+	case "$host" in
+		*-*-mingw*|*-*-cygwin*) ;;
+		*)
+			mappings="XsharpSupport so libXsharpSupport.so.0.0.0"
+			for file in $so_imports ; do
+				AC_MSG_CHECKING(for full name of lib${file}.so)
+				result=""
+				for ldir in $so_lib_path ; do
+					if test -f "${ldir}/lib${file}.so" ; then
+						result=`"$OBJDUMP" -p "${ldir}/lib${file}.so" 2>/dev/null | grep SONAME | awk '{print $2}' -`
+						if test "x$result" != "x" ; then
+							break
+						fi
+					fi
+				done
+				if test "x$result" != "x" ; then
+					AC_MSG_RESULT($result)
+					mappings="$mappings
+${file} so ${result}"
+				else
+					AC_MSG_RESULT(lib${file}.so)
+				fi
+			done
+		;;
+	esac
+fi
+echo 'creating tools/pinvoke.map'
+test -e tools || mkdir tools
+echo "$mappings" >tools/pinvoke.map
+
+AC_OUTPUT([
+Makefile
+tools/Makefile
+config/Makefile
+runtime/Makefile
+I18N/Makefile
+DotGNU.SSL/Makefile
+System/Makefile
+System.Xml/Makefile
+System.Net.IrDA/Makefile
+csunit/Makefile
+csunit/TestVersion.cs
+csupport/Makefile
+compat/Makefile
+ISymWrapper/Makefile
+SharpZipLib/Makefile
+System.Configuration.Install/Makefile
+JScript/Makefile
+Basic/Makefile
+DotGNU.Images/Makefile
+DotGNU.Misc/Makefile
+Xsharp/Makefile
+Xsharp/Xlib.cs
+System.Drawing/Makefile
+System.Drawing.Xsharp/Makefile
+System.Drawing.Win32/Makefile
+System.Drawing.Postscript/Makefile
+System.EnterpriseServices/Makefile
+System.Windows.Forms/Makefile
+System.Design/Makefile
+System.Deployment/Makefile
+DotGNU.Terminal/Makefile
+DotGNU.XmlRpc/Makefile
+OpenSystem.Platform/Makefile
+OpenSystem.Platform/Types.cs
+Themes/Makefile
+Themes/WinXP/Makefile
+tests/Makefile
+tests/System/Makefile
+tests/System.Xml/Makefile
+tests/System.Windows.Forms/Makefile
+tests/runtime/Makefile
+tests/JScript/Makefile
+tests/Basic/Makefile
+resources/Makefile
+resources/en_US/Makefile
+resources/en_US/runtime/Makefile
+resources/en_US/I18N/Makefile
+resources/en_US/System/Makefile
+resources/en_US/System.Xml/Makefile
+resources/en_US/System.Net.IrDA/Makefile
+resources/en_US/Xsharp/Makefile
+resources/en_US/System.Configuration.Install/Makefile
+resources/en_US/System.Drawing/Makefile
+resources/en_US/System.Windows.Forms/Makefile
+resources/en_US/Basic/Makefile
+resources/en_US/System.Deployment/Makefile
+resources/de_DE/Makefile
+resources/de_DE/Basic/Makefile 
+resources/de_DE/I18N/Makefile
+resources/de_DE/System/Makefile
+resources/de_DE/System.Configuration.Install/Makefile
+resources/de_DE/System.Drawing/Makefile
+resources/de_DE/System.Windows.Forms/Makefile
+resources/de_DE/System.Xml/Makefile
+resources/de_DE/System.Net.IrDA/Makefile
+resources/de_DE/Xsharp/Makefile
+resources/de_DE/runtime/Makefile
+resources/ca_ES/Makefile
+resources/ca_ES/Basic/Makefile 
+resources/ca_ES/I18N/Makefile
+resources/ca_ES/System/Makefile
+resources/ca_ES/System.Configuration.Install/Makefile
+resources/ca_ES/System.Drawing/Makefile
+resources/ca_ES/System.Windows.Forms/Makefile
+resources/ca_ES/System.Xml/Makefile
+resources/ca_ES/System.Net.IrDA/Makefile
+resources/ca_ES/Xsharp/Makefile
+resources/ca_ES/runtime/Makefile
+samples/Makefile
+samples/ilrun.sh
+samples/simple/Makefile
+samples/xsharp/Makefile
+samples/dcop/Makefile
+samples/forms/Makefile
+samples/developers/Makefile
+tools/run_test.sh
+tools/link_res.sh
+tools/wrapper.sh
+pnetlib.spec])
+
+chmod +x "${srcdir}/samples/ilrun.sh" 2>/dev/null

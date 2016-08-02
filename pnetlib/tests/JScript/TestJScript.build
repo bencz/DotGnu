@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<project name="pnetlib TestJScript" default="all">
+	<target name="all">
+
+		<!-- Build the TestJScript.dll library -->
+		<compile output="TestJScript.dll"
+				 target="library"
+				 unsafe="true"
+				 debug="true"
+				 nostdlib="true"
+				 optimize="true">
+
+			<sources>
+				<includes if="${CONFIG_EXTENDED_NUMERICS}" name="**/*.cs"/>
+				<excludes if="${CONFIG_EXTENDED_NUMERICS}" name="TestJScript.cs"/>
+				<file name="TestJScript.cs"/>
+			</sources>
+
+			<references>
+				<file name="../../csunit/cstest.dll"/>
+				<file name="../../JScript/JScript.Test.dll"/>
+				<file name="../../compat/Microsoft.Vsa.dll"/>
+				<file name="../../System/first/System.dll"/>
+				<file name="../../DotGNU.SSL/DotGNU.SSL.dll"/>
+				<file name="../../OpenSystem.Platform/OpenSystem.Platform.dll"/>
+				<file name="../../runtime/mscorlib.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+			<arg compiler="csc" value="/nowarn:626"/>
+			<arg compiler="csc" value="/nowarn:649"/>
+			<arg compiler="csc" value="/nowarn:168"/>
+			<arg compiler="csc" value="/nowarn:67"/>
+			<arg compiler="csc" value="/nowarn:169"/>
+		</compile>
+
+	</target>
+</project>

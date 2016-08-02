@@ -1,0 +1,58 @@
+.\" Copyright (c) 2003 Southern Storm Software, Pty Ltd.
+.\"
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2 of the License, or
+.\" (at your option) any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+.TH ilstrip 1 "5 July 2003" "Southern Storm Software" "Portable.NET Development Tools"
+.SH NAME
+ilstrip \- strip debug symbols from Intermediate Language (IL) programs
+.SH SYNOPSIS
+\fBilstrip\fR [ options ] \fIinput\fR ...
+.SH DESCRIPTION
+.B Ilstrip
+strips the debug symbol information from an IL executable (.exe)
+or an IL dynamic link library (.dll).
+.SH OPTIONS
+.TP
+\fB\-o\fR \fIfile\fR, \fB\-\-output\fR \fIfile\fR
+Specify the output filename.  By default the stripped version of a
+file overwrites the original name.
+.TP
+.B \-p, \-\-preserve\-dates
+Preserve the original access and modification times on the input files.
+.TP
+.B \-v, \-\-verbose
+List all files as they are modified.
+.TP
+.B \-\-help
+Print a usage message for the \fBilstrip\fR program.
+.TP
+.B \-V, \-\-version
+Print the version of the \fBilstrip\fR program.
+.TP
+.B \-\-
+Marks the end of the command-line options, and the beginning of
+the input filenames.  You may need to use this if your filename
+begins with '-'.  e.g. "ilstrip -- -input.exe".  This is not needed
+if the input is stdin: "ilstrip -" is perfectly valid.
+.SH "AUTHOR"
+Written by Southern Storm Software, Pty Ltd.
+
+http://www.southern-storm.com.au/
+.SH "SEE ALSO"
+ilsize(1), ilfind(1), ilasm(1), strip(1)
+.SH "DIAGNOSTICS"
+Exit status is 1 if an error occurred while processing the input.
+Otherwise the exit status is 0.  See the manual page for
+\fBilsize\fR(1) for a complete list of errors that may occur
+when loading an IL image file.

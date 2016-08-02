@@ -1,0 +1,13 @@
+line 2: literal code:
+ abc^*&%/* kjk}jkj*/
+	// }
+	/*
+*/
+	"\"}" '/*kjkjk*/'
+{ abc // }
+}
+
+input9.tst:10: end of file inside literal code block
+line 10: literal code:
+ // open block
+

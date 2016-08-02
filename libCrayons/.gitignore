@@ -1,0 +1,13 @@
+Makefile.in
+Makefile
+.deps
+configure
+config.log
+config.cache
+config.status
+confdefs.h
+aclocal.m4
+libtool
+ltconfig
+ltmain.sh
+autom4te.cache

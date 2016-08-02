@@ -1,0 +1,4 @@
+./error2.cs:23: parse error at or near `x'
+./error2.cs:24: parse error at or near `y'
+./error2.cs:25: parse error at or near `z'
+./error2.cs:29: parse error at or near `y'

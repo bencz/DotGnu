@@ -1,0 +1,2 @@
+./ref2.cs:41: no matching method for call to `m1(int)'
+./ref2.cs:42: no matching method for call to `m2(int)'

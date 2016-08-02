@@ -1,0 +1,44 @@
+
+Mono Libraries for Portable.NET
+-------------------------------
+
+This distribution contains a number of build scripts for building some
+of the Mono class libraries and utility programs with Portable.NET's
+C# compiler, so that they can be installed and used with Portable.NET's
+runtime engine.
+
+If you are building this from CVS, you will need a copy of the Mono library 
+source tree (CVS module "mcs"), because the CVS distribution does not contain 
+the Mono sources.  See "www.go-mono.com" for details on obtaining the Mono 
+library source.
+
+Once you have the Mono library source, configure and build as follows:
+
+	./configure --with-mono-sources=../mono/mcs
+	make
+	make install
+
+where "../mono/mcs" is the path on your system to the "mcs" directory within
+the Mono source distribution.  This directory will typically contain a
+"class" subdirectory, under which the Mono library sources may be found.
+
+By default, the libraries will be installed in ${prefix}/lib/cscc/lib,
+where the other pnetlib libraries are installed.  This location should
+not conflict with a Mono installation if you have one on your system.
+
+Not all Mono libraries are built.  In particular, the Portable.NET
+counterparts to "corlib", "System", and "System.Xml" are used instead
+of the Mono versions.  Some other libraries may not be built yet
+because of missing features or bugs in Portable.NET or pnetlib, which
+we are working on.  Contributions are welcome. It is possible to build
+and use "System.Xml" from mono. See "class/System.XML/README" for more
+info.
+
+Bug reports, contributions, offers of help, etc, should be addressed
+to the Portable.NET developers mailing list, "pnet-developers@dotgnu.org".
+To subscribe, visit "www.dotgnu.org".
+
+The build scripts are distributed under the terms of the GNU General
+Public License (see "COPYING" for details), but the Mono source and
+resulting binaries are under different licenses.  Consult the Mono
+source distribution for details.

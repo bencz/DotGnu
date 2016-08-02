@@ -1,0 +1,250 @@
+/*
+ * jv_logical.tc - Logical operator nodes.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/*
+ * Generate discard code for the logical NOT operator.
+ */
+JavaGenDiscard(ILNode_LogicalNot)
+{
+	JavaGenDiscard(node->expr, info);
+}
+
+/*
+ * Generate value code for the logical NOT operator.
+ */
+JavaGenValue(ILNode_LogicalNot)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenThen(node->expr, info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, 1);
+	return ILMachineType_Boolean;
+}
+
+/*
+ * Generate "then" code for the logical NOT operator.
+ */
+JavaGenThen(ILNode_LogicalNot)
+{
+	JavaGenElse(node->expr, info, label);
+}
+
+/*
+ * Generate "else" code for the logical NOT operator.
+ */
+JavaGenElse(ILNode_LogicalNot)
+{
+	JavaGenThen(node->expr, info, label);
+}
+
+/*
+ * Generate discard code for the logical AND operator.
+ */
+JavaGenDiscard(ILNode_LogicalAnd)
+{
+	ILLabel label = ILLabel_Undefined;
+	JavaGenElse(node->expr1, info, &label);
+	JavaGenDiscard(node->expr2, info);
+	JavaGenLabel(info, &label);
+}
+
+/*
+ * Generate value code for the logical AND operator.
+ */
+JavaGenValue(ILNode_LogicalAnd)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenElse(node->expr1, info, &label1);
+	JavaGenElse(node->expr2, info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, 1);
+	return ILMachineType_Boolean;
+}
+
+/*
+ * Generate "then" code for the logical AND operator.
+ */
+JavaGenThen(ILNode_LogicalAnd)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	JavaGenElse(node->expr1, info, &label1);
+	JavaGenThen(node->expr2, info, label);
+	JavaGenLabel(info, &label1);
+}
+
+/*
+ * Generate "else" code for the logical AND operator.
+ */
+JavaGenElse(ILNode_LogicalAnd)
+{
+	JavaGenElse(node->expr1, info, label);
+	JavaGenElse(node->expr2, info, label);
+}
+
+/*
+ * Generate discard code for the logical OR operator.
+ */
+JavaGenDiscard(ILNode_LogicalOr)
+{
+	ILLabel label = ILLabel_Undefined;
+	JavaGenThen(node->expr1, info, &label);
+	JavaGenDiscard(node->expr2, info);
+	JavaGenLabel(info, &label);
+}
+
+/*
+ * Generate value code for the logical OR operator.
+ */
+JavaGenValue(ILNode_LogicalOr)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	JavaGenThen(node->expr1, info, &label1);
+	JavaGenThen(node->expr2, info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_0);
+	JavaGenJump(info, JAVA_OP_GOTO, &label2);
+	JavaGenLabel(info, &label1);
+	JavaGenSimple(info, JAVA_OP_ICONST_1);
+	JavaGenLabel(info, &label2);
+	JavaGenAdjust(info, 1);
+	return ILMachineType_Boolean;
+}
+
+/*
+ * Generate "then" code for the logical OR operator.
+ */
+JavaGenThen(ILNode_LogicalOr)
+{
+	JavaGenThen(node->expr1, info, label);
+	JavaGenThen(node->expr2, info, label);
+}
+
+/*
+ * Generate "else" code for the logical OR operator.
+ */
+JavaGenElse(ILNode_LogicalOr)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	JavaGenThen(node->expr1, info, &label1);
+	JavaGenElse(node->expr2, info, label);
+	JavaGenLabel(info, &label1);
+}
+
+/*
+ * Generate value code for the user-defined logical AND operator.
+ */
+JavaGenValue(ILNode_UserLogicalAnd)
+{
+	ILMachineType type;
+	int size;
+	ILLabel label = ILLabel_Undefined;
+
+	/* Evaluate the first sub-expression */
+	type = JavaGenValue(node->expr1, info);
+
+	/* Test the first sub-expression for false */
+	size = JavaGenTypeSize(type);
+	if(size == 1)
+	{
+		JavaGenSimple(info, JAVA_OP_DUP);
+	}
+	else if(size == 2)
+	{
+		JavaGenSimple(info, JAVA_OP_DUP2);
+	}
+	JavaGenAdjust(info, size);
+	if(node->falseMethod)
+	{
+		JavaGenCallByMethod(info, node->falseMethod);
+		JavaGenJump(info, JAVA_OP_IFNE, &label);
+	}
+	else
+	{
+		JavaGenCallByMethod(info, node->trueMethod);
+		JavaGenJump(info, JAVA_OP_IFEQ, &label);
+	}
+	JavaGenAdjust(info, -size);
+
+	/* Pop the first sub-expression and evaluate the second */
+	JavaGenCast(info, type, ILMachineType_Void);
+	type = JavaGenValue(node->expr2, info);
+
+	/* Output the jump label here */
+	JavaGenLabel(info, &label);
+
+	/* Done */
+	return type;
+}
+
+/*
+ * Generate value code for the user-defined logical OR operator.
+ */
+JavaGenValue(ILNode_UserLogicalOr)
+{
+	ILMachineType type;
+	int size;
+	ILLabel label = ILLabel_Undefined;
+
+	/* Evaluate the first sub-expression */
+	type = JavaGenValue(node->expr1, info);
+
+	/* Test the first sub-expression for true */
+	size = JavaGenTypeSize(type);
+	if(size == 1)
+	{
+		JavaGenSimple(info, JAVA_OP_DUP);
+	}
+	else if(size == 2)
+	{
+		JavaGenSimple(info, JAVA_OP_DUP2);
+	}
+	JavaGenAdjust(info, size);
+	if(node->trueMethod)
+	{
+		JavaGenCallByMethod(info, node->trueMethod);
+		JavaGenJump(info, JAVA_OP_IFNE, &label);
+	}
+	else
+	{
+		JavaGenCallByMethod(info, node->falseMethod);
+		JavaGenJump(info, JAVA_OP_IFEQ, &label);
+	}
+	JavaGenAdjust(info, -size);
+
+	/* Pop the first sub-expression and evaluate the second */
+	JavaGenCast(info, type, ILMachineType_Void);
+	type = JavaGenValue(node->expr2, info);
+
+	/* Output the jump label here */
+	JavaGenLabel(info, &label);
+
+	/* Done */
+	return type;
+}

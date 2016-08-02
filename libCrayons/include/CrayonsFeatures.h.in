@@ -1,0 +1,56 @@
+/*
+ * CrayonsFeatures.h - Features header.
+ *
+ * Copyright (C) 2006  Free Software Foundation, Inc.
+ *
+ * This library is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU Lesser General Public
+ * License as published by the Free Software Foundation; either
+ * version 2.1 of the License, or (at your option) any later version.
+ *
+ * This library is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ * Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this library; if not, write to the Free Software
+ * Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+ */
+
+#ifndef _CRAYONS_FEATURES_H_
+#define _CRAYONS_FEATURES_H_
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* Define the basic signed numeric types. */
+typedef signed @crayons_type_i1@ CInt8;
+typedef signed @crayons_type_i2@ CInt16;
+typedef signed @crayons_type_i4@ CInt32;
+typedef signed @crayons_type_i8@ CInt64;
+
+/* Define the basic unsigned numeric types. */
+typedef unsigned @crayons_type_i1@ CUInt8;
+typedef unsigned @crayons_type_i2@ CUInt16;
+typedef unsigned @crayons_type_i4@ CUInt32;
+typedef unsigned @crayons_type_i8@ CUInt64;
+
+/* Define const as needed. */
+#define _Cconst @crayons_const_define@
+
+/* Define the crayons version components. */
+#define CrayonsVersionMajor @crayons_version_major@
+#define CrayonsVersionMinor @crayons_version_minor@
+#define CrayonsVersionMicro @crayons_version_micro@
+
+/* Feature defines. */
+@crayons_x11_surface_define@
+
+
+#ifdef __cplusplus
+};
+#endif
+
+#endif /* _CRAYONS_FEATURES_H_ */

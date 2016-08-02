@@ -1,0 +1,7 @@
+Makefile
+Makefile.in
+.deps
+configure
+config.log
+config.cache
+config.status

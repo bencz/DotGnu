@@ -1,0 +1,55 @@
+#
+# IO.txt - Resources for I/O-related errors and exceptions.
+#
+# Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+IO_StreamClosed=Stream ist bereits geschlossen
+IO_FileAccess=Invalid file access value specified
+IO_FileMode=Invalid file mode value specified
+IO_FileShare=Invalid file share value specified
+IO_InvalidPathname=Ungueltiger Pfad angegeben
+IO_IncorrectAccess=Incorrect access mode specified for file handle
+IO_WriteFailed=Schreibanfrage fehlgeschlagen
+IO_FlushFailed=flushanfrage fehlgeschlagen
+IO_ReadFailed=Leseanfrage fehlgeschlagen
+IO_SeekFailed=Suchanfrage fehlgeschlagen
+IO_SetLengthFailed=SetLength Anfrage fehlgeschlagen
+IO_EndOfStream=Versuch ueber das Ende des streams hinaus zu suchen
+IO_ReadEndOfStream=Versuch ueber das Ende des streams hinaus zu lesen
+IO_NotSupp_Seek=Der angegebene stream unterstuetzt kein Suchen
+IO_NotSupp_SetLength=Der angegebene stream unterstuetzt nicht seine Laenge zu setzen
+IO_NotSupp_Read=Der angegebene stream unterstuetzt kein Lesen
+IO_NotSupp_Write=Der angegebene stream unterstuetzt kein Schreiben
+IO_NotSupp_Async=Der angegebene stream unterstuetzt keine asynchronen Operationen
+IO_PathNotFound=Der angegebene Pfad konnte nicht gefunden werden
+IO_DirNotFound=Der angegebene Ordner konnte nicht gefunden werden
+IO_FileNotFound=Konnte Datei nicht finden "{0}"
+IO_FileLoad=Konnte Datei nicht laden "{0}"
+IO_RegistryKeyClosed=Der Registry Schluessel wurde bereits geschlossen
+IO_RegistryReadOnly=Der Registry Schluessel kann nur gelesen werden
+IO_RegistryKeyNotExist=Der Registry Schluessel existiert nicht
+IO_RegistryHasSubKeys=Der Registry Schluessel hat noch untergeordnete Schluessel
+IO_UnknownFile=Unbekannter Dateiname
+IO_AccessDenied=Der Zugriff auf den angegebenen Pfadnamen ist nicht erlaubt
+IO_InvalidLength=Kann die stream Laenge nicht auf den angegebenen Wert aendern
+IO_InvalidSeekPosition=Ungueltige seek Position
+IO_InvalidWhence=Ungueltiger seek Start
+IO_IsolatedStorage=Es ist ein Fehler beim Zugriff auf den isolierten Speicher zuzugreifen
+IO_FixedCapacity=Kann die Kapazitaet des Speicher streams nicht erhoehen
+IO_CannotReduceCapacity=Kann die Kapazitaet nicht unter die Laenge des streams vermindern
+IO_LockFailed=Fehler bei der Anforderung einer Sperre
+IO_UnlockFailed=Fehler bei der Freigabe einer Sperre

@@ -1,0 +1,3 @@
+./method7.cs:33: cannot access instance members in static methods
+./method7.cs:34: cannot access instance members in static methods
+./method7.cs:35: cannot access instance members in static methods

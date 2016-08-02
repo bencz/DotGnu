@@ -1,0 +1,186 @@
+
+How to embed the JScript engine in your own applications
+========================================================
+
+Creating the engine instance
+----------------------------
+
+For all of the examples in this document, you need to include the following
+namespaces:
+
+	using Microsoft.JScript;
+	using Microsoft.JScript.Vsa;
+	using Microsoft.Vsa;
+
+Compile your application against the following assemblies:
+
+	Microsoft.JScript
+	Microsoft.Vsa
+	System
+
+Create the engine instance as follows:
+
+	VsaEngine engine = VsaEngine.CreateEngine();
+
+This allows you to use the engine in an embedded environment.  There are
+other ways to create the engine, but they are only for JScript gurus.
+The "VsaEngine" constructor (e.g. "new VsaEngine()") is not recommended.
+
+If you create the engine as above, then you can only use a single engine
+instance per process.  Subsequent calls to "CreateEngine()" will return
+the same object.  This can be problematic in server programs that handle
+multiple independent requests in separate threads.  The single-instance
+behaviour is required for backwards-compatibility.
+
+This JScript implementation can support "detached engines", which allows
+multiple instances to exist side-by-side, each with their own state.
+Use the following code to create a detached engine instance:
+
+	VsaEngine engine;
+	bool isDetached = false;
+	lock(typeof(VsaEngine))
+	{
+		engine = VsaEngine.CreateEngine();
+		try
+		{
+			engine.SetOption("detach", true);
+			isDetached = true;
+		}
+		catch(VsaException)
+		{
+			// The "detach" option was not understood.
+		}
+	}
+
+If "isDetached" is false at the end of this process, then the JScript
+implementation does not support detached operation and you should be
+careful not to use multiple instances at once.  It is important to
+lock the "VsaEngine" class while doing this, to properly support
+detached engine creation in multi-threaded programs.
+
+Once an engine instance has been detached, there is no way to "re-attach"
+it and make it the default engine instance again.
+
+Providing script source to the engine
+-------------------------------------
+
+Scripts are provided to the engine by creating one or more code items:
+
+	IVsaCodeItem item =
+		(IVsaCodeItem)(engine.Items.CreateItem("script1",
+											   VsaItemType.Code,
+											   VsaItemFlag.None));
+	item.SourceText = "<<your script here>>";
+
+If you have more than one script to be executed, then add them all using
+the above sequence.  The string, "script1", is a unique identifier for
+the item.  Each item should have a different identifier.  The items will
+be executed in order.
+
+If a script was loaded from a file, then its code base can be set as follows:
+
+	item.SetOption("codebase", filename);
+
+Compiling and running the script
+--------------------------------
+
+Compile the script item (or items) that you just loaded using the engine's
+"Compile" method:
+
+	bool ok = engine.Compile();
+
+Then the script can be executed as follows:
+
+	engine.Run();
+
+Running the script will execute any global code that is found within
+the script.
+
+Note: this implementation of JScript does not compile scripts down to IL
+bytecode first.  Instead, it evaluates them directly in memory from their
+tree representation.  This may change in a future version.
+
+Performing evaluations
+----------------------
+
+If you are embedding a script engine into an application, you will probably
+want to perform evaluations on script fragments after the main script has
+been executed.  Use the "Eval.JScriptEvaluate" method for this purpose:
+
+	Object result = Eval.JScriptEvaluate("func()", engine);
+
+Manipulating JScript objects
+----------------------------
+
+The easiest way to obtain the value of a global JScript variable is to call
+"JScriptEvaluate", passing it the name of the variable.  e.g. if the script
+stored a value in the global variable "x", then the following code will
+retrieve the value:
+
+	Object x = Eval.JScriptEvaluate("x", engine);
+
+Evaluations can also be used to set the value of global script variables:
+
+	Eval.JScriptEvaluate("x = 3", engine);
+
+JScript objects will normally be instances of the "JSObject" class.
+The "JSObject" indexer can be used to get and set object properties:
+
+	Object prop1 = ((JSObject)x)["prop1"];
+	((JSObject)x)["prop2"] = 42;
+
+An object's prototype can be retrieved using the "GetParent()" method:
+
+	Object prototype = ((JSObject)obj).GetParent();
+
+Providing environmental objects
+-------------------------------
+
+TODO: describe how to define a C# class that can be referenced by a script
+to provide non-core behaviour.
+
+Script output
+-------------
+
+At startup time, the "print" command is disabled in the engine.  If you
+want your script to be able to print, then you should set the "print"
+option as follows:
+
+	engine.SetOption("print", true);
+
+By default, output will go to "Console.Out".  You can redirect it to your
+program by creating an instance of the "IMessageReceiver" interface and
+calling the "SetOutputStream" method on the engine.  The interface has
+one method, called "Message":
+
+	public interface IMessageReceiver
+	{
+		void Message(String strValue);
+	}
+
+The "IMessageReceiver" interface isn't very efficient or culture-aware,
+so it is usually better to add an environmental object to the engine
+and call that instead of using "print".
+
+Cleaning up
+-----------
+
+When you want to discard the script's state, then call "Reset()".  After
+that, you can remove the script items and add new ones:
+
+	engine.Reset();
+	engine.Items.Remove("script1");
+	IVsaCodeItem item =
+		(IVsaCodeItem)(engine.Items.CreateItem("script1",
+											   VsaItemType.Code,
+											   VsaItemFlag.None));
+	item.SourceText = "<<your new script here>>";
+
+You could even re-compile the same script items again, to be executed in
+a new context:
+
+	engine.Reset();
+	bool ok = engine.Compile();
+
+When you have finished with the engine, call "Close()".  After that,
+you can create a new engine using "CreateEngine()", as described above.

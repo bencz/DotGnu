@@ -1,0 +1,67 @@
+pnet (0.6.8-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Russell Stuart <russell-debian@stuart.id.au>  Tue, 24 Aug 2004 16:25:32 +1000
+
+pnet (0.5.2) unstable; urgency=low
+
+  * New upstream release
+
+ -- Andrew Mitchell <ajmitch@ajmitch.dhis.org>  Sun, 9 Feb 2003 17:14:41 +1300
+
+pnet (0.4.8-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Andrew Mitchell <ajmitch@dunedin.lug.net.nz>  Sat, 23 Nov 2002 19:31:37 +1300
+
+pnet (0.4.2-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Andrew Mitchell <ajmitch@dunedin.lug.net.nz>  Thu, 25 Jul 2002 15:47:20 +1200
+
+pnet (0.4.0-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Andrew Mitchell <ajmitch@dunedin.lug.net.nz>  Sun, 30 Jun 2002 15:13:05 +1200
+
+pnet (0.3.8-1) unstable; urgency=low
+
+  * New upstream release, package has been split
+
+ -- Andrew Mitchell <ajmitch@dunedin.lug.net.nz>  Mon, 10 Jun 2002 22:53:41 +1200
+
+pnet (0.3.6-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Andrew Mitchell <ajmitch@dunedin.lug.net.nz>  Sat, 11 May 2002 15:27:21 +1200
+
+pnet (0.3.4-2) unstable; urgency=low
+
+  * Fix packaging bugs
+
+ -- Andrew Mitchell <ajmitch@dunedin.lug.net.nz>  Sun, 21 Apr 2002 10:55:10 +1200
+
+pnet (0.3.4-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Andrew Mitchell <ajmitch@dunedin.lug.net.nz>  Sat,  20 Apr 2002 18:36:26 +1300
+  
+pnet (0.2.8-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Andrew Mitchell <ajmitch@ajmitch.dhis.org>  Fri,  18 Jan 2002 18:36:26 +1300
+
+pnet (0.2.6-1) unstable; urgency=low
+
+  * Initial Release.
+
+ -- Andrew Mitchell <ajmitch@ajmitch.dhis.org>  Tue,  4 Dec 2001 13:36:26 +1300
+
+

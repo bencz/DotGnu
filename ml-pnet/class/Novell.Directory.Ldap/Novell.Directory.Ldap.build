@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+
+<project name="Novell.Directory.Ldap" default="all">
+	<target name="all">
+		<compile target="library"
+				 output="Novell.Directory.Ldap.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="true"
+				 installasdefault="true">
+
+			<sources basedir="${mono.sources}/class/Novell.Directory.Ldap">
+				<includes name="**/*.cs"/> 
+				<includes name="../../build/common/Consts.cs"/>
+				<excludes name="Novell.Directory.Ldap.Security.jvm/**"/>
+				<excludes name="Test/**"/>
+			</sources>
+
+			<references>
+				<file name="System.dll"/>
+				<file name="../Mono.Security/Mono.Security.dll"/>
+			</references>
+
+		</compile>
+	</target>
+</project>

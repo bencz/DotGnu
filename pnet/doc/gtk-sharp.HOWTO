@@ -1,0 +1,62 @@
+
+This document describes how to use the Gtk# library with Portable.NET.
+
+1. Install Gtk+ 2.0.
+
+You will need an up to date installation of Gtk+ to use Gtk#.  The versions
+that come with RedHat 7.x (for example) are not sufficient.  Refer to
+http://www.gtk.org/ for the latest sources and install instructions.
+
+If you have to install Gtk+ 2.0 somewhere other than the standard system
+location, you will need to set your LD_LIBRARY_PATH environment variable
+to point at this non-standard location.
+
+2. Get a recent snapshot of Gtk#.
+
+Recent builds of Gtk# can be obtained from "http://www.atoker.com/mono/".
+You will need the "gtk-sharp", "gtk-sharp-glue" and "mono-assemblies"
+packages.
+
+If you have Debian, then simply install those packages.  If you don't
+have Debian, then you will need to extract the files that you need
+from the packages first.  Use the following commands to extract a Debian
+package:
+
+	ar x gtk-sharp_????.deb
+	tar xvfz data.tar.gz
+
+The files you want will normally be in "./usr/lib" after extraction.
+
+The Debian packages will normally install the required ".dll" and ".so"
+files into "/usr/lib".  Portable.NET should be able to find the files
+here.  If not, set your LD_LIBRARY_PATH environment variable to point
+at the location.
+
+3. Compile and run a Gtk# test program.
+
+The "gtk-sharp/sample" directory of the Mono CVS tree contains some sample
+programs that you can try out.  For example, "HelloWorld.cs".  Compile it
+using Portable.NET's C# compiler as follows:
+
+	cscc -o gtk-hello-world.exe HelloWorld.cs -gtk
+
+The "-gtk" compiler option will automatically add all of the Gtk# libraries
+to the link line.  The companion option "-gnome" will add all of the Gnome#
+libraries.  You can list the libraries manually if you wish:
+
+	-lgnome-sharp -lgtk-sharp -lgdk-sharp -lgdk-imaging-sharp
+	-latk-sharp -lpango-sharp -lglib-sharp -lSystem.Drawing -lSystem
+
+You should now be able to run the test program:
+
+	ilrun gtk-hello-world.exe
+
+If the compiler or the runtime engine has problems finding the required
+libraries, then use the "-L" option to specify explicit paths.
+
+4. Have fun writing your own Gtk# applications!
+
+The Gtk# Web page contains links to source code, examples, and
+documentation:
+
+	http://gtk-sharp.sourceforge.net/

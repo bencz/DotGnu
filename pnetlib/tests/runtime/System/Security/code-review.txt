@@ -1,0 +1,32 @@
+
+Code review for System.Security
+===============================
+
+Last updated: 23 July 2003
+
+Classes that need tests
+-----------------------
+
+CodeAccessPermission
+MiniXml
+NamedPermissionSet
+PermissionSet
+SecurityElement
+SecurityException (done)
+SecurityManager
+VerificationException (done)
+XmlSyntaxException (done)
+
+Classes that were validated using manual inspection and csdocvalil
+------------------------------------------------------------------
+
+AllowPartiallyTrustedCallersAttribute
+IEvidenceFactory
+IPermission
+ISecurityEncodable
+ISecurityPolicyEncodable
+IStackWalk
+PolicyLevelType
+SecurityZone
+SuppressUnmanagedCodeSecurityAttribute
+UnverifiableCodeAttribute

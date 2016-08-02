@@ -1,0 +1,634 @@
+/*
+ * c_defs.tc - Treecc definitions for C.
+ *
+ * Copyright (C) 2002  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+/*
+ * Inherit the common definitions.
+ */
+%include %readonly "cg_all.tc"
+
+/*
+ * Set a new header for definitions that follow.
+ */
+%header "c_defs.h"
+
+/*
+ * Copy the following definitions to the top of the "c_defs.h" file.
+ */
+%decls %{
+
+#include <codegen/cg_nodes.h>
+#include <codegen/cg_coerce.h>
+#include <codegen/cg_resolve.h>
+#include <codegen/cg_scope.h>
+#include <cscc/common/cc_preproc.h>
+#include <cscc/common/cc_options.h>
+#include <cscc/c/c_declspec.h>
+
+/*
+ * Define the semantic analysis value for C nodes.
+ */
+typedef struct
+{
+	int		kind__;
+	ILType *type__;
+	void   *extra__;
+
+} CSemValue;
+
+/*
+ * Semantic analysis value kinds.
+ *
+ * If the "DYN_CONSTANT" flag is set, then it indicates a
+ * constant value that must be computed at runtime, because
+ * it references a function, a static address, or a type
+ * whose size is only known at runtime.
+ *
+ * If the "BOOLEAN" flag is set, then the compiler has inferred
+ * that the correspond node will always be boolean true or false.
+ */
+#define	C_SEMKIND_VOID			(1<<0)
+#define	C_SEMKIND_LVALUE		(1<<1)
+#define	C_SEMKIND_RVALUE		(1<<2)
+#define	C_SEMKIND_CONSTANT		(1<<3)
+#define	C_SEMKIND_DYN_CONSTANT	(1<<4)
+#define	C_SEMKIND_FUNCTION		(1<<5)
+#define	C_SEMKIND_TYPE			(1<<6)
+#define	C_SEMKIND_BOOLEAN		(1<<7)
+#define	C_SEMKIND_NO_REF		(1<<8)
+#define	C_SEMKIND_DECAYED		(1<<9)
+#define	C_SEMKIND_ERROR			(1<<10)
+#define	C_SEMKIND_FIELD			(1<<11)
+#define	C_SEMKIND_PROPERTY		(1<<12)
+#define	C_SEMKIND_METHOD_GROUP	(1<<13)
+#define	C_SEMKIND_SVALUE		(1<<14)
+
+/*
+ * The default semantic value, which is always "void".
+ */
+extern CSemValue CSemValueDefault;
+
+/*
+ * A semantic value that represents a boolean r-value.
+ */
+extern CSemValue CSemValueBool;
+
+/*
+ * A semantic value that represents a semantic error.
+ */
+extern CSemValue CSemValueError;
+
+/*
+ * Test for various kinds of semantic values.
+ */
+#define	CSemIsVoid(value)		(((value).kind__ & C_SEMKIND_VOID) != 0)
+#define	CSemIsLValue(value)			\
+			(((value).kind__ & (C_SEMKIND_LVALUE | C_SEMKIND_SVALUE)) != 0)
+#define	CSemIsRValue(value)			\
+			(((value).kind__ & (C_SEMKIND_LVALUE | C_SEMKIND_RVALUE)) != 0)
+#define	CSemIsConstant(value)	(((value).kind__ & C_SEMKIND_CONSTANT) != 0)
+#define	CSemIsDynConstant(value)	\
+			(((value).kind__ & C_SEMKIND_DYN_CONSTANT) != 0)
+#define	CSemIsFunction(value)	(((value).kind__ & C_SEMKIND_FUNCTION) != 0)
+#define	CSemIsType(value)		(((value).kind__ & C_SEMKIND_TYPE) != 0)
+#define	CSemIsBoolean(value)	(((value).kind__ & C_SEMKIND_BOOLEAN) != 0)
+#define	CSemIsNoRef(value)		(((value).kind__ & C_SEMKIND_NO_REF) != 0)
+#define	CSemIsDecayed(value)	(((value).kind__ & C_SEMKIND_DECAYED) != 0)
+#define	CSemIsError(value)		(((value).kind__ & C_SEMKIND_ERROR) != 0)
+#define	CSemIsField(value)		(((value).kind__ & C_SEMKIND_FIELD) != 0)
+#define	CSemIsProperty(value)	(((value).kind__ & C_SEMKIND_PROPERTY) != 0)
+#define	CSemIsMethodGroup(value)	\
+			(((value).kind__ & C_SEMKIND_METHOD_GROUP) != 0)
+#define	CSemIsSValue(value)		(((value).kind__ & C_SEMKIND_SVALUE) != 0)
+
+/*
+ * Get the type field from a semantic value.
+ */
+#define	CSemGetType(value)				((value).type__)
+
+/*
+ * Get the decayed type field from a semantic value.
+ */
+#define	CSemGetDecayedType(value)		((ILType *)((value).extra__))
+
+/*
+ * Get the constant value associated with a semantic value.
+ */
+#define	CSemGetConstant(value)	\
+	((((value).kind__ & (C_SEMKIND_CONSTANT | C_SEMKIND_DYN_CONSTANT)) \
+			== C_SEMKIND_CONSTANT) ? ((ILEvalValue *)((value).extra__)) \
+								   : ((ILEvalValue *)0))
+
+/*
+ * Get the function name associated with a semantic value.
+ */
+#define	CSemGetFuncName(value)	((char *)((value).extra__))
+
+/*
+ * Set a semantic value to "void".
+ */
+#define	CSemSetVoid(value)	\
+			do { \
+				(value).kind__ = C_SEMKIND_VOID; \
+				(value).type__ = ILType_Void; \
+				(value).extra__ = 0; \
+			} while (0)
+
+/*
+ * Set a semantic value to an l-value reference.
+ */
+#define	CSemSetLValue(value,type)	\
+			do { \
+				(value).kind__ = C_SEMKIND_LVALUE; \
+				(value).type__ = (type); \
+				(value).extra__ = 0; \
+			} while (0)
+
+/*
+ * Set a semantic value to an s-value reference (i.e. an l-value that
+ * cannot be used as an r-value such as a write-only property).
+ */
+#define	CSemSetSValue(value,type)	\
+			do { \
+				(value).kind__ = C_SEMKIND_SVALUE | C_SEMKIND_NO_REF; \
+				(value).type__ = (type); \
+				(value).extra__ = 0; \
+			} while (0)
+
+/*
+ * Set a semantic value to an l-value reference that does not
+ * allow the "&" operator to be used (e.g. bit fields).
+ */
+#define	CSemSetLValueNoRef(value,type)	\
+			do { \
+				(value).kind__ = C_SEMKIND_LVALUE | C_SEMKIND_NO_REF; \
+				(value).type__ = (type); \
+				(value).extra__ = 0; \
+			} while (0)
+
+/*
+ * Set a semantic value to an r-value reference.
+ */
+#define	CSemSetRValue(value,type)	\
+			do { \
+				(value).kind__ = C_SEMKIND_RVALUE; \
+				(value).type__ = (type); \
+				(value).extra__ = 0; \
+			} while (0)
+
+/*
+ * Set a semantic value to an r-value reference that resulted
+ * from a decayed array l-value.
+ */
+#define	CSemSetDecayedRValue(value,type,origType)	\
+			do { \
+				(value).kind__ = C_SEMKIND_RVALUE | C_SEMKIND_DECAYED; \
+				(value).type__ = (type); \
+				(value).extra__ = (void *)(origType); \
+			} while (0)
+
+/*
+ * Set a semantic value to a constant reference.
+ */
+#define	CSemSetConstant(value,type,constValue)	\
+			do { \
+				(value).kind__ = C_SEMKIND_RVALUE | C_SEMKIND_CONSTANT; \
+				(value).type__ = (type); \
+				(value).extra__ = \
+					CSemDupExtra(&(constValue), sizeof(ILEvalValue)); \
+			} while (0)
+
+/*
+ * Set a semantic value to a dynamic constant reference.
+ */
+#define	CSemSetDynConstant(value,type)	\
+			do { \
+				(value).kind__ = C_SEMKIND_RVALUE | C_SEMKIND_CONSTANT | \
+								 C_SEMKIND_DYN_CONSTANT; \
+				(value).type__ = (type); \
+				(value).extra__ = 0; \
+			} while (0)
+
+/*
+ * Set a semantic value to a function reference.
+ */
+#define	CSemSetFunction(value,type,name)	\
+			do { \
+				(value).kind__ = C_SEMKIND_FUNCTION | C_SEMKIND_CONSTANT | \
+								 C_SEMKIND_DYN_CONSTANT; \
+				(value).type__ = (type); \
+				(value).extra__ = (void *)(name); \
+			} while (0)
+
+/*
+ * Set a semantic value to a type reference.
+ */
+#define	CSemSetType(value,type)	\
+			do { \
+				(value).kind__ = C_SEMKIND_TYPE; \
+				(value).type__ = (type); \
+				(value).extra__ = 0; \
+			} while (0)
+
+/*
+ * Covnert a semantic value into a type reference.
+ */
+#define	CSemToType(value)	\
+			do { \
+				(value).kind__ = C_SEMKIND_TYPE; \
+				(value).extra__ = 0; \
+			} while (0)
+
+/*
+ * Adjust a semantic value to record that it is boolean.  This must
+ * be used after one of the above "Set" macros.
+ */
+#define	CSemSetBoolean(value)	\
+			do { \
+				(value).kind__ |= C_SEMKIND_BOOLEAN; \
+			} while (0)
+
+/*
+ * Set a semantic value to "error".
+ */
+#define	CSemSetError(value)	\
+			do { \
+				(value).kind__ = C_SEMKIND_ERROR; \
+				(value).type__ = ILType_Void; \
+				(value).extra__ = 0; \
+			} while (0)
+
+/*
+ * Convert l-values into r-values, while retaining constant information.
+ */
+#define	CSemLToRValue(value)	\
+			do { \
+				(value).kind__ &= ~C_SEMKIND_LVALUE; \
+				(value).kind__ |= C_SEMKIND_RVALUE; \
+			} while (0)
+
+/*
+ * Set a semantic value to a field.
+ */
+#define	CSemSetField(value,field)	\
+			do { \
+				(value).kind__ = C_SEMKIND_FIELD; \
+				(value).type__ = ILType_Void; \
+				(value).extra__ = (void *)(field); \
+			} while (0)
+
+/*
+ * Extract the field from a semantic value.
+ */
+#define	CSemGetField(value)		((ILField *)((value).extra__))
+
+/*
+ * Set a semantic value to a property.
+ */
+#define	CSemSetProperty(value,property)	\
+			do { \
+				(value).kind__ = C_SEMKIND_PROPERTY; \
+				(value).type__ = ILType_Void; \
+				(value).extra__ = (void *)(property); \
+			} while (0)
+
+/*
+ * Extract the property from a semantic value.
+ */
+#define	CSemGetProperty(value)	((ILProperty *)((value).extra__))
+
+/*
+ * Set a semantic value to a method group.
+ */
+#define	CSemSetMethodGroup(value,type,name)	\
+			do { \
+				(value).kind__ = C_SEMKIND_METHOD_GROUP; \
+				(value).type__ = (type); \
+				(value).extra__ = (void *)(name); \
+			} while (0)
+
+/*
+ * Get the name from a method group.
+ */
+#define	CSemGetMethodName(value)	((char *)((value).extra__))
+
+/*
+ * Perform inline semantic analysis on a node, in a specific scope.
+ */
+CSemValue CSemInlineAnalysis(ILGenInfo *info, ILNode *node,
+							 ILNode **parent, ILScope *scope);
+
+/*
+ * Determine if a semantic value is zero.
+ */
+int CSemIsZero(CSemValue value);
+
+/*
+ * Information about an address that is generated by "ILNode_CGenAddress".
+ */
+typedef struct
+{
+	int			ptrOnStack;		/* Zero if the address is relative to NULL */
+	ILInt32		offset;			/* Constant offset from the pointer */
+
+} CAddress;
+
+/*
+ * The default address (evaluates to NULL).
+ */
+extern CAddress CAddressDefault;
+
+/*
+ * Push the address of an l-value node onto the stack.  This calls
+ * "ILNode_CGenAddress" and then combines the pointer and offset into
+ * a single pointer value on the stack.
+ */
+void CGenAddress(ILGenInfo *info, ILNode *node);
+
+%}
+
+%output "c_nodes.c"
+
+%{
+#include <cscc/c/c_internal.h>
+#include "il_dumpasm.h"
+%}
+
+/*
+ * gc/nogc flag specifiers.
+ */
+%enum ILGCSpecifier =
+{
+	ILGC_Unknown,
+	ILGC_Managed,
+	ILGC_Unmanaged
+}
+
+/*
+ * Define extra node types that are required by C.
+ */
+%node ILNode_CString ILNode_String
+%node ILNode_CWString ILNode_String
+%node ILNode_SizeOfExpr ILNode_UnaryExpression =
+{
+	%nocreate ILType *type = {0};
+}
+%node ILNode_SizeOfType ILNode_Expression =
+{
+	ILType *type;
+}
+%node ILNode_CDeclarator ILNode_Dummy =
+{
+	CDeclarator decl;
+}
+%node ILNode_CBitFieldDeclarator ILNode_CDeclarator =
+{
+	ILUInt32 bitFieldSize;
+}
+%node ILNode_CInitDeclarator ILNode_CDeclarator =
+{
+	ILNode *init;
+}
+%node ILNode_VaStart ILNode_Expression =
+{
+	ILNode *vaList;
+	const char *name;
+}
+%node ILNode_VaEnd ILNode_Expression =
+{
+	ILNode *vaList;
+}
+%node ILNode_VaArg ILNode_Expression =
+{
+	ILNode *vaList;
+	ILType *type;
+}
+%node ILNode_SetJmp ILNode_UnaryExpression
+%node ILNode_AllocA ILNode_UnaryExpression
+%node ILNode_AsmStmt ILNode_Statement =
+{
+	const char *code;
+}
+%node ILNode_CLocalVar ILNode_LValue =
+{
+	unsigned long index;
+	ILMachineType machineType;
+	ILType *type;
+	ILType *decayedType;
+}
+%node ILNode_CArgumentVar ILNode_LValue =
+{
+	unsigned long index;
+	ILMachineType machineType;
+	ILType *type;
+}
+%node ILNode_CGlobalVar ILNode_LValue =
+{
+	const char *name;
+	ILType *type;
+	ILType *decayedType;
+}
+%node ILNode_FunctionRef ILNode_Expression =
+{
+	const char *name;
+	ILType *signature;
+}
+%node ILNode_CInvocationExpression ILNode_InvocationExpression =
+{
+	%nocreate const char *name = {0};
+}
+%node ILNode_CSharpInvocation ILNode_Dummy =
+{
+	ILType *type;
+	char *name;
+	ILNode *thisExpr;
+	ILNode *args;
+}
+%node ILNode_CArrayAccess ILNode_ArrayAccess
+%node ILNode_CFieldAccess ILNode_LValue %abstract =
+{
+	ILNode *expr;
+	const char *name;
+	%nocreate ILField *field = {0};
+	%nocreate ILType *ownerType = {0};
+}
+%node ILNode_CDerefField ILNode_CFieldAccess
+%node ILNode_CMemberField ILNode_CFieldAccess
+%node ILNode_CStaticField ILNode_CFieldAccess
+%node ILNode_CDeref ILNode_LValue =
+{
+	ILNode *expr;
+	%nocreate ILType *type = {0};
+	%nocreate ILMachineType machineType = {ILMachineType_Void};
+}
+%node ILNode_CBitField ILNode_LValueNoRef =
+{
+	ILNode *expr;
+	ILField *field;
+	ILMachineType machineType;
+	ILUInt32 bitFieldStart;
+	ILUInt32 bitFieldSize;
+	int genExprAsAddr;
+	%nocreate unsigned tempVar = {~((unsigned)0)};
+	%nocreate unsigned tempPtrVar = {~((unsigned)0)};
+}
+%node ILNode_CAttribute ILNode_Dummy =
+{
+	const char *name;
+	ILNode *args;
+}
+%node ILNode_CAttributeValue ILNode_Dummy =
+{
+	ILEvalValue value;
+}
+%node ILNode_CAssignArray ILNode_Statement =
+{
+	ILNode *expr1;
+	ILNode *expr2;
+	%nocreate ILType *type = {0};
+}
+%node ILNode_CAssignStruct ILNode_Statement =
+{
+	ILNode *expr1;
+	ILNode *expr2;
+	%nocreate ILType *type = {0};
+}
+%node ILNode_CToCSharpString ILNode_UnaryExpression
+%node ILNode_CArrayInit ILNode_UnaryExpression
+%node ILNode_CLabelRef ILNode_Expression =
+{
+	const char *name;
+	%nocreate ILInt32 labelNum = {0};
+}
+%node ILNode_CGotoPtr ILNode_Statement =
+{
+	ILNode *expr;
+}
+%node ILNode_CSharpTypeOf ILNode_Expression =
+{
+	ILType *type;
+}
+%node ILNode_CTypeExpression ILNode_Expression =
+{
+	ILType *type;
+}
+%node ILNode_CBox ILNode_UnaryExpression
+%node ILNode_CNewObject ILNode_Expression =
+{
+	ILGCSpecifier specifier;
+	ILType *type;
+	ILNode *args;
+	int useGlobalNew;
+}
+%node ILNode_CNewArray ILNode_Expression =
+{
+	ILGCSpecifier specifier;
+	ILType *type;
+	ILNode *expr;
+	int useGlobalNew;
+	%nocreate ILType *resultType = {0};
+}
+%node ILNode_CDelete ILNode_BinaryExpression =
+{
+	int arrayDelete;
+	int useGlobalDelete;
+	%nocreate ILMethod *dtor = {0};
+}
+%node ILNode_CSizeOfRaw ILNode_Expression =
+{
+	ILType *type;
+}
+%node ILNode_CSizeTempVar ILNode_Expression =
+{
+	%nocreate unsigned tempVar = {~((unsigned)0)};
+}
+%node ILNode_CSizeReleaseTempVar ILNode_BinaryExpression
+%node ILNode_CSizeMax ILNode_BinaryExpression
+%node ILNode_CSizeAlign ILNode_Expression =
+{
+	ILNode *size;
+	ILUInt32 alignFlags;
+	ILType *measureType;
+	ILNode *alignVar;
+}
+%node ILNode_CopyComplex ILNode_UnaryExpression =
+{
+	ILType *type;
+}
+
+%output "c_semantics.c"
+
+%{
+#include <cscc/c/c_internal.h>
+#include "il_dumpasm.h"
+%}
+
+/*
+ * Define the C semantic analysis node operation.  "parent" points
+ * to the position where "node" was loaded from, so it can be replaced
+ * with a new node if necessary.  "stmtLevel" is non-zero if the parent
+ * node is at the statement level of a function, or zero if the parent
+ * is an expression node.
+ */
+%operation CSemValue ILNode_CSemAnalysis([ILNode *node], ILGenInfo *info,
+									     ILNode **parent, int stmtLevel)
+			= {CSemValueDefault}
+
+/*
+ * Define the "generate partial address" operation.  This builds
+ * an address for an l-value as a pointer and an offset, both optional.
+ */
+%operation CAddress ILNode_CGenAddress([ILNode_LValue *node], ILGenInfo *info)
+			= {CAddressDefault}
+
+/*
+ * Collect up the case labels that exist within the body of
+ * a "switch" statement.
+ */
+%operation void ILNode_CollectCases([ILNode *node], ILGenInfo *info,
+                                    ILNode *list)
+
+/*
+ * Stub out "ILNode_CGenAddress" for non-reference l-values.
+ */
+ILNode_CGenAddress(ILNode_LValueNoRef)
+{
+	return CAddressDefault;
+}
+
+/*
+ * Stub out "CollectCases" for non-statement nodes.
+ */
+ILNode_CollectCases(ILNode)
+{
+	/* Nothing to do here */
+}
+
+/*
+ * Include C-specific definitions.
+ */
+%include "c_ainit.tc"
+%include "c_builtin.tc"
+%include "c_const.tc"
+%include "c_lvalue.tc"
+%include "c_invoke.tc"
+%include "c_oper.tc"
+%include "c_stmt.tc"
+%include "c_stubs.tc"
+%include "c_name.tc"

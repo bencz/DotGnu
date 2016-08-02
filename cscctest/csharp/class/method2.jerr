@@ -1,0 +1,4 @@
+./method2.cs:23: `out' parameters not permitted when compiling to Java bytecode
+./method2.cs:28: `ref' parameters not permitted when compiling to Java bytecode
+./method2.cs:40: `out' arguments not permitted when compiling to Java bytecode
+./method2.cs:41: `ref' arguments not permitted when compiling to Java bytecode

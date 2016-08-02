@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="iso-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<title>XP Theme - XP Visual Styles for Portable.NET</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<style type="text/css">
+<!--
+h1 {
+	font-weight: bold;
+	color: #0000CC;
+	background-color: #EBEAF2;
+	padding: 0px 0px 0px 4px;
+	margin: 0px;
+}
+body {
+	font-family: "Trebuchet MS", Arial, "Luxi Sans", Helvetica, sans-serif;
+	margin: 0px;
+	color: #000000;
+	background-color: #FFFFFF;
+}
+h4 {
+	background-color: #EEE;
+}
+.sample {
+	font-family: "Lucida Console", "Courier New", Courier, mono;
+	font-size: x-small;
+	border: 1px dashed #666666;
+	background-color: #CCCCCC;
+	width: 40%;
+	padding: 4px;
+	height: auto;
+}
+.content {
+	padding: 0px 8px 8px;
+}
+.info {
+	top: 4px;
+	right: 4px;
+	position: absolute;
+}
+a, a:hover {
+	color: #000066;
+	text-decoration: none;
+	border: 1px solid #FFFFFF;
+}
+a:hover {
+	color: #0033FF;
+	background-color: #eee;
+	border: 1px solid #666666;
+	}
+.links {
+	list-style-type: circle;
+	list-style-position: outside;
+}
+-->
+</style>
+</head>
+<body>
+<div class="info">Version 0.1 (alpha)</div>
+<h1>Portable.NET XP Theme</h1>
+<div class="content"> 
+  <p>The XP Theme enables <a href="http://www.southern-storm.com.au">Portable.NET</a> 
+    to use Windows XP visual styles for GUI applications using the System.Windows.Forms 
+    library. You can always find the newest version of the theme <a href="http://mil-sim.net/files/pnetxp">here</a>.</p>
+  <h4>Using the theme</h4>
+  <p>The XP theme relies on the UxTheme (User Experience) library and therefore 
+    requires a Windows XP or Windows 2003 system.</p>
+  <p>Copy the <var>System.Windows.Forms.Themes.XP.dll</var> dynamic link library 
+    to the <var>lib\cscc\lib</var> folder located in your Portable.NET installation 
+    folder. To use the XP theme you must set the <var>FlatStyle</var> property 
+    of form controls to <var>System</var>. You will also need to enable Portable.NET 
+    to use the XP theme - this can be accomplished in two ways:</p>
+  <ul>
+    <li>Enable the theme system-wide (i.e. for all applications) by setting the 
+      <var>PNET_WINFORMS_THEME</var> environment variable to <var>XP</var>. You 
+      can add this variable in &quot;My Computer&quot; properties (&quot;Advanced&quot; 
+      tab), or set it temporarily from the command line:</p> 
+      <p class="sample">SET PNET_WINFORMS_THEME = XP</p>
+    </li>
+    <li>Enable the theme for each application by specifying the <var>--theme=XP</var> 
+      option for <var>ilrun</var>, e.g.:</p> 
+      <p class="sample">ilrun myapp.exe --theme=XP</p>
+    </li>
+  </ul>
+  <p>Bear in mind that if you try to enable the XP theme on systems other than
+  Windows XP or Windows 2003, Portable.NET will fall back to the default theme.
+  On a side note, given the rapid pace of <a href="http://www.winehq.org/">WINE</a>
+  development (as of this writing <a href="http://www.winehq.org/">WINE</a>
+  includes an early implementation of the UxTheme library), it may soon be possible
+  to use this theme on other systems.</p>
+  <h4>Building the library</h4>
+  <p>The XP theme engine archive includes build files for <a href="http://www.southern-storm.com.au/docs/pnettools_5.html">CSAnt</a> 
+    and Visual Studio.NET 2003. To compile the source code, simply open the project 
+    file or execute one of the build scripts provided - <var>build.bat</var> for 
+    Windows or <var>build.sh</var> for Linux (or other systems using the Bourne 
+    shell).</p>
+  <p>If you wish to modify or improve the theme engine please read the Theme XP 
+    <a href="doc/index.html">API documentation</a> provided. Please note that 
+    at this time the documentation is still incomplete.<a href="http://mil-sim.net/files/pnetxp"></a></p>
+  <h4>Online resources</h4>
+  <h5>Themes and visual styles</h5>
+  <ul class="links">
+    <li><a href="http://www.themexp.org">ThemeXP</a> - choose your favourite from 
+      a collection of nearly 1400 styles</li>
+  <li><a href="http://draginol.stardock.com/articles/xpskinning.html">XP Skinning</a> - learn more about XP visual styles</li>
+  </ul>
+  <h5>DotGNU and Portable.NET</h5>
+  <ul class="links">
+    <li> <a href="http://mil-sim.net/forums/pnet">Portable.NET for Windows Forum</a> 
+      - discuss and ask questions on Portable.NET for Windows (including the XP 
+      theme) </li>
+    <li> <a href="http://www.southern-storm.com.au">Portable.NET Homepage</a> 
+      - download the source code for the latest versions of Portable.NET and libraries 
+    </li>
+    <li> <a href="http://dotgnu.org">DotGNU Project</a> - learn more about DotGNU and 
+      its sub-projects, and download the latest software packages </li>
+    <li> <a href="http://www.compona.com">Compona</a> - extend your applications 
+      with professionally designed custom controls and utility libraries </li>
+  </ul>
+  <h4>Authors and legal information</h4>
+  <p>The XP theme engine was written by <a href="http://mil-sim.net">Maciek Plewa</a> 
+    with invaluable help from <a href="http://www.compona.com/">Roger Johansson</a>.</p>
+  <p>Copyright &copy; 2004 by <a href="http://mil-sim.net">Maciek Plewa</a><br/>
+    Copyright &copy; 2004 by <a href="http://www.compona.com/">Nordic Compona 
+    Solutions</a></p>
+  <p>Portable.NET is Copyright &copy; <a href="http://www.southern-storm.com.au">Southern 
+    Storm Pty Ltd</a></p>
+  <p>This program is free software; you can redistribute it and/or modify it under 
+    the terms of the <a href="http://www.gnu.org/copyleft/gpl.html">GNU General 
+    Public Licence</a> as published by the <a href="http://www.fsf.org">Free Software 
+    Foundation</a>; either version 2 of the Licence, or (at your option) any later 
+    version.</p>
+  <p> This program is distributed in the hope that it will be useful, but WITHOUT 
+    ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS 
+    FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.</p>
+  <p> As a special exception, the copyright holders of this library give you permission 
+    to link this library with independent modules to produce an executable, regardless 
+    of the licence terms of these independent modules, and to copy and distribute 
+    the resulting executable under terms of your choice, provided that you also 
+    meet, for each linked independent module, the terms and conditions of the 
+    licence of that module. An independent module is a module which is not derived 
+    from or based on this library. If you modify this library, you may extend 
+    this exception to your version of the library, but you are not obligated to 
+    do so. If you do not wish to do so, delete this exception statement from your 
+    version.</p>
+  <p>Linux is a registered trademark of Linus Torvalds. Microsoft, Windows, Windows 
+    XP, Windows 2003 are trademarks or registered trademarks of the Microsoft 
+    Corporation. All other trademarks are the property of their respective owners.<br />
+  </p>
+</div>
+</body>
+</html>

@@ -1,0 +1,353 @@
+%output "cg_logical.c"
+
+%{
+/*
+ * cg_logical.tc - Logical operator nodes.
+ *
+ * Copyright (C) 2001  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+#include <codegen/cg_nodes.h>
+%}
+
+/*
+ * Get the type of a logical operator.
+ */
+ILNode_GetType(ILNode_LogicalNot),
+ILNode_GetType(ILNode_LogicalAnd),
+ILNode_GetType(ILNode_LogicalOr),
+ILNode_GetType(ILNode_UserLogicalAnd),
+ILNode_GetType(ILNode_UserLogicalOr)
+{
+	return ILMachineType_Boolean;
+}
+
+/*
+ * Generate discard code for the logical NOT operator.
+ */
+ILNode_GenDiscard(ILNode_LogicalNot)
+{
+	ILNode_GenDiscard(node->expr, info);
+}
+
+/*
+ * Generate value code for the logical NOT operator.
+ */
+ILNode_GenValue(ILNode_LogicalNot)
+{
+	ILNode_GenValue(node->expr, info);
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenAdjust(info, 1);
+	ILGenSimple(info, IL_OP_XOR);
+	ILGenAdjust(info, -1);
+	return ILMachineType_Boolean;
+}
+
+/*
+ * Generate "then" code for the logical NOT operator.
+ */
+ILNode_GenThen(ILNode_LogicalNot)
+{
+	ILNode_GenElse(node->expr, info, label);
+}
+
+/*
+ * Generate "else" code for the logical NOT operator.
+ */
+ILNode_GenElse(ILNode_LogicalNot)
+{
+	ILNode_GenThen(node->expr, info, label);
+}
+
+/*
+ * Evaluate the constant value of a logical NOT operator.
+ */
+ILNode_EvalConst(ILNode_LogicalNot)
+{
+	if(!ILNode_EvalConst(node->expr, info, value))
+	{
+		return 0;
+	}
+	if(!ILGenConstToBoolean(info, value))
+	{
+		return 0;
+	}
+	value->un.i4Value = !(value->un.i4Value);
+	return 1;
+}
+
+/*
+ * Generate discard code for the logical AND operator.
+ */
+ILNode_GenDiscard(ILNode_LogicalAnd)
+{
+	ILLabel label = ILLabel_Undefined;
+	ILNode_GenElse(node->expr1, info, &label);
+	ILNode_GenDiscard(node->expr2, info);
+	ILGenLabel(info, &label);
+}
+
+/*
+ * Generate value code for the logical AND operator.
+ */
+ILNode_GenValue(ILNode_LogicalAnd)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	ILNode_GenElse(node->expr1, info, &label1);
+	ILNode_GenElse(node->expr2, info, &label1);
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenJump(info, IL_OP_BR, &label2);
+	ILGenLabel(info, &label1);
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenLabel(info, &label2);
+	ILGenAdjust(info, 1);
+	return ILMachineType_Boolean;
+}
+
+/*
+ * Generate "then" code for the logical AND operator.
+ */
+ILNode_GenThen(ILNode_LogicalAnd)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILNode_GenElse(node->expr1, info, &label1);
+	ILNode_GenThen(node->expr2, info, label);
+	ILGenLabel(info, &label1);
+}
+
+/*
+ * Generate "else" code for the logical AND operator.
+ */
+ILNode_GenElse(ILNode_LogicalAnd)
+{
+	ILNode_GenElse(node->expr1, info, label);
+	ILNode_GenElse(node->expr2, info, label);
+}
+
+/*
+ * Evaluate the constant value of a logical AND operator.
+ */
+ILNode_EvalConst(ILNode_LogicalAnd)
+{
+	ILInt32 tempValue;
+
+	/* Evaluate the first sub-expression */
+	if(!ILNode_EvalConst(node->expr1, info, value))
+	{
+		return 0;
+	}
+	if(!ILGenConstToBoolean(info, value))
+	{
+		return 0;
+	}
+	if(!(info->semAnalysis))
+	{
+		/* If the result is false, then we have the final value,
+		   even if the second sub-expression is non-constant.
+		   Note: if we are performing semantic analysis, then assume
+		   that we are evaluating real constants, which we must
+		   fully evaluate to be sure that they are constants.
+		   When not performing semantic analysis, we can optimise more */
+		if(!(value->un.i4Value))
+		{
+			return 1;
+		}
+	}
+	tempValue = value->un.i4Value;
+
+	/* Evaluate the second sub-expression and return its value */
+	if(!ILNode_EvalConst(node->expr2, info, value))
+	{
+		return 0;
+	}
+	if(!ILGenConstToBoolean(info, value))
+	{
+		return 0;
+	}
+	value->un.i4Value = (tempValue && value->un.i4Value);
+	return 1;
+}
+
+/*
+ * Generate discard code for the logical OR operator.
+ */
+ILNode_GenDiscard(ILNode_LogicalOr)
+{
+	ILLabel label = ILLabel_Undefined;
+	ILNode_GenThen(node->expr1, info, &label);
+	ILNode_GenDiscard(node->expr2, info);
+	ILGenLabel(info, &label);
+}
+
+/*
+ * Generate value code for the logical OR operator.
+ */
+ILNode_GenValue(ILNode_LogicalOr)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILLabel label2 = ILLabel_Undefined;
+	ILNode_GenThen(node->expr1, info, &label1);
+	ILNode_GenThen(node->expr2, info, &label1);
+	ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenJump(info, IL_OP_BR, &label2);
+	ILGenLabel(info, &label1);
+	ILGenSimple(info, IL_OP_LDC_I4_1);
+	ILGenLabel(info, &label2);
+	ILGenAdjust(info, 1);
+	return ILMachineType_Boolean;
+}
+
+/*
+ * Generate "then" code for the logical OR operator.
+ */
+ILNode_GenThen(ILNode_LogicalOr)
+{
+	ILNode_GenThen(node->expr1, info, label);
+	ILNode_GenThen(node->expr2, info, label);
+}
+
+/*
+ * Generate "else" code for the logical OR operator.
+ */
+ILNode_GenElse(ILNode_LogicalOr)
+{
+	ILLabel label1 = ILLabel_Undefined;
+	ILNode_GenThen(node->expr1, info, &label1);
+	ILNode_GenElse(node->expr2, info, label);
+	ILGenLabel(info, &label1);
+}
+
+/*
+ * Evaluate the constant value of a logical OR operator.
+ */
+ILNode_EvalConst(ILNode_LogicalOr)
+{
+	ILInt32 tempValue;
+
+	/* Evaluate the first sub-expression */
+	if(!ILNode_EvalConst(node->expr1, info, value))
+	{
+		return 0;
+	}
+	if(!ILGenConstToBoolean(info, value))
+	{
+		return 0;
+	}
+	if(!(info->semAnalysis))
+	{
+		/* If the result is true, then we have the final value,
+		   even if the second sub-expression is non-constant.
+		   Note: if we are performing semantic analysis, then assume
+		   that we are evaluating real constants, which we must
+		   fully evaluate to be sure that they are constants.
+		   When not performing semantic analysis, we can optimise more */
+		if(value->un.i4Value)
+		{
+			return 1;
+		}
+	}
+	tempValue = value->un.i4Value;
+
+	/* Evaluate the second sub-expression and return its value */
+	if(!ILNode_EvalConst(node->expr2, info, value))
+	{
+		return 0;
+	}
+	if(!ILGenConstToBoolean(info, value))
+	{
+		return 0;
+	}
+	value->un.i4Value = (tempValue || value->un.i4Value);
+	return 1;
+}
+
+/*
+ * Generate value code for the user-defined logical AND operator.
+ */
+ILNode_GenValue(ILNode_UserLogicalAnd)
+{
+	ILMachineType type;
+	ILLabel label = ILLabel_Undefined;
+
+	/* Evaluate the first sub-expression */
+	type = ILNode_GenValue(node->expr1, info);
+
+	/* Test the first sub-expression for false */
+	ILGenSimple(info, IL_OP_DUP);
+	ILGenAdjust(info, 1);
+	if(node->falseMethod)
+	{
+		ILGenCallByMethod(info, node->falseMethod);
+		ILGenJump(info, IL_OP_BRTRUE, &label);
+	}
+	else
+	{
+		ILGenCallByMethod(info, node->trueMethod);
+		ILGenJump(info, IL_OP_BRFALSE, &label);
+	}
+	ILGenAdjust(info, -1);
+
+	/* Pop the first sub-expression and evaluate the second */
+	ILGenSimple(info, IL_OP_POP);
+	ILGenAdjust(info, -1);
+	type = ILNode_GenValue(node->expr2, info);
+
+	/* Output the jump label here */
+	ILGenLabel(info, &label);
+
+	/* Done */
+	return type;
+}
+
+/*
+ * Generate value code for the user-defined logical OR operator.
+ */
+ILNode_GenValue(ILNode_UserLogicalOr)
+{
+	ILMachineType type;
+	ILLabel label = ILLabel_Undefined;
+
+	/* Evaluate the first sub-expression */
+	type = ILNode_GenValue(node->expr1, info);
+
+	/* Test the first sub-expression for true */
+	ILGenSimple(info, IL_OP_DUP);
+	ILGenAdjust(info, 1);
+	if(node->trueMethod)
+	{
+		ILGenCallByMethod(info, node->trueMethod);
+		ILGenJump(info, IL_OP_BRTRUE, &label);
+	}
+	else
+	{
+		ILGenCallByMethod(info, node->falseMethod);
+		ILGenJump(info, IL_OP_BRFALSE, &label);
+	}
+	ILGenAdjust(info, -1);
+
+	/* Pop the first sub-expression and evaluate the second */
+	ILGenSimple(info, IL_OP_POP);
+	ILGenAdjust(info, -1);
+	type = ILNode_GenValue(node->expr2, info);
+
+	/* Output the jump label here */
+	ILGenLabel(info, &label);
+
+	/* Done */
+	return type;
+}

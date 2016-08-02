@@ -1,0 +1,863 @@
+/*
+ * JExpr.tc - Input file for "treecc" that defines JScript expression nodes.
+ *
+ * Copyright (C) 2003 Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+
+// Evaluate constants.
+Eval(JConstant)
+{
+	return value;
+}
+
+// Evaluate "undefined" constants.
+Eval(JUndefined)
+{
+	return null;
+}
+
+// Evaluate expression list elements.
+Eval(JExprListElem)
+{
+	// Nothing to do here: handled by the higher level.
+	return null;
+}
+
+// Evaluate array literals.
+Eval(JArrayLiteral)
+{
+	// Create a new instance of "Array".
+	ArrayObject value = new ArrayObject
+		(EngineInstance.GetEngineInstance(engine).GetArrayPrototype());
+
+	// Evaluate and add the elements.
+	JExprListElem elem = first;
+	int index = 0;
+	while(elem != null)
+	{
+		value[index++] = elem.expr.Eval(engine);
+		elem = elem.next;
+	}
+
+	// Return the object to the caller.
+	return value;
+}
+
+// Evaluate object literals.
+Eval(JObjectLiteral)
+{
+	// Create a new instance of "Object".
+	JSObject value = new JSObject(EngineInstance.GetEngineInstance(engine)
+										.GetObjectPrototype());
+
+	// Evaluate and add the properties.
+	JExprListElem elem = first;
+	while(elem != null)
+	{
+		value.Put(Convert.ToString(elem.name), elem.expr.Eval(engine));
+		elem = elem.next;
+	}
+
+	// Return the object to the caller.
+	return value;
+}
+
+// Evaluate the "this" value.
+Eval(JThis),
+Eval(JSuper)
+{
+	IActivationObject act =
+		(engine.ScriptObjectStackTop() as IActivationObject);
+	if(act != null)
+	{
+		return act.GetDefaultThisObject();
+	}
+	else
+	{
+		return DBNull.Value;
+	}
+}
+
+// Evaluate identifiers in the current execution context.
+Eval(JIdentifier)
+{
+	IVariableAccess scope = (engine.ScriptObjectStackTop() as IVariableAccess);
+	while(scope != null)
+	{
+		if(scope.HasVariable(name))
+		{
+			return scope.GetVariable(name);
+		}
+		scope = scope.GetParentScope();
+	}
+	return ((IVariableAccess)(engine.GetMainScope())).GetVariable(name);
+}
+
+// Prepare for a store into an identifier.
+Prepare(JIdentifier),
+Prepare(JVarDecl)
+{
+	IVariableAccess scope = (engine.ScriptObjectStackTop() as IVariableAccess);
+	while(scope != null)
+	{
+		if(scope.HasVariable(name))
+		{
+			data1 = scope;
+			return;
+		}
+		scope = scope.GetParentScope();
+	}
+	data1 =  engine.GetMainScope();
+}
+
+// Get and prepare for a store into an identifier.
+GetAndPrepare(JIdentifier),
+GetAndPrepare(JVarDecl)
+{
+	IVariableAccess scope = (engine.ScriptObjectStackTop() as IVariableAccess);
+	while(scope != null)
+	{
+		if(scope.HasVariable(name))
+		{
+			data1 = scope;
+			return scope.GetVariable(name);
+		}
+		scope = scope.GetParentScope();
+	}
+	scope = (IVariableAccess)(engine.GetMainScope());
+	data1 = scope;
+	return scope.GetVariable(name);
+}
+
+// Store into an identifier in the current execution context.
+Store(JIdentifier),
+Store(JVarDecl)
+{
+	((IVariableAccess)data1).SetVariable(name, value);
+}
+
+// Evaluate "as is" nodes, which are typically used to surround
+// bracketed expressions to allow "identifier" and "(identifier)"
+// to be distinguished in statement label positions.
+Eval(JAsIs)
+{
+	return expr.Eval(engine);
+}
+
+// Evaluate "comma" nodes.
+Eval(JComma)
+{
+	expr1.Eval(engine);
+	return expr2.Eval(engine);
+}
+
+// Evaluate an assignment statement.
+Eval(JAssign)
+{
+	Object data1 = null;
+	Object data2 = null;
+	Object value;
+	expr1.Prepare(engine, ref data1, ref data2);
+	value = expr2.Eval(engine);
+	expr1.Store(engine, data1, data2, value);
+	return value;
+}
+
+// Evaluate an operator-based assignment statement.
+Eval(JAssignOp)
+{
+	Object data1 = null;
+	Object data2 = null;
+	Object value1, value2;
+	value1 = expr1.GetAndPrepare(engine, ref data1, ref data2);
+	value2 = expr2.Eval(engine);
+	value1 = Convert.ToPrimitive(value1, DefaultValueHint.None);
+	value2 = Convert.ToPrimitive(value2, DefaultValueHint.None);
+	switch(oper)
+	{
+		case JSToken.PlusAssign:
+		{
+			if(value1 is String || value2 is String)
+			{
+				value1 = ((String)value1) + ((String)value2);
+			}
+			else
+			{
+				value1 = Convert.ToNumber(value1) + Convert.ToNumber(value2);
+			}
+		}
+		break;
+
+		case JSToken.MinusAssign:
+		{
+			value1 = Convert.ToNumber(value1) - Convert.ToNumber(value2);
+		}
+		break;
+
+		case JSToken.MultiplyAssign:
+		{
+			value1 = Convert.ToNumber(value1) * Convert.ToNumber(value2);
+		}
+		break;
+
+		case JSToken.DivideAssign:
+		{
+			value1 = Convert.ToNumber(value1) / Convert.ToNumber(value2);
+		}
+		break;
+
+		case JSToken.ModuloAssign:
+		{
+			value1 = Convert.ToNumber(value1) % Convert.ToNumber(value2);
+		}
+		break;
+
+		case JSToken.BitwiseOrAssign:
+		{
+			value1 = Convert.ToInt32(value1) | Convert.ToInt32(value2);
+		}
+		break;
+
+		case JSToken.BitwiseXorAssign:
+		{
+			value1 = Convert.ToInt32(value1) ^ Convert.ToInt32(value2);
+		}
+		break;
+
+		case JSToken.BitwiseAndAssign:
+		{
+			value1 = Convert.ToInt32(value1) & Convert.ToInt32(value2);
+		}
+		break;
+
+		case JSToken.LeftShiftAssign:
+		{
+			value1 = Convert.ToInt32(value1) <<
+			         (int)(Convert.ToUInt32(value2) & 0x1F);
+		}
+		break;
+
+		case JSToken.RightShiftAssign:
+		{
+			value1 = Convert.ToInt32(value1) >>
+			         (int)(Convert.ToUInt32(value2) & 0x1F);
+		}
+		break;
+
+		case JSToken.UnsignedRightShiftAssign:
+		{
+			value1 = Convert.ToUInt32(value1) >>
+			         (int)(Convert.ToUInt32(value2) & 0x1F);
+		}
+		break;
+	}
+	expr1.Store(engine, data1, data2, value1);
+	return value1;
+}
+
+// Evaluate a conditional expression.
+Eval(JIfExpr)
+{
+	Object value = expr1.Eval(engine);
+	if(Convert.ToBoolean(value))
+	{
+		return expr2.Eval(engine);
+	}
+	else
+	{
+		return expr3.Eval(engine);
+	}
+}
+
+// Evaluate a logical OR expression.
+Eval(JLogicalOr)
+{
+	Object value = expr1.Eval(engine);
+	if(Convert.ToBoolean(value))
+	{
+		return value;
+	}
+	else
+	{
+		return expr2.Eval(engine);
+	}
+}
+
+// Evaluate a logical AND expression.
+Eval(JLogicalAnd)
+{
+	Object value = expr1.Eval(engine);
+	if(!Convert.ToBoolean(value))
+	{
+		return value;
+	}
+	else
+	{
+		return expr2.Eval(engine);
+	}
+}
+
+// Evaluate a bitwise OR expression.
+Eval(JBitwiseOr)
+{
+	return Convert.ToInt32(expr1.Eval(engine)) |
+		   Convert.ToInt32(expr2.Eval(engine));
+}
+
+// Evaluate a bitwise XOR expression.
+Eval(JBitwiseXor)
+{
+	return Convert.ToInt32(expr1.Eval(engine)) ^
+		   Convert.ToInt32(expr2.Eval(engine));
+}
+
+// Evaluate a bitwise AND expression.
+Eval(JBitwiseAnd)
+{
+	return Convert.ToInt32(expr1.Eval(engine)) &
+		   Convert.ToInt32(expr2.Eval(engine));
+}
+
+// Evaluate an equality expression.
+Eval(JEq)
+{
+	return Equality.JScriptEquals(expr1.Eval(engine), expr2.Eval(engine));
+}
+
+// Evaluate an inequality expression.
+Eval(JNe)
+{
+	return !Equality.JScriptEquals(expr1.Eval(engine), expr2.Eval(engine));
+}
+
+// Evaluate a strict equality expression.
+Eval(JStrictEq)
+{
+	return StrictEquality.JScriptStrictEquals
+		(expr1.Eval(engine), expr2.Eval(engine));
+}
+
+// Evaluate a strict inequality expression.
+Eval(JStrictNe)
+{
+	return !StrictEquality.JScriptStrictEquals
+		(expr1.Eval(engine), expr2.Eval(engine));
+}
+
+// Evaluate a less than expression.
+Eval(JLt)
+{
+	Object value1 = Convert.ToPrimitive(expr1.Eval(engine),
+										DefaultValueHint.Number);
+	Object value2 = Convert.ToPrimitive(expr2.Eval(engine),
+										DefaultValueHint.Number);
+	if(value1 is String && value2 is String)
+	{
+		return (String.CompareOrdinal((String)value1, (String)value2) < 0);
+	}
+	else
+	{
+		return (Convert.ToNumber(value1) < Convert.ToNumber(value2));
+	}
+}
+
+// Evaluate a less than or equal expression.
+Eval(JLe)
+{
+	Object value1 = Convert.ToPrimitive(expr1.Eval(engine),
+										DefaultValueHint.Number);
+	Object value2 = Convert.ToPrimitive(expr2.Eval(engine),
+										DefaultValueHint.Number);
+	if(value1 is String && value2 is String)
+	{
+		return (String.CompareOrdinal((String)value1, (String)value2) <= 0);
+	}
+	else
+	{
+		return (Convert.ToNumber(value1) <= Convert.ToNumber(value2));
+	}
+}
+
+// Evaluate a greater than expression.
+Eval(JGt)
+{
+	Object value1 = Convert.ToPrimitive(expr1.Eval(engine),
+										DefaultValueHint.Number);
+	Object value2 = Convert.ToPrimitive(expr2.Eval(engine),
+										DefaultValueHint.Number);
+	if(value1 is String && value2 is String)
+	{
+		return (String.CompareOrdinal((String)value1, (String)value2) > 0);
+	}
+	else
+	{
+		return (Convert.ToNumber(value1) > Convert.ToNumber(value2));
+	}
+}
+
+// Evaluate a greater than or equal expression.
+Eval(JGe)
+{
+	Object value1 = Convert.ToPrimitive(expr1.Eval(engine),
+										DefaultValueHint.Number);
+	Object value2 = Convert.ToPrimitive(expr2.Eval(engine),
+										DefaultValueHint.Number);
+	if(value1 is String && value2 is String)
+	{
+		return (String.CompareOrdinal((String)value1, (String)value2) >= 0);
+	}
+	else
+	{
+		return (Convert.ToNumber(value1) >= Convert.ToNumber(value2));
+	}
+}
+
+// Evaluate an "instanceof" expression.
+Eval(JInstanceof)
+{
+	return Instanceof.JScriptInstanceof(expr1.Eval(engine), expr2.Eval(engine));
+}
+
+// Evaluate an "in" expression.
+Eval(JIn)
+{
+	return In.JScriptIn(expr1.Eval(engine), expr2.Eval(engine));
+}
+
+// Evaluate a left shift expression.
+Eval(JShl)
+{
+	return Convert.ToInt32(expr1.Eval(engine)) <<
+		   (int)(Convert.ToUInt32(expr2.Eval(engine)) & 0x1F);
+}
+
+// Evaluate a right shift expression.
+Eval(JShr)
+{
+	return Convert.ToInt32(expr1.Eval(engine)) >>
+		   (int)(Convert.ToUInt32(expr2.Eval(engine)) & 0x1F);
+}
+
+// Evaluate an unsigned right shift expression.
+Eval(JUShr)
+{
+	return Convert.ToUInt32(expr1.Eval(engine)) >>
+		   (int)(Convert.ToUInt32(expr2.Eval(engine)) & 0x1F);
+}
+
+// Evaluate an addition expression.
+Eval(JAdd)
+{
+	Object value1 = Convert.ToPrimitive(expr1.Eval(engine),
+										DefaultValueHint.None);
+	Object value2 = Convert.ToPrimitive(expr2.Eval(engine),
+										DefaultValueHint.None);
+	if(value1 is String || value2 is String)
+	{
+		return value1.ToString() + value2.ToString();
+	}
+	else
+	{
+		return Convert.ToNumber(value1) + Convert.ToNumber(value2);
+	}
+}
+
+// Evaluate a subtraction expression.
+Eval(JSub)
+{
+	return Convert.ToNumber(expr1.Eval(engine)) -
+		   Convert.ToNumber(expr2.Eval(engine));
+}
+
+// Evaluate a multiplication expression.
+Eval(JMul)
+{
+	return Convert.ToNumber(expr1.Eval(engine)) *
+		   Convert.ToNumber(expr2.Eval(engine));
+}
+
+// Evaluate a division expression.
+Eval(JDiv)
+{
+	return Convert.ToNumber(expr1.Eval(engine)) /
+		   Convert.ToNumber(expr2.Eval(engine));
+}
+
+// Evaluate a remainder expression.
+Eval(JRem)
+{
+	return Convert.ToNumber(expr1.Eval(engine)) %
+		   Convert.ToNumber(expr2.Eval(engine));
+}
+
+// Evaluate a negate expression.
+Eval(JNeg)
+{
+	return -(Convert.ToNumber(expr.Eval(engine)));
+}
+
+// Evaluate a unary plus expression.
+Eval(JUnaryPlus)
+{
+	return Convert.ToNumber(expr.Eval(engine));
+}
+
+// Evaluate a "delete" expression.
+Eval(JDelete)
+{
+	if(expr is JFieldAccess)
+	{
+		// Must be a "JFieldAccess" to make sense.
+		Object thisob = Convert.ToObject
+			(((JFieldAccess)expr).Eval(engine), engine);
+		if(thisob is ScriptObject)
+		{
+			return ((ScriptObject)thisob).Delete(((JFieldAccess)expr).name);
+		}
+		else
+		{
+			return true;
+		}
+	}
+	else
+	{
+		// Evaluate expr for its side-effects only.
+		expr.Eval(engine);
+		return true;
+	}
+}
+
+// Evaluate a "void" expression.
+Eval(JVoid)
+{
+	// Evaluate the sub-expression and then return "undefined".
+	expr.Eval(engine);
+	return null;
+}
+
+// Evaluate a "typeof" expression.
+Eval(JTypeof)
+{
+	return Support.Typeof(expr.Eval(engine));
+}
+
+// Evaluate a pre-increment expression.
+Eval(JPreInc)
+{
+	Object data1 = null;
+	Object data2 = null;
+	Object value = expr.GetAndPrepare(engine, ref data1, ref data2);
+	value = Convert.ToNumber(value) + 1.0;
+	expr.Store(engine, data1, data2, value);
+	return value;
+}
+
+// Evaluate a pre-decrement expression.
+Eval(JPreDec)
+{
+	Object data1 = null;
+	Object data2 = null;
+	Object value = expr.GetAndPrepare(engine, ref data1, ref data2);
+	value = Convert.ToNumber(value) - 1.0;
+	expr.Store(engine, data1, data2, value);
+	return value;
+}
+
+// Evaluate a post-increment expression.
+Eval(JPostInc)
+{
+	Object data1 = null;
+	Object data2 = null;
+	Object value = expr.GetAndPrepare(engine, ref data1, ref data2);
+	double value2 = Convert.ToNumber(value);
+	expr.Store(engine, data1, data2, value2 + 1.0);
+	return value2;
+}
+
+// Evaluate a post-decrement expression.
+Eval(JPostDec)
+{
+	Object data1 = null;
+	Object data2 = null;
+	Object value = expr.GetAndPrepare(engine, ref data1, ref data2);
+	double value2 = Convert.ToNumber(value);
+	expr.Store(engine, data1, data2, value2 - 1.0);
+	return value2;
+}
+
+// Evaluate a bitwise NOT expression.
+Eval(JBitwiseNot)
+{
+	return ~(Convert.ToInt32(expr.Eval(engine)));
+}
+
+// Evaluate a logical NOT expression.
+Eval(JLogicalNot)
+{
+	if(Convert.ToBoolean(expr.Eval(engine)))
+	{
+		return false;
+	}
+	else
+	{
+		return true;
+	}
+}
+
+// Evaluate a "new" expression.
+Eval(JNew)
+{
+	// Evaluate the constructor.
+	Object constructor;
+	constructor = expr1.Eval(engine);
+
+	// Evaluate the arguments.
+	Object[] args = Support.EvalArgList(expr2, engine);
+
+	// Bail out if the constructor object is invalid.
+	if(!(constructor is ScriptFunction))
+	{
+		throw new JScriptException(JSError.FunctionExpected, this.context);
+	}
+
+	// Call the constructor.
+	return ((ScriptFunction)constructor).Construct(engine, args);
+}
+
+// Evaluate an array access expression.
+Eval(JArrayAccess)
+{
+	Object thisob = Convert.ToObject(expr1.Eval(engine), engine);
+	Object value = expr2.Eval(engine);
+	if(thisob is ScriptObject)
+	{
+		// Try to handle special cases to make array accesses more efficient.
+		if(value is int)
+		{
+			return ((ScriptObject)thisob)[(int)value];
+		}
+		else if(value is double)
+		{
+			return ((ScriptObject)thisob)[(double)value];
+		}
+		else if(value is String)
+		{
+			return ((ScriptObject)thisob)[(String)value];
+		}
+		else
+		{
+			return ((ScriptObject)thisob)[value];
+		}
+	}
+	else if(thisob is Array)
+	{
+		// Get the element from an underlying CLI array.
+		return ((Array)thisob).GetValue(Convert.ToInt32(value));
+	}
+	else if(thisob is IDictionary)
+	{
+		// Get the element from an underlying CLI dictionary.
+		return ((IDictionary)thisob)[value];
+	}
+	else
+	{
+		return null;
+	}
+}
+
+// Prepare for an array store operation.
+Prepare(JArrayAccess)
+{
+	data1 = Convert.ToObject(expr1.Eval(engine), engine);
+	data2 = expr2.Eval(engine);
+}
+
+// Get and prepare for an array store operation.
+GetAndPrepare(JArrayAccess)
+{
+	data1 = Convert.ToObject(expr1.Eval(engine), engine);
+	data2 = expr2.Eval(engine);
+	if(data1 is ScriptObject)
+	{
+		// Try to handle special cases to make array accesses more efficient.
+		if(data2 is int)
+		{
+			return ((ScriptObject)data1)[(int)data2];
+		}
+		else if(data2 is double)
+		{
+			return ((ScriptObject)data1)[(double)data2];
+		}
+		else if(data2 is String)
+		{
+			return ((ScriptObject)data1)[(String)data2];
+		}
+		else
+		{
+			return ((ScriptObject)data1)[data2];
+		}
+	}
+	else if(data1 is Array)
+	{
+		// Get the element from an underlying CLI array.
+		return ((Array)data1).GetValue(Convert.ToInt32(data2));
+	}
+	else if(data1 is IDictionary)
+	{
+		// Get the element from an underlying CLI dictionary.
+		return ((IDictionary)data1)[data2];
+	}
+	else
+	{
+		return null;
+	}
+}
+
+// Perform an array store operation.
+Store(JArrayAccess)
+{
+	if(data1 is ScriptObject)
+	{
+		if(data2 is int)
+		{
+			((ScriptObject)data1)[(int)data2] = value;
+		}
+		else if(data2 is double)
+		{
+			((ScriptObject)data1)[(double)data2] = value;
+		}
+		else if(data2 is String)
+		{
+			((ScriptObject)data1)[(String)data2] = value;
+		}
+		else
+		{
+			((ScriptObject)data1)[data2] = value;
+		}
+	}
+	else if(data1 is Array)
+	{
+		// Store the element into an underlying CLI array.
+		((Array)data1).SetValue(value, Convert.ToInt32(data2));
+	}
+	else if(data1 is IDictionary)
+	{
+		// Store the element into an underlying CLI dictionary.
+		((IDictionary)data1)[data2] = value;
+	}
+}
+
+// Evaluate a field access expression.
+Eval(JFieldAccess)
+{
+	Object thisob = Convert.ToObject(expr.Eval(engine), engine);
+	if(thisob is ScriptObject)
+	{
+		return ((ScriptObject)thisob)[name];
+	}
+	else
+	{
+		return null;
+	}
+}
+
+// Prepare to store into a field access.
+Prepare(JFieldAccess)
+{
+	data1 = Convert.ToObject(expr.Eval(engine), engine);
+}
+
+// Get and prepare to store into a field access.
+GetAndPrepare(JFieldAccess)
+{
+	data1 = Convert.ToObject(expr.Eval(engine), engine);
+	if(data1 is ScriptObject)
+	{
+		return ((ScriptObject)data1)[name];
+	}
+	else
+	{
+		return null;
+	}
+}
+
+// Store into a field access.
+Store(JFieldAccess)
+{
+	if(data1 is ScriptObject)
+	{
+		((ScriptObject)data1)[name] = value;
+	}
+}
+
+// Evaluate a function call expression.
+Eval(JCall)
+{
+	// Evaluate the function and the "this" object.
+	Object thisob;
+	Object func;
+	if(expr1 is JFieldAccess)
+	{
+		thisob = Convert.ToObject
+			(((JFieldAccess)expr1).expr.Eval(engine), engine);
+		if(thisob is ScriptObject)
+		{
+			func = ((ScriptObject)thisob).Get(((JFieldAccess)expr1).name);
+		}
+		else
+		{
+			func = null;
+		}
+	}
+	else
+	{
+		thisob = null;
+		func = expr1.Eval(engine);
+	}
+
+	// Evaluate the arguments.
+	Object[] args = Support.EvalArgList(expr2, engine);
+
+	// Bail out if the function object is invalid.
+	if(!(func is ScriptFunction))
+	{
+		throw new JScriptException(JSError.FunctionExpected, this.context);
+	}
+
+	// Call the function.
+	return ((ScriptFunction)func).Call(engine, thisob, args);
+}
+
+// Evaluate an argument list expression.
+Eval(JArgList)
+{
+	// Nothing to do here: handled by "Support.EvalArgList" instead.
+	return null;
+}
+
+// Evaluate an "eval" expression.
+Eval(JEval)
+{
+	return Microsoft.JScript.Eval.JScriptEvaluate(expr.Eval(engine), engine);
+}
+
+// Evaluate a "print" expression.
+Eval(JPrint)
+{
+	Support.Print(engine, expr);
+	return Empty.Value;
+}

@@ -1,0 +1,32 @@
+#
+# Security.txt - Resources for security errors.
+#
+# Copyright (C) 2003  Southern Storm Software, Pty Ltd.
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+#
+Security_AllMembershipCondition=All code
+Security_AppDirMembershipCondition=ApplicationDirectory
+Security_PolicyVersion=Invalid version for serialized policy object
+Security_PolicyName=Incorrect name for serialized policy object
+Security_NotCodeGroupChild=The object is not a child of the specified code group
+Security_RemotingCheckType=The type {0} cannot be remoted at the `Low' security level
+Security_SelectorCycle=Chaining the specified selectors will create a cycle
+Security_Exclusive=Mutually exclusive policies encountered
+Security_PermissionSetNotFound=Could not find the specified permission set
+Security_FullTrustPresent=Full trust information is already present
+Security_FullTrustNotPresent=Full trust information is not present
+Security_RootGroupDescription=Root code group that grants access to everything
+Security_CodeGroupName=Incorrect XML tag name for security code group

@@ -1,0 +1,1378 @@
+%header "cg_nodes.h"
+%output "cg_nodes.c"
+
+%both %{
+/*
+ * cg_nodes.tc - Declare common nodes and operations.
+ *
+ * Copyright (C) 2001, 2009  Southern Storm Software, Pty Ltd.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ */
+%}
+
+%decls %{
+
+#include <codegen/cg_defs.h>
+#include <codegen/cg_varusage.h>
+
+typedef struct _tagILEvalValue ILEvalValue;
+
+%}
+
+%decls %end %{
+#include <codegen/cg_varusage.h>
+#include <codegen/cg_gen.h>
+#include <codegen/cg_output.h>
+#include <codegen/cg_utils.h>
+%}
+
+%{
+#include <codegen/cg_nodes.h>
+%}
+
+/*
+ * Put the common treecc housekeeping code here.
+ */
+%common
+
+/*
+ * Strip filenames in "#line" directives down to their base name.
+ */
+%option strip_filenames
+
+/*
+ * The root of the node hierarchy.
+ */
+%node ILNode %abstract %typedef
+
+/*
+ * Machine types.
+ */
+%enum ILMachineType =
+{
+	ILMachineType_Void,
+	ILMachineType_Boolean,
+	ILMachineType_Int8,
+	ILMachineType_UInt8,
+	ILMachineType_Int16,
+	ILMachineType_UInt16,
+	ILMachineType_Char,
+	ILMachineType_Int32,
+	ILMachineType_UInt32,
+	ILMachineType_Int64,
+	ILMachineType_UInt64,
+	ILMachineType_NativeInt,
+	ILMachineType_NativeUInt,
+	ILMachineType_Float32,
+	ILMachineType_Float64,
+	ILMachineType_NativeFloat,
+	ILMachineType_Decimal,
+	ILMachineType_String,
+	ILMachineType_ObjectRef,
+	ILMachineType_UnmanagedPtr,
+	ILMachineType_ManagedPtr,
+	ILMachineType_TransientPtr,
+	ILMachineType_ManagedValue,
+}
+
+/*
+ * Parameter modifiers.
+ */
+%enum ILParameterModifier =
+{
+	ILParamMod_empty,
+	ILParamMod_ref,
+	ILParamMod_out,
+	ILParamMod_params,
+	ILParamMod_arglist,
+	ILParamMod_methodgroup
+}
+
+/*
+ * Switch table types.
+ */
+%enum ILSwitchTableType =
+{
+	ILSwitchTableType_Indexed,			/* Indexed by "int" */
+	ILSwitchTableType_Lookup,			/* Lookup by "int" */
+	ILSwitchTableType_If,				/* Small switch: compile to "if" */
+	ILSwitchTableType_BinaryIf			/* Compile to binary "if" tree */
+}
+
+/*
+ * Node visited modes, to help detect circularities.
+ */
+%enum ILVisitMode =
+{
+	ILVisitMode_NotVisited,
+	ILVisitMode_Processing,
+	ILVisitMode_Done
+}
+
+/*
+ * Definition of "ILEvalValue".
+ */
+%decls %end %{
+
+struct _tagILEvalValue
+{
+	ILMachineType		valueType;
+	union
+	{
+		ILInt32			i4Value;
+		ILInt64			i8Value;
+		ILFloat			r4Value;
+		ILDouble		r8Value;
+		ILDecimal		decValue;
+		void		   *oValue;
+		struct
+		{
+			const char *str;
+			int			len;
+		}				strValue;
+	} un;
+
+};
+
+%}
+
+/*
+ * Definition of "ILSwitchValue".
+ */
+%decls %end %{
+
+struct _tagILSwitchValue
+{
+	ILEvalValue			value;
+	ILNode             *caseLabel;
+	ILNode             *section;
+
+};
+
+%}
+
+/*
+ * Useful node categories.
+ */
+%node ILNode_Dummy ILNode %abstract
+%node ILNode_Expression ILNode %abstract
+%node ILNode_Alias ILNode_Dummy %abstract =
+{
+	const char *name;
+	%nocreate ILNode_Alias	   *next = {0};
+}
+%node ILNode_Constant ILNode_Expression %abstract
+%node ILNode_LValue ILNode_Expression %abstract
+%node ILNode_LValueNoRef ILNode_LValue %abstract
+%node ILNode_UnaryExpression ILNode_Expression %abstract =
+{
+	ILNode *expr;
+}
+%node ILNode_DummyUnaryExpr ILNode_UnaryExpression %abstract
+%node ILNode_LValueUnaryExpr ILNode_LValue %abstract =
+{
+	ILNode *expr;
+}
+%node ILNode_LValueNoRefUnaryExpr ILNode_LValueUnaryExpr %abstract
+%node ILNode_LValueBinaryExpr ILNode_LValue %abstract =
+{
+	ILNode *expr1;
+	ILNode *expr2;
+}
+%node ILNode_BinaryExpression ILNode_Expression %abstract =
+{
+	ILNode *expr1;
+	ILNode *expr2;
+}
+%node ILNode_DummyBinaryExpr ILNode_BinaryExpression %abstract
+%node ILNode_TernaryExpression ILNode_Expression %abstract =
+{
+	ILNode *expr1;
+	ILNode *expr2;
+	ILNode *expr3;
+}
+%node ILNode_Statement ILNode %abstract =
+{
+	%nocreate ILVarUsageTable *varUsage = {0};
+}
+%node ILNode_List ILNode_Statement =
+{
+	%nocreate ILNode      *item1 = {0};
+	%nocreate ILNode      *item2 = {0};
+	%nocreate ILNode      *item3 = {0};
+	%nocreate ILNode      *item4 = {0};
+	%nocreate ILNode_List *rest  = {0};
+}
+
+%output "cg_const.c"
+
+/*
+ * Constant node types.
+ */
+%node ILNode_Null ILNode_Constant
+%node ILNode_NullPtr ILNode_Constant
+%node ILNode_True ILNode_Constant
+%node ILNode_False ILNode_Constant
+%node ILNode_Integer ILNode_Constant %abstract =
+{
+	ILUInt64 value;
+	int      isneg;
+	int      canneg;
+}
+%node ILNode_Int8 ILNode_Integer
+%node ILNode_UInt8 ILNode_Integer
+%node ILNode_Int16 ILNode_Integer
+%node ILNode_UInt16 ILNode_Integer
+%node ILNode_Char ILNode_Integer
+%node ILNode_Int32 ILNode_Integer
+%node ILNode_UInt32 ILNode_Integer
+%node ILNode_Int64 ILNode_Integer
+%node ILNode_UInt64 ILNode_Integer
+%node ILNode_Int ILNode_Integer
+%node ILNode_UInt ILNode_Integer
+%node ILNode_Real ILNode_Constant %abstract =
+{
+	ILDouble value;
+}
+%node ILNode_Float32 ILNode_Real
+%node ILNode_Float64 ILNode_Real
+%node ILNode_Float ILNode_Real
+%node ILNode_Decimal ILNode_Constant =
+{
+	ILDecimal value;
+}
+%node ILNode_String ILNode_Constant =
+{
+	const char *str;
+	int   len;
+}
+
+%output "cg_logical.c"
+
+/*
+ * Logical operators.
+ */
+%node ILNode_LogicalNot ILNode_UnaryExpression
+%node ILNode_LogicalAnd ILNode_BinaryExpression
+%node ILNode_LogicalOr ILNode_BinaryExpression
+%node ILNode_UserLogical ILNode_BinaryExpression %abstract =
+{
+	ILMethod *opMethod;
+	ILMethod *trueMethod;
+	ILMethod *falseMethod;
+}
+%node ILNode_UserLogicalAnd ILNode_UserLogical
+%node ILNode_UserLogicalOr ILNode_UserLogical
+
+%output "cg_arith.c"
+
+/*
+ * Arithmetic operators.
+ */
+%node ILNode_BinaryArith ILNode_BinaryExpression %abstract
+%node ILNode_BinaryBitwise ILNode_BinaryExpression %abstract
+%node ILNode_BinaryShift ILNode_BinaryExpression %abstract
+%node ILNode_Add ILNode_BinaryArith
+%node ILNode_Sub ILNode_BinaryArith
+%node ILNode_Mul ILNode_BinaryArith
+%node ILNode_Div ILNode_BinaryArith
+%node ILNode_Rem ILNode_BinaryArith
+%node ILNode_Neg ILNode_UnaryExpression
+%node ILNode_UnaryPlus ILNode_UnaryExpression
+%node ILNode_And ILNode_BinaryBitwise
+%node ILNode_Or ILNode_BinaryBitwise
+%node ILNode_Xor ILNode_BinaryBitwise
+%node ILNode_Not ILNode_UnaryExpression
+%node ILNode_Shl ILNode_BinaryShift
+%node ILNode_Shr ILNode_BinaryShift
+%node ILNode_UShr ILNode_BinaryShift
+%node ILNode_UserUnaryOp ILNode_UnaryExpression =
+{
+	ILMachineType machineType;
+	ILMethod *method;
+}
+%node ILNode_UserBinaryOp ILNode_BinaryExpression =
+{
+	ILMachineType machineType;
+	ILMethod *method;
+}
+%node ILNode_Concat ILNode_BinaryExpression
+%node ILNode_DelegateAdd ILNode_BinaryExpression =
+{
+	ILClass *delegateClass;
+}
+%node ILNode_DelegateSub ILNode_BinaryExpression =
+{
+	ILClass *delegateClass;
+}
+
+%output "cg_assign.c"
+
+/*
+ * Assignment operators.
+ */
+%node ILNode_AssignExpression ILNode_Expression %abstract =
+{
+	ILNode *assign;		/* BinaryExpression containing the operator */
+	%nocreate ILNode *lvalue;   /*  Points to lvalue when it's buried in
+									the operator  */
+}
+%node ILNode_Assign ILNode_BinaryExpression
+%node ILNode_AssignAdd ILNode_AssignExpression
+%node ILNode_AssignSub ILNode_AssignExpression
+%node ILNode_AssignMul ILNode_AssignExpression
+%node ILNode_AssignDiv ILNode_AssignExpression
+%node ILNode_AssignRem ILNode_AssignExpression
+%node ILNode_AssignAnd ILNode_AssignExpression
+%node ILNode_AssignOr ILNode_AssignExpression
+%node ILNode_AssignXor ILNode_AssignExpression
+%node ILNode_AssignShl ILNode_AssignExpression
+%node ILNode_AssignShr ILNode_AssignExpression
+%node ILNode_AssignUShr ILNode_AssignExpression
+%node ILNode_PreInc ILNode_UnaryExpression
+%node ILNode_PreDec ILNode_UnaryExpression
+%node ILNode_PostInc ILNode_UnaryExpression
+%node ILNode_PostDec ILNode_UnaryExpression
+%node ILNode_UserIncOrDec ILNode_UnaryExpression %abstract =
+{
+	ILMethod     *method;
+	ILMachineType type;
+}
+%node ILNode_UserPreInc ILNode_UserIncOrDec
+%node ILNode_UserPreDec ILNode_UserIncOrDec
+%node ILNode_UserPostInc ILNode_UserIncOrDec
+%node ILNode_UserPostDec ILNode_UserIncOrDec
+%node ILNode_IncOrDecPtr ILNode_UnaryExpression %abstract =
+{
+	ILUInt32	size;
+	ILNode     *sizeNode;
+}
+%node ILNode_PreIncPtr ILNode_IncOrDecPtr
+%node ILNode_PreDecPtr ILNode_IncOrDecPtr
+%node ILNode_PostIncPtr ILNode_IncOrDecPtr
+%node ILNode_PostDecPtr ILNode_IncOrDecPtr
+
+%output "cg_relop.c"
+
+/*
+ * Relational operators.
+ */
+%node ILNode_Relational ILNode_BinaryExpression %abstract
+%node ILNode_Eq ILNode_Relational
+%node ILNode_Ne ILNode_Relational
+%node ILNode_Lt ILNode_Relational
+%node ILNode_Le ILNode_Relational
+%node ILNode_Gt ILNode_Relational
+%node ILNode_Ge ILNode_Relational
+
+%output "cg_misc.c"
+
+/*
+ * Miscellaneous operators.
+ */
+%node ILNode_Comma ILNode_BinaryExpression
+%node ILNode_AsIs ILNode_LValueNoRefUnaryExpr
+%node ILNode_MarkType ILNode_AsIs =
+{
+	ILType *type;
+}
+%node ILNode_Overflow ILNode_LValueNoRefUnaryExpr
+%node ILNode_NoOverflow ILNode_LValueNoRefUnaryExpr
+%node ILNode_Pedantic ILNode_LValueNoRefUnaryExpr
+%node ILNode_NoPedantic ILNode_LValueNoRefUnaryExpr
+%node ILNode_CastSimple ILNode_UnaryExpression =
+{
+	ILMachineType machineType;
+}
+%node ILNode_CastType ILNode_UnaryExpression =
+{
+	ILType *type;
+}
+%node ILNode_UserConversion ILNode_UnaryExpression =
+{
+	ILMachineType machineType;
+	ILMethod *method;
+}
+%node ILNode_CastStringToCharPtr ILNode_UnaryExpression =
+{
+}
+%node ILNode_CastArrayToElementPtr ILNode_UnaryExpression =
+{
+	ILType *arrayType;
+}
+%node ILNode_Conditional ILNode_TernaryExpression
+%node ILNode_Deref ILNode_LValue =
+{
+	ILNode *expr;
+	ILType *elemType;
+}
+%node ILNode_AddressOf ILNode_UnaryExpression
+%node ILNode_ToBool ILNode_UnaryExpression =
+{
+	%nocreate ILMethod *trueMethod = {0};
+	%nocreate ILMethod *falseMethod = {0};
+}
+%node ILNode_ToConst ILNode_UnaryExpression
+%node ILNode_This ILNode_LValue
+%node ILNode_ArgList ILNode_BinaryExpression
+%node ILNode_VarArgList ILNode_Expression
+%node ILNode_VarArgExpand ILNode_UnaryExpression =
+{
+	%nocreate ILType *varArgTypes = {0};
+}
+%node ILNode_Argument ILNode_Expression =
+{
+	ILParameterModifier	modifier;
+	ILNode *expression;
+}
+%node ILNode_ArgArray ILNode_Expression =
+{
+	ILType  *elemType;
+	ILUInt32 numElems;
+	ILNode  *args;
+}
+%node ILNode_BoxingExpression ILNode_Expression %abstract =
+{
+	ILNode  *expr;
+	ILClass *classInfo;
+	int      isEnumType;
+}
+%node ILNode_As ILNode_BoxingExpression
+%node ILNode_Is ILNode_BoxingExpression
+%node ILNode_Error ILNode_Expression
+%node ILNode_Box ILNode_BoxingExpression
+%node ILNode_Unbox ILNode_BoxingExpression =
+{
+	ILMachineType machineType;
+}
+%node ILNode_IsNull ILNode_UnaryExpression
+%node ILNode_IsNonNull ILNode_UnaryExpression
+%node ILNode_MakeRefAny ILNode_UnaryExpression =
+{
+	%nocreate ILType *type = {0};
+}
+%node ILNode_RefType ILNode_UnaryExpression
+%node ILNode_RefValue ILNode_BinaryExpression =
+{
+	%nocreate ILType *type = {0};
+}
+%node ILNode_ArrayLength ILNode_UnaryExpression
+
+/*
+ * Object and array construction expressions.
+ */
+%node ILNode_NewExpression ILNode_Expression =
+{
+	ILNode	   *type;
+	ILNode	   *indexes;
+	ILNode	   *rank;
+	ILNode	   *arrayInitializer;
+	%nocreate ILType *arrayType = {0};
+}
+%node ILNode_ObjectCreationExpression ILNode_Expression =
+{
+	ILNode	   *type;
+	ILNode	   *argList;
+	%nocreate ILMethod *methodInfo = {0};
+	%nocreate ILType   *callSiteSig = {0};
+}
+%node ILNode_DelegateCreationExpression ILNode_Expression =
+{
+	ILClass	   *delegateClass;
+	ILNode	   *expr;
+	ILMethod   *methodInfo;
+}
+%node ILNode_DefaultConstructor ILNode_Expression =
+{
+	ILNode	   *expr;
+	ILType     *type;
+	int			useCtorMethod;
+}
+%node ILNode_RefInit ILNode_Expression =
+{
+	ILNode	   *expr;
+	ILType	   *type;
+}
+%node ILNode_RefValueTypeCreationExpression ILNode_Expression =
+{
+	ILNode	   *expr;
+	ILType	   *type;
+	%nocreate ILNode   *argList = {0};
+	%nocreate ILMethod *methodInfo = {0};
+	%nocreate ILType   *callSiteSig = {0};
+}
+
+/*
+ * Method invocation expressions.
+ */
+%node ILNode_InvocationExpression ILNode_BinaryExpression =
+{
+	%nocreate ILNode   *thisExpr = {0};
+	%nocreate ILMethod *methodInfo = {0};
+	%nocreate ILType   *callSiteSig = {0};
+	%nocreate int       baseCall = {0};
+}
+%node ILNode_BaseInit ILNode_Expression
+%node ILNode_ThisInit ILNode_Expression
+%node ILNode_NonStaticInit ILNode_Expression
+
+/*
+ * Identifiers and l-values.
+ */
+
+%output "cg_lvalue.c"
+
+%node ILNode_Identifier ILNode =
+{
+	const char *name;
+}
+%node ILNode_QualIdent ILNode =
+{
+	ILNode *left;
+	const char *name;
+}
+%node ILNode_GenericQualIdent ILNode =
+{
+	ILNode *left;
+	const char *name;
+	ILUInt32	numTypeArgs;
+	ILNode	   *typeArgs;
+}
+%node ILNode_LocalVar ILNode_LValue =
+{
+	unsigned long index;
+	ILMachineType machineType;
+}
+%node ILNode_ArgumentVar ILNode_LValue =
+{
+	unsigned long index;
+	ILMachineType machineType;
+}
+%node ILNode_RefArgumentVar ILNode_LValue =
+{
+	unsigned long index;
+	ILMachineType machineType;
+	ILType *type;
+}
+%node ILNode_MemberAccess ILNode_LValueBinaryExpr =
+{
+	%nocreate ILMachineType machineType = {ILMachineType_Void};
+}
+%node ILNode_BaseAccess ILNode_LValueUnaryExpr =
+{
+	%nocreate ILMachineType machineType = {ILMachineType_Void};
+}
+%node ILNode_BaseElement ILNode_LValueUnaryExpr =
+{
+	%nocreate ILMachineType machineType = {ILMachineType_Void};
+}
+%node ILNode_DerefField ILNode_LValueBinaryExpr =
+{
+	%nocreate ILMachineType machineType = {ILMachineType_Void};
+	%nocreate ILField *field = {0};
+	%nocreate ILUInt32 tempVar = {0};
+}
+%node ILNode_StaticField ILNode_LValue =
+{
+	ILField *field;
+}
+%node ILNode_MemberField ILNode_LValue =
+{
+	ILNode  *expr;
+	ILField *field;
+	%nocreate ILUInt32 tempVar = {0};
+	%nocreate ILUInt32 baseCall = {0};
+}
+%node ILNode_StaticProperty ILNode_LValueNoRef =
+{
+	ILProperty *property;
+	%nocreate ILUInt32 baseCall = {0};
+}
+%node ILNode_MemberProperty ILNode_LValueNoRef =
+{
+	ILNode  *expr;
+	ILProperty *property;
+	%nocreate ILUInt32 tempVar = {0};
+	%nocreate ILUInt32 baseCall = {0};
+}
+%node ILNode_ArrayAccess ILNode_LValue =
+{
+	ILNode *array;
+	ILNode *indices;
+	%nocreate ILType *arrayType = {0};
+	%nocreate ILType *elemType = {0};
+	%nocreate long saveStack = {0};
+}
+%node ILNode_IndexerAccess ILNode_LValueNoRef =
+{
+	ILNode *object;
+	ILNode *indices;
+	ILMethod *getMethod;
+	ILMethod *setMethod;
+	ILType *objectType;
+	ILType *elemType;
+	ILMachineType machineType;
+	int baseAccess;
+	%nocreate long saveStack = {0};
+}
+
+%output "cg_ainit.c"
+
+/*
+ * Array initialization.
+ */
+%node ILNode_ArrayInit ILNode_UnaryExpression =
+{
+	%nocreate ILType *arrayType = {0};
+}
+
+%output "cg_stmt.c"
+
+/*
+ * Statements.
+ */
+%node ILNode_Empty ILNode_Statement
+%node ILNode_Compound ILNode_List
+%node ILNode_If ILNode_Statement =
+{
+	ILNode *expr;
+	ILNode *thenClause;
+	ILNode *elseClause;
+}
+%node ILNode_Memcpy ILNode_Statement =
+{
+	ILNode *destExpr;
+	ILNode *srcExpr;
+	ILNode *sizeExpr;
+	ILUInt8	align;
+}
+%node ILNode_Memset ILNode_Statement =
+{
+	ILNode *addrExpr;
+	ILNode *valueExpr;
+	ILNode *sizeExpr;
+	ILUInt8	align;
+}
+%node ILNode_LabelledStatement ILNode_Statement %abstract =
+{
+	%nocreate const char *name = {0};
+}
+%node ILNode_While ILNode_LabelledStatement =
+{
+	ILNode *cond;
+	ILNode *stmt;
+}
+%node ILNode_Do ILNode_LabelledStatement =
+{
+	ILNode *stmt;
+	ILNode *cond;
+}
+%node ILNode_For ILNode_LabelledStatement =
+{
+	ILNode *init;
+	ILNode *cond;
+	ILNode *incr;
+	ILNode *stmt;
+}
+%node ILNode_Foreach ILNode_LabelledStatement =
+{
+	ILNode	   *type;
+	const char *varName;
+	ILNode	   *varNameNode;
+	ILNode	   *expr;
+	ILNode	   *stmt;
+	%nocreate ILNode* doCast = {0};
+	%nocreate unsigned long varIndex = {0};
+	%nocreate ILMachineType varType = {ILMachineType_Void};
+	%nocreate ILType *arrayType = {0};
+	%nocreate ILType *elemType = {0};
+}
+%node ILNode_ForeachString ILNode_LabelledStatement =
+{
+	ILNode *expr;
+	ILNode *stmt;
+	unsigned long varIndex;
+	ILMachineType varType;
+}
+
+%node ILNode_EmptyExpr ILNode_Expression=
+{
+	ILMachineType type;
+}
+%node ILNode_ForeachCollection ILNode_LabelledStatement =
+{
+	ILNode *doCast;
+	ILNode *expr;
+	ILNode *stmt;
+	ILType *arrayType;
+	unsigned long varIndex ;
+	ILMachineType varType ;
+	ILType *enumeratorType;
+	ILMethod *getEnumerator;
+	ILMethod *moveNext;
+	ILMethod *getCurrent;
+}
+%node ILNode_Break ILNode_Statement
+%node ILNode_LabelledBreak ILNode_Statement =
+{
+	const char *name;
+}
+%node ILNode_Continue ILNode_Statement
+%node ILNode_LabelledContinue ILNode_Statement =
+{
+	const char *name;
+}
+%node ILNode_Return ILNode_Statement
+%node ILNode_ReturnExpr ILNode_Statement =
+{
+	ILNode *expr;
+}
+%node ILNode_Goto ILNode_Statement =
+{
+	const char *name;
+}
+%node ILNode_GotoLabel ILNode_Statement =
+{
+	const char *name;
+}
+%node ILNode_GotoCase ILNode_Statement =
+{
+	ILNode *expr;
+	%nocreate ILNode_SwitchSection *switchSection={0};
+}
+%node ILNode_GotoDefault ILNode_Statement
+%node ILNode_NewScope ILNode_Statement =
+{
+	ILNode *stmt;
+	%nocreate ILScope *scope = {0};
+}
+%node ILNode_Switch ILNode_LabelledStatement =
+{
+	ILNode *expr;
+	ILNode *sections;
+	ILNode *body;
+	%nocreate ILNode *defaultSection = {0};
+	%nocreate ILSwitchValue *switchValues = {0};
+	%nocreate unsigned long numSwitchValues = {0};
+	%nocreate ILType* switchType={0};
+	%nocreate ILSwitchTableType tableType = {ILSwitchTableType_Indexed};
+}
+%node ILNode_SwitchSectList ILNode_List
+%node ILNode_SwitchSection ILNode_Statement =
+{
+	ILNode *caseList;
+	ILNode *stmt;
+	%nocreate ILLabel label = {ILLabel_Undefined};
+	%nocreate ILVisitMode visited = {ILVisitMode_NotVisited};
+}
+%node ILNode_CaseList ILNode_List
+%node ILNode_CaseLabel ILNode_Statement =
+{
+	ILNode *expr;
+	%nocreate ILNode_SwitchSection *section = {0};
+}
+%node ILNode_DefaultLabel ILNode_Statement =
+{
+	%nocreate ILNode_SwitchSection *section = {0};
+}
+%node ILNode_Throw ILNode_Statement
+%node ILNode_ThrowExpr ILNode_Statement =
+{
+	ILNode *expr;
+}
+%node ILNode_Try ILNode_Statement =
+{
+	ILNode *stmt;
+	ILNode *catchClauses;
+	ILNode *finallyClause;
+}
+%node ILNode_CatchClauses ILNode_List
+%node ILNode_CatchClause ILNode_Statement =
+{
+	ILNode	   *type;
+	const char *name;
+	ILNode	   *nameNode;
+	ILNode	   *stmt;
+	%nocreate ILClass *classInfo = {0};
+	%nocreate unsigned long varIndex = {0};
+}
+%node ILNode_FinallyClause ILNode_Statement =
+{
+	ILNode *stmt;
+}
+%node ILNode_Lock ILNode_Statement =
+{
+	ILNode *expr;
+	ILNode *stmt;
+}
+%node ILNode_VariableDeclarator ILNode_Statement =
+{
+	ILNode	   *name;
+	ILNode	   *init;
+}
+%node ILNode_LocalVarDeclaration ILNode_Statement =
+{
+	ILNode	   *type;
+	ILNode	   *varNames;
+}
+%node ILNode_LocalConstDeclaration ILNode_Statement =
+{
+	ILNode	   *type;
+	ILNode	   *decls;
+}
+%node ILNode_LineInfo ILNode_Statement =
+{
+	ILNode	   *stmt;
+}
+%node ILNode_EventAddOrRemove ILNode_Statement =
+{
+	ILNode *thisExpr;
+	ILNode *delegateExpr;
+	ILMethod *method;
+}
+
+%output "cg_decls.c"
+
+/*
+ * Declarations.
+ */
+
+/*
+ * Gereric parameter targets.
+ */
+%enum ILGenParamTarget =
+{
+	ILGenParamTarget_Class,				/* generic class parameter */
+	ILGenParamTarget_Method				/* generic method parameter */
+}
+
+%node ILNode_Declaration ILNode_Statement %abstract
+%node ILNode_ClassDefn ILNode_Declaration =
+{
+	ILNode	   *attributes;
+	ILUInt32	modifiers;
+	const char *name;
+	const char *namespace;
+	ILNode     *namespaceNode;
+	ILNode     *typeFormals;
+	ILNode     *baseClass;
+	ILNode     *body;
+	ILNode     *staticCtors;
+	%nocreate ILClass *classInfo = {0};
+	%nocreate ILUInt64 nextEnum = {0};
+	%nocreate ILNode *staticCtorsMethod = {0};
+	%nocreate ILNode *initCtorsMethod = {0};
+	%nocreate ILNode_ClassDefn *nestedParent = {0};
+	%nocreate ILNode *nestedClasses = {0};
+	%nocreate ILVisitMode visited = {ILVisitMode_NotVisited};
+	%nocreate const char *defaultMemberName = {0};
+	%nocreate ILNode_ClassDefn *partialParent = {0};
+	%nocreate ILNode *otherParts = {0};
+
+}
+%node ILNode_ScopeChange ILNode_Declaration =
+{
+	ILScope *scope;
+	ILNode  *body;
+}
+%node ILNode_FieldDeclaration ILNode_Declaration =
+{
+	ILNode	   *attributes;
+	ILUInt32	modifiers;
+	ILNode	   *type;
+	ILNode	   *fieldDeclarators;
+}
+%node ILNode_FieldDeclarator ILNode_Declaration =
+{
+	ILNode		*name;
+	ILNode		*initializer;
+	%nocreate ILField *fieldInfo = {0};
+	%nocreate ILVisitMode visited = {ILVisitMode_NotVisited};
+	%nocreate ILNode_FieldDeclaration *owner = {0};
+	%nocreate ILNode *staticCtor = {0};
+}
+%node ILNode_EventDeclaration ILNode_Declaration =
+{
+	ILNode	   *attributes;
+	ILUInt32	modifiers;
+	ILNode	   *type;
+	ILNode	   *eventDeclarators;
+	%nocreate int needFields = {0};
+}
+%node ILNode_EventDeclarator ILNode_Declaration =
+{
+	ILNode     *fieldDeclarator;
+	ILNode	   *addAccessor;
+	ILNode	   *removeAccessor;
+	%nocreate ILEvent *eventInfo = {0};
+	%nocreate ILField *backingField = {0};
+	%nocreate ILVisitMode visited = {ILVisitMode_NotVisited};
+	%nocreate ILNode_EventDeclaration *backLink = {0};
+}
+%node ILNode_ProxyDeclaration ILNode_Declaration =
+{
+	ILMethod   *interfaceMethod;
+	ILMethod   *proxyReplacement;
+}
+
+/*
+ * Method nodes
+ */
+%node ILNode_MethodDeclaration ILNode_Declaration =
+{
+	ILNode	   *attributes;
+	ILUInt32	modifiers;
+	ILNode	   *type;
+	ILNode	   *name;
+	ILNode	   *typeFormals;	
+	ILNode	   *params;
+	ILNode     *body;
+	%nocreate ILMethod *methodInfo  = {0};
+	%nocreate ILType   *localVarSig = {0};
+	%nocreate ILVisitMode visited = {ILVisitMode_NotVisited};
+	%nocreate int suppressCodeGen = {0};
+}
+
+/*
+ * Property declarations
+ */
+%node ILNode_PropertyDeclaration ILNode_Declaration =
+{
+	ILNode	   *attributes;
+	ILUInt32	modifiers;
+	ILNode	   *type;
+	ILNode	   *name;
+	ILNode	   *params;
+	ILNode	   *getAccessor;
+	ILNode	   *setAccessor;
+	ILUInt32	getsetFlags; /* 1 = get, 2 = set */
+	%nocreate ILProperty *propertyInfo = {0};
+	%nocreate ILVisitMode visited = {ILVisitMode_NotVisited};
+}
+
+%node ILNode_EnumMemberDeclaration ILNode_Declaration =
+{
+	ILNode	   *attributes;
+	ILNode	   *name;
+	ILNode	   *value; /* optional */
+	%nocreate ILField *fieldInfo = {0};
+	%nocreate ILVisitMode visited = {ILVisitMode_NotVisited};
+}
+	
+%node ILNode_DelegateMemberDeclaration ILNode_Declaration =
+{
+	ILNode	   *returnType;
+	ILNode	   *params;
+	%nocreate  ILMethod *ctorMethod = {0};
+	%nocreate  ILMethod *invokeMethod = {0};
+	%nocreate  ILMethod *beginInvokeMethod = {0};
+	%nocreate  ILMethod *endInvokeMethod = {0};
+}
+
+%node ILNode_FormalParameter ILNode_Declaration =
+{
+	ILNode	   *attributes;
+	ILParameterModifier	pmod;
+	ILNode	   *type;
+	ILNode	   *name;
+}
+
+/*
+ * Generic type parameter nodes
+ */
+%node ILNode_GenericTypeParameter ILNode_Declaration =
+{
+	ILUInt32	num;
+	const char *name;
+	ILUInt32	constraint;
+	ILNode_List *typeConstraints;
+	%nocreate ILNode *attributes = {0};
+	%nocreate ILType *mainType = {0};
+	%nocreate ILGenericPar *genPar = {0};
+	%nocreate ILGenParamTarget target = {ILGenParamTarget_Class};
+	%nocreate ILVisitMode visited = {ILVisitMode_NotVisited};
+}
+
+%node ILNode_GenericTypeParameters ILNode_Declaration =
+{
+	ILUInt32	numTypeParams;
+	ILNode_List *typeParams;
+	%nocreate ILVisitMode visited = {ILVisitMode_NotVisited};
+}
+
+%output "cg_attrs.c"
+
+/*
+ * Attributes and sub types
+ */
+%enum ILAttrTargetType =
+{
+	ILAttrTargetType_None,
+	ILAttrTargetType_Named,
+	ILAttrTargetType_Event,
+	ILAttrTargetType_Return
+}
+%enum ILAttrMode =
+{
+	ILAttrMode_NotVisited,
+	ILAttrMode_Processing,
+	ILAttrMode_Done
+}
+%node ILNode_AttributeTree ILNode_Declaration =
+{
+	ILNode	   *sections;
+	%nocreate ILAttrMode mode = {ILAttrMode_NotVisited};
+}
+%node ILNode_AttributeSection ILNode_Declaration =
+{
+	ILAttrTargetType type;
+	ILNode	   *target;
+	ILNode     *attrs;
+}
+%node ILNode_Attribute ILNode_Declaration =
+{
+	ILNode	   *name;
+	ILNode	   *args;
+}
+%node ILNode_AttrArgs ILNode_Declaration =
+{
+	ILNode	   *positionalArgs;
+	ILNode	   *namedArgs;
+}
+%node ILNode_NamedArg ILNode_Declaration =
+{
+	ILNode	   *name;
+	ILNode	   *value;
+}
+
+/*
+ * Basic node operations for code generation.
+ */
+%operation %virtual ILMachineType ILNode_GetType(ILNode *node, ILGenInfo *info)
+%operation %virtual void ILNode_GenDiscard(ILNode *node, ILGenInfo *info)
+%operation %virtual ILMachineType ILNode_GenValue
+				(ILNode *node, ILGenInfo *info)
+%operation %virtual void ILNode_GenThen
+				(ILNode *node, ILGenInfo *info, ILLabel *label)
+%operation %virtual void ILNode_GenElse
+				(ILNode *node, ILGenInfo *info, ILLabel *label)
+%operation %virtual int ILNode_EvalConst
+				(ILNode *node, ILGenInfo *info, ILEvalValue *value)
+%operation %virtual ILMachineType ILNode_Prepare
+				(ILNode_LValue *node, ILGenInfo *info,
+				 void **data1, void **data2)
+%operation %virtual ILMachineType ILNode_GetAndPrepare
+				(ILNode_LValue *node, ILGenInfo *info, int leave,
+				 void **data1, void **data2)
+%operation %virtual void ILNode_Store
+				(ILNode_LValue *node, ILGenInfo *info, int leave,
+				 void *data1, void *data2)
+%operation %virtual void ILNode_GenRef
+				(ILNode_LValue *node, ILGenInfo *info);
+%operation %virtual int ILNode_EndsInReturnImpl(ILNode *node, ILGenInfo *info);
+
+
+/*
+ * Statements only need "ILNode_GenDiscard".
+ */
+ILNode_GetType(ILNode_Statement)
+{
+	return ILMachineType_Void;
+}
+ILNode_GenValue(ILNode_Statement)
+{
+	ILNode_GenDiscard(node, info);
+	return ILMachineType_Void;
+}
+ILNode_GenThen(ILNode_Statement)
+{
+	ILMachineType type = ILNode_GenValue(node, info);
+	ILNodeStackThen(info, label, type);
+}
+ILNode_GenElse(ILNode_Statement)
+{
+	ILMachineType type = ILNode_GenValue(node, info);
+	ILNodeStackElse(info, label, type);
+}
+ILNode_EvalConst(ILNode_Statement)
+{
+	return 0;
+}
+
+/*
+ * Dummy nodes don't need anything.
+ */
+ILNode_GetType(ILNode_Dummy)
+{
+	fprintf(stderr, "GetType is not implemented for node type `%s'",
+			yykindname(node));
+	exit(1);
+	return ILMachineType_Void; 
+}
+ILNode_GenDiscard(ILNode_Dummy)
+{
+	fprintf(stderr, "GenDiscard is not implemented for node type `%s'",
+			yykindname(node));
+	exit(1);
+}
+ILNode_GenValue(ILNode_Dummy)
+{
+	fprintf(stderr, "GenValue is not implemented for node type `%s'",
+			yykindname(node));
+	exit(1);
+	return ILMachineType_Void; /* Not reached */
+}
+ILNode_GenThen(ILNode_Dummy)
+{
+	fprintf(stderr, "GenThen is not implemented for node type `%s'",
+			yykindname(node));
+	exit(1);
+}
+ILNode_GenElse(ILNode_Dummy)
+{
+	fprintf(stderr, "GenElse is not implemented for node type `%s'",
+			yykindname(node));
+	exit(1);
+}
+ILNode_EvalConst(ILNode_Dummy)
+{
+	fprintf(stderr, "EvalConst is not implemented for node type `%s'",
+			yykindname(node));
+	exit(1);
+	return 0; /* Not reached */
+}
+
+/*
+ * Default implementation of "ILNode_GenDiscard" for expressions.
+ */
+ILNode_GenDiscard(ILNode_Expression)
+{
+	ILMachineType type = ILNode_GenValue(node, info);
+	ILGenCast(info, type, ILMachineType_Void);
+}
+
+/*
+ * Jump to a label if the top of the stack is true.
+ */
+%operation %inline void ILNodeStackThen(ILGenInfo *info, ILLabel *label,
+										[ILMachineType type])
+ILNodeStackThen(ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILNodeStackThen(ILMachineType_Boolean),
+ILNodeStackThen(ILMachineType_Int8),
+ILNodeStackThen(ILMachineType_UInt8),
+ILNodeStackThen(ILMachineType_Int16),
+ILNodeStackThen(ILMachineType_UInt16),
+ILNodeStackThen(ILMachineType_Char),
+ILNodeStackThen(ILMachineType_Int32),
+ILNodeStackThen(ILMachineType_UInt32),
+ILNodeStackThen(ILMachineType_NativeInt),
+ILNodeStackThen(ILMachineType_NativeUInt),
+ILNodeStackThen(ILMachineType_ObjectRef),
+ILNodeStackThen(ILMachineType_UnmanagedPtr),
+ILNodeStackThen(ILMachineType_ManagedPtr),
+ILNodeStackThen(ILMachineType_ManagedValue),
+ILNodeStackThen(ILMachineType_TransientPtr)
+{
+	ILGenJump(info, IL_OP_BRTRUE, label);
+	ILGenAdjust(info, -1);
+}
+ILNodeStackThen(ILMachineType_Int64),
+ILNodeStackThen(ILMachineType_UInt64)
+{
+    /* Note: we can probably do this with "brtrue", but the
+       documentation is a little vague.  It provides information
+       for types "I" and "O", but not "I8" or "F".  Therefore,
+       we will be paranoid and do it the long way */
+    ILGenSimple(info, IL_OP_LDC_I4_0);
+    ILGenSimple(info, IL_OP_CONV_I8);
+    ILGenJump(info, IL_OP_BNE_UN, label);
+	ILGenExtend(info, 1);
+	ILGenAdjust(info, -1);
+}
+ILNodeStackThen(ILMachineType_Float32),
+ILNodeStackThen(ILMachineType_Float64),
+ILNodeStackThen(ILMachineType_NativeFloat)
+{
+	/* See comments above */
+    ILGenLoadFloat32(info, (ILFloat)0.0);
+    ILGenJump(info, IL_OP_BNE_UN, label);
+	ILGenExtend(info, 1);
+	ILGenAdjust(info, -1);
+}
+ILNodeStackThen(ILMachineType_Decimal)
+{
+    ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenCallByName(info, "valuetype [.library]System.Decimal "
+								"[.library]System.Decimal::op_Implicit(int32)");
+	ILGenCallByName(info, "bool [.library]System.Decimal::op_Equality"
+					"(valuetype [.library]System.Decimal, "
+					"valuetype [.library]System.Decimal)");
+    ILGenJump(info, IL_OP_BNE_UN, label);
+	ILGenExtend(info, 1);
+	ILGenAdjust(info, -1);
+}
+ILNodeStackThen(ILMachineType_String)
+{
+	ILGenCallByName(info, "bool [.library]System.Boolean::FromString"
+								"(class [.library]System.String)");
+    ILGenJump(info, IL_OP_BNE_UN, label);
+	ILGenAdjust(info, -1);
+}
+
+/*
+ * Jump to a label if the top of the stack is false.
+ */
+%operation %inline void ILNodeStackElse(ILGenInfo *info, ILLabel *label,
+										[ILMachineType type])
+ILNodeStackElse(ILMachineType_Void)
+{
+	/* Nothing to do here */
+}
+ILNodeStackElse(ILMachineType_Boolean),
+ILNodeStackElse(ILMachineType_Int8),
+ILNodeStackElse(ILMachineType_UInt8),
+ILNodeStackElse(ILMachineType_Int16),
+ILNodeStackElse(ILMachineType_UInt16),
+ILNodeStackElse(ILMachineType_Char),
+ILNodeStackElse(ILMachineType_Int32),
+ILNodeStackElse(ILMachineType_UInt32),
+ILNodeStackElse(ILMachineType_NativeInt),
+ILNodeStackElse(ILMachineType_NativeUInt),
+ILNodeStackElse(ILMachineType_ObjectRef),
+ILNodeStackElse(ILMachineType_UnmanagedPtr),
+ILNodeStackElse(ILMachineType_ManagedPtr),
+ILNodeStackElse(ILMachineType_ManagedValue),
+ILNodeStackElse(ILMachineType_TransientPtr)
+{
+	ILGenJump(info, IL_OP_BRFALSE, label);
+	ILGenAdjust(info, -1);
+}
+ILNodeStackElse(ILMachineType_Int64),
+ILNodeStackElse(ILMachineType_UInt64)
+{
+    /* Note: we can probably do this with "brtrue", but the
+       documentation is a little vague.  It provides information
+       for types "I" and "O", but not "I8" or "F".  Therefore,
+       we will be paranoid and do it the long way */
+    ILGenSimple(info, IL_OP_LDC_I4_0);
+    ILGenSimple(info, IL_OP_CONV_I8);
+    ILGenJump(info, IL_OP_BEQ, label);
+	ILGenExtend(info, 1);
+	ILGenAdjust(info, -1);
+}
+ILNodeStackElse(ILMachineType_Float32),
+ILNodeStackElse(ILMachineType_Float64),
+ILNodeStackElse(ILMachineType_NativeFloat)
+{
+	/* See comments above */
+    ILGenLoadFloat32(info, (ILFloat)0.0);
+    ILGenJump(info, IL_OP_BEQ, label);
+	ILGenExtend(info, 1);
+	ILGenAdjust(info, -1);
+}
+ILNodeStackElse(ILMachineType_Decimal)
+{
+    ILGenSimple(info, IL_OP_LDC_I4_0);
+	ILGenCallByName(info, "valuetype [.library]System.Decimal "
+								"[.library]System.Decimal::op_Implicit(int32)");
+	ILGenCallByName(info, "bool [.library]System.Decimal::op_Equality"
+					"(valuetype [.library]System.Decimal, "
+					"valuetype [.library]System.Decimal)");
+    ILGenJump(info, IL_OP_BEQ, label);
+	ILGenExtend(info, 1);
+	ILGenAdjust(info, -1);
+}
+ILNodeStackElse(ILMachineType_String)
+{
+	ILGenCallByName(info, "bool [.library]System.Boolean::FromString"
+								"(class [.library]System.String)");
+    ILGenJump(info, IL_OP_BEQ, label);
+	ILGenAdjust(info, -1);
+}
+
+/*
+ * Default implementation of "ILNode_GenThen" for expressions.
+ */
+ILNode_GenThen(ILNode_Expression)
+{
+	ILMachineType type = ILNode_GenValue(node, info);
+	ILNodeStackThen(info, label, type);
+}
+
+/*
+ * Default implementation of "ILNode_GenElse" for expressions.
+ */
+ILNode_GenElse(ILNode_Expression)
+{
+	ILMachineType type = ILNode_GenValue(node, info);
+	ILNodeStackElse(info, label, type);
+}
+
+/*
+ * Default implementation of "ILNode_EvalConst" for expressions.
+ */
+ILNode_EvalConst(ILNode_Expression)
+{
+	return 0;
+}
+
+/*
+ * EmptyExpr's for casting in stack vars
+ */
+ILNode_GenValue(ILNode_EmptyExpr)
+{
+	return node->type;
+}
+
+ILNode_GetType(ILNode_EmptyExpr)
+{
+	return node->type;
+}
+
+/*
+ * Type and code generation functions for "DummyUnary" and "DummyBinary".
+ */
+ILNode_GetType(ILNode_DummyUnaryExpr),
+ILNode_GetType(ILNode_DummyBinaryExpr)
+{
+	return ILMachineType_Void;
+}
+ILNode_GenValue(ILNode_DummyUnaryExpr),
+ILNode_GenValue(ILNode_DummyBinaryExpr)
+{
+	return ILMachineType_Void;
+}
+
+/*
+ * Default implementation of "ILNode_GenRef" for l-value
+ * nodes that don't need it.
+ */
+ILNode_GenRef(ILNode_LValueNoRef),
+ILNode_GenRef(ILNode_LValueNoRefUnaryExpr)
+{
+	/* Nothing to do here */
+}
+
+/*
+ * Default implementation of "ILNode_EndsInReturnImpl".
+ */
+ILNode_EndsInReturnImpl(ILNode)
+{
+	return 0;
+}

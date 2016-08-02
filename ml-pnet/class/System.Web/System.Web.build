@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+
+<project name="System.Web" default="all">
+	<target name="all">
+		<compile target="library"
+				 output="System.Web.dll"
+				 debug="${debug.flag}"
+				 unsafe="true"
+				 install="true"
+				 installasdefault="true">
+
+			<sources basedir="${mono.sources}/class/System.Web/">
+				<includes name="**/*.cs"/> 
+				<includes name="../../build/common/Consts.cs"/>
+				<includes name="../../build/common/Locale.cs"/>
+				<includes name="../../build/common/MonoTODOAttribute.cs"/> 
+				<excludes name="System.Web.J2EE/**"/>
+				<excludes name="System.Web.Hosting/ServletWorkerRequest.jvm.cs"/>
+				<excludes name="System.Web.SessionState/HttpSessionState.jvm.cs"/>
+				<excludes name="System.Web.SessionState/SessionInProcHandler.jvm.cs"/>
+				<excludes name="System.Web.UI/ControlBuilder.jvm.cs"/>
+				<excludes name="System.Web.UI/ObjectTagBuilder.jvm.cs"/>
+				<excludes name="System.Web.UI/PageHandlerFactory.jvm.cs"/>
+				<excludes name="System.Web.UI/TemplateControl.jvm.cs"/>
+				<excludes name="System.Web.UI.WebControls/XmlBuilder.jvm.cs"/>
+				<excludes name="System.Web.Util/ICalls.jvm.cs"/>
+				<excludes name="Test/**"/>
+				<excludes name="System.Web.Util/ICalls.cs"/>
+				<file basedir="." name="ICalls.cs"/>
+			</sources>
+
+			<references>
+				<file name="System.dll"/>
+				<file name="System.Xml.dll"/>
+				<file name="System.EnterpriseServices.dll"/>
+				<file name="System.Drawing.dll"/>
+				<file name="../Mono.Security/Mono.Security.dll"/>
+				<file name="../Mono.Data.Tds/Mono.Data.Tds.dll"/>
+				<file name="../System.Data/System.Data.dll"/>
+			</references>
+
+			<arg compiler="cscc" value="-fassembly-version=${FRAMEWORK_VERSION}"/>
+			<arg compiler="cscc" value="-fassembly-key=neutral"/>
+			<arg compiler="cscc" value="-Wno-empty-input"/>
+
+		</compile>
+	</target>
+</project>

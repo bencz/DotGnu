@@ -1,0 +1,3 @@
+./locals3.cs:26: invalid lvalue in assignment
+./locals3.cs:31: `x' is already declared in this scope
+./locals3.cs:30: previous declaration here

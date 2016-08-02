@@ -1,0 +1,3 @@
+./member_access3.cs:24: unsafe field declaration not permitted with Java output
+./member_access3.cs:24: unsafe pointer type not permitted with Java output
+./member_access3.cs:27: unsafe method declaration not permitted with Java output

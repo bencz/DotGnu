@@ -1,0 +1,75 @@
+DotGNU Portable.NET Library
+---------------------------
+
+This distribution contains an implementation of the C# library, for use
+with .NET-capable runtime engines and applications.  Originally designed
+for DotGNU Portable.NET (http://www.southern-storm.com.au/portable_net.html),
+this library can be used by other .NET development efforts also.
+
+DotGNU Portable.NET Library is part of the GNU project, developed
+as part of the DotGNU (http://www.dotgnu.org/) meta-project.
+
+The source code for the library is distributed under the terms of the
+GNU General Public License, with the following exception:
+
+	As a special exception, the copyright holders of this library give you
+	permission to link this library with independent modules to produce an
+	executable, regardless of the license terms of these independent modules,
+	and to copy and distribute the resulting executable under terms of your
+	choice, provided that you also meet, for each linked independent module,
+	the terms and conditions of the license of that module.  An independent
+	module is a module which is not derived from or based on this library.
+	If you modify this library, you may extend this exception to your
+	version of the library, but you are not obligated to do so.  If you do
+	not wish to do so, delete this exception statement from your version. 
+
+This exception is intended to be consistent with GNU Classpath
+(http://www.gnu.org/software/classpath/classpath.html).
+
+Contributions are welcome.  You must release your code under the terms
+of the GPL, and you must also agree to allow your code to be used with
+the above exception.  For more information, see the file "HACKING".
+
+Building the Library
+--------------------
+
+The "configure" script understands the following options:
+
+    --with-pnet=DIR
+
+        Specify the location of the Portable.NET source tree.
+        It is assumed that this directory contains compiled versions
+        of programs such as "cscc" and "resgen", which are used when
+        building the library.
+
+        If this option is not specified, then "configure" will look
+        in "../pnet", and then along the path, for the programs that
+        it needs.
+
+        If "configure" does not find any evidence of Portable.NET
+        on the system, it will look for Microsoft's tools instead.
+
+    --with-mstools
+
+        Force "configure" to use Microsoft tools, even if Portable.NET
+        is installed on the same system.
+
+When building under Windows, you will need to have Cygwin installed
+to provide the GNU-compatible toolchain that the scripts and Makefile's
+use.  Cygwin is available for download from "http://cygwin.redhat.com/".
+
+Roadmap
+-------
+
+The directories contain the following:
+
+    runtime    Implementation of the core classes that make up
+               what Microsoft calls "mscorlib".
+    doc        Documentation, including the list of native methods that
+               a runtime engine must supply to use "runtime", and a
+               set of coding guidelines for contributions.
+    resources  Resource files for translatable strings in the library.
+               There are subdirectories for each supported language.
+    tools      Repository for random scripts used by the build system.
+    csunit     Implementation of the unit test framework for pnetlib.
+    tests      Individual unit tests for the classes in pnetlib.
